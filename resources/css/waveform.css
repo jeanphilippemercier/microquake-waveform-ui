@@ -1,0 +1,20 @@
+.btn-back{    
+    background-color: white;
+    color: black;
+    cursor:pointer;
+    display: inline;
+    border-left: 1px solid rgb(33,150,243);
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    height: 25px;
+    width: 40px;
+    vertical-align: baseline;
+    padding: 5px, 12px;
+    font-size: 20px;
+
+}
+.btn-back:hover{
+  color: white;
+  background-color: rgb(33, 150, 243)
+}
