@@ -3,11 +3,12 @@ var channelsObjs = [];
 
 window.onload = function () {
 
-	var startTime0 = new Date();
+	var startTime = new Date();
 	var totalPoints = 0;
 	var sameScale = true;
 	var showTooltip = false;
 	var zoomY = false;
+	var zoomAll = false;
 	toMicro = 1000000;  // seconds to microseconds factor
 	toMmUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
 	initialDuration = 1 * toMicro;  // same scale time window to display in microseconds (1 second)
@@ -39,13 +40,14 @@ window.onload = function () {
 	    {
 	    	if(typeof json[key] == "object") {
 		    	traceOrigin = new Date(json[key].start.split('.')[0] + "Z");  // +"Z" to UTC
-		    	if(traceOrigin.getTime() < origin.getTime()) {	    		
-		    		origin = traceOrigin; 
+		    	if(traceOrigin.getTime() < origin.getTime()) {
+		    		origin = traceOrigin;
 		    		firstLabel = json[key].start.split('.')[0].replace('T',' ');
 		    	}
 	    	}
-	    }		
+	    }
 
+// Load data and picks to channelObj
 		for (key in json)
 	    {
 	    	if(typeof json[key] == "object") {
@@ -53,7 +55,7 @@ window.onload = function () {
 	    		channelsObjs[index]={};
 	    		channelsObjs[index].station=key;
 	    		datesplit = json[key].start.split('.');
-	    		channelsObjs[index].start=json[key].start; 
+	    		channelsObjs[index].start=json[key].start;
 	    		traceOrigin = new Date(datesplit[0] + "Z");  // +"Z" to UTC
 	    		microsec = parseInt(datesplit[1]);
 	    		microsec = microsec + (traceOrigin.getTime() - origin.getTime())*1000;
@@ -71,11 +73,10 @@ window.onload = function () {
 		    			x: microsec + (i * delta),
 		    			y: json[key].data[i]
 		    		});
-		    	}		    	
+		    	}
 		    	channelsObjs[index].duration = (channelsObjs[index].data.length - 1) * delta;
 
 		    	channelsObjs[index].picks=[];
-		    	// channelsObjs[index].datapicks=[];
 		    	if(json[key].hasOwnProperty("p-pick")) {
 		    		datesplit = json[key]["p-pick"].split('.');
 					pickTime = new Date(datesplit[0] + "Z");  // to UTC
@@ -88,11 +89,6 @@ window.onload = function () {
 		    			label: "P",
 		    			labelAlign: "far"
 		    		});
-		    		/* channelsObjs[index].datapicks.push({
-		    			x: pickMicro + pickTimeDiff*1000,
-		    			y: 0,
-		    			indexLabel: "P"
-		    		}); */
 		    	}
 		    	if(json[key].hasOwnProperty("s-pick")) {
 		    		datesplit = json[key]["s-pick"].split('.');
@@ -106,27 +102,18 @@ window.onload = function () {
 		    			label: "S",
 		    			labelAlign: "far"
 		    		});
-		    		/* channelsObjs[index].datapicks.push({
-		    			x: pickMicro + pickTimeDiff*1000,
-		    			y: 0,
-		    			indexLabel: "S"
-		    		}); */
-		    	}		    	
-		    	index ++;		    	
+		    	}
+		    	index ++;
 	    	}
 	    }
 
-		var startTime = new Date();
-	    // document.getElementById("timeToLoad").innerHTML = "Load Time: " + (startTime - startTime0) + "ms";
-
+// Chart Options, Render
 	    var options;
-
 	    for (var i = 0; i < index; i++) {
-	    	   	
 			options = {
 				zoomEnabled: true,
 				zoomType: zoomY ? "xy" : "x",
-				animationEnabled: true,	
+				animationEnabled: true,
 		      	rangeChanged: function(e){
 		        	if (!e.chart.options.viewportMinStack){
 						e.chart.options.viewportMinStack = [];
@@ -135,15 +122,19 @@ window.onload = function () {
 					if(e.trigger === "zoom"){
 		        		e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
 		        		e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
-		        		var channel = parseInt( chart.container.id.replace("Container",""));
+		        		var channel = parseInt( e.chart.container.id.replace("Container",""));
+		        		var chart = channelsObjs[channel].chart;
 		        		document.getElementById(channelsObjs[channel].button).style.display = "inline";
+		        		if(zoomAll && !zoomY) {
+							zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
+		        		}
 		        	}
 		        	if(e.trigger === "reset"){
 		        		resetChartView(e.chart);
 		        		e.chart.options.viewportMinStack=[];
-		         		e.chart.options.viewportMinStack=[];
+		         		e.chart.options.viewportMaxStack=[];
 		        	}
-		      	},							
+		      	},
 				title: {
 					text: channelsObjs[i].station,
 					dockInsidePlotArea: true,
@@ -167,7 +158,7 @@ window.onload = function () {
 					maximum: getXmax(i),
 					viewportMinimum: getXvpMin(),
 					viewportMaximum: getXvpMax(),
-					includeZero: true,										
+					includeZero: true,
 					labelAutoFit: false,
 					labelWrap: false,
 					labelFormatter: function(e){
@@ -176,7 +167,7 @@ window.onload = function () {
 						}
 						else {
 							return  e.value/toMicro +" s" ;
-						}						
+						}
 					},
 					stripLines: channelsObjs[i].picks
 				},
@@ -187,10 +178,10 @@ window.onload = function () {
 							return  "0 mm/s";
 						}
 						else {
-							return  e.value/toMmUnits;	
-						}						
-					}					
-				},				
+							return  e.value/toMmUnits;
+						}
+					}
+				},
 				data: [
 					{
 						type: "line",
@@ -199,43 +190,47 @@ window.onload = function () {
 						highlightEnabled: true,
 						dataPoints: channelsObjs[i].data
 					}
-/*{
-						type: "scatter",
-						mouseover: onMouseover,
-						mouseout: onMouseout,
-						indexLabelOrientation: "horizontal",
-						toolTipContent: null,
-						highlightEnabled: false,
-						fillOpacity: 0,
-						dataPoints: channelsObjs[i].datapicks
-}*/
 				]
-			};			
+			};
 
 			channelsObjs[i].chart = new CanvasJS.Chart(channelsObjs[i].container, options);
-			
-			channelsObjs[i].chart.render();			
+			channelsObjs[i].chart.render();
 			totalPoints += channelsObjs[i].data.length;
 
+			// Add back button to toolbar
 			toolbar = document.getElementsByClassName("canvasjs-chart-toolbar")[i];
 			$("<button>").attr({
 	    		'id': channelsObjs[i].button,
 	    		'class': "btn-back"
-			}).html('\u21e6').appendTo(toolbar);			
+			}).html('\u21e6').appendTo(toolbar);
 			button = document.getElementById( channelsObjs[i].button);
 			button.addEventListener( "click", back);
 	    }
 
 		$("#changeTimeScale").click(function () {
 			sameScale = !sameScale;
-			resetCharts();
+			resetChartsView();
 			$("#changeTimeScale")[0].innerHTML = sameScale ? "Full Time Scale" : "Same Time Scale";
 		});
 
 		function resetCharts() {
 			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+				chart.options.axisX.viewportMinimum = null;
+				chart.options.axisX.viewportMaximum = null;
+				chart.options.axisY.viewportMinimum = null;
+				chart.options.axisY.viewportMaximum = null;
+				chart.options.viewportMinStack=[];
+				chart.options.viewportMaxStack=[];
+				document.getElementById(channelsObjs[i].button).style.display = "none";
+				chart.render();
+			}
+		}
+
+		function resetChartsView() {
+			for (var i = 0; i < index; i++) {
 				resetChartView(channelsObjs[i].chart);
-			}			
+			}
 		}
 
 		function resetChartView(chart) {
@@ -263,6 +258,47 @@ window.onload = function () {
 		}
 
 
+		function getAxisMinAll(isXaxis) {
+			var min = 0;
+			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+				axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+				min = Math.max(axis.get("minimum"), min);
+			}
+			return min;
+		}
+
+		function getAxisMaxAll(isXaxis) {
+			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+				axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+				max = i==0 ? axis.get("maximum") : Math.min(axis.get("maximum"), max);
+			}
+			return max;
+		}
+
+		function zoomAllCharts(vpMin, vpMax, isXaxis, interval) {
+			var axisMin = getAxisMinAll(isXaxis);
+			var axisMax = getAxisMaxAll(isXaxis);
+			interval = interval ? interval : 0;
+		  	if(vpMin >= axisMin && vpMax <= axisMax && (vpMax - vpMin) > (2 * interval)){
+				for (var i = 0; i < index; i++) {
+					chart = channelsObjs[i].chart;
+					axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+					zoomChartView(axis, vpMin, vpMax);
+				}
+		  	}
+		}
+
+		function zoomChartView(axis, vpMin, vpMax) {
+
+		    axis.set("viewportMinimum", vpMin, false);
+		    axis.set("viewportMaximum", vpMax);
+		    chart.render();
+
+		}
+
+
 		function addPick(chartIndex, pickType, value) {
 			var chart = channelsObjs[chartIndex].chart;
 			var position = value ? value : lastSelectedXPosition;
@@ -284,47 +320,27 @@ window.onload = function () {
 			}
 			else {  // no value specified delete all picks of this type
 				channelsObjs[chartIndex].picks = channelsObjs[chartIndex].picks.filter( el => el.label !== pickType);
-			}			
+			}
 			chart.options.axisX.stripLines = channelsObjs[chartIndex].picks;
 			chart.render();
-		}		
-
-/*
-		function onRightClick(e){
-			console.log("Right clicked on: x = " + e.dataPoint.x + " and y = " + e.dataPoint.y);
 		}
-
-		function onMouseover(e){
-			var i = parseInt(e.chart.container.id.replace("Container",""));
-			var chartContainer = channelsObjs[i].chart.container;
-			console.log(chartContainer);
-			chartContainer.addEventListener('contextmenu', e.chart.rightClick = function(ev){
-				console.log('RC');
-				ev.preventDefault();
-		    	onRightClick(e);
-		    	return false;
-		  	}, false);
-		}
-
-		function onMouseout(e){
-			var i = parseInt(e.chart.container.id.replace("Container",""));
-			var chartContainer = channelsObjs[i].chart.container;
-			chartContainer.removeEventListener('contextmenu', e.chart.rightClick);
-		}
-*/
 
 		$("#showTooltip").click(function () {
 			showTooltip = !showTooltip;
-
+			$("#showTooltip")[0].innerHTML = showTooltip ? "Hide Tooltip" : "Show Tooltip";
 			for (var i = 0; i < index; i++) {
 				channelsObjs[i].chart.options.toolTip.enabled = showTooltip;
-				$("#showTooltip")[0].innerHTML = showTooltip ? "Hide Tooltip" : "Show Tooltip";
 				channelsObjs[i].chart.render();
 			}
 		});
 
+		$("#zoomAll").click(function () {
+			zoomAll = !zoomAll;
+			$("#zoomAll")[0].innerHTML = zoomAll ? "Zoom Selected" : "Zoom All";
+		});
+
 		$("#zoomMode").click(function () {
-			zoomY = !zoomY;			
+			zoomY = !zoomY;
 			for (var i = 0; i < index; i++) {
 				channelsObjs[i].chart.options.zoomType = zoomY ? "xy" : "x"
 				channelsObjs[i].chart.render();
@@ -332,6 +348,9 @@ window.onload = function () {
 			$("#zoomMode")[0].innerHTML = zoomY ? "X Zoom and Pan" : "XY Zoom and Pan";
 		});
 
+		$("#resetAll").click(function () {
+			resetChartsView();
+		});
 
 		function back(){
 			var i = parseInt(event.target.id.replace("ContainerBtn",""));
@@ -351,11 +370,12 @@ window.onload = function () {
 		  	}
 		  	else{
 		      	chart.options.viewportMinStack=[];
-		        chart.options.viewportMinStack=[];
+		        chart.options.viewportMaxStack=[];
 		        resetChartView(chart);
 		  	}
 		}
 
+// Keyboard interaction for Zoom
 		document.addEventListener('keydown', function(e) {
 			if (e.keyCode == '37' ||
 				e.keyCode == '38' ||
@@ -375,7 +395,7 @@ window.onload = function () {
 					        interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
 					    var newViewportMin, newViewportMax;
 
-					    if (e.keyCode == '38') {// up arrow    
+					    if (e.keyCode == '38') {// up arrow
 					      newViewportMin = viewportMin + interval;
 					      newViewportMax = viewportMax - interval;
 					    }
@@ -392,29 +412,34 @@ window.onload = function () {
 					      newViewportMax = viewportMax + interval;
 					    }
 
-					    if(newViewportMin >= axis.get("minimum") && newViewportMax <= axis.get("maximum") && (newViewportMax - newViewportMin) > (2 * interval)){
-					      	axis.set("viewportMinimum", newViewportMin, false);
-					      	axis.set("viewportMaximum", newViewportMax);
-					      	chart.render();
-					    }
+					  	if(zoomAll){
+					  		zoomAllCharts(newViewportMin, newViewportMax, e.altKey);
+					  	}
+					  	else {
+						    if(newViewportMin >= axis.get("minimum") && newViewportMax <= axis.get("maximum") && (newViewportMax - newViewportMin) > (2 * interval)){
+						      	axis.set("viewportMinimum", newViewportMin, false);
+						      	axis.set("viewportMaximum", newViewportMax);
+						      	chart.render();
+						    }
+					  	}
 					    break;
 				  	}
 			  	}
 			}
 		}, false);
 
-
+// Drag picks
 		for (var j = 0; j < index; j++) {
-		
-			canvas = "#" + channelsObjs[j].container + " > .canvasjs-chart-container"
-			$(canvas).on("mousedown", function(e) {
-				var index = parseInt($(this).parent()[0].id.replace("Container",""));
+			canvas_chart = "#" + channelsObjs[j].container + " > .canvasjs-chart-container > .canvasjs-chart-canvas";
+			$(canvas_chart).last().on("mousedown", function(e) {
+				lastDownTarget = e.target;
+				var index = parseInt($(this).parent().parent()[0].id.replace("Container",""));
 				chart = channelsObjs[index].chart;
 			  	var parentOffset = $(this).parent().offset();
 			  	var relX = e.pageX - parentOffset.left;
 			  	var relY = e.pageY - parentOffset.top;
 				if(e.button ==0) {  // drag active on left mouse button only
-				  	// Get the selected stripLine & change the cursor				  	
+				  	// Get the selected stripLine & change the cursor
 				  	var snapDistance = 10;  // 5 initial
 				  	for(var i = 0; i < chart.axisX[0].stripLines.length; i++) {
 				  		if(chart.axisX[0].stripLines[i].get("bounds")) {
@@ -425,18 +450,18 @@ window.onload = function () {
 								}
 								else {  // move pick
 					      			selected = i;
-					      			// $(this).css("cursor","pointer");
+					      			$(this).addClass('pointerClass');
 								}
 					      		break;
-					    	}			  			
+					    	}
 				  		}
 				  	}
 				}
-				else if(e.button ==1) {  // add new P or S 
-						if(e.ctrlKey) {  // add new P on Ctrl + center mouse button click 
+				else if(e.button ==1) {  // add new P or S
+						if(e.ctrlKey) {  // add new P on Ctrl + center mouse button click
 							addPick(index,'P', chart.axisX[0].convertPixelToValue(relX));
 						}
-						else if (e.shiftKey) {   // add new S pick on Shift + center mouse button click 
+						else if (e.shiftKey) {   // add new S pick on Shift + center mouse button click
 							addPick(index,'S', chart.axisX[0].convertPixelToValue(relX));
 						}
 				}
@@ -445,44 +470,34 @@ window.onload = function () {
 				}
 			});
 
-			$(canvas).on("mousemove", function(e) {
-			  // Move the selected stripLine
+			$(canvas_chart).last().on("mousemove", function(e) {  // move selected stripLine
 			  	if(selected !== -1) {
-					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
+					var i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
 					chart = channelsObjs[i].chart;
 			    	var parentOffset = $(this).parent().offset();
 			    	var relX = e.pageX - parentOffset.left;
 			    	chart.options.axisX.stripLines[selected].value = chart.axisX[0].convertPixelToValue(relX);
 			    	chart.options.zoomEnabled = false;
-			    	// chart.options.data[0].markerSize = 5;
-			    	chart.options.data[0].cursor = "pointer";
 					document.getElementById(channelsObjs[i].button).style.display = "none";
 			    	chart.render();
 			  	}
 			});
 
 
-			$(canvas).on("mouseup", function(e) {
-				if(selected !== -1) {
-				  	// Clear Selection and change the cursor
+			$(canvas_chart).last().on("mouseup", function(e) {
+				if(selected !== -1) { 	// clear selection and change the cursor
 				  	selected = -1;
-				  	// $(this).css("cursor","default");
-				  	// Turn zoom back on
-					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
+				  	$(this).removeClass('pointerClass');
+					// var i = parseInt( $(this).parent()[0].id.replace("Container",""));
+					var i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
 					chart = channelsObjs[i].chart;
-			    	chart.options.zoomEnabled = true;
-			    	// chart.options.data[0].markerSize = 0;
-			    	chart.options.data[0].cursor = "default";
+			    	chart.options.zoomEnabled = true;   // turn zoom back on
 			    	document.getElementById(channelsObjs[i].button).style.display = "inline";
 			    	chart.render();
 		    	}
 			});
 
-			canvas_chart = canvas + " > .canvasjs-chart-canvas";
-			$(canvas_chart)[1].addEventListener("mousedown", function(e){
-				lastDownTarget = e.target;
-			});
-
+// Zoom: on mouse wheel event zoom on Y axis, or on X axis if Alt key pressed
 			$(canvas_chart)[1].addEventListener("wheel", function(e){
 			  	e.preventDefault();
 
@@ -493,7 +508,7 @@ window.onload = function () {
 
  				if(e.clientX < chart.plotArea.x1 || e.clientX > chart.plotArea.x2 || relOffsetY < chart.plotArea.y1 || relOffsetY > chart.plotArea.y2)
 			  		return;
-			    
+
 			  	var axis = e.altKey ? chart.axisX[0] : chart.axisY[0];
 
 			  	var viewportMin = axis.get("viewportMinimum"),
@@ -511,18 +526,24 @@ window.onload = function () {
 			    	newViewportMax = viewportMax + interval;
 			  	}
 
-			  	if(newViewportMin >= axis.get("minimum") && newViewportMax <= axis.get("maximum") && (newViewportMax - newViewportMin) > (2 * interval)){
-			    	axis.set("viewportMinimum", newViewportMin, false);
-			    	axis.set("viewportMaximum", newViewportMax);
-			    	chart.render();
-			  	}			  	
+			  	if(zoomAll){
+			  		zoomAllCharts(newViewportMin, newViewportMax, e.altKey);
+			  	}
+			  	else {  // zoom selected trace only
+				  	if(newViewportMin >= axis.get("minimum") && newViewportMax <= axis.get("maximum") && (newViewportMax - newViewportMin) > (2 * interval)){
+				    	axis.set("viewportMinimum", newViewportMin, false);
+				    	axis.set("viewportMaximum", newViewportMax);
+				    	chart.render();
+				  	}
+			  	}
 			});
 
+// Context menu selections
 			$("#" + channelsObjs[j].container).contextMenu({
 			  selector: "div",
-			  items: {			  	
+			  items: {
 			    "deleteP": {
-			      name: "Delete P picks", 
+			      name: "Delete P picks",
 			      callback: function() {
 					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
 					deletePicks(i, 'P');
@@ -530,15 +551,15 @@ window.onload = function () {
 			      }
 			    },
 			    "deleteS": {
-			      name: "Delete S picks", 
+			      name: "Delete S picks",
 			      callback: function() {
 					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
 					deletePicks(i, 'S');
 			        return;
 			      }
-			    },			    
+			    },
 			    "newP": {
-			      name: "New P pick", 
+			      name: "New P pick",
 			      callback: function() {
 					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
 					addPick(i, 'P');
@@ -546,7 +567,7 @@ window.onload = function () {
 			      }
 			    },
 			    "newS": {
-			      name: "New S pick", 
+			      name: "New S pick",
 			      callback: function() {
 					var i = parseInt( $(this).parent()[0].id.replace("Container",""));
 					addPick(i, 'S');
@@ -559,9 +580,21 @@ window.onload = function () {
 			        $("#showTooltip").trigger("click");
 			      }
 			    },
+			    "zoom": {
+			      name: "Toggle Zoom All Traces",
+			      callback: function() {
+			        $("#zoomAll").trigger("click");
+			      }
+			    },
+			    "reset": {
+			      name: "Reset All Traces",
+			      callback: function() {
+			        $("#resetAll").trigger("click");
+			      }
+			    },
 			    "sep1": "---------",
 			    "cancel": {
-			      name: "Cancel", 
+			      name: "Cancel",
 			      callback: function() {
 			        return;
 			      }
@@ -571,7 +604,7 @@ window.onload = function () {
 
 		}
 
-	    var endTime = new Date();	    
+	    var endTime = new Date();
 		document.getElementById("timeToRender").innerHTML = "Render Time: " + (endTime - startTime) + "ms";
 
 	    console.log(index + " channels");

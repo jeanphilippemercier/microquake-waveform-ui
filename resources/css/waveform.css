@@ -1,4 +1,4 @@
-.btn-back{    
+.btn-back{
     background-color: white;
     color: black;
     cursor:pointer;
@@ -15,6 +15,9 @@
 
 }
 .btn-back:hover{
-  color: white;
-  background-color: rgb(33, 150, 243)
+    color: white;
+    background-color: rgb(33, 150, 243)
+}
+.pointerClass{
+    cursor: pointer !important;
 }
