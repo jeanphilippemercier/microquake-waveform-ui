@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html>
+<head>  
+<meta charset="UTF-8">
+<link href="assets/fontawsome/css/all.css" rel="stylesheet">
+<link rel="Stylesheet" href="resources/css/waveform.css">
+<script src="resources/waveform.js"></script>
+</head>
+<body>
+<!--<div id="chartContainer" style="height: 100px; max-width: 920px; margin: 0px auto;"></div>-->
+<script src="assets/jquery/jquery-3.1.1.min.js"></script>
+<script src="assets/contextmenu/jquery.contextMenu.js"></script>
+<script src="assets/contextmenu/jquery.ui.position.min.js"></script>
+<link rel="stylesheet" href="assets/contextmenu/jquery.contextMenu.min.css">
+<script src="assets/toolbar/jquery.toolbar.min.js"></script>
+<link rel="stylesheet" href="assets/toolbar/jquery.toolbar.css">
+<script src="assets/bootstrap/bootstrap.min.js"></script>
+<link rel="stylesheet" href="assets/bootstrap/bootstrap.min.css">
+
+<script src="assets/canvasJS/canvasjs.min.js"></script>
+</body>
+<div id="timeToRender" style="margin-top: 20px;"></div>
+<!--
+<div id="user-toolbar" style="margin-top: 20px;"></div>
+<div id="user-toolbar-options" title="Plot Options">
+   	<a href="#" id="changeTimeScale" title="Change between fixed scale on all channels and auto-scale each channel"><i class="fas 	fa-expand-arrows-alt fa-lg"></i></a>
+   	<a href="#" id="zoomAll" title="Change to zoom or pan all or only selected channel"><i class="fas fa-link fa-lg"></i></a>
+   	<a href="#" id="resetAll" title="Reset All channels to initial view after zoom"><i class="fas fa-undo-alt fa-lg"></i></a>   
+   	<a href="#" id="zoomMode" title="Change between XY and X Zoom and Pan"><i class="fas fa-arrows-alt fa-lg"></i></a>
+	<a href="#" id="showTooltip" title="Show or hide tooltip on all channels"><i class="far fa-comment-alt fa-lg"></i></a>
+</div>
+-->
+<button id="changeTimeScale" title="Same Scale on All Channels" type="button" class="btn btn-primary active" data-toggle="button" aria-pressed="true" autocomplete="off">Same Scale<i class="fas fa-expand-arrows-alt fa-lg fa-fw"></i></button>
+<button id="zoomAll" title="Zoom or Pan All Channels" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Zoom All<i class="fas fa-link fa-lg fa-fw"></i></button>
+<button id="resetAll" title="Reset View after Zoom or Pan" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Reset View<i class="fas fa-undo-alt fa-lg fa-fw"></i></button>
+<button id="zoomMode" title="XY Zoom and Pan" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">XY Zoom<i class="fas fa-arrows-alt fa-lg fa-fw"></i></button>
+<button id="showTooltip" title="Show Tooltips" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Show Tooltips<i class="far fa-comment-alt fa-lg fa-fw"></i></button>
+</html>
