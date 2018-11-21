@@ -14,9 +14,9 @@ window.onload = function () {
 	initialDuration = 1 * toMicro;  // same scale time window to display in microseconds (1 second)
 	var selected = -1;
 	var lastSelectedXPosition = -1;
-	var lastDownTarget = -1;
+	var lastDownTarget = -1;  // last mouse down selection
 	var zoomSteps = 20; 	// for wheel mouse zoom
-	var pageOffsetY = 40; // due to toolbars, etc
+	var pageOffsetY = 80; // due to toolbars, etc
 	var chartHeight = 120; // height of each chart in pixels
 
 	var maxValue = function(dataPoints) {
@@ -26,7 +26,7 @@ window.onload = function () {
 	      maximum = Math.abs(dataPoints[i].y);
 	    }
 	  }
-	  return Math.ceil(maximum/10)*10;
+	  return Math.ceil(maximum/(toMmUnits/10))*(toMmUnits/10);
 	};
 
 /*
@@ -69,7 +69,7 @@ window.onload = function () {
 	    		microsec = microsec + (traceOrigin.getTime() - origin.getTime())*1000;
 
 	    		channelsObjs[index].container=index + "Container";
-	    		channelsObjs[index].button=channelsObjs[index].container + "Btn";
+	    		// channelsObjs[index].button=channelsObjs[index].container + "Btn";
 				$("<div>").attr({
 	    			'id': channelsObjs[index].container,
 	    			'style': divStyle
@@ -128,13 +128,12 @@ window.onload = function () {
 						e.chart.options.viewportMaxStack = [];
 		        	}
 					if(e.trigger === "zoom"){
-		        		e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
-		        		e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
-		        		var channel = parseInt( e.chart.container.id.replace("Container",""));
-		        		var chart = channelsObjs[channel].chart;
-		        		document.getElementById(channelsObjs[channel].button).style.display = "inline";
 		        		if(zoomAll && !zoomY) {
 							zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
+		        		}
+		        		else {
+		        			e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
+		        			e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
 		        		}
 		        	}
 		        	if(e.trigger === "reset"){
@@ -207,7 +206,7 @@ window.onload = function () {
 			channelsObjs[i].chart.render();
 			totalPoints += channelsObjs[i].data.length;
 
-			// Add back button to toolbar
+/* 			// Add back button to toolbar
 			toolbar = document.getElementsByClassName("canvasjs-chart-toolbar")[i];
 			$("<button>").attr({
 	    		'id': channelsObjs[i].button,
@@ -215,6 +214,7 @@ window.onload = function () {
 			}).html('\u21e6').appendTo(toolbar);
 			button = document.getElementById( channelsObjs[i].button);
 			button.addEventListener( "click", back);
+*/
 	    }
 
 		$("#changeTimeScale").click(function () {
@@ -234,9 +234,31 @@ window.onload = function () {
 				chart.options.axisY.viewportMaximum = null;
 				chart.options.viewportMinStack=[];
 				chart.options.viewportMaxStack=[];
-				document.getElementById(channelsObjs[i].button).style.display = "none";
+				// document.getElementById(channelsObjs[i].button).style.display = "none";
 				chart.render();
 			}
+		}
+
+		function updateZoomStackCharts(vpMin, vpMax) {
+			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+	        	if (!chart.options.viewportMinStack){
+					chart.options.viewportMinStack = [];
+					chart.options.viewportMaxStack = [];
+	        	}
+	        	chart.options.viewportMinStack.push(vpMin);
+		        chart.options.viewportMaxStack.push(vpMax);
+			}
+
+		}
+
+		function clearZoomStackCharts(vpMin, vpMax) {
+			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+				chart.options.viewportMinStack = [];
+				chart.options.viewportMaxStack = [];
+			}
+
 		}
 
 		function resetChartsView() {
@@ -255,7 +277,7 @@ window.onload = function () {
 			chart.options.axisY.viewportMaximum = null;
 			chart.options.axisY.minimum = -getYmax(channel);
 			chart.options.axisY.maximum = getYmax(channel);
-			document.getElementById(channelsObjs[channel].button).style.display = getXvpMax() == null ? "none" : "inline";
+			// document.getElementById(channelsObjs[channel].button).style.display = getXvpMax() == null ? "none" : "inline";
 			chart.render();
 		}
 
@@ -302,6 +324,7 @@ window.onload = function () {
 		}
 
 		function zoomAllCharts(vpMin, vpMax, isXaxis) {
+			updateZoomStackCharts(vpMin, vpMax);
 			var axisMin = getAxisMinAll(isXaxis);
 			var axisMax = getAxisMaxAll(isXaxis);
 		  	if(vpMin >= axisMin && vpMax <= axisMax){
@@ -383,27 +406,41 @@ window.onload = function () {
 			resetChartsView();
 		});
 
-		function back(){
-			var i = parseInt(event.target.id.replace("ContainerBtn",""));
-			var chart = channelsObjs[i].chart;
+		$("#backBtn").click(function () {
+			back();
+		});
 
-			var viewportMinStack = chart.options.viewportMinStack;
-		  	var viewportMaxStack = chart.options.viewportMaxStack;
-		  	if(!chart.options.axisX){
-		  		chart.options.axisX = {};
-		  	}
-		  	if(viewportMinStack && viewportMinStack.length >= 1){
-		      	viewportMinStack.pop();
-		      	viewportMaxStack.pop();
-		      	chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length-1];
-		      	chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length-1];
-		      	chart.render();
-		  	}
-		  	else{
-		      	chart.options.viewportMinStack=[];
-		        chart.options.viewportMaxStack=[];
-		        resetChartView(chart);
-		  	}
+		function back(){
+			// var i = parseInt(event.target.id.replace("ContainerBtn",""));
+
+			for (var j = 0; j < index; j++) {
+				canvas_chart = "#" + channelsObjs[j].container + " > .canvasjs-chart-container" + " > .canvasjs-chart-canvas";
+			  	if(	zoomAll ||
+			  		lastDownTarget == $(canvas_chart)[1])  // chart with last mouse selection
+			  	{
+					chart = channelsObjs[j].chart;
+
+					var viewportMinStack = chart.options.viewportMinStack;
+				  	var viewportMaxStack = chart.options.viewportMaxStack;
+				  	if(!chart.options.axisX){
+				  		chart.options.axisX = {};
+				  	}
+				  	if(viewportMinStack && viewportMinStack.length >= 1){
+				      	viewportMinStack.pop();
+				      	viewportMaxStack.pop();
+				      	chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length-1];
+				      	chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length-1];
+				      	chart.render();
+				  	}
+				  	else{
+				      	chart.options.viewportMinStack=[];
+				        chart.options.viewportMaxStack=[];
+				        resetChartView(chart);
+				  	}
+				  	if (!zoomAll) 
+				  		break;
+				}
+			}
 		}
 
 // Keyboard interaction for Zoom
@@ -459,8 +496,6 @@ window.onload = function () {
 				  	}
 			  	}
 			}
-		}, {
-			// passive: true
 		},
 		false);
 
@@ -528,7 +563,7 @@ window.onload = function () {
 					var i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
 					chart = channelsObjs[i].chart;
 			    	chart.options.zoomEnabled = true;   // turn zoom back on
-			    	document.getElementById(channelsObjs[i].button).style.display = "inline";
+			    	// document.getElementById(channelsObjs[i].button).style.display = "inline";
 			    	chart.render();
 		    	}
 			});
