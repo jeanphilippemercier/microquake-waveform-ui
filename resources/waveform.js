@@ -15,18 +15,19 @@ window.onload = function () {
 	var selected = -1;
 	var lastSelectedXPosition = -1;
 	var lastDownTarget = -1;  // last mouse down selection
-	var zoomSteps = 20; 	// for wheel mouse zoom
+	var zoomSteps = 5; 	// for wheel mouse zoom
 	var pageOffsetY = 80; // due to toolbars, etc
 	var chartHeight = 120; // height of each chart in pixels
 
-	var maxValue = function(dataPoints) {
-	  var maximum = Math.abs(dataPoints[0].y);
-	  for (i = 0; i < dataPoints.length; i++) {
-	    if (Math.abs(dataPoints[i].y) > maximum) {
-	      maximum = Math.abs(dataPoints[i].y);
-	    }
-	  }
-	  return Math.ceil(maximum/(toMmUnits/10))*(toMmUnits/10);
+	var maxValue = function(dataPoints, fine) {
+		fine = fine ? fine : 10;
+		var maximum = Math.abs(dataPoints[0].y);
+		for (i = 0; i < dataPoints.length; i++) {
+		  if (Math.abs(dataPoints[i].y) > maximum) {
+		    maximum = Math.abs(dataPoints[i].y);
+		  }
+		}
+		return Math.ceil(maximum/(toMmUnits/fine))*(toMmUnits/fine);
 	};
 
 /*
@@ -138,8 +139,6 @@ window.onload = function () {
 		        	}
 		        	if(e.trigger === "reset"){
 		        		resetChartView(e.chart);
-		        		e.chart.options.viewportMinStack=[];
-		         		e.chart.options.viewportMaxStack=[];
 		        	}
 		      	},
 				title: {
@@ -252,7 +251,7 @@ window.onload = function () {
 
 		}
 
-		function clearZoomStackCharts(vpMin, vpMax) {
+		function clearZoomStackCharts() {
 			for (var i = 0; i < index; i++) {
 				chart = channelsObjs[i].chart;
 				chart.options.viewportMinStack = [];
@@ -277,6 +276,8 @@ window.onload = function () {
 			chart.options.axisY.viewportMaximum = null;
 			chart.options.axisY.minimum = -getYmax(channel);
 			chart.options.axisY.maximum = getYmax(channel);
+			chart.options.viewportMinStack = [];
+			chart.options.viewportMaxStack = [];
 			// document.getElementById(channelsObjs[channel].button).style.display = getXvpMax() == null ? "none" : "inline";
 			chart.render();
 		}
@@ -301,7 +302,7 @@ window.onload = function () {
 		}
 
 		function getYmax(channel) {
-			return sameScale ? getValueMaxAll() : maxValue(channelsObjs[channel].data);
+			return sameScale ? getValueMaxAll() : maxValue(channelsObjs[channel].data, 100);
 		}
 
 
@@ -433,8 +434,6 @@ window.onload = function () {
 				      	chart.render();
 				  	}
 				  	else{
-				      	chart.options.viewportMinStack=[];
-				        chart.options.viewportMaxStack=[];
 				        resetChartView(chart);
 				  	}
 				  	if (!zoomAll) 
@@ -460,7 +459,8 @@ window.onload = function () {
 					    var axis = e.altKey ? chart.axisX[0] : chart.axisY[0];
 					    var viewportMin = axis.get("viewportMinimum"),
 					        viewportMax = axis.get("viewportMaximum"),
-					        interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
+					        interval = (viewportMax - viewportMin)/zoomSteps;  // control zoom step
+					        // interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
 					    var newViewportMin, newViewportMax;
 
 					    if (e.keyCode == '38') {// up arrow
@@ -549,7 +549,7 @@ window.onload = function () {
 			    	var relX = e.pageX - parentOffset.left;
 			    	chart.options.axisX.stripLines[selected].value = chart.axisX[0].convertPixelToValue(relX);
 			    	chart.options.zoomEnabled = false;
-					document.getElementById(channelsObjs[i].button).style.display = "none";
+					// document.getElementById(channelsObjs[i].button).style.display = "none";
 			    	chart.render();
 			  	}
 			});
@@ -584,7 +584,8 @@ window.onload = function () {
 
 			  	var viewportMin = axis.get("viewportMinimum"),
 			    	viewportMax = axis.get("viewportMaximum"),
-			      	interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
+			    	interval = (viewportMax - viewportMin)/zoomSteps;  // control zoom step
+			      	// interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
 
 			  	var newViewportMin, newViewportMax;
 
