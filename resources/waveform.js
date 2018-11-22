@@ -224,19 +224,6 @@ window.onload = function () {
 			// $("#changeTimeScale")[0].innerHTML = sameScale ? "Full Time Scale" : "Same Time Scale";
 		});
 
-		function resetCharts() {
-			for (var i = 0; i < index; i++) {
-				chart = channelsObjs[i].chart;
-				chart.options.axisX.viewportMinimum = null;
-				chart.options.axisX.viewportMaximum = null;
-				chart.options.axisY.viewportMinimum = null;
-				chart.options.axisY.viewportMaximum = null;
-				chart.options.viewportMinStack=[];
-				chart.options.viewportMaxStack=[];
-				// document.getElementById(channelsObjs[i].button).style.display = "none";
-				chart.render();
-			}
-		}
 
 		function updateZoomStackCharts(vpMin, vpMax) {
 			for (var i = 0; i < index; i++) {
@@ -281,6 +268,21 @@ window.onload = function () {
 			// document.getElementById(channelsObjs[channel].button).style.display = getXvpMax() == null ? "none" : "inline";
 			chart.render();
 		}
+
+		function resetCharts() {
+			for (var i = 0; i < index; i++) {
+				chart = channelsObjs[i].chart;
+				chart.options.axisX.viewportMinimum = null;
+				chart.options.axisX.viewportMaximum = null;
+				chart.options.axisY.viewportMinimum = null;
+				chart.options.axisY.viewportMaximum = null;
+				chart.options.viewportMinStack=[];
+				chart.options.viewportMaxStack=[];
+				// document.getElementById(channelsObjs[i].button).style.display = "none";
+				chart.render();
+			}
+		}
+
 
 		function getXmax(channel) {
 			return sameScale ? Math.max(((channelsObjs[channel].data.length - 1) * delta, initialDuration)) : channelsObjs[channel].duration;
