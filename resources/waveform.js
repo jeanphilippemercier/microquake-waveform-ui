@@ -1,4 +1,6 @@
+/*jshint esversion: 6 */
 var jsondata;
+
 var channelsObjs = [];
 
 window.onload = function () {
@@ -40,13 +42,12 @@ window.onload = function () {
 
 	$.getJSON("data/data.json", function(json) {
 	    jsondata = json;
-	    var delta = 1000000./json.rate;
+	    var delta = 1000000/json.rate;
 	    origin = new Date();
 	    index = 0;
 	    divStyle= "height: "+ chartHeight + "px; max-width: 920px; margin: 0px auto;";
 
-		for (key in json)
-	    {
+		for (var key in json) {
 	    	if(typeof json[key] == "object") {
 		    	traceOrigin = new Date(json[key].start.split('.')[0] + "Z");  // +"Z" to UTC
 		    	if(traceOrigin.getTime() < origin.getTime()) {
@@ -57,8 +58,7 @@ window.onload = function () {
 	    }
 
 // Load data and picks to channelObj
-		for (key in json)
-	    {
+		for (key in json) {
 	    	if(typeof json[key] == "object") {
 
 	    		channelsObjs[index]={};
@@ -77,10 +77,10 @@ window.onload = function () {
 				}).appendTo("body");
 
 				channelsObjs[index].data=[];
-		    	for (var i = 0; i < json[key].data.length; i++) {
+		    	for (var k = 0; k < json[key].data.length; k++) {
 		    		channelsObjs[index].data.push({
-		    			x: microsec + (i * delta),
-		    			y: json[key].data[i]
+		    			x: microsec + (k * delta),
+		    			y: json[key].data[k]
 		    		});
 		    	}
 		    	channelsObjs[index].duration = (channelsObjs[index].data.length - 1) * delta;
@@ -397,7 +397,7 @@ window.onload = function () {
 			$(this).button('toggle');
 			$(this).toggleClass('active');
 			for (var i = 0; i < index; i++) {
-				channelsObjs[i].chart.options.zoomType = zoomY ? "xy" : "x"
+				channelsObjs[i].chart.options.zoomType = zoomY ? "xy" : "x";
 				channelsObjs[i].chart.render();
 			}
 			// $("#zoomMode")[0].innerHTML = zoomY ? "X Zoom and Pan" : "XY Zoom and Pan";
@@ -518,7 +518,7 @@ window.onload = function () {
 				  		if(chart.axisX[0].stripLines[i].get("bounds")) {
 					    	if(relX > chart.axisX[0].stripLines[i].get("bounds").x1 - snapDistance && relX < chart.axisX[0].stripLines[i].get("bounds").x2 + snapDistance && relY > chart.axisX[0].stripLines[i].get("bounds").y1 && relY < chart.axisX[0].stripLines[i].get("bounds").y2) {
 								if(e.ctrlKey) {  // remove pick
-									selLine = chart.options.axisX.stripLines[i]
+									selLine = chart.options.axisX.stripLines[i];
 									deletePicks(index, selLine.label, selLine.value);
 								}
 								else {  // move pick
