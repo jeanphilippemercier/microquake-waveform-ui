@@ -36,10 +36,9 @@ window.onload = function () {
 	$.getJSON("data/data.json", function(json) {
 		jsondata = json;
 		const delta = 1000000/json.rate;  // sample interval in microseconds
-		let origin = getEarliestTime(json);
+		let timeScaleOrigin = getEarliestTime(json);
 
 // Load data and picks to channels
-		let traceStartTime, datesplit, microsec;
 		let index = 0;
 		for (let key in json) {
 			if(typeof json[key] === "object" && json[key].hasOwnProperty('data') && json[key].hasOwnProperty('start')) {
@@ -47,10 +46,10 @@ window.onload = function () {
 				channels[index].station=key;
 				channels[index].start=json[key].start;
 
-				datesplit = json[key].start.split('.');
-				traceStartTime = new Date(datesplit[0] + "Z");  // UTC
-				microsec = parseInt(datesplit[1]) +
-				 (traceStartTime === origin.time ? 0: (traceStartTime.getTime() - origin.time.getTime())*1000);
+				let datesplit = json[key].start.split('.');
+				let traceStartTime = new Date(datesplit[0] + "Z");  // UTC
+				let microsec = parseInt(datesplit[1]) +
+				 (traceStartTime === timeScaleOrigin.time ? 0: (traceStartTime.getTime() - timeScaleOrigin.time.getTime())*1000);
 
 				channels[index].container=index + "Container";
 				$("<div>").attr({
@@ -81,7 +80,7 @@ window.onload = function () {
 					let pickTime = new Date(datesplit[0] + "Z");  // to UTC
 					obj.picks.push({
 						value: parseInt(datesplit[1]) +
-						 (pickTime === origin.time ? 0: (pickTime.getTime()-origin.time.getTime())*1000),
+						 (pickTime === timeScaleOrigin.time ? 0: (pickTime.getTime()-timeScaleOrigin.time.getTime())*1000),
 						thickness: 2,
 						color: "blue",
 						label: pickType,
@@ -107,9 +106,8 @@ window.onload = function () {
 		}
 
 // Chart Options, Render
-		let options;
 		for (let i = 0; i < channels.length; i++) {
-			options = {
+			let options = {
 				zoomEnabled: true,
 				zoomType: zoomY ? "xy" : "x",
 				animationEnabled: true,
@@ -159,7 +157,7 @@ window.onload = function () {
 					labelWrap: false,
 					labelFormatter: function(e){
 						if(e.value === 0) {
-							return origin.label;
+							return timeScaleOrigin.label;
 						}
 						else {
 							return  e.value/toMicro +" s" ;
@@ -216,7 +214,7 @@ window.onload = function () {
 
 		function updateZoomStackCharts(vpMin, vpMax) {
 			for (let i = 0; i < channels.length; i++) {
-				chart = channels[i].chart;
+				let chart = channels[i].chart;
 				if (!chart.options.viewportMinStack){
 					chart.options.viewportMinStack = [];
 					chart.options.viewportMaxStack = [];
@@ -228,7 +226,7 @@ window.onload = function () {
 /*
 		function clearZoomStackCharts() {
 			for (let i = 0; i < channels.length; i++) {
-				chart = channels[i].chart;
+				let chart = channels[i].chart;
 				chart.options.viewportMinStack = [];
 				chart.options.viewportMaxStack = [];
 			}
@@ -257,7 +255,7 @@ window.onload = function () {
 /*
 		function resetCharts() {
 			for (let i = 0; i < channels.length; i++) {
-				chart = channels[i].chart;
+				let chart = channels[i].chart;
 				chart.options.axisX.viewportMinimum = null;
 				chart.options.axisX.viewportMaximum = null;
 				chart.options.axisY.viewportMinimum = null;
@@ -283,6 +281,7 @@ window.onload = function () {
 		}
 
 		function getValueMaxAll() {
+			let max;
 			for (let i = 0; i < channels.length; i++) {
 				max = i === 0 ? maxValue(channels[0].data) : Math.max(maxValue(channels[i].data), max);
 			}
@@ -295,18 +294,20 @@ window.onload = function () {
 
 
 		function getAxisMinAll(isXaxis) {
+			let min;
 			for (let i = 0; i < channels.length; i++) {
-				chart = channels[i].chart;
-				axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+				let chart = channels[i].chart;
+				let axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
 				min = i === 0 ? axis.get("minimum") : Math.min(axis.get("minimum"), min);
 			}
 			return min;
 		}
 
 		function getAxisMaxAll(isXaxis) {
+			let max;
 			for (let i = 0; i < channels.length; i++) {
-				chart = channels[i].chart;
-				axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+				let chart = channels[i].chart;
+				let axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
 				max = i === 0 ? axis.get("maximum") : Math.max(axis.get("maximum"), max);
 			}
 			return max;
@@ -314,21 +315,15 @@ window.onload = function () {
 
 		function zoomAllCharts(vpMin, vpMax, isXaxis) {
 			updateZoomStackCharts(vpMin, vpMax);
-			let axisMin = getAxisMinAll(isXaxis);
-			let axisMax = getAxisMaxAll(isXaxis);
-			if(vpMin >= axisMin && vpMax <= axisMax){
+			if(vpMin >= getAxisMinAll(isXaxis) && vpMax <= getAxisMaxAll(isXaxis)){
 				for (let i = 0; i < channels.length; i++) {
-					chart = channels[i].chart;
-					axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-					zoomChartView(axis, vpMin, vpMax);
+					let chart = channels[i].chart;
+					let axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+					axis.set("viewportMinimum", vpMin, false);
+					axis.set("viewportMaximum", vpMax);
+					chart.render();
 				}
 			}
-		}
-
-		function zoomChartView(axis, vpMin, vpMax) {
-			axis.set("viewportMinimum", vpMin, false);
-			axis.set("viewportMaximum", vpMax);
-			chart.render();
 		}
 
 		function addPick(index, pickType, value) {
@@ -386,7 +381,6 @@ window.onload = function () {
 
 		$("#resetAll").on("click", function () {
 			$(this).button('toggle');
-			// $(this).toggleClass('active');
 			resetChartsView();
 		});
 
@@ -396,10 +390,10 @@ window.onload = function () {
 
 		function back(){
 			for (let j = 0; j < channels.length; j++) {
-				canvas_chart = "#" + channels[j].container +
+				let canvas_chart = "#" + channels[j].container +
 					" > .canvasjs-chart-container" + " > .canvasjs-chart-canvas";
 				if(zoomAll || lastDownTarget === $(canvas_chart)[1]) {
-					chart = channels[j].chart;
+					let chart = channels[j].chart;
 					let viewportMinStack = chart.options.viewportMinStack;
 					let viewportMaxStack = chart.options.viewportMaxStack;
 					if(!chart.options.axisX){
@@ -430,11 +424,11 @@ window.onload = function () {
 			{
 				e.preventDefault();
 				for (let j = 0; j < channels.length; j++) {
-					canvas_chart = "#" + channels[j].container +
+					let canvas_chart = "#" + channels[j].container +
 						" > .canvasjs-chart-container > .canvasjs-chart-canvas";
 					if(lastDownTarget === $(canvas_chart)[1]) {
 
-						chart = channels[j].chart;
+						let chart = channels[j].chart;
 
 						let axis = e.altKey ? chart.axisX[0] : chart.axisY[0];
 						let viewportMin = axis.get("viewportMinimum"),
@@ -481,11 +475,11 @@ window.onload = function () {
 
 // Drag picks
 		for (let j = 0; j < channels.length; j++) {
-			canvas_chart = "#" + channels[j].container + " > .canvasjs-chart-container > .canvasjs-chart-canvas";
+			let canvas_chart = "#" + channels[j].container + " > .canvasjs-chart-container > .canvasjs-chart-canvas";
 			$(canvas_chart).last().on("mousedown", function(e) {
 				lastDownTarget = e.target;
 				let index = parseInt($(this).parent().parent()[0].id.replace("Container",""));
-				chart = channels[index].chart;
+				let chart = channels[index].chart;
 				let parentOffset = $(this).parent().offset();
 				let relX = e.pageX - parentOffset.left;
 				let relY = e.pageY - parentOffset.top;
@@ -498,7 +492,7 @@ window.onload = function () {
 							 relY > chart.axisX[0].stripLines[i].get("bounds").y1 &&
 							 relY < chart.axisX[0].stripLines[i].get("bounds").y2) {
 								if(e.ctrlKey) {  // remove pick
-									selLine = chart.options.axisX.stripLines[i];
+									let selLine = chart.options.axisX.stripLines[i];
 									deletePicks(index, selLine.label, selLine.value);
 								}
 								else {  // move pick
@@ -526,12 +520,11 @@ window.onload = function () {
 			$(canvas_chart).last().on("mousemove", function(e) {  // move selected stripLine
 				if(selected !== -1) {
 					let i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
-					chart = channels[i].chart;
+					let chart = channels[i].chart;
 					let parentOffset = $(this).parent().offset();
 					let relX = e.pageX - parentOffset.left;
 					chart.options.axisX.stripLines[selected].value = chart.axisX[0].convertPixelToValue(relX);
 					chart.options.zoomEnabled = false;
-					// document.getElementById(channels[i].button).style.display = "none";
 					chart.render();
 				}
 			});
@@ -543,7 +536,7 @@ window.onload = function () {
 					$(this).removeClass('pointerClass');
 					// let i = parseInt( $(this).parent()[0].id.replace("Container",""));
 					let i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
-					chart = channels[i].chart;
+					let chart = channels[i].chart;
 					chart.options.zoomEnabled = true;   // turn zoom back on
 					// document.getElementById(channels[i].button).style.display = "inline";
 					chart.render();
@@ -555,7 +548,7 @@ window.onload = function () {
 				e.preventDefault();
 
 				let i = parseInt( $(this).parent().parent()[0].id.replace("Container",""));
-				chart = channels[i].chart;
+				let chart = channels[i].chart;
 
 				let relOffsetY = e.clientY - pageOffsetY - i * chartHeight;
 
@@ -570,7 +563,7 @@ window.onload = function () {
 				let viewportMin = axis.get("viewportMinimum"),
 					viewportMax = axis.get("viewportMaximum"),
 					interval = (viewportMax - viewportMin)/zoomSteps;  // control zoom step
-					// interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // control zoom step
+					// interval = (axis.get("maximum") - axis.get("minimum"))/zoomSteps;  // alternate control zoom step
 
 				let newViewportMin, newViewportMax;
 
@@ -595,8 +588,6 @@ window.onload = function () {
 						}
 					}
 				}
-			}, {
-				// passive: true
 			});
 
 // Context menu selections
