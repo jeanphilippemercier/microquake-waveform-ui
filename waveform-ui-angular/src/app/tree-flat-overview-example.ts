@@ -118,6 +118,27 @@ const TREE_EVENT_DATA = JSON.stringify([
         'magnitude': -0.701888904582125,
         'magnitude_type': 'Mw',
         'uncertainty': '1.4333591697936514',
+        'time_utc': '2018-12-08T10:21:49.846299Z',
+        'modification_timestamp': '2018-12-01T17:24:38.885095Z',
+        'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
+        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_4Umtk9o.xml',
+        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_uInNWuf.mseed',
+        'waveform_context_file': null
+    },
+    {
+        'event_resource_id': 'smi:local/e7021615-e7f0-40d0-ad39-8ff8dc0edb73',
+        'x': 651134.0,
+        'y': 4767540.0,
+        'z': -182.52,
+        'time_epoch': 1541672509846298880,
+        'evaluation_mode': 'automatic',
+        'status': 'preliminary',
+        'event_type': 'earthquake',
+        'time_residual': 0.0602406839270605,
+        'npick': 135,
+        'magnitude': -0.701888904582125,
+        'magnitude_type': 'Mw',
+        'uncertainty': '1.4333591697936514',
         'time_utc': '2016-01-08T10:21:49.846299Z',
         'modification_timestamp': '2018-12-01T17:24:38.885095Z',
         'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
@@ -182,15 +203,14 @@ export class FileDatabase {
 
   convertTree(dataObject) {
     const dataTree = {};
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-      'September', 'October', 'November', 'December'];
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
             const d = new Date(value.time_utc);
             const year = d.getFullYear();
-            const month = monthNames[d.getMonth()];
+            // const month = monthNames[d.getMonth()];
+            const month = d.getMonth();
             const day =  ('0' + d.getDate()).slice(-2);
             const event_time = d.toLocaleTimeString('en-gb');
               if (!dataTree.hasOwnProperty(year)) {
@@ -209,7 +229,7 @@ export class FileDatabase {
           }
       }
     }
-    console.log(dataTree);
+    // console.log(dataTree);
     return dataTree;
   }
 
@@ -218,17 +238,19 @@ export class FileDatabase {
    * The return value is the list of `FileNode`.
    */
   buildFileTree(obj: {[key: string]: any}, level: number): FileNode[] {
-    return Object.keys(obj).reduce<FileNode[]>((accumulator, key) => {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+      'September', 'October', 'November', 'December'];
+    return Object.keys(obj).sort().reverse().reduce<FileNode[]>((accumulator, key) => {
       const value = obj[key];
       const node = new FileNode();
-      node.name = key;
+      node.name = level === 1 ? monthNames[key] : key;
 
       if (value != null) {
         if (typeof value === 'object' && !value.hasOwnProperty('event_type')) {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            node.type = value.event_type;
+            node.type = value.event_type + ' ' + value.magnitude_type + ':' + value.magnitude.toPrecision(4);
             node.info = value.status;
           } else {
             node.type = value;

@@ -30,9 +30,9 @@ export class AppComponent implements OnInit {
         let lastSelectedXPosition = -1;
         let lastDownTarget;  // last mouse down selection
         const zoomSteps = 5;    // for wheel mouse zoom
-        const pageOffsetY = 80;
+        const pageOffsetY = 40;
         const chartHeight = 120; // height of each chart in pixels
-        const divStyle = 'height: ' + chartHeight + 'px;' //' max-width: 1800px; margin: 0px auto;';
+        const divStyle = 'height: ' + chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
         const snapDistance = 10;
 
         function maxValue (dataPoints, res) {
@@ -550,6 +550,7 @@ export class AppComponent implements OnInit {
                 // Context menu selections
                 const channelContainer = '#' + channels[j].container;
                 const node: any = $(channelContainer);
+                /*
                 node.contextMenu({
                     selector: channelContainer,
                     items: {
@@ -607,6 +608,7 @@ export class AppComponent implements OnInit {
                         }
                     }
                 });
+                */
             }
 
             const endTime = new Date();

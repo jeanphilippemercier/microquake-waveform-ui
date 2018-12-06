@@ -2,10 +2,11 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { TestApiService } from './test-api.service';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatNativeDateModule} from '@angular/material';
+import { FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { MatNativeDateModule} from '@angular/material';
+import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {DemoMaterialModule} from './material-modules';
+import { DemoMaterialModule} from './material-modules';
 
 import { AppComponent } from './app.component';
 import {TreeFlatOverviewExample} from './tree-flat-overview-example';
@@ -28,3 +29,5 @@ import {TreeFlatOverviewExample} from './tree-flat-overview-example';
   bootstrap: [AppComponent, TreeFlatOverviewExample]
 })
 export class AppModule { }
+
+platformBrowserDynamic().bootstrapModule(AppModule);
