@@ -1,6 +1,5 @@
 <!--The content below is only a placeholder and can be replaced.-->
 <header></header>
-
 <div class='container-fluid content'> <!-- container centers content on large screens -->
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
@@ -10,7 +9,7 @@
       </div>
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
-        <div class='row' id='toolbar'>
+      <div class='row' id='toolbar'>
           <button id='changeTimeScale' title='Same Scale on All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'>Same Scale<i class='fas fa-expand-arrows-alt fa-lg fa-fw'></i></button>
           <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Zoom All<i class='fas fa-link fa-lg fa-fw'></i></button>
           <button id='backBtn' title='Undo last Zoom or Pan' type='button' class='btn btn-primary'>Back Zoom<i class='fas fa-arrow-left fa-lg fa-fw'></i></button>
@@ -23,7 +22,13 @@
     </div>
   </div>
 </div>
-
+<ul class='menu'>
+  <li data-action='deleteP'>Delete P Picks</li>
+  <li data-action='deleteS'>Delete S Picks</li>
+  <li data-action='newP'>New P Pick</li>
+  <li data-action='newS'>New S Pick</li>
+  <li data-action='showTooltip'>Toggle Tooltip</li>
+</ul>
 <footer></footer>
 
 

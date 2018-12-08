@@ -1,10 +1,7 @@
 /*jshint esversion: 6 */
-
-import { Component, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from './canvasjs.min';
-// import { ContextMenu } from '@types/jquery.contextmenu';
-import { TestApiService } from './test-api.service';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +24,7 @@ export class AppComponent implements OnInit {
         const toMmUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
         const initialDuration = toMicro;  // time window to display in microseconds (1 second)
         let selected = -1;
+        let selectedContextMenu = -1;
         let lastSelectedXPosition = -1;
         let lastDownTarget;  // last mouse down selection
         const zoomSteps = 5;    // for wheel mouse zoom
@@ -34,6 +32,20 @@ export class AppComponent implements OnInit {
         const chartHeight = 120; // height of each chart in pixels
         const divStyle = 'height: ' + chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
         const snapDistance = 10;
+
+        const menu = document.querySelector('.menu');
+        let menuVisible = false;
+
+        const toggleMenu = command => {
+         (<any>menu).style.display = command === 'show' ? 'block' : 'none';
+          menuVisible = !menuVisible;
+        };
+
+        const setPosition = ({ top, left }) => {
+          (<any>menu).style.left = `${left}px`;
+          (<any>menu).style.top = `${top}px`;
+          toggleMenu('show');
+        };
 
         function maxValue (dataPoints, res) {
             res = res ? res : 10;
@@ -63,10 +75,13 @@ export class AppComponent implements OnInit {
                      (traceStartTime === timeScaleOrigin.time ? 0 : (traceStartTime.getTime() - timeScaleOrigin.time.getTime()) * 1000);
 
                     channels[index].container = index.toString() + 'Container';
-                    $('<div>').attr({
-                        'id': channels[index].container,
-                        'style': divStyle
-                    }).appendTo('#waveform-panel');
+
+                    if ( $('#' + channels[index].container).length === 0 ) {
+                        $('<div>').attr({
+                            'id': channels[index].container,
+                            'style': divStyle
+                        }).appendTo('#waveform-panel');
+                    }
 
                     channels[index].data = [];
                     for (let k = 0; k < json[key].data.length; k++) {
@@ -203,7 +218,6 @@ export class AppComponent implements OnInit {
 
             $('#changeTimeScale').on('click', function () {
                 sameScale = !sameScale;
-                // $(this).button('toggle');
                 $(this).toggleClass('active');
                 resetChartsView();
             });
@@ -326,12 +340,17 @@ export class AppComponent implements OnInit {
                 chart.render();
             }
 
+            function toggleTooltip(ind, value) {
+                value = value ? value : !channels[ind].chart.options.toolTip.enabled;
+                channels[ind].chart.options.toolTip.enabled = value;
+                channels[ind].chart.render();
+            }
+
             $('#showTooltip').on('click', function () {
                 showTooltip = !showTooltip;
                 $(this).toggleClass('active');
                 for (let i = 0; i < channels.length; i++) {
-                    channels[i].chart.options.toolTip.enabled = showTooltip;
-                    channels[i].chart.render();
+                    toggleTooltip(i, showTooltip);
                 }
             });
 
@@ -441,6 +460,14 @@ export class AppComponent implements OnInit {
                 // Drag picks
                 $(canvas_chart).last().on('mousedown', function(e) {
                     lastDownTarget = e.target;
+
+                    if (!($(e.target).parents('.menu').length > 0)) {
+                        if (menuVisible) {
+                            selectedContextMenu = -1;
+                            toggleMenu('hide');
+                            return;
+                        }
+                    }
                     const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                     const chart = channels[ind].chart;
                     const parentOffset = $(this).parent().offset();
@@ -547,69 +574,38 @@ export class AppComponent implements OnInit {
                     }
                 });
 
-                // Context menu selections
-                const channelContainer = '#' + channels[j].container;
-                const node: any = $(channelContainer);
-                /*
-                node.contextMenu({
-                    selector: channelContainer,
-                    items: {
-                        'deleteP': {
-                            name: 'Delete P picks',
-                            callback: function() {
-                                const i = parseInt( $(this).parent()[0].id.replace('Container', ''), 10);
-                                deletePicks(i, 'P', null);
-                            }
-                        },
-                        'deleteS': {
-                            name: 'Delete S picks',
-                            callback: function() {
-                                const i = parseInt( $(this).parent()[0].id.replace('Container', ''), 10);
-                                deletePicks(i, 'S', null);
-                            }
-                        },
-                        'newP': {
-                            name: 'New P pick',
-                            callback: function() {
-                                const i = parseInt( $(this).parent()[0].id.replace('Container', ''), 10);
-                                addPick(i, 'P', null);
-                            }
-                        },
-                        'newS': {
-                            name: 'New S pick',
-                            callback: function() {
-                                const i = parseInt( $(this).parent()[0].id.replace('Container', ''), 10);
-                                addPick(i, 'S', null);
-                            }
-                        },
-                        'tooltip': {
-                            name: 'Toggle Tooltip',
-                            callback: function() {
-                                $('#showTooltip').trigger('click');
-                            }
-                        },
-                        'zoom': {
-                            name: 'Toggle Zoom All Traces',
-                            callback: function() {
-                                $('#zoomAll').trigger('click');
-                            }
-                        },
-                        'reset': {
-                            name: 'Reset All Traces',
-                            callback: function() {
-                                $('#resetAll').trigger('click');
-                            }
-                        },
-                        'sep1': '---------',
-                        'cancel': {
-                            name: 'Cancel',
-                            callback: function() {
-                            }
-                        }
-                    }
+                $('#' + channels[j].container).on('contextmenu', function(e) {
+                      e.preventDefault();
+                      const origin = {
+                        left: e.pageX,
+                        top: e.pageY
+                      };
+                      setPosition(origin);
+                      selectedContextMenu = j;
+                      return false;
                 });
-                */
+
             }
+
+            // If the context menu element is clicked
+            $('.menu li').click(function() {
+                if (selectedContextMenu !== -1) {
+                    // This is the triggered action name
+                    switch ($(this).attr('data-action')) {
+
+                        // A case for each action. Your actions here
+                        case 'deleteP': deletePicks(selectedContextMenu, 'P', null); break;
+                        case 'deleteS': deletePicks(selectedContextMenu, 'S', null); break;
+                        case 'newP': addPick(selectedContextMenu, 'P', null); break;
+                        case 'newS': addPick(selectedContextMenu, 'S', null); break;
+                        case 'showTooltip': toggleTooltip(selectedContextMenu, null); break;
+                    }
+                }
+
+                // Hide it AFTER the action was triggered
+                selectedContextMenu = -1;
+                toggleMenu('hide');
+            });
 
             const endTime = new Date();
             // document.getElementById('timeToRender').innerHTML = 'Render Time: ' + (endTime - startTime) + 'ms';
@@ -617,5 +613,6 @@ export class AppComponent implements OnInit {
             console.log(channels.length + ' total channels');
             console.log(totalPoints + ' total data points');
         });
+
     }
 }

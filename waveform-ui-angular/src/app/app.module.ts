@@ -1,7 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { TestApiService } from './test-api.service';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { MatNativeDateModule} from '@angular/material';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
@@ -23,9 +22,9 @@ import {TreeFlatOverviewExample} from './tree-flat-overview-example';
     HttpClientModule,
     DemoMaterialModule,
     MatNativeDateModule,
-    ReactiveFormsModule,
+    ReactiveFormsModule
   ],
-  providers: [TestApiService],
+  providers: [],
   bootstrap: [AppComponent, TreeFlatOverviewExample]
 })
 export class AppModule { }
