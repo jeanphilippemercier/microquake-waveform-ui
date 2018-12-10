@@ -29,3 +29,16 @@
 .menu li:hover {
     background-color: #DEF;
 }
+
+.btn-primary {
+    background: #69F;
+    &:hover,
+    &:focus,
+    &:active {
+        background-color: lighten( #69f, 20%)!important;
+    }
+    &.active {
+        background-color: darken( #69f, 20%)!important;
+        @extend .z-depth-1-half;
+    }
+}

@@ -25,42 +25,6 @@ export class FileFlatNode {
 /**
  * The file structure tree data in string. The data could be parsed into a Json object
  */
-const TREE_DATA = JSON.stringify({
-  Applications: {
-    Calendar: 'app',
-    Chrome: 'app',
-    Webstorm: 'app'
-  },
-  Documents: {
-    angular: {
-      src: {
-        compiler: 'ts',
-        core: 'ts'
-      }
-    },
-    material2: {
-      src: {
-        button: 'ts',
-        checkbox: 'ts',
-        input: 'ts'
-      }
-    }
-  },
-  Downloads: {
-    October: 'pdf',
-    November: 'pdf',
-    Tutorial: 'html'
-  },
-  Pictures: {
-    'Photo Booth Library': {
-      Contents: 'dir',
-      Pictures: 'dir'
-    },
-    Sun: 'png',
-    Woods: 'jpg'
-  }
-});
-
 const TREE_EVENT_DATA = JSON.stringify([
     {
         'event_resource_id': 'smi:local/97f39d25-db59-40fb-bcf8-57de70589fd1',
@@ -267,12 +231,12 @@ export class FileDatabase {
  * @title Tree with flat nodes
  */
 @Component({
-  selector: 'tree-flat-overview-example',
-  templateUrl: 'tree-flat-overview-example.html',
-  styleUrls: ['tree-flat-overview-example.css'],
+  selector: 'app-events-tree',
+  templateUrl: 'events-tree.component.html',
+  styleUrls: ['events-tree.component.css'],
   providers: [FileDatabase]
 })
-export class TreeFlatOverviewExample {
+export class EventsTreeComponent {
   treeControl: FlatTreeControl<FileFlatNode>;
   treeFlattener: MatTreeFlattener<FileNode, FileFlatNode>;
   dataSource: MatTreeFlatDataSource<FileNode, FileFlatNode>;

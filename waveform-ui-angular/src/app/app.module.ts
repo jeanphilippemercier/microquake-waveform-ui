@@ -6,14 +6,15 @@ import { MatNativeDateModule} from '@angular/material';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DemoMaterialModule} from './material-modules';
+import { AngularFontAwesomeModule } from 'angular-font-awesome';
 
 import { AppComponent } from './app.component';
-import {TreeFlatOverviewExample} from './tree-flat-overview-example';
+import {EventsTreeComponent} from './events-tree.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    TreeFlatOverviewExample
+    EventsTreeComponent
   ],
   imports: [
     BrowserModule,
@@ -22,10 +23,11 @@ import {TreeFlatOverviewExample} from './tree-flat-overview-example';
     HttpClientModule,
     DemoMaterialModule,
     MatNativeDateModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AngularFontAwesomeModule
   ],
   providers: [],
-  bootstrap: [AppComponent, TreeFlatOverviewExample]
+  bootstrap: [AppComponent, EventsTreeComponent]
 })
 export class AppModule { }
 

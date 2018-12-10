@@ -16,7 +16,8 @@ export class AppComponent implements OnInit {
         const channels = [];
         const startTime = new Date();
         let totalPoints = 0;
-        let sameScale = true;
+        let commonScaleX = true;
+        let commonScaleY = false;
         let showTooltip = false;
         let zoomY = false;
         let zoomAll = false;
@@ -151,7 +152,7 @@ export class AppComponent implements OnInit {
                             }
                         }
                         if (e.trigger === 'reset') {
-                            resetChartView(e.chart);
+                            resetChartViewX(e.chart);
                         }
                     },
                     title: {
@@ -217,9 +218,15 @@ export class AppComponent implements OnInit {
             }
 
             $('#changeTimeScale').on('click', function () {
-                sameScale = !sameScale;
+                commonScaleX = !commonScaleX;
                 $(this).toggleClass('active');
-                resetChartsView();
+                resetAllChartsViewX();
+            });
+
+            $('#changeAmplitudeScale').on('click', function () {
+                commonScaleY = !commonScaleY;
+                $(this).toggleClass('active');
+                resetAllChartsViewY();
             });
 
             function updateZoomStackCharts(vpMin, vpMax) {
@@ -234,38 +241,69 @@ export class AppComponent implements OnInit {
                 }
             }
 
-            function resetChartsView() {
+            function resetAllChartsViewX() {
                 for (let i = 0; i < channels.length; i++) {
-                    resetChartView(channels[i].chart);
+                    resetChartViewX(channels[i].chart);
                 }
             }
 
-            function resetChartView(chart) {
+            function resetAllChartsViewY() {
+                for (let i = 0; i < channels.length; i++) {
+                    resetChartViewY(channels[i].chart);
+                }
+            }
+
+            function resetAllChartsViewXY() {
+                for (let i = 0; i < channels.length; i++) {
+                    resetChartViewXY(channels[i].chart);
+                }
+            }
+
+            function resetChartViewX(chart) {
                 const channel = parseInt( chart.container.id.replace('Container', ''), 10);
                 chart.options.axisX.viewportMinimum = getXvpMin();
                 chart.options.axisX.viewportMaximum = getXvpMax();
                 chart.options.axisX.minimum = 0;
                 chart.options.axisX.maximum = getXmax(channel);
-                chart.options.axisY.viewportMinimum = null;
-                chart.options.axisY.viewportMaximum = null;
-                chart.options.axisY.minimum = -getYmax(channel);
-                chart.options.axisY.maximum = getYmax(channel);
                 chart.options.viewportMinStack = [];
                 chart.options.viewportMaxStack = [];
                 chart.render();
             }
 
+            function resetChartViewY(chart) {
+                const channel = parseInt( chart.container.id.replace('Container', ''), 10);
+                chart.options.axisY.viewportMinimum = null;
+                chart.options.axisY.viewportMaximum = null;
+                chart.options.axisY.minimum = -getYmax(channel);
+                chart.options.axisY.maximum = getYmax(channel);
+                chart.render();
+            }
+
+            function resetChartViewXY(chart) {
+                const channel = parseInt( chart.container.id.replace('Container', ''), 10);
+                chart.options.axisX.viewportMinimum = getXvpMin();
+                chart.options.axisX.viewportMaximum = getXvpMax();
+                chart.options.axisX.minimum = 0;
+                chart.options.axisX.maximum = getXmax(channel);
+                chart.options.viewportMinStack = [];
+                chart.options.viewportMaxStack = [];
+                chart.options.axisY.viewportMinimum = null;
+                chart.options.axisY.viewportMaximum = null;
+                chart.options.axisY.minimum = -getYmax(channel);
+                chart.options.axisY.maximum = getYmax(channel);
+                chart.render();
+            }
+
             function getXmax(channel) {
-                return sameScale ? Math.max((channels[channel].data.length - 1) * delta, initialDuration)
-                 : channels[channel].duration;
+                return commonScaleX ? Math.max(channels[channel].duration, initialDuration) :  channels[channel].duration;
             }
 
             function getXvpMax() {
-                return sameScale ? initialDuration : null;
+                return commonScaleX ? initialDuration : null;
             }
 
             function getXvpMin() {
-                return sameScale ? 0 : null;
+                return commonScaleX ? 0 : null;
             }
 
             function getValueMaxAll() {
@@ -277,7 +315,7 @@ export class AppComponent implements OnInit {
             }
 
             function getYmax(channel) {
-                return sameScale ? getValueMaxAll() : maxValue(channels[channel].data, 100);
+                return commonScaleY ?  getValueMaxAll() : maxValue(channels[channel].data, 100);
             }
 
 
@@ -369,7 +407,7 @@ export class AppComponent implements OnInit {
             });
 
             $('#resetAll').on('click', function () {
-                resetChartsView();
+                resetAllChartsViewXY();
             });
 
             $('#backBtn').on('click', function () {
@@ -394,7 +432,7 @@ export class AppComponent implements OnInit {
                             chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
                             chart.render();
                         } else {
-                            resetChartView(chart);
+                            resetChartViewX(chart);
                         }
                         if (!zoomAll) {
                             break;
