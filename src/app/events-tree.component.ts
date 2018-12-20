@@ -4,6 +4,9 @@ import {Component, Injectable} from '@angular/core';
 import {MatTreeFlatDataSource, MatTreeFlattener} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
+import { environment } from '../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { CatalogApiService } from './catalog-api.service';
 
 /**
  * File node data with nested structure.
@@ -23,118 +26,6 @@ export class FileFlatNode {
 }
 
 /**
- * The file structure tree data in string. The data could be parsed into a Json object
- */
-const TREE_EVENT_DATA = JSON.stringify([
-    {
-        'event_resource_id': 'smi:local/97f39d25-db59-40fb-bcf8-57de70589fd1',
-        'x': 651146.0,
-        'y': 4767340.0,
-        'z': -154.999,
-        'time_epoch': 1541675807968399872,
-        'evaluation_mode': 'automatic',
-        'status': 'preliminary',
-        'event_type': 'earthquake',
-        'time_residual': 0.0577068453478441,
-        'npick': 143,
-        'magnitude': -0.476779429523073,
-        'magnitude_type': 'Mw',
-        'uncertainty': '1.1381649382897496',
-        'time_utc': '2018-11-08T11:16:47.968400Z',
-        'modification_timestamp': '2018-12-01T18:16:55.363590Z',
-        'insertion_timestamp': '2018-12-01T18:16:55.363693Z',
-        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T11-16-47.968400Z_myeyQ64.xml',
-        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T11-16-47.968400Z_bT9J3bc.mseed',
-        'waveform_context_file': null
-    },
-    {
-        'event_resource_id': 'smi:local/e7021615-e7f0-40d0-ad39-8ff8dc0edb73',
-        'x': 651134.0,
-        'y': 4767540.0,
-        'z': -182.52,
-        'time_epoch': 1541672509846298880,
-        'evaluation_mode': 'automatic',
-        'status': 'preliminary',
-        'event_type': 'earthquake',
-        'time_residual': 0.0602406839270605,
-        'npick': 135,
-        'magnitude': -0.701888904582125,
-        'magnitude_type': 'Mw',
-        'uncertainty': '1.4333591697936514',
-        'time_utc': '2018-11-08T10:21:49.846299Z',
-        'modification_timestamp': '2018-12-01T17:24:38.885095Z',
-        'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
-        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_4Umtk9o.xml',
-        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_uInNWuf.mseed',
-        'waveform_context_file': null
-    },
-    {
-        'event_resource_id': 'smi:local/e7021615-e7f0-40d0-ad39-8ff8dc0edb73',
-        'x': 651134.0,
-        'y': 4767540.0,
-        'z': -182.52,
-        'time_epoch': 1541672509846298880,
-        'evaluation_mode': 'automatic',
-        'status': 'preliminary',
-        'event_type': 'earthquake',
-        'time_residual': 0.0602406839270605,
-        'npick': 135,
-        'magnitude': -0.701888904582125,
-        'magnitude_type': 'Mw',
-        'uncertainty': '1.4333591697936514',
-        'time_utc': '2018-12-08T10:21:49.846299Z',
-        'modification_timestamp': '2018-12-01T17:24:38.885095Z',
-        'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
-        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_4Umtk9o.xml',
-        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_uInNWuf.mseed',
-        'waveform_context_file': null
-    },
-    {
-        'event_resource_id': 'smi:local/e7021615-e7f0-40d0-ad39-8ff8dc0edb73',
-        'x': 651134.0,
-        'y': 4767540.0,
-        'z': -182.52,
-        'time_epoch': 1541672509846298880,
-        'evaluation_mode': 'automatic',
-        'status': 'preliminary',
-        'event_type': 'earthquake',
-        'time_residual': 0.0602406839270605,
-        'npick': 135,
-        'magnitude': -0.701888904582125,
-        'magnitude_type': 'Mw',
-        'uncertainty': '1.4333591697936514',
-        'time_utc': '2016-01-08T10:21:49.846299Z',
-        'modification_timestamp': '2018-12-01T17:24:38.885095Z',
-        'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
-        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_4Umtk9o.xml',
-        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_uInNWuf.mseed',
-        'waveform_context_file': null
-    },
-    {
-        'event_resource_id': 'smi:local/e7021615-e7f0-40d0-ad39-8ff8dc0edb73',
-        'x': 651134.0,
-        'y': 4767540.0,
-        'z': -182.52,
-        'time_epoch': 1541672509846298880,
-        'evaluation_mode': 'automatic',
-        'status': 'preliminary',
-        'event_type': 'earthquake',
-        'time_residual': 0.0602406839270605,
-        'npick': 135,
-        'magnitude': -0.701888904582125,
-        'magnitude_type': 'Mw',
-        'uncertainty': '1.4333591697936514',
-        'time_utc': '2017-02-08T10:21:49.846299Z',
-        'modification_timestamp': '2018-12-01T17:24:38.885095Z',
-        'insertion_timestamp': '2018-12-01T17:24:38.885112Z',
-        'event_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_4Umtk9o.xml',
-        'waveform_file': 'http://sppkube.eastus.cloudapp.azure.com/files/events/2018-11-08T10-21-49.846299Z_uInNWuf.mseed',
-        'waveform_context_file': null
-    }
-
-]);
-
-/**
  * File database, it can build a tree structured Json object from string.
  * Each node in Json object represents a file or a directory. For a file, it has name and type.
  * For a directory, it has name and children (a list of files or directories).
@@ -143,26 +34,34 @@ const TREE_EVENT_DATA = JSON.stringify([
  */
 @Injectable()
 export class FileDatabase {
+
   dataChange = new BehaviorSubject<FileNode[]>([]);
 
   get data(): FileNode[] { return this.dataChange.value; }
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.initialize();
   }
 
   initialize() {
-    // Parse the string to json object.
-    const dataObject = JSON.parse(TREE_EVENT_DATA);
+    const endTime =  new Date();
+    const startTime = new Date(endTime.getTime() - 2 * 31536000000);
+    const API_URL = environment.apiUrl + '?start_time=' + startTime.toISOString() + '&end_time=' + endTime.toISOString();
 
-    const treeObject = this.convertTree(dataObject);
+    this.http.get(API_URL).subscribe(events => {
 
-    // Build the tree nodes from Json object. The result is a list of `FileNode` with nested
-    //     file node as children.
-    const data = this.buildFileTree(treeObject, 0);
+        console.log(events);
 
-    // Notify the change.
-    this.dataChange.next(data);
+        const treeObject = this.convertTree(events);
+
+        // Build the tree nodes from Json object. The result is a list of `FileNode` with nested
+        //     file node as children.
+        const data = this.buildFileTree(treeObject, 0);
+
+        // Notify the change.
+        this.dataChange.next(data);
+    });
+
   }
 
   convertTree(dataObject) {

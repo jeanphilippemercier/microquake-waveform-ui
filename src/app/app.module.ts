@@ -10,6 +10,7 @@ import { AngularFontAwesomeModule } from 'angular-font-awesome';
 
 import { AppComponent } from './app.component';
 import {EventsTreeComponent} from './events-tree.component';
+import { CatalogApiService } from './catalog-api.service';
 
 @NgModule({
   declarations: [
