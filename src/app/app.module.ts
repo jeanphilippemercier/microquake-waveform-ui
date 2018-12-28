@@ -9,7 +9,7 @@ import { AngularFontAwesomeModule } from 'angular-font-awesome';
 import { AppComponent } from './app.component';
 import {EventsTreeComponent} from './events-tree.component';
 import { CatalogApiService } from './catalog-api.service';
-import { HelpDialogComponent, HelpDialogComponentDialog} from './help-dialog.component';
+import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
 
 
 @NgModule({
@@ -17,7 +17,7 @@ import { HelpDialogComponent, HelpDialogComponentDialog} from './help-dialog.com
     AppComponent,
     EventsTreeComponent,
     HelpDialogComponent,
-    HelpDialogComponentDialog
+    HelpDialogSheetComponent
   ],
   imports: [
     BrowserModule,
@@ -28,7 +28,7 @@ import { HelpDialogComponent, HelpDialogComponentDialog} from './help-dialog.com
     ReactiveFormsModule,
     AngularFontAwesomeModule
   ],
-  entryComponents: [HelpDialogComponent, HelpDialogComponentDialog],
+  entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [],
   bootstrap: [AppComponent, EventsTreeComponent]
 })

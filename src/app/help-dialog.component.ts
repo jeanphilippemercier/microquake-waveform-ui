@@ -1,11 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material';
 
-export interface DialogData {
-  animal: string;
-  name: string;
-}
-
 @Component({
   selector: 'app-help-dialog',
   templateUrl: './help-dialog.component.html',
@@ -13,19 +8,21 @@ export interface DialogData {
 })
 export class HelpDialogComponent {
 
-    animal: string;
-    name: string;
 
     constructor(public dialog: MatDialog) {}
 
     openDialog(): void {
-        const dialogRef = this.dialog.open(HelpDialogComponentDialog, {
+        this.dialog.closeAll();
+        const dialogRef = this.dialog.open(HelpDialogSheetComponent, {
           width: '600px',
-          data: {name: this.name, animal: this.animal}
+          hasBackdrop: false,
+          position: {
+            'bottom': '0',
+            'right': '0'
+          }
         });
         dialogRef.afterClosed().subscribe(result => {
           console.log(`Dialog closed: ${result}`);
-          this.animal = result;
         });
     }
 
@@ -35,14 +32,11 @@ export class HelpDialogComponent {
   selector: 'app-help-dialog-dialog',
   templateUrl: './help-dialog.component-dialog.html',
 })
-export class HelpDialogComponentDialog {
+export class HelpDialogSheetComponent {
 
   constructor(
-    public dialogRef: MatDialogRef<HelpDialogComponentDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData) {}
+    public dialogRef: MatDialogRef<HelpDialogSheetComponent>
+    ) {}
 
-  onNoClick(): void {
-    this.dialogRef.close();
-  }
 }
 

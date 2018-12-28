@@ -42,3 +42,8 @@
         @extend .z-depth-1-half;
     }
 }
+.btn-toolbar {
+    position: fixed;
+    top: 0;
+    z-index: 9;
+}

@@ -19,6 +19,7 @@ export class AppComponent implements OnInit {
         let commonScaleX = true;
         let commonScaleY = false;
         let showTooltip = false;
+        let showHelp = false;
         let zoomY = false;
         let zoomAll = false;
         const toMicro = 1000000;  // seconds to microseconds factor
@@ -390,6 +391,11 @@ export class AppComponent implements OnInit {
                 for (let i = 0; i < channels.length; i++) {
                     toggleTooltip(i, showTooltip);
                 }
+            });
+
+            $('#showHelp').on('click', function () {
+                showHelp = !showHelp;
+                $(this).toggleClass('active');
             });
 
             $('#zoomAll').on('click', function () {
