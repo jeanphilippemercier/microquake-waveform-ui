@@ -30,7 +30,7 @@ export class HelpDialogComponent {
 
 @Component({
   selector: 'app-help-dialog-dialog',
-  templateUrl: './help-dialog.component-dialog.html',
+  templateUrl: './help-dialog-sheet.component.html',
 })
 export class HelpDialogSheetComponent {
 
