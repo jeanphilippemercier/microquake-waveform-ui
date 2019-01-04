@@ -1,4 +1,5 @@
 Zoom using mouse and keys:
+    
     Selected channel or Zoom All
         Mouse Wheel                 - Y zoom
         Alt + Mouse Wheel             - X zoom
