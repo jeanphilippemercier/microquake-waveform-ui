@@ -31,7 +31,7 @@
 
 ## Picking
 
-keys:
+keys
 
 *d* - Activate the P picking mode
 *f* - Activate the S picking mode
