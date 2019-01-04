@@ -11,6 +11,7 @@ Zoom using mouse and keys:
         Reset View - button
 
 Picks:
+
     Ctrl + Left Mouse Button to Select Pick     - Remove P/S Pick
     Ctrl + Middle Mouse Button                     - Add new P Pick
     Shift + Middle Mouse Button                 - Add new S Pick
