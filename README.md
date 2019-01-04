@@ -19,14 +19,6 @@
 
 # User Interface Design
 
-## IMS User Interface Example
-
-ADDING IMAGE OF USER INTERFACE
-
-## Proposed User Interface Layout
-
-ADDING IMAGE OF PROPOSED USER INTERFACE SKETCH
-
 # Interaction
 
 ## Picking
@@ -82,12 +74,17 @@ When either mode is activated
 
 ## Page
 
-**1** - Previous page
+**1** - Previous page  
 **2** - Next page
 
-## View mode
+## other
 
-**t** - toggle beween waveform and travel time model (distance - travel time)
+**t** - toggle beween waveform and travel time model (distance - travel time)  
+**g** - reprocess event (calculate location, magnitude and focal mechanism)
+    1- A message is sent through a particular Kafka topic which trigger the processing of the event
+    2- Database is modified
+    3- UI receives notification (Kafka, websocket) that the database has been modified
+    4- Event information is updated
 
 ## CURRENT KEYS
 
