@@ -1,6 +1,6 @@
 # Purpose of Waveform UI
 
-- Visualize waveforms
+- Visualise event waveforms
 - Perform interactive processing
     - Pick/repick P and S wave
     - Change evaluation status (event.preferred_origin().evaluation_status)
@@ -16,6 +16,58 @@
     - Event evaluation status (event.preferred_origin().evaluation_status)
     - Event ID (event.resource_id)
 - Show event location on an insert map
+
+# User Interface Design
+
+## IMS User Interface Example
+
+<<ADDING IMAGE OF USER INTERFACE>>
+
+## Proposed User Interface Layout
+
+<<ADDING IMAGE OF PROPOSED USER INTERFACE SKETCH>>
+
+# Interaction
+
+## Picking
+
+keys:
+
+*d* - Activate the P picking mode
+*f* - Activate the S picking mode
+*s* - Undo last picking operation
+
+When either mode is activated
+left click - add or modify P or S pick  
+double left click - remove P or S pick
+right click - remove both P and S
+
+## Change event type 
+
+(see possible value at https://docs.obspy.org/packages/obspy.core.event.header.html#obspy.core.event.header.EventType)
+
+*e* - toggle event type
+    
+    Two types readily accessible
+        - Seismic event (Map to "induced or triggered event")
+        - Blast (Map to "Mining Explosion")
+
+*w* - roll through the below list
+        - Open pit blast (Map to "Quarry Explosion")
+        - Regional Event / Earthquake (Map to "Earthquake")
+        - Drilling Noise (Map to "Other Event", add "Drilling Noise" in Event.event_description)
+        - Crusher Noise (Map to "Other Event", add "Crusher Noise" in Event.event_description)
+        - Surface Noise (Map to "Other Event", add "Surface Noise" in Event.event_description)
+        
+*@ + TYPE (Autocompletion while typing)* - give access to all the other QuakeML types
+(see  https://docs.obspy.org/packages/obspy.core.event.header.html#obspy.core.event.header.EventType)
+
+## Change evaluation status
+
+(evaluation status => event.preferred_origin().evaluation_status)
+
+
+
 
 Zoom using mouse and keys:
     
