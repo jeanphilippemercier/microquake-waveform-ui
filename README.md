@@ -20,6 +20,30 @@
 # User Interface Design
 
 # Interaction
+Key Overview:
+**Picking**  
+**d** - Activate the P picking mode  
+**f** - Activate the S picking mode  
+**s** - Undo last picking operation
+
+**Event Types and Status**  
+**e** - Seismic event (Map to "induced or triggered event")  
+**b** - Blast (Map to "Mining Explosion")  
+**w** - roll through a list of event type   
+**@ + TYPE (Autocompletion while typing)** - gives access to all the other QuakeML types  
+**r** - toggle between **accepted** and **rejected**
+
+**Zoom and Pan**  
+**z** - toggle common time mode (solidary time axis, default common time on)  
+**x** - toggle common amplitude mode (solidary y axis, default common amplitude off) 
+
+**Navigation**
+**1** - Previous page  
+**2** - Next page
+
+**Other**  
+**t** - toggle beween waveform and travel time model (distance - travel time)  
+**g** - reprocess event (calculate location, magnitude and focal mechanism)
 
 ## Picking
 
@@ -27,7 +51,8 @@ keys
 
 **d** - Activate the P picking mode  
 **f** - Activate the S picking mode  
-**s** - Undo last picking operation  
+**s** - Undo last picking operation
+
 
 When either mode is activated
 
@@ -48,7 +73,7 @@ When either mode is activated
     - Crusher Noise (Map to "Other Event", add "Crusher Noise" in Event.event_description)  
     - Surface Noise (Map to "Other Event", add "Surface Noise" in Event.event_description)  
         
-**@ + TYPE (Autocompletion while typing)** - give access to all the other QuakeML types    
+**@ + TYPE (Autocompletion while typing)** - gives access to all the other QuakeML types    
 (see  https://docs.obspy.org/packages/obspy.core.event.header.html#obspy.core.event.header.EventType)  
 
 ## Change evaluation status
@@ -72,7 +97,7 @@ When either mode is activated
 **z** - toggle common time mode (solidary time axis, default common time on)  
 **x** - toggle common amplitude mode (solidary y axis, default common amplitude off)  
 
-## Page
+## Navigation between pages
 
 **1** - Previous page  
 **2** - Next page
