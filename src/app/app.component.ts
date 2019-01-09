@@ -110,7 +110,7 @@ export class AppComponent implements OnInit {
                             value: parseInt(datesplit[1], 10) +
                              (pickTime === timeScaleOrigin.time ? 0 : (pickTime.getTime() - timeScaleOrigin.time.getTime()) * 1000),
                             thickness: 2,
-                            color: 'blue',
+                            color: pickKey === 'p-pick' ? 'blue' : pickKey === 's-pick' ? 'red' : 'black',
                             label: pickType,
                             labelAlign: 'far'
                         });
@@ -447,6 +447,7 @@ export class AppComponent implements OnInit {
                 }
             }
 
+/*
             document.addEventListener('keydown', function(e) {
                 if (e.keyCode === 37 ||
                     e.keyCode === 38 ||
@@ -460,7 +461,7 @@ export class AppComponent implements OnInit {
 
                             const chart = channels[j].chart;
 
-                            const axis = e.altKey ? chart.axisX[0] : chart.axisY[0];
+                            const axis = e.shiftKey ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
                             const viewportMin = axis.get('viewportMinimum'),
                                 viewportMax = axis.get('viewportMaximum'),
                                 interval = (viewportMax - viewportMin) / zoomSteps;  // control zoom step
@@ -483,7 +484,7 @@ export class AppComponent implements OnInit {
 
                             if ((newViewportMax - newViewportMin) > (2 * interval)) {
                                 if (zoomAll) {
-                                    zoomAllCharts(newViewportMin, newViewportMax, e.altKey);
+                                    zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey);
                                 } else {
                                     if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
                                         axis.set('viewportMinimum', newViewportMin, false);
@@ -498,7 +499,7 @@ export class AppComponent implements OnInit {
                 }
             },
             false);
-
+*/
             for (let j = 0; j < channels.length; j++) {
                 const canvas_chart = '#' + channels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
                 // Drag picks
@@ -572,47 +573,60 @@ export class AppComponent implements OnInit {
                     }
                 });
 
-                // Zoom: on mouse wheel event zoom on Y axis, or on X axis if Alt key pressed
+                // Zoom: on mouse wheel event zoom on Y axis if Ctrl key is pressed, or on X axis if Shift key pressed
                 $(canvas_chart)[1].addEventListener('wheel', function(e) {
-                    e.preventDefault();
+                    if (e.ctrlKey || e.shiftKey || e.altKey) {
 
-                    const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                    const chart = channels[i].chart;
+                        e.preventDefault();
 
-                    const relOffsetY = e.clientY - pageOffsetY - i * chartHeight;
+                        const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
+                        const chart = channels[i].chart;
 
-                    if (e.clientX < chart.plotArea.x1 ||
-                     e.clientX > chart.plotArea.x2 ||
-                     relOffsetY < chart.plotArea.y1 ||
-                     relOffsetY > chart.plotArea.y2) {
-                        return;
-                    }
+                        const relOffsetY = e.clientY - pageOffsetY - i * chartHeight;
 
-                    const axis = e.altKey ? chart.axisX[0] : chart.axisY[0];
+                        if (e.clientX < chart.plotArea.x1 ||
+                         e.clientX > chart.plotArea.x2 ||
+                         relOffsetY < chart.plotArea.y1 ||
+                         relOffsetY > chart.plotArea.y2) {
+                            return;
+                        }
 
-                    const viewportMin = axis.get('viewportMinimum'),
-                        viewportMax = axis.get('viewportMaximum'),
-                        interval = (viewportMax - viewportMin) / zoomSteps;  // control zoom step
-                        // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
+                        const axis = (e.shiftKey || e.altKey) ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
 
-                    let newViewportMin, newViewportMax;
+                        const viewportMin = axis.get('viewportMinimum'),
+                            viewportMax = axis.get('viewportMaximum'),
+                            interval = (viewportMax - viewportMin) / zoomSteps;  // control zoom step
+                            // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
 
-                    if (e.deltaY < 0) {
-                        newViewportMin = viewportMin + interval;
-                        newViewportMax = viewportMax - interval;
-                    } else if (e.deltaY > 0) {
-                        newViewportMin = viewportMin - interval;
-                        newViewportMax = viewportMax + interval;
-                    }
+                        let newViewportMin, newViewportMax;
 
-                    if ((newViewportMax - newViewportMin) > (2 * interval)) {
-                        if (zoomAll) {
-                            zoomAllCharts(newViewportMin, newViewportMax, e.altKey);
-                        } else {  // zoom selected trace only
-                            if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
-                                axis.set('viewportMinimum', newViewportMin, false);
-                                axis.set('viewportMaximum', newViewportMax);
-                                chart.render();
+                        if (e.ctrlKey || e.shiftKey) { // amplitude or time zoom
+                            if (e.deltaY < 0) {
+                                newViewportMin = viewportMin + interval;
+                                newViewportMax = viewportMax - interval;
+                            } else if (e.deltaY > 0) {
+                                newViewportMin = viewportMin - interval;
+                                newViewportMax = viewportMax + interval;
+                            }
+                        } else if (e.altKey) {  // time pan
+                            if (e.deltaY < 0) {
+                                newViewportMin = viewportMin - interval;
+                                newViewportMax = viewportMax - interval;
+                            } else if (e.deltaY > 0) {
+                                newViewportMin = viewportMin + interval;
+                                newViewportMax = viewportMax + interval;
+                            }
+                        }
+
+                        if ((newViewportMax - newViewportMin) > (2 * interval)) {
+                            if (zoomAll) {
+                                zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
+                            } else {  // zoom selected trace only
+                                if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
+                                    axis.set('viewportMinimum', newViewportMin, false);
+                                    axis.set('viewportMaximum', newViewportMax);
+                                    chart.render();
+                                }
                             }
                         }
                     }

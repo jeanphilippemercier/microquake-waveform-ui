@@ -18,7 +18,7 @@ export class HelpDialogComponent {
           hasBackdrop: false,
           position: {
             'bottom': '0',
-            'right': '0'
+            'left': '0'
           }
         });
         dialogRef.afterClosed().subscribe(result => {

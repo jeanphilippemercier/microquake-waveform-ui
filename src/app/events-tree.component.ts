@@ -71,11 +71,12 @@ export class FileDatabase {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
             const d = new Date(value.time_utc);
+            const microsec = value.time_utc.slice(-8, -1);
             const year = d.getFullYear();
             // const month = monthNames[d.getMonth()];
             const month = d.getMonth();
             const day =  ('0' + d.getDate()).slice(-2);
-            const event_time = d.toLocaleTimeString('en-gb');
+            const event_time = d.toLocaleTimeString('en-gb') + microsec;
               if (!dataTree.hasOwnProperty(year)) {
                 dataTree[year] = {};
               }
@@ -88,7 +89,7 @@ export class FileDatabase {
               if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
                 dataTree[year][month][day][event_time] = {};
               }
-              dataTree[year][month][day][event_time] = dataObject[property];
+              dataTree[year][month][day][event_time] = value;
           }
       }
     }
@@ -103,7 +104,14 @@ export class FileDatabase {
   buildFileTree(obj: {[key: string]: any}, level: number): FileNode[] {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
       'September', 'October', 'November', 'December'];
-    return Object.keys(obj).sort().reverse().reduce<FileNode[]>((accumulator, key) => {
+    const numKeys = Object.keys(obj).map(function(item) {
+      return parseInt(item, 10);
+    });
+    let sortedEntries = Object.keys(obj).sort().reverse();
+    if (level < 2) {
+      sortedEntries = numKeys.sort(function(a, b) { return b - a; }).map(String);
+    }
+    return sortedEntries.reduce<FileNode[]>((accumulator, key) => {
       const value = obj[key];
       const node = new FileNode();
       node.name = level === 1 ? monthNames[key] : key;
@@ -113,7 +121,9 @@ export class FileDatabase {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            node.type = value.event_type + ' ' + value.magnitude_type + ':' + value.magnitude.toPrecision(4);
+            const desc1 = value.status === 'reviewed' ? 'A' : 'R';
+            const desc2 = value.event_type === 'earthquake' ? 'E' : value.event_type === 'blast' ? 'B' : 'O';
+            node.type = desc1 + desc2 + ' ' + value.magnitude.toPrecision(2);
             node.info = value.status;
           } else {
             node.type = value;
