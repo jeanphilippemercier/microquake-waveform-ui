@@ -16,11 +16,10 @@ export class AppComponent implements OnInit {
         const channels = [];
         const startTime = new Date();
         let totalPoints = 0;
-        let commonScaleX = true;
-        let commonScaleY = false;
+        let commonTime = true;
+        let commonAmplitude = false;
         let showTooltip = false;
         let showHelp = false;
-        let zoomY = false;
         let zoomAll = false;
         const toMicro = 1000000;  // seconds to microseconds factor
         const toMmUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -137,7 +136,7 @@ export class AppComponent implements OnInit {
             for (let i = 0; i < channels.length; i++) {
                 const options = {
                     zoomEnabled: true,
-                    zoomType: zoomY ? 'xy' : 'x',
+                    zoomType: 'x',
                     animationEnabled: true,
                     rangeChanged: function(e) {
                         if (!e.chart.options.viewportMinStack) {
@@ -145,7 +144,7 @@ export class AppComponent implements OnInit {
                             e.chart.options.viewportMaxStack = [];
                         }
                         if (e.trigger === 'zoom') {
-                            if (zoomAll && !zoomY) {
+                            if (zoomAll) {
                                 zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
                             } else {
                                 e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
@@ -218,17 +217,51 @@ export class AppComponent implements OnInit {
                 totalPoints += channels[i].data.length;
             }
 
-            $('#changeTimeScale').on('click', function () {
-                commonScaleX = !commonScaleX;
+            $('#commonTime').on('click', function () {
+                commonTime = !commonTime;
                 $(this).toggleClass('active');
                 resetAllChartsViewX();
             });
 
-            $('#changeAmplitudeScale').on('click', function () {
-                commonScaleY = !commonScaleY;
+            document.addEventListener('keydown', function(e) {
+                if (e.keyCode === 90) {
+                    toggleCommonTime();
+                }
+                if (e.keyCode === 88) {
+                    toggleCommonAmplitude();
+                }
+            },
+            false);
+
+            function toggleCommonTime() {
+                commonTime = !commonTime;
+                if (commonTime) {
+                    $('#commonTime').addClass('active');
+                    $('#commonTime')[0].setAttribute('aria-pressed', 'true');
+                } else {
+                    $('#commonTime').removeClass('active focus');
+                    $('#commonTime')[0].setAttribute('aria-pressed', 'false');
+                }
+                resetAllChartsViewX();
+            }
+
+            $('#commonAmplitude').on('click', function () {
+                commonAmplitude = !commonAmplitude;
                 $(this).toggleClass('active');
                 resetAllChartsViewY();
             });
+
+            function toggleCommonAmplitude() {
+                commonAmplitude = !commonAmplitude;
+                if (commonAmplitude) {
+                    $('#commonAmplitude').addClass('active');
+                    $('#commonAmplitude')[0].setAttribute('aria-pressed', 'true');
+                } else {
+                    $('#commonAmplitude').removeClass('active focus');
+                    $('#commonAmplitude')[0].setAttribute('aria-pressed', 'false');
+                }
+                resetAllChartsViewY();
+            }
 
             function updateZoomStackCharts(vpMin, vpMax) {
                 for (let i = 0; i < channels.length; i++) {
@@ -296,15 +329,15 @@ export class AppComponent implements OnInit {
             }
 
             function getXmax(channel) {
-                return commonScaleX ? Math.max(channels[channel].duration, initialDuration) :  channels[channel].duration;
+                return commonTime ? Math.max(channels[channel].duration, initialDuration) :  channels[channel].duration;
             }
 
             function getXvpMax() {
-                return commonScaleX ? initialDuration : null;
+                return commonTime ? initialDuration : null;
             }
 
             function getXvpMin() {
-                return commonScaleX ? 0 : null;
+                return commonTime ? 0 : null;
             }
 
             function getValueMaxAll() {
@@ -316,7 +349,7 @@ export class AppComponent implements OnInit {
             }
 
             function getYmax(channel) {
-                return commonScaleY ?  getValueMaxAll() : maxValue(channels[channel].data, 100);
+                return commonAmplitude ?  getValueMaxAll() : maxValue(channels[channel].data, 100);
             }
 
 
@@ -401,15 +434,6 @@ export class AppComponent implements OnInit {
             $('#zoomAll').on('click', function () {
                 zoomAll = !zoomAll;
                 $(this).toggleClass('active');
-            });
-
-            $('#zoomMode').on('click', function () {
-                zoomY = !zoomY;
-                $(this).toggleClass('active');
-                for (let i = 0; i < channels.length; i++) {
-                    channels[i].chart.options.zoomType = zoomY ? 'xy' : 'x';
-                    channels[i].chart.render();
-                }
             });
 
             $('#resetAll').on('click', function () {
@@ -500,6 +524,7 @@ export class AppComponent implements OnInit {
             },
             false);
 */
+
             for (let j = 0; j < channels.length; j++) {
                 const canvas_chart = '#' + channels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
                 // Drag picks

@@ -1,7 +1,7 @@
 <mat-tree [dataSource]='dataSource' [treeControl]='treeControl'>
-  <mat-tree-node *matTreeNodeDef='let node' matTreeNodeToggle matTreeNodePadding (click)='activeNode = node' [ngClass]="{ 'background-highlight': activeNode === node }" (dblclick)='myFunc()'>
+  <mat-tree-node *matTreeNodeDef='let node' matTreeNodeToggle matTreeNodePadding (click)='activeNode = node' [ngClass]="{ 'background-highlight': activeNode === node, 'accepted': node.status === 'A', 'rejected': node.status === 'R' }" (dblclick)='myFunc()'>
     <button mat-icon-button disabled></button>
-    {{node.name}} : {{node.type}}
+    {{node.status}}{{node.type}} {{node.name}} {{node.magnitude}}
   </mat-tree-node>
 
   <mat-tree-node *matTreeNodeDef='let node;when: hasChild' matTreeNodePadding>
@@ -11,7 +11,7 @@
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
-    {{node.name}} : {{node.type}}
+    {{node.name}}
   </mat-tree-node>
 </mat-tree>
 

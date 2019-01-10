@@ -15,14 +15,17 @@ import { CatalogApiService } from './catalog-api.service';
 export class FileNode {
   children: FileNode[];
   name: string;
-  type: any;
+  status: string;
+  type: string;
+  magnitude: number;
   info: string;
 }
 
 /** Flat node with expandable and level information */
 export class FileFlatNode {
   constructor(
-    public expandable: boolean, public name: string, public level: number, public type: any) {}
+    public expandable: boolean, public name: string, public level: number,
+      public status: string, public type: string, public magnitude: number ) {}
 }
 
 /**
@@ -121,9 +124,10 @@ export class FileDatabase {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            const desc1 = value.status === 'reviewed' ? 'A' : 'R';
-            const desc2 = value.event_type === 'earthquake' ? 'E' : value.event_type === 'blast' ? 'B' : 'O';
-            node.type = desc1 + desc2 + ' ' + value.magnitude.toPrecision(2);
+            node.status = (value.status === 'reviewed' && value.evaluation_mode === 'manual') ? 'A' : 'R';
+            node.type = value.event_type === 'earthquake' ? 'E' :
+                          value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
+            node.magnitude = value.magnitude.toPrecision(2);
             node.info = value.status;
           } else {
             node.type = value;
@@ -160,7 +164,7 @@ export class EventsTreeComponent {
   }
 
   transformer = (node: FileNode, level: number) => {
-    return new FileFlatNode(!!node.children, node.name, level, node.type);
+    return new FileFlatNode(!!node.children, node.name, level, node.status, node.type, node.magnitude);
   }
 
   myFunc() {

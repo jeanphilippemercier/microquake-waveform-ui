@@ -10,13 +10,12 @@
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
       <div class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position: fixed;'>
-          <button id='changeTimeScale' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'>Common Time <fa name='arrows-h' size='lg'></fa></button>
-          <button id='changeAmplitudeScale' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Common Amplitude <fa name='arrows-v' size='lg'></fa></button>
+          <button id='commonTime' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'>Common Time <fa name='arrows-h' size='lg'></fa></button>
+          <button id='commonAmplitude' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Common Amplitude <fa name='arrows-v' size='lg'></fa></button>
           <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Zoom All <fa name='link' size='lg'></fa></button>
           <button id='backBtn' title='Undo last Zoom or Pan' type='button' class='btn btn-primary'>Back Zoom <fa name='arrow-left' size='lg'></fa></button>
           <button id='resetAll' title='Reset View after Zoom or Pan' type='button' class='btn btn-primary'>Reset View <fa name='undo' size='lg'></fa></button>
-          <button id='zoomMode' title='XY Zoom and Pan' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>XY Zoom <fa name='arrows-alt' size='lg'></fa></button>
-          <button id='showTooltip' title='Show Tooltips' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Show Tooltips <fa name='info-circle' size='lg'></fa></button>
+          <!--<button id='showTooltip' title='Show Tooltips' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Show Tooltips <fa name='info-circle' size='lg'></fa></button>-->
           <div>
             <app-help-dialog></app-help-dialog>
           </div>
