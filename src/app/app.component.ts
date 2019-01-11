@@ -471,60 +471,6 @@ export class AppComponent implements OnInit {
                 }
             }
 
-/*
-            document.addEventListener('keydown', function(e) {
-                if (e.keyCode === 37 ||
-                    e.keyCode === 38 ||
-                    e.keyCode === 39 ||
-                    e.keyCode === 40) {
-                    e.preventDefault();
-                    for (let j = 0; j < channels.length; j++) {
-                        const canvas_chart = '#' + channels[j].container +
-                            ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
-                        if (lastDownTarget === $(canvas_chart)[1]) {
-
-                            const chart = channels[j].chart;
-
-                            const axis = e.shiftKey ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
-                            const viewportMin = axis.get('viewportMinimum'),
-                                viewportMax = axis.get('viewportMaximum'),
-                                interval = (viewportMax - viewportMin) / zoomSteps;  // control zoom step
-                                // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;
-                            let newViewportMin, newViewportMax;
-
-                            if (e.keyCode === 38) {// up arrow
-                                newViewportMin = viewportMin + interval;
-                                newViewportMax = viewportMax - interval;
-                            } else if (e.keyCode === 40) {// down arrow
-                                newViewportMin = viewportMin - interval;
-                                newViewportMax = viewportMax + interval;
-                            } else if (e.keyCode === 37) {// left arrow
-                                newViewportMin = viewportMin - interval;
-                                newViewportMax = viewportMax - interval;
-                            } else if (e.keyCode === 39) {// right arrow
-                                newViewportMin = viewportMin + interval;
-                                newViewportMax = viewportMax + interval;
-                            }
-
-                            if ((newViewportMax - newViewportMin) > (2 * interval)) {
-                                if (zoomAll) {
-                                    zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey);
-                                } else {
-                                    if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
-                                        axis.set('viewportMinimum', newViewportMin, false);
-                                        axis.set('viewportMaximum', newViewportMax);
-                                        chart.render();
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-            },
-            false);
-*/
-
             for (let j = 0; j < channels.length; j++) {
                 const canvas_chart = '#' + channels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
                 // Drag picks

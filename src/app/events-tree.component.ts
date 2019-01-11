@@ -7,6 +7,7 @@ import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { CatalogApiService } from './catalog-api.service';
+import * as miniseed from 'seisplotjs-miniseed'
 
 /**
  * File node data with nested structure.
@@ -15,17 +16,24 @@ import { CatalogApiService } from './catalog-api.service';
 export class FileNode {
   children: FileNode[];
   name: string;
-  status: string;
-  type: string;
+  eval_status: string;      // accepted or rejected, A or R
+  type: string;             // event, blast or other, E, B or O
+  evaluation_mode: string;  // from api, "automatic" or "manual"
+  event_file: string;
+  event_type: string;       // from api, "earthquake" or "explosion"
   magnitude: number;
-  info: string;
+  status: string;           // from api, "preliminary" or "reviewed"
+  time_utc: string;
+  waveform_file: string;
 }
 
 /** Flat node with expandable and level information */
 export class FileFlatNode {
   constructor(
     public expandable: boolean, public name: string, public level: number,
-      public status: string, public type: string, public magnitude: number ) {}
+      public eval_status: string, public type: string, public evaluation_mode: string,
+      public event_file: string, public event_type, public magnitude: number,
+      public status: string, public time_utc, public waveform_file: string ) {}
 }
 
 /**
@@ -124,11 +132,17 @@ export class FileDatabase {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            node.status = (value.status === 'reviewed' && value.evaluation_mode === 'manual') ? 'A' : 'R';
+            node.eval_status = (value.status === 'reviewed' && value.evaluation_mode === 'manual') ? 'A' : 'R';
             node.type = value.event_type === 'earthquake' ? 'E' :
                           value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
+            node.evaluation_mode = value.evaluation_mode;
             node.magnitude = value.magnitude.toPrecision(2);
-            node.info = value.status;
+            node.event_file = value.event_file;
+            node.event_type = value.event_type;
+            node.status = value.status;
+            node.time_utc = value.time_utc;
+            node.waveform_file = value.waveform_file;
+
           } else {
             node.type = value;
           }
@@ -164,11 +178,50 @@ export class EventsTreeComponent {
   }
 
   transformer = (node: FileNode, level: number) => {
-    return new FileFlatNode(!!node.children, node.name, level, node.status, node.type, node.magnitude);
+    return new FileFlatNode(!!node.children, node.name, level, node.eval_status, node.type,
+      node.evaluation_mode, node.event_file, node.event_type, node.magnitude,
+      node.status, node.time_utc, node.waveform_file);
   }
 
-  myFunc() {
-    console.log('function called');
+  selectEvent() {
+
+    if (this.hasOwnProperty('activeNode')) {
+
+      const qmlhr = new XMLHttpRequest();
+      qmlhr.open('GET', this['activeNode'].event_file , true);
+      qmlhr.onreadystatechange = function() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            // Typical action to be performed when the document is ready:
+            const qml = qmlhr.responseXML;
+          } else {
+            console.log('Error getting QuakeML', this.statusText);
+          }
+        }
+      };
+      qmlhr.send();
+
+      const mshr = new XMLHttpRequest();
+      mshr.open('GET', this['activeNode'].waveform_file, true);
+      mshr.responseType = 'arraybuffer';
+      mshr.onreadystatechange = function() {
+        if (this.readyState === this.DONE) {
+          if ( this.status === 200) {
+            const records = miniseed.parseDataRecords(this.response);
+            console.log(records);
+          } else {
+            console.log('Error getting miniseed', this.statusText);
+          }
+        }
+      };
+      /*
+      mshr.onload = function(e) {
+        const records = miniseed.parseDataRecords(this.response);
+      };
+      */
+      mshr.send();
+    }
+
   }
 
   private _getLevel = (node: FileFlatNode) => node.level;
