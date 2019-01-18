@@ -6,7 +6,10 @@ export const environment = {
   production: false,
 
   // URL of development API
-  apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog'
+  apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog',
+  // viewer chart height in pixels
+  chartHeight: 120,
+  commonTimeState: true
 };
 
 /*

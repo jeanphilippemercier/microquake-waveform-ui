@@ -1,13 +1,13 @@
 /*jshint esversion: 6 */
 import {FlatTreeControl} from '@angular/cdk/tree';
-import {Component, Injectable} from '@angular/core';
+import {Component, Injectable, OnInit, Output, EventEmitter} from '@angular/core';
 import {MatTreeFlatDataSource, MatTreeFlattener} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { CatalogApiService } from './catalog-api.service';
-import * as miniseed from 'seisplotjs-miniseed'
+import * as miniseed from 'seisplotjs-miniseed';
 
 /**
  * File node data with nested structure.
@@ -61,7 +61,7 @@ export class FileDatabase {
 
     this.http.get(API_URL).subscribe(events => {
 
-        console.log(events);
+//         console.log(events);
 
         const treeObject = this.convertTree(events);
 
@@ -142,7 +142,6 @@ export class FileDatabase {
             node.status = value.status;
             node.time_utc = value.time_utc;
             node.waveform_file = value.waveform_file;
-
           } else {
             node.type = value;
           }
@@ -168,6 +167,8 @@ export class EventsTreeComponent {
   treeFlattener: MatTreeFlattener<FileNode, FileFlatNode>;
   dataSource: MatTreeFlatDataSource<FileNode, FileFlatNode>;
 
+  @Output() messageEvent = new EventEmitter();
+
   constructor(database: FileDatabase) {
     this.treeFlattener = new MatTreeFlattener(this.transformer, this._getLevel,
       this._isExpandable, this._getChildren);
@@ -187,39 +188,8 @@ export class EventsTreeComponent {
 
     if (this.hasOwnProperty('activeNode')) {
 
-      const qmlhr = new XMLHttpRequest();
-      qmlhr.open('GET', this['activeNode'].event_file , true);
-      qmlhr.onreadystatechange = function() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) {
-            // Typical action to be performed when the document is ready:
-            const qml = qmlhr.responseXML;
-          } else {
-            console.log('Error getting QuakeML', this.statusText);
-          }
-        }
-      };
-      qmlhr.send();
+      this.messageEvent.emit(this['activeNode']);
 
-      const mshr = new XMLHttpRequest();
-      mshr.open('GET', this['activeNode'].waveform_file, true);
-      mshr.responseType = 'arraybuffer';
-      mshr.onreadystatechange = function() {
-        if (this.readyState === this.DONE) {
-          if ( this.status === 200) {
-            const records = miniseed.parseDataRecords(this.response);
-            console.log(records);
-          } else {
-            console.log('Error getting miniseed', this.statusText);
-          }
-        }
-      };
-      /*
-      mshr.onload = function(e) {
-        const records = miniseed.parseDataRecords(this.response);
-      };
-      */
-      mshr.send();
     }
 
   }
@@ -232,7 +202,6 @@ export class EventsTreeComponent {
 
   hasChild = (_: number, _nodeData: FileFlatNode) => _nodeData.expandable;
 }
-
 
 /**  Copyright 2018 Google Inc. All Rights Reserved.
     Use of this source code is governed by an MIT-style license that

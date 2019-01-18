@@ -5,7 +5,8 @@
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
       <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
       <div class='mat-app-background basic-container'>
-        <app-events-tree>loading</app-events-tree>
+        <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
+        <!--app-events-tree> {{message}} </app-events-tree-->
       </div>
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->

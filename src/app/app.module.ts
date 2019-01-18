@@ -29,8 +29,8 @@ import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.comp
     AngularFontAwesomeModule
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
-  providers: [],
-  bootstrap: [AppComponent, EventsTreeComponent]
+  providers: [CatalogApiService],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
 
