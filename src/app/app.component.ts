@@ -15,80 +15,144 @@ import * as miniseed from 'seisplotjs-miniseed';
 export class AppComponent implements OnInit {
     title = 'waveform-ui-angular';
 
-    public catalog;
+    public catalog: any;
+    public allChannels: any[];
+    public activeChannels: any[];
+    public zeroTime: Date;
+
+    public commonTimeState: Boolean;
+    public commonYState: Boolean;
+    public showTooltip: Boolean;
+    public showHelp: Boolean;
+    public zoomAll: Boolean;
+
+    private convYUnits: number;
+
+    public selected: number;
+    public selectedContextMenu: number;
+    public lastSelectedXPosition: number;
+    public lastDownTarget: any;  // last mouse down selection
 
     public eventMessage: any;
+
+    private menu: any;
+    private menuVisible: Boolean;
+
+    private renderCharts: Function;
+    private destroyCharts: Function;
+    private setChartKeys: Function;
+    private getEvent: Function;
+    private getEventInfo: Function;
+    private parseMiniseed: Function;
+    private loadEvent: Function;
+
+    private toggleMenu: Function;
+    private setPosition: Function;
+    private maxValue: Function;
+    private toggleCommonTime: Function;
+    private toggleCommonAmplitude: Function;
+    private updateZoomStackCharts: Function;
+    private resetAllChartsViewX: Function;
+    private resetAllChartsViewXY: Function;
+    private resetAllChartsViewY: Function;
+    private resetChartViewX: Function;
+    private resetChartViewXY: Function;
+    private resetChartViewY: Function;
+    private getXmax: Function;
+    private getYmax: Function;
+    private getXvpMax: Function;
+    private getXvpMin: Function;
+    private getValueMaxAll: Function;
+    private getAxisMaxAll: Function;
+    private getAxisMinAll: Function;
+    private zoomAllCharts: Function;
+    private addPick: Function;
+    private deletePicks: Function;
+    private addPickData: Function;
+    private toggleTooltip: Function;
+    private back: Function;
+    private setPage: Function;
+    private page_size: number;
+
+    public loading = false;
 
     getNotification(message) {
         console.log(message);
         this.eventMessage = message;
+        this.loadEvent(message);
     }
 
     constructor(private _catalogService: CatalogApiService) { }
 
-    ngOnInit() {
-        let zeroTime = new Date();
-        let commonAmplitude = false;
-        let commonTimeState = true;
-        let showTooltip = false;
-        let showHelp = false;
-        let zoomAll = false;
-        const toMicro = 1000000;  // seconds to microseconds factor
-        // const toMmUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
-        const toMmUnits = 0.001;  // factor to convert input units (m) to mmm
-        const initialDuration = toMicro;  // time window to display in microseconds (1 second)
-        let selected = -1;
-        let selectedContextMenu = -1;
-        let lastSelectedXPosition = -1;
-        let lastDownTarget;  // last mouse down selection
-        const zoomSteps = 5;    // for wheel mouse zoom
-        const pageOffsetY = 40;
-        const snapDistance = 10;
-        let channels = [];
+    public ngOnInit() {
 
-        const menu = document.querySelector('.menu');
-        let menuVisible = false;
+        const self = this;
 
-        let eventMessage = null;
+        self.commonTimeState = true;
+        self.commonYState = false;
+        self.showTooltip = false;
+        self.showHelp = false;
+        self.zoomAll = false;
 
-        function getNotification(message) {
-            console.log(message);
-            eventMessage = message;
-        }
+        self.convYUnits = 0.001; // factor to convert input units (m) to mmm
+        // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
 
+        self.selected = -1;
+        self.selectedContextMenu = -1;
+        self.lastSelectedXPosition = -1;
+
+        self.menu = document.querySelector('.menu');
+        self.menuVisible = false;
+
+        self.page_size = 10;
+
+        const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
         this._catalogService.get_recent_events_week().subscribe(data => {
                 this.catalog = data;
                 this.catalog.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
                 const event = this.catalog[0];
-                getEvent(event).then(eventData => {
-                    if (eventData) {
-                        channels = eventData.channels;
-                        zeroTime = eventData.zeroTime;
-                        console.log(channels);
-                        renderCharts();
-                        addListeners();
-                    }
-                });
-                getEventInfo(event);
+                this.loadEvent(event);
             },
             err => console.error(err),
             () => console.log('done loading')
         );
 
-
-        const toggleMenu = command => {
-         (<any>menu).style.display = command === 'show' ? 'block' : 'none';
-          menuVisible = !menuVisible;
+        this.loadEvent = event => {
+            if (event.hasOwnProperty('waveform_file')) {
+                self.destroyCharts();
+                self.getEvent(event).then(eventFile => {
+                    if (eventFile) {
+                        const eventData = self.parseMiniseed(eventFile);
+                        self.allChannels = eventData.channels;
+                        self.zeroTime = eventData.zeroTime;
+                        self.setPage(1);
+                        console.log(self.activeChannels);
+                        self.renderCharts();
+                        self.setChartKeys();
+                    }
+                });
+                self.getEventInfo(event);
+            }
         };
 
-        const setPosition = ({ top, left }) => {
-          (<any>menu).style.left = `${left}px`;
-          (<any>menu).style.top = `${top}px`;
-          toggleMenu('show');
+        this.setPage = pageNumber => {
+            self.activeChannels = self.allChannels.slice((pageNumber - 1) * self.page_size, pageNumber * self.page_size);
+
         };
 
-        function maxValue (dataPoints, res) {
+        this.toggleMenu = command => {
+         (<any>self.menu).style.display = command === 'show' ? 'block' : 'none';
+          self.menuVisible = !self.menuVisible;
+        };
+
+        this.setPosition = ({ top, left }) => {
+          (<any>self.menu).style.left = `${left}px`;
+          (<any>self.menu).style.top = `${top}px`;
+          self.toggleMenu('show');
+        };
+
+        this.maxValue = (dataPoints, res) => {
             res = res ? res : 10;
             let maximum = Math.abs(dataPoints[0].y);
             for (let i = 0; i < dataPoints.length; i++) {
@@ -96,21 +160,30 @@ export class AppComponent implements OnInit {
                     maximum = Math.abs(dataPoints[i].y);
                 }
             }
-            return Math.ceil(maximum / (toMmUnits / res)) * (toMmUnits / res);
-        }
+            return Math.ceil(maximum / (self.convYUnits / res)) * (self.convYUnits / res);
+        };
 
-        function destroyCharts(chans) {
-            for (let i = 0; i < chans.length; i++) {
-                chans[i].chart.destroy();
-                const elem = document.getElementById(chans[i].container);
-                elem.parentElement.removeChild(elem);
+        this.destroyCharts = () => {
+            if (self.activeChannels) {
+                for (let i = 0; i < self.activeChannels.length; i++) {
+                    self.activeChannels[i].chart.destroy();
+                    const elem = document.getElementById(self.activeChannels[i].container);
+                    elem.parentElement.removeChild(elem);
+                }
             }
-        }
+        };
 
-        function renderCharts() {
+        this.renderCharts = () => {
            // Chart Options, Render
 
-            for (let i = 0; i < channels.length; i++) {
+            for (let i = 0; i < self.activeChannels.length; i++) {
+
+                if ( $('#' + self.activeChannels[i].container).length === 0 ) {
+                    $('<div>').attr({
+                        'id': self.activeChannels[i].container,
+                        'style': divStyle
+                    }).appendTo('#waveform-panel');
+                }
 
                 const options = {
                     zoomEnabled: true,
@@ -122,19 +195,19 @@ export class AppComponent implements OnInit {
                             e.chart.options.viewportMaxStack = [];
                         }
                         if (e.trigger === 'zoom') {
-                            if (zoomAll) {
-                                zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
+                            if (self.zoomAll) {
+                                self.zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
                             } else {
                                 e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
                                 e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
                             }
                         }
                         if (e.trigger === 'reset') {
-                            resetChartViewX(e.chart);
+                            self.resetChartViewX(e.chart);
                         }
                     },
                     title: {
-                        text: channels[i].station,
+                        text: self.activeChannels[i].station,
                         dockInsidePlotArea: true,
                         fontSize: 12,
                         fontFamily: 'tahoma',
@@ -142,41 +215,41 @@ export class AppComponent implements OnInit {
                         horizontalAlign: 'left'
                     },
                     toolTip: {
-                        enabled: showTooltip,
+                        enabled: self.showTooltip,
                         contentFormatter: function (e) {
                             const content = ' ' +
-                             '<strong>' + e.entries[0].dataPoint.y / toMmUnits + ' mm/s</strong>' +
+                             '<strong>' + e.entries[0].dataPoint.y / self.convYUnits + ' mm/s</strong>' +
                              '<br/>' +
-                             '<strong>' + e.entries[0].dataPoint.x / toMicro + ' s</strong>';
+                             '<strong>' + e.entries[0].dataPoint.x / 1000000 + ' s</strong>';
                             return content;
                         }
                     },
                     axisX: {
                         minimum: 0,
-                        maximum: getXmax(i),
-                        viewportMinimum: getXvpMin(),
-                        viewportMaximum: getXvpMax(),
+                        maximum: self.getXmax(i),
+                        viewportMinimum: self.getXvpMin(),
+                        viewportMaximum: self.getXvpMax(),
                         includeZero: true,
                         labelAutoFit: false,
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                return zeroTime.toISOString().split('.')[0].replace('T', ' ');
+                                return self.zeroTime.toISOString().split('.')[0].replace('T', ' ');
                             } else {
-                                return  e.value / toMicro + ' s' ;
+                                return  e.value / 1000000 + ' s' ;
                             }
                         },
-                        stripLines: channels[i].picks
+                        stripLines: self.activeChannels[i].picks
                     },
                     axisY: {
-                        minimum: -getYmax(i),
-                        maximum: getYmax(i),
+                        minimum: -self.getYmax(i),
+                        maximum: self.getYmax(i),
                         includeZero: true,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
                                 return  '0 mm/s';
                             } else {
-                                return  e.value / toMmUnits;
+                                return  e.value / self.convYUnits;
                             }
                         }
                     },
@@ -186,32 +259,32 @@ export class AppComponent implements OnInit {
                             lineColor: 'black',
                             lineThickness: 1,
                             highlightEnabled: true,
-                            dataPoints: channels[i].data
+                            dataPoints: self.activeChannels[i].data
                         }
                     ]
                 };
-                channels[i].chart = new CanvasJS.Chart(channels[i].container, options);
-                channels[i].chart.render();
+                self.activeChannels[i].chart = new CanvasJS.Chart(self.activeChannels[i].container, options);
+                self.activeChannels[i].chart.render();
             }
-            console.log(channels.length + ' total channels');
-        }
+            console.log(self.activeChannels.length + ' total activeChannels');
+        };
 
-        function addListeners() {
-            for (let j = 0; j < channels.length; j++) {
-                const canvas_chart = '#' + channels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
+        this.setChartKeys = () => {
+            for (let j = 0; j < self.activeChannels.length; j++) {
+                const canvas_chart = '#' + self.activeChannels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
                 // Drag picks
                 $(canvas_chart).last().on('mousedown', function(e) {
-                    lastDownTarget = e.target;
+                    self.lastDownTarget = e.target;
 
                     if (!($(e.target).parents('.menu').length > 0)) {
-                        if (menuVisible) {
-                            selectedContextMenu = -1;
-                            toggleMenu('hide');
+                        if (self.menuVisible) {
+                            self.selectedContextMenu = -1;
+                            self.toggleMenu('hide');
                             return;
                         }
                     }
                     const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                    const chart = channels[ind].chart;
+                    const chart = self.activeChannels[ind].chart;
                     const parentOffset = $(this).parent().offset();
                     const relX = e.pageX - parentOffset.left;
                     const relY = e.pageY - parentOffset.top;
@@ -219,15 +292,15 @@ export class AppComponent implements OnInit {
                         // Get the selected stripLine & change the cursor
                         for (let i = 0; i < chart.axisX[0].stripLines.length; i++) {
                             if (chart.axisX[0].stripLines[i].get('bounds')) {
-                                if (relX > chart.axisX[0].stripLines[i].get('bounds').x1 - snapDistance &&
-                                 relX < chart.axisX[0].stripLines[i].get('bounds').x2 + snapDistance &&
+                                if (relX > chart.axisX[0].stripLines[i].get('bounds').x1 - environment.snapDistance &&
+                                 relX < chart.axisX[0].stripLines[i].get('bounds').x2 + environment.snapDistance &&
                                  relY > chart.axisX[0].stripLines[i].get('bounds').y1 &&
                                  relY < chart.axisX[0].stripLines[i].get('bounds').y2) {
                                     if (e.ctrlKey) {  // remove pick
                                         const selLine = chart.options.axisX.stripLines[i];
-                                        deletePicks(ind, selLine.label, selLine.value);
+                                        self.deletePicks(ind, selLine.label, selLine.value);
                                     } else {  // move pick
-                                        selected = i;
+                                        self.selected = i;
                                         $(this).addClass('pointerClass');
                                     }
                                     break;
@@ -236,36 +309,36 @@ export class AppComponent implements OnInit {
                         }
                     } else if (e.button === 1) {  // add new P or S
                             if (e.ctrlKey) {  // add new P on Ctrl + center mouse button click
-                                addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
+                                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
                             } else if (e.shiftKey) {   // add new S pick on Shift + center mouse button click
-                                addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+                                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
                             }
                     } else if (e.button === 2) {  // save position on right mouse button, context menu
-                        lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
+                        self.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
                     }
                 });
 
                 $(canvas_chart).last().on('mousemove', function(e) {  // move selected stripLine
-                    if (selected !== -1) {
+                    if (self.selected !== -1) {
                         const i = parseInt( $(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = channels[i].chart;
+                        const chart = self.activeChannels[i].chart;
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
-                        chart.options.axisX.stripLines[selected].value = chart.axisX[0].convertPixelToValue(relX);
+                        chart.options.axisX.stripLines[self.selected].value = chart.axisX[0].convertPixelToValue(relX);
                         chart.options.zoomEnabled = false;
                         chart.render();
                     }
                 });
 
                 $(canvas_chart).last().on('mouseup', function(e) {
-                    if (selected !== -1) {   // clear selection and change the cursor
-                        selected = -1;
+                    if (self.selected !== -1) {   // clear selection and change the cursor
+                        self.selected = -1;
                         $(this).removeClass('pointerClass');
                         // let i = parseInt( $(this).parent()[0].id.replace('Container',''));
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = channels[i].chart;
+                        const chart = self.activeChannels[i].chart;
                         chart.options.zoomEnabled = true;   // turn zoom back on
-                        // document.getElementById(channels[i].button).style.display = 'inline';
+                        // document.getElementById(self.activeChannels[i].button).style.display = 'inline';
                         chart.render();
                     }
                 });
@@ -277,9 +350,9 @@ export class AppComponent implements OnInit {
                         e.preventDefault();
 
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = channels[i].chart;
+                        const chart = self.activeChannels[i].chart;
 
-                        const relOffsetY = e.clientY - pageOffsetY - i * environment.chartHeight;
+                        const relOffsetY = e.clientY - environment.pageOffsetY - i * environment.chartHeight;
 
                         if (e.clientX < chart.plotArea.x1 ||
                          e.clientX > chart.plotArea.x2 ||
@@ -292,7 +365,7 @@ export class AppComponent implements OnInit {
 
                         const viewportMin = axis.get('viewportMinimum'),
                             viewportMax = axis.get('viewportMaximum'),
-                            interval = (viewportMax - viewportMin) / zoomSteps;  // control zoom step
+                            interval = (viewportMax - viewportMin) / environment.zoomSteps;  // control zoom step
                             // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
 
                         let newViewportMin, newViewportMax;
@@ -316,8 +389,8 @@ export class AppComponent implements OnInit {
                         }
 
                         if ((newViewportMax - newViewportMin) > (2 * interval)) {
-                            if (zoomAll) {
-                                zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
+                            if (self.zoomAll) {
+                                self.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
                             } else {  // zoom selected trace only
                                 if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
                                     axis.set('viewportMinimum', newViewportMin, false);
@@ -329,117 +402,117 @@ export class AppComponent implements OnInit {
                     }
                 });
 
-                $('#' + channels[j].container).on('contextmenu', e => {
+                $('#' + self.activeChannels[j].container).on('contextmenu', e => {
                       e.preventDefault();
                       const origin = {
                         left: e.pageX,
                         top: e.pageY
                       };
-                      setPosition(origin);
-                      selectedContextMenu = j;
+                      self.setPosition(origin);
+                      self.selectedContextMenu = j;
                       return false;
                 });
 
             }
-        }
+        };
 
         $('#commonAmplitude').on('click', () => {
-            commonAmplitude = !commonAmplitude;
+            self.commonYState = !self.commonYState;
             $(this).toggleClass('active');
-            resetAllChartsViewY();
+            self.resetAllChartsViewY();
         });
 
         $('#commonTime').on('click', () => {
-            commonTimeState = !commonTimeState;
+            self.commonTimeState = !self.commonTimeState;
             $(this).toggleClass('active');
-            resetAllChartsViewX();
+            self.resetAllChartsViewX();
         });
 
         document.addEventListener('keydown', e => {
             if (e.keyCode === 90) {
-                toggleCommonTime();
+                self.toggleCommonTime();
             }
             if (e.keyCode === 88) {
-                toggleCommonAmplitude();
+                self.toggleCommonAmplitude();
             }
         },
         false);
 
         $('#showTooltip').on('click', () => {
-            showTooltip = !showTooltip;
+            self.showTooltip = !self.showTooltip;
             $(this).toggleClass('active');
-            for (let i = 0; i < channels.length; i++) {
-                toggleTooltip(i, showTooltip);
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                self.toggleTooltip(i, self.showTooltip);
             }
         });
 
         $('#showHelp').on('click', () => {
-            showHelp = !showHelp;
+            self.showHelp = !self.showHelp;
             $(this).toggleClass('active');
         });
 
         $('#zoomAll').on('click', () => {
-            zoomAll = !zoomAll;
+            self.zoomAll = !self.zoomAll;
             $(this).toggleClass('active');
         });
 
         $('#resetAll').on('click', () => {
-            resetAllChartsViewXY();
+            self.resetAllChartsViewXY();
         });
 
         $('#backBtn').on('click', () => {
-            back();
+            self.back();
         });
 
         // If the context menu element is clicked
         $('.menu li').click(function() {
-            if (selectedContextMenu !== -1) {
+            if (self.selectedContextMenu !== -1) {
                 // This is the triggered action name
                 const action = $(this).attr('data-action');
                 switch (action) {
 
                     // A case for each action. Your actions here
-                    case 'deleteP': deletePicks(selectedContextMenu, 'P', null); break;
-                    case 'deleteS': deletePicks(selectedContextMenu, 'S', null); break;
-                    case 'newP': addPick(selectedContextMenu, 'P', null); break;
-                    case 'newS': addPick(selectedContextMenu, 'S', null); break;
-                    case 'showTooltip': toggleTooltip(selectedContextMenu, null); break;
+                    case 'deleteP': self.deletePicks(self.selectedContextMenu, 'P', null); break;
+                    case 'deleteS': self.deletePicks(self.selectedContextMenu, 'S', null); break;
+                    case 'newP': self.addPick(self.selectedContextMenu, 'P', null); break;
+                    case 'newS': self.addPick(self.selectedContextMenu, 'S', null); break;
+                    case 'showTooltip': self.toggleTooltip(self.selectedContextMenu, null); break;
                     default: break;
                 }
             }
 
             // Hide it AFTER the action was triggered
-            selectedContextMenu = -1;
-            toggleMenu('hide');
+            self.selectedContextMenu = -1;
+            self.toggleMenu('hide');
         });
 
-        function toggleCommonTime() {
-            commonTimeState = !commonTimeState;
-            if (commonTimeState) {
+        this.toggleCommonTime = () => {
+            self.commonTimeState = !self.commonTimeState;
+            if (self.commonTimeState) {
                 $('#commonTime').addClass('active');
                 $('#commonTime')[0].setAttribute('aria-pressed', 'true');
             } else {
                 $('#commonTime').removeClass('active focus');
                 $('#commonTime')[0].setAttribute('aria-pressed', 'false');
             }
-            resetAllChartsViewX();
-        }
+            self.resetAllChartsViewX();
+        };
 
-        function toggleCommonAmplitude() {
-            commonAmplitude = !commonAmplitude;
-            if (commonAmplitude) {
+        this.toggleCommonAmplitude = () => {
+            self.commonYState = !self.commonYState;
+            if (self.commonYState) {
                 $('#commonAmplitude').addClass('active');
                 $('#commonAmplitude')[0].setAttribute('aria-pressed', 'true');
             } else {
                 $('#commonAmplitude').removeClass('active focus');
                 $('#commonAmplitude')[0].setAttribute('aria-pressed', 'false');
             }
-            resetAllChartsViewY();
-        }
+            self.resetAllChartsViewY();
+        };
 
-        function updateZoomStackCharts(vpMin, vpMax) {
-            for (let i = 0; i < channels.length; i++) {
-                const chart = channels[i].chart;
+        this.updateZoomStackCharts = (vpMin, vpMax) => {
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                const chart = self.activeChannels[i].chart;
                 if (!chart.options.viewportMinStack) {
                     chart.options.viewportMinStack = [];
                     chart.options.viewportMaxStack = [];
@@ -447,156 +520,158 @@ export class AppComponent implements OnInit {
                 chart.options.viewportMinStack.push(vpMin);
                 chart.options.viewportMaxStack.push(vpMax);
             }
-        }
+        };
 
-        function resetAllChartsViewX() {
-            for (let i = 0; i < channels.length; i++) {
-                resetChartViewX(channels[i].chart);
+        this.resetAllChartsViewX = () => {
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                self.resetChartViewX(self.activeChannels[i].chart);
             }
-        }
+        };
 
-        function resetAllChartsViewY() {
-            for (let i = 0; i < channels.length; i++) {
-                resetChartViewY(channels[i].chart);
+        this.resetAllChartsViewY = () => {
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                self.resetChartViewY(self.activeChannels[i].chart);
             }
-        }
+        };
 
-        function resetAllChartsViewXY() {
-            for (let i = 0; i < channels.length; i++) {
-                resetChartViewXY(channels[i].chart);
+        this.resetAllChartsViewXY = () => {
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                self.resetChartViewXY(self.activeChannels[i].chart);
             }
-        }
+        };
 
-        function resetChartViewX(chart) {
+        this.resetChartViewX = (chart) => {
             const channel = parseInt( chart.container.id.replace('Container', ''), 10);
-            chart.options.axisX.viewportMinimum = getXvpMin();
-            chart.options.axisX.viewportMaximum = getXvpMax();
+            chart.options.axisX.viewportMinimum = self.getXvpMin();
+            chart.options.axisX.viewportMaximum = self.getXvpMax();
             chart.options.axisX.minimum = 0;
-            chart.options.axisX.maximum = getXmax(channel);
+            chart.options.axisX.maximum = self.getXmax(channel);
             chart.options.viewportMinStack = [];
             chart.options.viewportMaxStack = [];
             chart.render();
-        }
+        };
 
-        function resetChartViewY(chart) {
+        this.resetChartViewY = (chart) => {
             const channel = parseInt( chart.container.id.replace('Container', ''), 10);
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.minimum = -getYmax(channel);
-            chart.options.axisY.maximum = getYmax(channel);
+            chart.options.axisY.minimum = -self.getYmax(channel);
+            chart.options.axisY.maximum = self.getYmax(channel);
             chart.render();
-        }
+        };
 
-        function resetChartViewXY(chart) {
+        this.resetChartViewXY = (chart) => {
             const channel = parseInt( chart.container.id.replace('Container', ''), 10);
-            chart.options.axisX.viewportMinimum = getXvpMin();
-            chart.options.axisX.viewportMaximum = getXvpMax();
+            chart.options.axisX.viewportMinimum = self.getXvpMin();
+            chart.options.axisX.viewportMaximum = self.getXvpMax();
             chart.options.axisX.minimum = 0;
-            chart.options.axisX.maximum = getXmax(channel);
+            chart.options.axisX.maximum = self.getXmax(channel);
             chart.options.viewportMinStack = [];
             chart.options.viewportMaxStack = [];
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.minimum = -getYmax(channel);
-            chart.options.axisY.maximum = getYmax(channel);
+            chart.options.axisY.minimum = -self.getYmax(channel);
+            chart.options.axisY.maximum = self.getYmax(channel);
             chart.render();
-        }
+        };
 
-        function getXmax(pos) {
-            return commonTimeState ? Math.max(channels[pos].duration, initialDuration) :  channels[pos].duration;
-        }
+        this.getXmax = (pos) => {
+            return self.commonTimeState ?
+                Math.max(self.activeChannels[pos].duration, environment.fixedDuration * 1000000) :  self.activeChannels[pos].duration;
+        };
 
-        function getXvpMax() {
-            return commonTimeState ? initialDuration : null;
-        }
+        this.getXvpMax = () => {
+            return self.commonTimeState ? environment.fixedDuration * 1000000 : null;
+        };
 
-        function getXvpMin() {
-            return commonTimeState ? 0 : null;
-        }
+        this.getXvpMin = () => {
+            return self.commonTimeState ? 0 : null;
+        };
 
-        function getValueMaxAll() {
+        this.getValueMaxAll = () => {
             let val;
-            for (let i = 0; i < channels.length; i++) {
-                val = i === 0 ? maxValue(channels[0].data, null) : Math.max(maxValue(channels[i].data, null), val);
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                val = i === 0 ?
+                    self.maxValue(self.activeChannels[0].data, null) : Math.max(self.maxValue(self.activeChannels[i].data, null), val);
             }
             return val;
-        }
+        };
 
-        function getYmax(channel) {
-            return commonAmplitude ?  getValueMaxAll() : maxValue(channels[channel].data, 100);
-        }
+        this.getYmax = (channel) => {
+            return self.commonYState ?  self.getValueMaxAll() : self.maxValue(self.activeChannels[channel].data, 100);
+        };
 
-        function getAxisMinAll(isXaxis) {
+        this.getAxisMinAll = (isXaxis) => {
             let min;
-            for (let i = 0; i < channels.length; i++) {
-                const chart = channels[i].chart;
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                const chart = self.activeChannels[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 min = i === 0 ? axis.get('minimum') : Math.min(axis.get('minimum'), min);
             }
             return min;
-        }
+        };
 
-        function getAxisMaxAll(isXaxis) {
+        this.getAxisMaxAll = (isXaxis) => {
             let max;
-            for (let i = 0; i < channels.length; i++) {
-                const chart = channels[i].chart;
+            for (let i = 0; i < self.activeChannels.length; i++) {
+                const chart = self.activeChannels[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 max = i === 0 ? axis.get('maximum') : Math.max(axis.get('maximum'), max);
             }
             return max;
-        }
+        };
 
-        function zoomAllCharts(vpMin, vpMax, isXaxis) {
-            updateZoomStackCharts(vpMin, vpMax);
-            if (vpMin >= getAxisMinAll(isXaxis) && vpMax <= getAxisMaxAll(isXaxis)) {
-                for (let i = 0; i < channels.length; i++) {
-                    const chart = channels[i].chart;
+        this.zoomAllCharts = (vpMin, vpMax, isXaxis) => {
+            self.updateZoomStackCharts(vpMin, vpMax);
+            if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
+                for (let i = 0; i < self.activeChannels.length; i++) {
+                    const chart = self.activeChannels[i].chart;
                     const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                     axis.set('viewportMinimum', vpMin, false);
                     axis.set('viewportMaximum', vpMax);
                     chart.render();
                 }
             }
-        }
+        };
 
-        function addPick(ind, pickType, value) {
-            const chart = channels[ind].chart;
-            const position = value ? value : lastSelectedXPosition;
-            channels[ind].picks.push({
+        this.addPick = (ind, pickType, value) => {
+            const chart = self.activeChannels[ind].chart;
+            const position = value ? value : self.lastSelectedXPosition;
+            self.activeChannels[ind].picks.push({
                 value: position,
                 thickness: 2,
                 color: pickType === 'P' ? 'red' : pickType === 'S' ? 'blue' : 'black',
                 label: pickType,
                 labelAlign: 'far'
             });
-            chart.options.axisX.stripLines = channels[ind].picks;
+            chart.options.axisX.stripLines = self.activeChannels[ind].picks;
             chart.render();
-        }
+        };
 
-        function deletePicks(ind, pickType, value) {
-            const chart = channels[ind].chart;
+        this.deletePicks = (ind, pickType, value) => {
+            const chart = self.activeChannels[ind].chart;
             if (value) {
-                channels[ind].picks = channels[ind].picks
+                self.activeChannels[ind].picks = self.activeChannels[ind].picks
                 .filter( el => el.label !== pickType || el.label === pickType && el.value !== value);
             } else {  // no value specified delete all picks of this type
-                channels[ind].picks = channels[ind].picks.filter( el => el.label !== pickType);
+                self.activeChannels[ind].picks = self.activeChannels[ind].picks.filter( el => el.label !== pickType);
             }
-            chart.options.axisX.stripLines = channels[ind].picks;
+            chart.options.axisX.stripLines = self.activeChannels[ind].picks;
             chart.render();
-        }
+        };
 
-        function toggleTooltip(ind, value) {
-            value = value ? value : !channels[ind].chart.options.toolTip.enabled;
-            channels[ind].chart.options.toolTip.enabled = value;
-            channels[ind].chart.render();
-        }
+        this.toggleTooltip = (ind, value) => {
+            value = value ? value : !self.activeChannels[ind].chart.options.toolTip.enabled;
+            self.activeChannels[ind].chart.options.toolTip.enabled = value;
+            self.activeChannels[ind].chart.render();
+        };
 
-        function back() {
-            for (let j = 0; j < channels.length; j++) {
-                const canvas_chart = '#' + channels[j].container +
+        this.back = () => {
+            for (let j = 0; j < self.activeChannels.length; j++) {
+                const canvas_chart = '#' + self.activeChannels[j].container +
                     ' > .canvasjs-chart-container' + ' > .canvasjs-chart-canvas';
-                if (zoomAll || lastDownTarget === $(canvas_chart)[1]) {
-                    const chart = channels[j].chart;
+                if (self.zoomAll || self.lastDownTarget === $(canvas_chart)[1]) {
+                    const chart = self.activeChannels[j].chart;
                     const viewportMinStack = chart.options.viewportMinStack;
                     const viewportMaxStack = chart.options.viewportMaxStack;
                     if (!chart.options.axisX) {
@@ -609,16 +684,16 @@ export class AppComponent implements OnInit {
                         chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
                         chart.render();
                     } else {
-                        resetChartViewX(chart);
+                        self.resetChartViewX(chart);
                     }
-                    if (!zoomAll) {
+                    if (!self.zoomAll) {
                         break;
                     }
                 }
             }
-        }
+        };
 
-        function addPickData(pickType, data, obj) {
+        this.addPickData = (pickType, data, obj) => {
             obj.picks = ( typeof obj.picks !== 'undefined' && obj.picks instanceof Array ) ? obj.picks : [];
             const pickKey = pickType === 'P' ? 'p-pick' : pickType === 'S' ? 's-pick' : '';
             if (pickKey !== '') {
@@ -635,9 +710,9 @@ export class AppComponent implements OnInit {
                     });
                 }
             }
-        }
+        };
 
-        function getEventInfo(event) {
+        this.getEventInfo = (event) => {
           const qmlhr = new XMLHttpRequest();
           qmlhr.open('GET', event.event_file , true);
           qmlhr.onreadystatechange = function() {
@@ -652,91 +727,87 @@ export class AppComponent implements OnInit {
             }
           };
           qmlhr.send();
-        }
+        };
 
-        function getEvent(event): any {
+        this.parseMiniseed = (file): any => {
+            const records = miniseed.parseDataRecords(file);
+            const channelsMap = miniseed.byChannel(records);
+            const chans = [];
+            let i = 0;
+            let zTime = null;
+            const eventData = {};
+            let sampleRate = 0;
+            let rescan = false;
+            channelsMap.forEach( function(this, value, key, map) {
+                const sg = miniseed.createSeismogram(channelsMap.get(key));
+                const header = channelsMap.get(key)[0].header;
+                if (sg._y.includes(NaN) === false) {
+                    if (i === 0) {
+                        sampleRate = sg.sampleRate();
+                        zTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');  // starting time to second
+                    } else {
+                        const channelZeroTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');
+                        if (channelZeroTime.getTime() < zTime.getTime()) {
+                            zTime = channelZeroTime;
+                            rescan = true;
+                        }
+                    }
+                    chans[i] = {};
+                    chans[i].station = sg.codes();
+                    chans[i].start = sg._start.toDate();
+                    // tenthMilli from startBTime + microsecond from Blockette 1001
+                    chans[i].microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+                    chans[i].data = [];
+                    for (let k = 0; k < sg.numPoints(); k++) {
+                        chans[i].data.push({
+                            x: chans[i].microsec + (k * 1000000 / sampleRate),
+                            y: sg._y[k]
+                        });
+                    }
+                    chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;
+                    self.addPickData('P', sg, chans[i]);
+                    self.addPickData('S', sg, chans[i]);
+                    chans[i].container = i.toString() + 'Container';
+                    i ++;
+                }
+            });
+            if (rescan) {
+                console.log('rescan channels change in earliest time detected');
+                for (let j = 0; j < chans.length; j++) {
+                    const channelZeroTime = new Date(chans[j].start.toISOString().split('.')[0] + 'Z');
+                    if (channelZeroTime !== zTime) {
+                        for (let k = 0; k < chans[k].data.length; k++) {
+                            chans[k].data['x'] = chans[k].data['x']
+                               + (channelZeroTime.getTime() - zTime.getTime()) * 1000;
+                        }
+                    }
+                }
+            }
+            eventData['channels'] = chans;
+            eventData['zeroTime'] = zTime;
+            return(eventData);
+        };
+
+        this.getEvent = (event): any => {
             return new Promise(resolve => {
                 const mshr = new XMLHttpRequest();
                 mshr.open('GET', event.waveform_file, true);
                 mshr.responseType = 'arraybuffer';
+                self.loading = true;
                 mshr.onreadystatechange = () => {
                     if (mshr.readyState === mshr.DONE) {
                         if (mshr.status === 200)  {
-                            const records = miniseed.parseDataRecords(mshr.response);
-                            const channelsMap = miniseed.byChannel(records);
-                            const chans = [];
-                            let i = 0;
-                            let zTime = null;
-                            const eventData = {};
-                            let sampleRate = 0;
-                            let rescan = false;
-                            const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
-                            channelsMap.forEach( function(this, value, key, map) {
-                                const sg = miniseed.createSeismogram(channelsMap.get(key));
-                                const header = channelsMap.get(key)[0].header;
-                                if (sg._y.includes(NaN) === false) {
-                                    if (i === 0) {
-                                        sampleRate = sg.sampleRate();
-                                        zTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');  // starting time to second
-                                    } else {
-                                        const channelZeroTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');
-                                        if (channelZeroTime.getTime() < zTime.getTime()) {
-                                            zTime = channelZeroTime;
-                                            rescan = true;
-                                        }
-                                    }
-                                    chans[i] = {};
-                                    chans[i].station = sg.codes();
-                                    chans[i].start = sg._start.toDate();
-                                    // tenthMilli from startBTime + microsecond from Blockette 1001
-                                    chans[i].microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-                                    chans[i].data = [];
-                                    for (let k = 0; k < sg.numPoints(); k++) {
-                                        chans[i].data.push({
-                                            x: chans[i].microsec + (k * 1000000 / sampleRate),
-                                            y: sg._y[k]
-                                        });
-                                    }
-                                    chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;
-                                    addPickData('P', sg, chans[i]);
-                                    addPickData('S', sg, chans[i]);
-                                    chans[i].container = i.toString() + 'Container';
-
-                                    if ( $('#' + chans[i].container).length === 0 ) {
-                                        $('<div>').attr({
-                                            'id': chans[i].container,
-                                            'style': divStyle
-                                        }).appendTo('#waveform-panel');
-                                    }
-                                    if (i > 60) {
-                                        return false;
-                                    }
-                                    i ++;
-                                }
-                            });
-                            if (rescan) {
-                                console.log('rescan channels change in earliest time detected');
-                                for (let j = 0; j < chans.length; j++) {
-                                    const channelZeroTime = new Date(chans[j].start.toISOString().split('.')[0] + 'Z');
-                                    if (channelZeroTime !== zTime) {
-                                        for (let k = 0; k < chans[k].data.length; k++) {
-                                            chans[k].data['x'] = chans[k].data['x']
-                                               + (channelZeroTime.getTime() - zTime.getTime()) * 1000;
-                                        }
-                                    }
-                                }
-                            }
-                            eventData['channels'] = chans;
-                            eventData['zeroTime'] = zTime;
-                            resolve(eventData);
+                            self.loading = false;
+                            resolve (mshr.response);
                         } else {
+                            self.loading = false;
                             console.log('Error getting miniseed', mshr.statusText);
                         }
                     }
                 };
                 mshr.send();
             });
-        }
+        };
 
     }
 

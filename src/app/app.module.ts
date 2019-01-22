@@ -10,6 +10,7 @@ import { AppComponent } from './app.component';
 import {EventsTreeComponent} from './events-tree.component';
 import { CatalogApiService } from './catalog-api.service';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
+import { NgxLoadingModule } from 'ngx-loading';
 
 
 @NgModule({
@@ -26,7 +27,8 @@ import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.comp
     HttpClientModule,
     DemoMaterialModule,
     ReactiveFormsModule,
-    AngularFontAwesomeModule
+    AngularFontAwesomeModule,
+    NgxLoadingModule.forRoot({})
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [CatalogApiService],
