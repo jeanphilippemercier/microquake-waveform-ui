@@ -71,8 +71,10 @@ export class AppComponent implements OnInit {
     private addPickData: Function;
     private toggleTooltip: Function;
     private back: Function;
-    private setPage: Function;
+    private showPage: Function;
     private page_size: number;
+
+    public page_number: number;
 
     public loading = false;
 
@@ -104,7 +106,9 @@ export class AppComponent implements OnInit {
         self.menu = document.querySelector('.menu');
         self.menuVisible = false;
 
-        self.page_size = 10;
+        self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
+        self.page_number = 0;
+
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -126,19 +130,22 @@ export class AppComponent implements OnInit {
                         const eventData = self.parseMiniseed(eventFile);
                         self.allChannels = eventData.channels;
                         self.zeroTime = eventData.zeroTime;
-                        self.setPage(1);
-                        console.log(self.activeChannels);
-                        self.renderCharts();
-                        self.setChartKeys();
+                        self.page_number = 1;
+                        self.showPage(self.page_number, self.page_size);
+                        console.log(self.allChannels.length);
                     }
                 });
                 self.getEventInfo(event);
             }
         };
 
-        this.setPage = pageNumber => {
-            self.activeChannels = self.allChannels.slice((pageNumber - 1) * self.page_size, pageNumber * self.page_size);
-
+        this.showPage = (pageNumber, pageSize) => {
+            if (self.allChannels.length > 0 && pageNumber > 0 && (pageNumber - 1) * pageSize < self.allChannels.length) {
+                self.activeChannels = self.allChannels.slice
+                    ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allChannels.length));
+                self.renderCharts();
+                self.setChartKeys();
+            }
         };
 
         this.toggleMenu = command => {
@@ -809,6 +816,32 @@ export class AppComponent implements OnInit {
             });
         };
 
+        $('#nextPage').on('click', () => {
+            if (self.allChannels &&
+                    self.allChannels.hasOwnProperty('length') &&
+                    self.allChannels.length > 0 &&
+                    self.page_number < Math.ceil(self.allChannels.length / self.page_size)) {
+                self.destroyCharts();
+                self.page_number ++;
+                console.log(self.page_number);
+                self.showPage(self.page_number, self.page_size);
+            }
+        });
+
+        $('#previousPage').on('click', () => {
+            if (self.allChannels &&
+                    self.allChannels.hasOwnProperty('length') &&
+                    self.allChannels.length > 0 &&
+                    self.page_number > 1) {
+                self.destroyCharts();
+                self.page_number --;
+                console.log(self.page_number);
+                self.showPage(self.page_number, self.page_size);
+            }
+        });
+
+
     }
+
 
 }
