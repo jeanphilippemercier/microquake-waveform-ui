@@ -72,10 +72,10 @@ export class AppComponent implements OnInit {
     private toggleTooltip: Function;
     private back: Function;
     private showPage: Function;
+    private pageChange: Function;
 
     private page_size: number;
     public page_number: number;
-    public total_pages: number;
 
     public loading = false;
 
@@ -97,7 +97,7 @@ export class AppComponent implements OnInit {
         self.showHelp = false;
         self.zoomAll = false;
 
-        self.convYUnits = 0.001; // factor to convert input units (m) to mmm
+        self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
 
         self.selected = -1;
@@ -109,8 +109,6 @@ export class AppComponent implements OnInit {
 
         self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
         self.page_number = 0;
-        self.total_pages = 0;
-
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -126,7 +124,6 @@ export class AppComponent implements OnInit {
 
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file')) {
-                self.destroyCharts();
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
@@ -135,10 +132,9 @@ export class AppComponent implements OnInit {
                             self.zeroTime = eventData.zeroTime;
                             if (self.allChannels.length > 0) {
                                 self.page_number = 1;
-                                self.total_pages = Math.ceil(self.allChannels.length / self.page_size);
-                                self.showPage(self.page_number, self.page_size);
+                                self.pageChange();
                             }
-                            console.log(self.allChannels.length);
+                            console.log('Loaded data for ' + self.allChannels.length + ' channels');
                         }
                     }
                 });
@@ -147,12 +143,17 @@ export class AppComponent implements OnInit {
         };
 
         this.showPage = (pageNumber, pageSize) => {
-            if (pageNumber > 0 && pageNumber <= self.total_pages) {
+            if (pageNumber > 0 && pageNumber <= Math.ceil(self.allChannels.length / self.page_size)) {
                 self.activeChannels = self.allChannels.slice
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allChannels.length));
                 self.renderCharts();
                 self.setChartKeys();
             }
+        };
+
+        this.pageChange = () => {
+            self.destroyCharts();
+            self.showPage(self.page_number, self.page_size);
         };
 
         this.toggleMenu = command => {
@@ -166,15 +167,15 @@ export class AppComponent implements OnInit {
           self.toggleMenu('show');
         };
 
-        this.maxValue = (dataPoints, res) => {
-            res = res ? res : 10;
+        this.maxValue = (dataPoints) => {
             let maximum = Math.abs(dataPoints[0].y);
             for (let i = 0; i < dataPoints.length; i++) {
                 if (Math.abs(dataPoints[i].y) > maximum) {
                     maximum = Math.abs(dataPoints[i].y);
                 }
             }
-            return Math.ceil(maximum / (self.convYUnits / res)) * (self.convYUnits / res);
+            const ret = Math.ceil(maximum * (self.convYUnits * 1000)) / (self.convYUnits * 1000);
+            return ret;
         };
 
         this.destroyCharts = () => {
@@ -191,6 +192,8 @@ export class AppComponent implements OnInit {
            // Chart Options, Render
 
             for (let i = 0; i < self.activeChannels.length; i++) {
+
+                self.activeChannels[i].container = i.toString() + 'Container';
 
                 if ( $('#' + self.activeChannels[i].container).length === 0 ) {
                     $('<div>').attr({
@@ -232,9 +235,9 @@ export class AppComponent implements OnInit {
                         enabled: self.showTooltip,
                         contentFormatter: function (e) {
                             const content = ' ' +
-                             '<strong>' + e.entries[0].dataPoint.y / self.convYUnits + ' mm/s</strong>' +
+                             '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000) / 1000 + ' mm/s</strong>' +
                              '<br/>' +
-                             '<strong>' + e.entries[0].dataPoint.x / 1000000 + ' s</strong>';
+                             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000) / 1000 + ' s</strong>';
                             return content;
                         }
                     },
@@ -256,14 +259,15 @@ export class AppComponent implements OnInit {
                         stripLines: self.activeChannels[i].picks
                     },
                     axisY: {
-                        minimum: -self.getYmax(i),
-                        maximum: self.getYmax(i),
+                        // minimum: -self.getYmax(i),
+                        // maximum: self.getYmax(i),
+                        interval: self.commonYState ? null : self.getYmax(i) / 2,
                         includeZero: true,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
                                 return  '0 mm/s';
                             } else {
-                                return  e.value / self.convYUnits;
+                                return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
                             }
                         }
                     },
@@ -566,16 +570,17 @@ export class AppComponent implements OnInit {
         };
 
         this.resetChartViewY = (chart) => {
-            const channel = parseInt( chart.container.id.replace('Container', ''), 10);
+            const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.minimum = -self.getYmax(channel);
-            chart.options.axisY.maximum = self.getYmax(channel);
+            chart.options.axisY.maximum = self.commonYState ? self.getYmax(channel) : null;
+            chart.options.axisY.minimum = self.commonYState ? -chart.options.axisY.maximum : null;
+            chart.options.axisY.interval = self.commonYState ? chart.options.axisY.maximum / 2 : null;
             chart.render();
         };
 
         this.resetChartViewXY = (chart) => {
-            const channel = parseInt( chart.container.id.replace('Container', ''), 10);
+            const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisX.viewportMinimum = self.getXvpMin();
             chart.options.axisX.viewportMaximum = self.getXvpMax();
             chart.options.axisX.minimum = 0;
@@ -584,14 +589,15 @@ export class AppComponent implements OnInit {
             chart.options.viewportMaxStack = [];
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.minimum = -self.getYmax(channel);
             chart.options.axisY.maximum = self.getYmax(channel);
+            chart.options.axisY.minimum = -chart.options.axisY.maximum;
             chart.render();
         };
 
         this.getXmax = (pos) => {
+            const endMicrosec = self.activeChannels[pos].microsec + self.activeChannels[pos].duration;
             return self.commonTimeState ?
-                Math.max(self.activeChannels[pos].duration, environment.fixedDuration * 1000000) :  self.activeChannels[pos].duration;
+                Math.max(endMicrosec, environment.fixedDuration * 1000000) :  endMicrosec;
         };
 
         this.getXvpMax = () => {
@@ -612,7 +618,7 @@ export class AppComponent implements OnInit {
         };
 
         this.getYmax = (channel) => {
-            return self.commonYState ?  self.getValueMaxAll() : self.maxValue(self.activeChannels[channel].data, 100);
+            return self.commonYState ?  self.getValueMaxAll() : self.maxValue(self.activeChannels[channel].data, null);
         };
 
         this.getAxisMinAll = (isXaxis) => {
@@ -774,25 +780,26 @@ export class AppComponent implements OnInit {
                     chans[i].data = [];
                     for (let k = 0; k < sg.numPoints(); k++) {
                         chans[i].data.push({
-                            x: chans[i].microsec + (k * 1000000 / sampleRate),
+                            x: chans[i].microsec + (k * 1000000 / sampleRate),   // microsecond offset from zeroTime
                             y: sg._y[k]
                         });
                     }
-                    chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;
+                    chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;  // in microseconds
                     self.addPickData('P', sg, chans[i]);
                     self.addPickData('S', sg, chans[i]);
-                    chans[i].container = i.toString() + 'Container';
+                    chans[i].index = i.toString();
                     i ++;
                 }
             });
             if (rescan) {
-                console.log('rescan channels change in earliest time detected');
+                console.log('***rescan channels change in earliest time detected');
                 for (let j = 0; j < chans.length; j++) {
                     const channelZeroTime = new Date(chans[j].start.toISOString().split('.')[0] + 'Z');
                     if (channelZeroTime !== zTime) {
-                        for (let k = 0; k < chans[k].data.length; k++) {
-                            chans[k].data['x'] = chans[k].data['x']
-                               + (channelZeroTime.getTime() - zTime.getTime()) * 1000;
+                        const offset = (channelZeroTime.getTime() - zTime.getTime()) * 1000;
+                        chans[j].microsec = chans[j].microsec + offset;
+                        for (let k = 0; k < chans[j].data.length; k++) {
+                            chans[j].data[k]['x'] = chans[j].data[k]['x'] + offset;
                         }
                     }
                 }
@@ -823,30 +830,5 @@ export class AppComponent implements OnInit {
             });
         };
 
-        $('#nextPage').on('click', () => {
-            if (self.allChannels &&
-                    self.allChannels.hasOwnProperty('length') &&
-                    self.allChannels.length > 0 &&
-                    self.page_number < self.total_pages) {
-                self.destroyCharts();
-                self.page_number ++;
-                self.showPage(self.page_number, self.page_size);
-            }
-        });
-
-        $('#previousPage').on('click', () => {
-            if (self.allChannels &&
-                    self.allChannels.hasOwnProperty('length') &&
-                    self.allChannels.length > 0 &&
-                    self.page_number > 1) {
-                self.destroyCharts();
-                self.page_number --;
-                self.showPage(self.page_number, self.page_size);
-            }
-        });
-
-
     }
-
-
 }

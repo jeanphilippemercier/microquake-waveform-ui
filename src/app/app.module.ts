@@ -11,6 +11,7 @@ import {EventsTreeComponent} from './events-tree.component';
 import { CatalogApiService } from './catalog-api.service';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
+import { NgxPaginationModule } from 'ngx-pagination';
 
 
 @NgModule({
@@ -28,7 +29,8 @@ import { NgxLoadingModule } from 'ngx-loading';
     DemoMaterialModule,
     ReactiveFormsModule,
     AngularFontAwesomeModule,
-    NgxLoadingModule.forRoot({})
+    NgxLoadingModule.forRoot({}),
+    NgxPaginationModule
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [CatalogApiService],

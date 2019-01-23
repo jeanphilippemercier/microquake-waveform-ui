@@ -9,8 +9,8 @@ export const environment = {
   apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog',
   // viewer chart height in pixels
   chartHeight: 120,
-  // page Y offset to start channel viewers due to toolbars, etc.
-  pageOffsetY: 40,
+  // page Y offset to start channel viewers due to toolbars, pagination, etc.
+  pageOffsetY: 70,
   // fixed duration to display, in seconds
   fixedDuration: 2,
   // steps for wheel mouse zoom sensitivity

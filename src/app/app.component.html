@@ -2,6 +2,7 @@
 <header></header>
 <div class='container-fluid content'> <!-- container centers content on large screens -->
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
+  <div *ngFor="let item of allChannels | paginate: { itemsPerPage: page_size, currentPage: page_number }"></div>
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
       <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
@@ -11,8 +12,6 @@
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
       <div class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position: fixed;'>
-          <button id='nextPage' title='Next Page' type='button' class='btn btn-primary'>Next Page <fa name='chevron-right' size='lg'></fa></button>
-          <button id='previousPage' title='Previous Page' type='button' class='btn btn-primary'>Previous Page <fa name='chevron-left' size='lg'></fa></button>
           <button id='commonTime' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'>Common Time <fa name='arrows-h' size='lg'></fa></button>
           <button id='commonAmplitude' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Common Amplitude <fa name='arrows-v' size='lg'></fa></button>
           <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Zoom All <fa name='link' size='lg'></fa></button>
@@ -23,7 +22,8 @@
             <app-help-dialog></app-help-dialog>
           </div>
       </div>
-      <div id='waveform-panel' style='position: relative; top: 40px'>Page {{page_number}} of {{total_pages}}
+      <div id='waveform-panel' style='position: relative; top: 40px'>
+        <pagination-controls (pageChange)="page_number = $event; pageChange()"></pagination-controls>
       </div>
     </div>
   </div>
