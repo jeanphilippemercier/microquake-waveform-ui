@@ -7,7 +7,6 @@
       <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
       <div class='mat-app-background basic-container'>
         <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
-        <!--app-events-tree> {{message}} </app-events-tree-->
       </div>
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
@@ -24,7 +23,7 @@
             <app-help-dialog></app-help-dialog>
           </div>
       </div>
-      <div id='waveform-panel' style='position: relative; top: 40px'>
+      <div id='waveform-panel' style='position: relative; top: 40px'>Page {{page_number}} of {{total_pages}}
       </div>
     </div>
   </div>

@@ -72,9 +72,10 @@ export class AppComponent implements OnInit {
     private toggleTooltip: Function;
     private back: Function;
     private showPage: Function;
-    private page_size: number;
 
+    private page_size: number;
     public page_number: number;
+    public total_pages: number;
 
     public loading = false;
 
@@ -108,6 +109,7 @@ export class AppComponent implements OnInit {
 
         self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
         self.page_number = 0;
+        self.total_pages = 0;
 
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
@@ -128,11 +130,16 @@ export class AppComponent implements OnInit {
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
-                        self.allChannels = eventData.channels;
-                        self.zeroTime = eventData.zeroTime;
-                        self.page_number = 1;
-                        self.showPage(self.page_number, self.page_size);
-                        console.log(self.allChannels.length);
+                        if (eventData && eventData.hasOwnProperty('channels')) {
+                            self.allChannels = eventData.channels;
+                            self.zeroTime = eventData.zeroTime;
+                            if (self.allChannels.length > 0) {
+                                self.page_number = 1;
+                                self.total_pages = Math.ceil(self.allChannels.length / self.page_size);
+                                self.showPage(self.page_number, self.page_size);
+                            }
+                            console.log(self.allChannels.length);
+                        }
                     }
                 });
                 self.getEventInfo(event);
@@ -140,7 +147,7 @@ export class AppComponent implements OnInit {
         };
 
         this.showPage = (pageNumber, pageSize) => {
-            if (self.allChannels.length > 0 && pageNumber > 0 && (pageNumber - 1) * pageSize < self.allChannels.length) {
+            if (pageNumber > 0 && pageNumber <= self.total_pages) {
                 self.activeChannels = self.allChannels.slice
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allChannels.length));
                 self.renderCharts();
@@ -820,10 +827,9 @@ export class AppComponent implements OnInit {
             if (self.allChannels &&
                     self.allChannels.hasOwnProperty('length') &&
                     self.allChannels.length > 0 &&
-                    self.page_number < Math.ceil(self.allChannels.length / self.page_size)) {
+                    self.page_number < self.total_pages) {
                 self.destroyCharts();
                 self.page_number ++;
-                console.log(self.page_number);
                 self.showPage(self.page_number, self.page_size);
             }
         });
@@ -835,7 +841,6 @@ export class AppComponent implements OnInit {
                     self.page_number > 1) {
                 self.destroyCharts();
                 self.page_number --;
-                console.log(self.page_number);
                 self.showPage(self.page_number, self.page_size);
             }
         });
