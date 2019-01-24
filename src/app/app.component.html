@@ -6,8 +6,23 @@
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
       <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
-      <div class='mat-app-background basic-container'>
+      <div class='mat-app-background basic-container' style="overflow: auto" [style.height.px]="tree_height">
         <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
+      </div>
+      <!--<div style="display: none;" id="eventInfoCard" class="mb-0">-->
+      <div style="overflow: auto" [style.height.px]="tree_height/2" id="eventInfoCard" class="mb-0">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Event Information</h5>
+            <p class="card-text" id="infoTime"></p>
+            <p class="card-text" id="infoEventType"></p>
+            <p class="card-text" id="infoEvalStatus"></p>
+            <p class="card-text" id="infoType"></p>
+            <p class="card-text" id="infoMagnitude"></p>
+            <p class="card-text" id="infoEvalMode"></p>
+            <p class="card-text" id="infoStatus"></p>
+          </div>
+        </div>
       </div>
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->

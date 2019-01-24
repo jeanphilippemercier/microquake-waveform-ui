@@ -76,13 +76,27 @@ export class AppComponent implements OnInit {
 
     private page_size: number;
     public page_number: number;
+    public tree_height = window.innerHeight * 0.666;
 
     public loading = false;
 
     getNotification(message) {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+      '    September', 'October', 'November', 'December'];
         console.log(message);
         this.eventMessage = message;
         this.loadEvent(message);
+        const dt = new Date(message.time_utc);
+        $('#infoTime')[0].innerHTML = monthNames[dt.getMonth()] + ' ' +
+            ('0' + dt.getDate()).slice(-2) + ' ' +
+            dt.getFullYear() + ', ' +
+            dt.toLocaleTimeString('en-gb') + message.time_utc.slice(-8, -1);
+        $('#infoMagnitude')[0].innerHTML = 'Magnitude: ' + message.magnitude;
+        $('#infoEventType')[0].innerHTML = 'Type: ' + message.event_type;
+        $('#infoEvalStatus')[0].innerHTML = 'Evaluation Status: ' + message.eval_status;
+        $('#infoType')[0].innerHTML = 'Type: ' + message.type;
+        $('#infoEvalMode')[0].innerHTML = 'Evaluation Mode: ' + message.evaluation_mode;
+        $('#infoStatus')[0].innerHTML = 'Status: ' + message.status;
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -109,6 +123,7 @@ export class AppComponent implements OnInit {
 
         self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
         self.page_number = 0;
+        console.log(self.tree_height);
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
