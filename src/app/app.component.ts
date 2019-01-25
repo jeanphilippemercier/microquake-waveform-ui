@@ -5,6 +5,7 @@ import * as CanvasJS from './canvasjs.min';
 import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,7 @@ export class AppComponent implements OnInit {
     public catalog: any;
     public allChannels: any[];
     public activeChannels: any[];
-    public zeroTime: Date;
+    public zeroTime: any;
 
     public commonTimeState: Boolean;
     public commonYState: Boolean;
@@ -76,27 +77,36 @@ export class AppComponent implements OnInit {
 
     private page_size: number;
     public page_number: number;
-    public tree_height = window.innerHeight * 0.666;
+    public tree_height = window.innerHeight * 0.66;
 
     public loading = false;
 
     getNotification(message) {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-      '    September', 'October', 'November', 'December'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+      '    Sep', 'Oct', 'Nov', 'Dec'];
         console.log(message);
         this.eventMessage = message;
-        this.loadEvent(message);
+        if (message.action === 'load') {
+            this.loadEvent(message);
+        }
         const dt = new Date(message.time_utc);
-        $('#infoTime')[0].innerHTML = monthNames[dt.getMonth()] + ' ' +
-            ('0' + dt.getDate()).slice(-2) + ' ' +
+        $('#infoTime')[0].innerHTML = ('0' + dt.getDate()).slice(-2) + ' ' +
+            monthNames[dt.getMonth()] + ' ' +
             dt.getFullYear() + ', ' +
-            dt.toLocaleTimeString('en-gb') + message.time_utc.slice(-8, -1);
-        $('#infoMagnitude')[0].innerHTML = 'Magnitude: ' + message.magnitude;
-        $('#infoEventType')[0].innerHTML = 'Type: ' + message.event_type;
-        $('#infoEvalStatus')[0].innerHTML = 'Evaluation Status: ' + message.eval_status;
-        $('#infoType')[0].innerHTML = 'Type: ' + message.type;
-        $('#infoEvalMode')[0].innerHTML = 'Evaluation Mode: ' + message.evaluation_mode;
-        $('#infoStatus')[0].innerHTML = 'Status: ' + message.status;
+            dt.toLocaleTimeString('en-gb') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
+        $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + '(' + message.magnitude_type + ')';
+        $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>' + 'X:' + message.x +
+            'm East ' + 'Y:' + message.y + 'm North ' + 'Z:' + message.z + 'm Up';
+        const event_type = message.event_type === 'earthquake' ? 'seismic event (E)' :
+           message.event_type === 'blast' || message.event_type === 'explosion' ? 'blast (B)' : 'other (O)';
+        $('#infoEventType')[0].innerHTML = '<strong>Event type: </strong>' + event_type;
+        const eval_status = message.eval_status === 'A' ? 'accepted (A)' : 'rejected (R)';
+        $('#infoEvalStatus')[0].innerHTML = '<strong>Evaluation status: </strong>' + eval_status;
+        $('#infoEvalMode')[0].innerHTML = '<strong>Evaluation mode: </strong>' + (message.evaluation_mode ? message.evaluation_mode : '-');
+        $('#infoStatus')[0].innerHTML = '<strong>Status: </strong>' + (message.status ? message.status : '-');
+        $('#infoPicks')[0].innerHTML = '<strong>Picks: </strong>' + (message.npick ? message.npick : '-');
+        // $('#infoTimeRes')[0].innerHTML = '<strong>Time residual: </strong>' + (message.time_residual ? message.time_residual : '-');
+        // $('#infoUncertainty')[0].innerHTML = '<strong>Uncertainty: </strong>' + (message.uncertainty ? message.uncertainty : '-');
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -772,30 +782,29 @@ export class AppComponent implements OnInit {
             let zTime = null;
             const eventData = {};
             let sampleRate = 0;
-            let rescan = false;
+            let changeOriginTime = false;
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
                 if (sg._y.includes(NaN) === false) {
                     if (i === 0) {
                         sampleRate = sg.sampleRate();
-                        zTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');  // starting time to second
+                        zTime = sg.start();  // starting time (use it up to second)
                     } else {
-                        const channelZeroTime = new Date(sg._start.toISOString().split('.')[0] + 'Z');
-                        if (channelZeroTime.getTime() < zTime.getTime()) {
-                            zTime = channelZeroTime;
-                            rescan = true;
+                        if (!sg.start().isSame(zTime, 'second')) {
+                            zTime = moment.min(zTime, sg.start());
+                            changeOriginTime = true;
                         }
                     }
                     chans[i] = {};
                     chans[i].station = sg.codes();
-                    chans[i].start = sg._start.toDate();
-                    // tenthMilli from startBTime + microsecond from Blockette 1001
+                    chans[i].start = sg.start();  // moment object (good up to milisecond)
+                    // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     chans[i].microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
                     chans[i].data = [];
                     for (let k = 0; k < sg.numPoints(); k++) {
                         chans[i].data.push({
-                            x: chans[i].microsec + (k * 1000000 / sampleRate),   // microsecond offset from zeroTime
+                            x: chans[i].microsec + (k * 1000000 / sampleRate),   // trace microsecond offset
                             y: sg._y[k]
                         });
                     }
@@ -806,15 +815,14 @@ export class AppComponent implements OnInit {
                     i ++;
                 }
             });
-            if (rescan) {
-                console.log('***rescan channels change in earliest time detected');
+            if (changeOriginTime) {
+                console.log('***changeOriginTime channels change in earliest time second detected');
                 for (let j = 0; j < chans.length; j++) {
-                    const channelZeroTime = new Date(chans[j].start.toISOString().split('.')[0] + 'Z');
-                    if (channelZeroTime !== zTime) {
-                        const offset = (channelZeroTime.getTime() - zTime.getTime()) * 1000;
+                    if (!chans[j].start.isSame(zTime, 'second')) {
+                        const offset = chans[j].start.diff(zTime, 'seconds') * 1000000;
                         chans[j].microsec = chans[j].microsec + offset;
                         for (let k = 0; k < chans[j].data.length; k++) {
-                            chans[j].data[k]['x'] = chans[j].data[k]['x'] + offset;
+                            chans[j].data[k]['x'] = chans[j].data[k]['x'] + offset;  // microsecond offset from zeroTime
                         }
                     }
                 }

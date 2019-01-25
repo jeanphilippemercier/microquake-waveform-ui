@@ -22,9 +22,16 @@ export class FileNode {
   event_file: string;
   event_type: string;       // from api, "earthquake" or "explosion"
   magnitude: number;
+  magnitude_type: string;   // from api, "preliminary" or "reviewed"
   status: string;           // from api, "preliminary" or "reviewed"
   time_utc: string;
   waveform_file: string;
+  x: number;
+  y: number;
+  z: number;
+  npick: number;
+  time_residual: number;
+  uncertainty: number;
 }
 
 /** Flat node with expandable and level information */
@@ -32,8 +39,10 @@ export class FileFlatNode {
   constructor(
     public expandable: boolean, public name: string, public level: number,
       public eval_status: string, public type: string, public evaluation_mode: string,
-      public event_file: string, public event_type, public magnitude: number,
-      public status: string, public time_utc, public waveform_file: string ) {}
+      public event_file: string, public event_type, public magnitude: number, public magnitude_type: string,
+      public status: string, public time_utc, public waveform_file: string,
+      public x: number, public y: number, public z: number, public npick: number,
+      public time_residual: number, public uncertainty: number) {}
 }
 
 /**
@@ -137,11 +146,18 @@ export class FileDatabase {
                           value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
             node.evaluation_mode = value.evaluation_mode;
             node.magnitude = value.magnitude.toPrecision(2);
+            node.magnitude_type = value.magnitude_type;
             node.event_file = value.event_file;
             node.event_type = value.event_type;
             node.status = value.status;
             node.time_utc = value.time_utc;
             node.waveform_file = value.waveform_file;
+            node.x = value.x;
+            node.y = value.y;
+            node.z = value.z;
+            node.npick = value.npick;
+            node.time_residual = value.time_residual;
+            node.uncertainty = value.uncertainty;
           } else {
             node.type = value;
           }
@@ -180,16 +196,31 @@ export class EventsTreeComponent {
 
   transformer = (node: FileNode, level: number) => {
     return new FileFlatNode(!!node.children, node.name, level, node.eval_status, node.type,
-      node.evaluation_mode, node.event_file, node.event_type, node.magnitude,
-      node.status, node.time_utc, node.waveform_file);
+      node.evaluation_mode, node.event_file, node.event_type, node.magnitude, node.magnitude_type,
+      node.status, node.time_utc, node.waveform_file, node.x, node.y, node.z,
+      node.npick, node.time_residual, node.uncertainty);
   }
 
   selectEvent() {
 
+    if (this.hasOwnProperty('selectedNode')) {
+
+      const message = this['selectedNode'];
+      message.action = 'load';
+
+      this.messageEvent.emit(message);
+    }
+
+  }
+
+  activeEvent() {
+
     if (this.hasOwnProperty('activeNode')) {
 
-      this.messageEvent.emit(this['activeNode']);
+      const message = this['activeNode'];
+      message.action = 'info';
 
+      this.messageEvent.emit(message);
     }
 
   }
