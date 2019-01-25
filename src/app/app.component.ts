@@ -94,9 +94,13 @@ export class AppComponent implements OnInit {
             monthNames[dt.getMonth()] + ' ' +
             dt.getFullYear() + ', ' +
             dt.toLocaleTimeString('en-gb') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
-        $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + '(' + message.magnitude_type + ')';
-        $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>' + 'X:' + message.x +
-            'm East ' + 'Y:' + message.y + 'm North ' + 'Z:' + message.z + 'm Up';
+        $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + ' (' + message.magnitude_type + ')';
+        $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>';
+            // + 'X:' + message.x +
+            // 'm East ' + 'Y:' + message.y + 'm North ' + 'Z:' + message.z + 'm Up';
+        $('#infoLocationX')[0].innerHTML = '<strong>X: </strong>' + message.x + 'm East ';
+        $('#infoLocationY')[0].innerHTML = '<strong>Y: </strong>' + message.y + 'm North ';
+        $('#infoLocationZ')[0].innerHTML = '<strong>Z: </strong>' + message.z + 'm Up ';
         const event_type = message.event_type === 'earthquake' ? 'seismic event (E)' :
            message.event_type === 'blast' || message.event_type === 'explosion' ? 'blast (B)' : 'other (O)';
         $('#infoEventType')[0].innerHTML = '<strong>Event type: </strong>' + event_type;
