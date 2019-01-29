@@ -12,6 +12,7 @@ import { CatalogApiService } from './catalog-api.service';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
+import { TreeModule } from 'angular-tree-component';
 
 
 @NgModule({
@@ -30,7 +31,8 @@ import { NgxPaginationModule } from 'ngx-pagination';
     ReactiveFormsModule,
     AngularFontAwesomeModule,
     NgxLoadingModule.forRoot({}),
-    NgxPaginationModule
+    NgxPaginationModule,
+    TreeModule.forRoot()
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [CatalogApiService],

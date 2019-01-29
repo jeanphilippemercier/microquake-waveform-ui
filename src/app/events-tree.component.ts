@@ -1,13 +1,14 @@
 /*jshint esversion: 6 */
-import {FlatTreeControl} from '@angular/cdk/tree';
-import {Component, Injectable, OnInit, Output, EventEmitter} from '@angular/core';
-import {MatTreeFlatDataSource, MatTreeFlattener} from '@angular/material/tree';
+import {NestedTreeControl} from '@angular/cdk/tree';
+import {Component, Injectable, OnInit, AfterViewInit, Output, EventEmitter, ViewChild} from '@angular/core';
+import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { CatalogApiService } from './catalog-api.service';
-import * as miniseed from 'seisplotjs-miniseed';
+import * as moment from 'moment';
+import { TreeComponent, TreeModel, TreeNode } from 'angular-tree-component';
 
 /**
  * File node data with nested structure.
@@ -32,17 +33,8 @@ export class FileNode {
   npick: number;
   time_residual: number;
   uncertainty: number;
-}
-
-/** Flat node with expandable and level information */
-export class FileFlatNode {
-  constructor(
-    public expandable: boolean, public name: string, public level: number,
-      public eval_status: string, public type: string, public evaluation_mode: string,
-      public event_file: string, public event_type, public magnitude: number, public magnitude_type: string,
-      public status: string, public time_utc, public waveform_file: string,
-      public x: number, public y: number, public z: number, public npick: number,
-      public time_residual: number, public uncertainty: number) {}
+  date: string;
+  level: number;
 }
 
 /**
@@ -59,33 +51,86 @@ export class FileDatabase {
 
   get data(): FileNode[] { return this.dataChange.value; }
 
-  constructor(private http: HttpClient) {
+  public min_time: any;
+  public max_time: any;
+  public treeObject: any;
+  public date: string;
+
+  constructor(private _catalogService: CatalogApiService) {
     this.initialize();
   }
-
   initialize() {
-    const endTime =  new Date();
-    const startTime = new Date(endTime.getTime() - 2 * 31536000000);
-    const API_URL = environment.apiUrl + '?start_time=' + startTime.toISOString() + '&end_time=' + endTime.toISOString();
+    const self = this;
 
-    this.http.get(API_URL).subscribe(events => {
+    this._catalogService.get_boundaries().subscribe(bounds => {
+      if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
+        self.treeObject = self.createTree(bounds);
+        self.getEvents(bounds.max_time);
+      }
 
-//         console.log(events);
+    });
+  }
 
-        const treeObject = this.convertTree(events);
+  getEvents(date) {
+
+    const self = this;
+    this._catalogService.get_day_events(date).subscribe(events => {
+
+        if (Array.isArray(events)) {
+          events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+        }
+
+        this.treeObject = this.convertTree(events, this.treeObject);
 
         // Build the tree nodes from Json object. The result is a list of `FileNode` with nested
         //     file node as children.
-        const data = this.buildFileTree(treeObject, 0);
+        const data = this.buildFileTree(this.treeObject, 0);
 
         // Notify the change.
         this.dataChange.next(data);
-    });
+
+      },
+      err => console.error(err),
+      () => {
+        console.log('done loading');
+      }
+    );
 
   }
 
-  convertTree(dataObject) {
+
+  createTree(bounds) {
     const dataTree = {};
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'];
+
+    if (typeof bounds === 'object' && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
+      if (moment(bounds['min_time']).isValid() && moment(bounds['max_time']).isValid()) {
+        this.min_time = moment(bounds['min_time']);
+        this.max_time = moment(bounds['max_time']);
+        const date = this.max_time;
+        while (date.isSameOrAfter(this.min_time)) {
+          const year = date.year();
+          const month = date.month();
+          const day = ('0' + date.date()).slice(-2);
+          if (!dataTree.hasOwnProperty(year)) {
+            dataTree[year] = {};
+          }
+          if (!dataTree[year].hasOwnProperty(month)) {
+            dataTree[year][month] = {};
+          }
+          if (!dataTree[year][month].hasOwnProperty(day)) {
+            dataTree[year][month][day] = {};
+          }
+          date.subtract(1, 'days');
+        }
+      }
+    }
+    // console.log(dataTree);
+    return dataTree;
+  }
+
+  convertTree(dataObject, dataTree) {
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
@@ -93,7 +138,6 @@ export class FileDatabase {
             const d = new Date(value.time_utc);
             const microsec = value.time_utc.slice(-8, -1);
             const year = d.getFullYear();
-            // const month = monthNames[d.getMonth()];
             const month = d.getMonth();
             const day =  ('0' + d.getDate()).slice(-2);
             const event_time = d.toLocaleTimeString('en-gb') + microsec;
@@ -113,7 +157,6 @@ export class FileDatabase {
           }
       }
     }
-    // console.log(dataTree);
     return dataTree;
   }
 
@@ -127,6 +170,7 @@ export class FileDatabase {
     const numKeys = Object.keys(obj).map(function(item) {
       return parseInt(item, 10);
     });
+    const self = this;
     let sortedEntries = Object.keys(obj).sort().reverse();
     if (level < 2) {
       sortedEntries = numKeys.sort(function(a, b) { return b - a; }).map(String);
@@ -135,6 +179,10 @@ export class FileDatabase {
       const value = obj[key];
       const node = new FileNode();
       node.name = level === 1 ? monthNames[key] : key;
+      self.date = level === 0 ? key : level === 1 ? self.date.substring(0, 4) + '-' + ('0' + (1 + parseInt(key, 10)).toString()).slice(-2) :
+                  level === 2 ? self.date.substring(0, 7) + '-' + key : self.date;
+      node.date = level === 2 ? self.date : null;
+      node.level = level;
 
       if (value != null) {
         if (typeof value === 'object' && !value.hasOwnProperty('event_type')) {
@@ -178,28 +226,31 @@ export class FileDatabase {
   styleUrls: ['events-tree.component.css'],
   providers: [FileDatabase]
 })
-export class EventsTreeComponent {
-  treeControl: FlatTreeControl<FileFlatNode>;
-  treeFlattener: MatTreeFlattener<FileNode, FileFlatNode>;
-  dataSource: MatTreeFlatDataSource<FileNode, FileFlatNode>;
+export class EventsTreeComponent implements AfterViewInit {
+  treeControl: NestedTreeControl<FileNode>;
+  dataSource: MatTreeNestedDataSource<FileNode>;
 
   @Output() messageEvent = new EventEmitter();
 
-  constructor(database: FileDatabase) {
-    this.treeFlattener = new MatTreeFlattener(this.transformer, this._getLevel,
-      this._isExpandable, this._getChildren);
-    this.treeControl = new FlatTreeControl<FileFlatNode>(this._getLevel, this._isExpandable);
-    this.dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
+  @ViewChild('tree') tree;
 
-    database.dataChange.subscribe(data => this.dataSource.data = data);
+  constructor(private database: FileDatabase) {
+    this.treeControl = new NestedTreeControl<FileNode>(this._getChildren);
+    this.dataSource = new MatTreeNestedDataSource();
+
+    database.dataChange.subscribe(data => {
+      this.dataSource.data = data;
+      this.treeControl.dataNodes = data;
+    });
   }
 
-  transformer = (node: FileNode, level: number) => {
-    return new FileFlatNode(!!node.children, node.name, level, node.eval_status, node.type,
-      node.evaluation_mode, node.event_file, node.event_type, node.magnitude, node.magnitude_type,
-      node.status, node.time_utc, node.waveform_file, node.x, node.y, node.z,
-      node.npick, node.time_residual, node.uncertainty);
+  ngAfterViewInit() {
+    this.tree.treeControl.expandAll();
   }
+
+  hasNestedChild = (_: number, nodeData: FileNode) => !nodeData.type;
+
+  private _getChildren = (node: FileNode) => node.children;
 
   selectEvent() {
 
@@ -222,16 +273,24 @@ export class EventsTreeComponent {
 
       this.messageEvent.emit(message);
     }
-
   }
 
-  private _getLevel = (node: FileFlatNode) => node.level;
+  activeDay() {
+    if (this.hasOwnProperty('activeParent')) {
 
-  private _isExpandable = (node: FileFlatNode) => node.expandable;
+      const parent = this['activeParent'];
 
-  private _getChildren = (node: FileNode): Observable<FileNode[]> => observableOf(node.children);
+      if (parent.level === 2 && this.treeControl.isExpanded(parent) && this.treeControl.getDescendants(parent).length === 0) {
+        const date = moment(parent.date);
+        if (date.isValid()) {
+          this.database.getEvents(date);
+        }
+        console.log('need to load more data');
+      }
 
-  hasChild = (_: number, _nodeData: FileFlatNode) => _nodeData.expandable;
+    }
+  }
+
 }
 
 /**  Copyright 2018 Google Inc. All Rights Reserved.

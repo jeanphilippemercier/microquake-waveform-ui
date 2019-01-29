@@ -6,11 +6,13 @@ export const environment = {
   production: false,
 
   // URL of development API
-  apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog',
+  apiUrlCatalog: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog',
+  // URL of development API
+  apiUrlCatalogBoundaries: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog_boundaries',
   // viewer chart height in pixels
   chartHeight: 120,
   // page Y offset to start channel viewers due to toolbars, pagination, etc.
-  pageOffsetY: 70,
+  pageOffsetY: 90,
   // fixed duration to display, in seconds
   fixedDuration: 2,
   // steps for wheel mouse zoom sensitivity

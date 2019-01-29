@@ -77,13 +77,13 @@ export class AppComponent implements OnInit {
 
     private page_size: number;
     public page_number: number;
-    public tree_height = window.innerHeight * 0.66;
+    public window_height = window.innerHeight;
 
     public loading = false;
+    public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+      '    Sep', 'Oct', 'Nov', 'Dec'];
 
     getNotification(message) {
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
-      '    Sep', 'Oct', 'Nov', 'Dec'];
         console.log(message);
         this.eventMessage = message;
         if (message.action === 'load') {
@@ -91,7 +91,7 @@ export class AppComponent implements OnInit {
         }
         const dt = new Date(message.time_utc);
         $('#infoTime')[0].innerHTML = ('0' + dt.getDate()).slice(-2) + ' ' +
-            monthNames[dt.getMonth()] + ' ' +
+            this.monthNames[dt.getMonth()] + ' ' +
             dt.getFullYear() + ', ' +
             dt.toLocaleTimeString('en-gb') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
         $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + ' (' + message.magnitude_type + ')';
@@ -137,11 +137,24 @@ export class AppComponent implements OnInit {
 
         self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
         self.page_number = 0;
-        console.log(self.tree_height);
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
-
-        this._catalogService.get_recent_events_week().subscribe(data => {
+/*
+        this._catalogService.get_boundaries().subscribe(bounds => {
+            if (typeof bounds === 'object' && bounds.hasOwnProperty('max_time')) {
+                this._catalogService.get_day_events(bounds.max_time).subscribe(data => {
+                        this.catalog = data;
+                        this.catalog.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+                        const event = this.catalog[0];
+                        this.loadEvent(event);
+                    },
+                    err => console.error(err),
+                    () => console.log('done loading')
+                );
+            }
+        });
+/*
+        this._catalogService.get_day_events().subscribe(data => {
                 this.catalog = data;
                 this.catalog.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
                 const event = this.catalog[0];
@@ -150,7 +163,7 @@ export class AppComponent implements OnInit {
             err => console.error(err),
             () => console.log('done loading')
         );
-
+*/
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file')) {
                 self.getEvent(event).then(eventFile => {
@@ -164,6 +177,12 @@ export class AppComponent implements OnInit {
                                 self.pageChange();
                             }
                             console.log('Loaded data for ' + self.allChannels.length + ' channels');
+                            const dt = eventData.zeroTime.toDate();
+                            $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
+                                ('0' + dt.getDate()).slice(-2) + ' ' +
+                                this.monthNames[dt.getMonth()] + ' ' +
+                                dt.getFullYear() + ', ' +
+                                dt.toLocaleTimeString('en-gb');
                         }
                     }
                 });
