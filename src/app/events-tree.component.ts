@@ -5,10 +5,8 @@ import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree'
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
-import { HttpClient } from '@angular/common/http';
 import { CatalogApiService } from './catalog-api.service';
 import * as moment from 'moment';
-import { TreeComponent, TreeModel, TreeNode } from 'angular-tree-component';
 
 /**
  * File node data with nested structure.
@@ -35,6 +33,7 @@ export class FileNode {
   uncertainty: number;
   date: string;
   level: number;
+  event_resource_id: string;
 }
 
 /**
@@ -55,47 +54,85 @@ export class FileDatabase {
   public max_time: any;
   public treeObject: any;
   public date: string;
+  public eventId: string;
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
   }
   initialize() {
-    const self = this;
+
+    const url_string = window.location.href;
+    const url = new URL(url_string);
+    this.eventId = url.searchParams.get('id');
 
     this._catalogService.get_boundaries().subscribe(bounds => {
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
-        self.treeObject = self.createTree(bounds);
-        self.getEvents(bounds.max_time);
+        this.min_time = bounds['min_time'];
+        this.max_time = bounds['max_time'];
+        this.treeObject = this.createTree(bounds);
+        if (this.eventId) {
+           this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
+             this.getEventsForDate(event.time_utc);
+           });
+
+        } else {
+            this.getEventsForDate(bounds.max_time);
+        }
       }
 
     });
   }
 
-  getEvents(date) {
+  getEventsForDate(date) {
 
-    const self = this;
     this._catalogService.get_day_events(date).subscribe(events => {
 
         if (Array.isArray(events)) {
           events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
         }
 
+        if (this.max_time === date) {
+          this.eventId = events[0].event_resource_id;
+        }
+
         this.treeObject = this.convertTree(events, this.treeObject);
 
         // Build the tree nodes from Json object. The result is a list of `FileNode` with nested
         //     file node as children.
-        const data = this.buildFileTree(this.treeObject, 0);
+        let data = this.buildFileTree(this.treeObject, 0);
+
+        data = this.markNodeSelected(data);
 
         // Notify the change.
         this.dataChange.next(data);
 
       },
-      err => console.error(err),
-      () => {
-        console.log('done loading');
-      }
+      err => console.error(err)
+      // , () => console.log('done loading')
     );
 
+  }
+
+  markNodeSelected(data) {
+      for (let i = 0; i <= data.length - 1; i++) {
+        if (data[i].hasOwnProperty('children')) {
+          for (let j = 0; j <= data[i].children.length - 1; j++) {
+            if (data[i].children[j].hasOwnProperty('children')) {
+              for (let k = 0; k <= data[i].children[j].children.length - 1; k++) {
+                if (data[i].children[j].children[k].hasOwnProperty('children')) {
+                  for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
+                    if (data[i].children[j].children[k].children[m].event_resource_id === this.eventId) {
+                      data[i].children[j].children[k].children[m]['select'] = 'true';
+                      console.log(data[i].children[j].children[k].children[m]);
+                      return data;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
   }
 
 
@@ -103,30 +140,25 @@ export class FileDatabase {
     const dataTree = {};
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'];
-
-    if (typeof bounds === 'object' && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
-      if (moment(bounds['min_time']).isValid() && moment(bounds['max_time']).isValid()) {
-        this.min_time = moment(bounds['min_time']);
-        this.max_time = moment(bounds['max_time']);
-        const date = this.max_time;
-        while (date.isSameOrAfter(this.min_time)) {
-          const year = date.year();
-          const month = date.month();
-          const day = ('0' + date.date()).slice(-2);
-          if (!dataTree.hasOwnProperty(year)) {
-            dataTree[year] = {};
-          }
-          if (!dataTree[year].hasOwnProperty(month)) {
-            dataTree[year][month] = {};
-          }
-          if (!dataTree[year][month].hasOwnProperty(day)) {
-            dataTree[year][month][day] = {};
-          }
-          date.subtract(1, 'days');
+    if (moment(this.min_time).isValid() && moment(this.max_time).isValid()) {
+      const date = moment(this.max_time);
+      const dateMin = moment(this.min_time);
+      while (date.isSameOrAfter(dateMin)) {
+        const year = date.year();
+        const month = date.month();
+        const day = ('0' + date.date()).slice(-2);
+        if (!dataTree.hasOwnProperty(year)) {
+          dataTree[year] = {};
         }
+        if (!dataTree[year].hasOwnProperty(month)) {
+          dataTree[year][month] = {};
+        }
+        if (!dataTree[year][month].hasOwnProperty(day)) {
+          dataTree[year][month][day] = {};
+        }
+        date.subtract(1, 'days');
       }
     }
-    // console.log(dataTree);
     return dataTree;
   }
 
@@ -206,6 +238,7 @@ export class FileDatabase {
             node.npick = value.npick;
             node.time_residual = value.time_residual;
             node.uncertainty = value.uncertainty;
+            node.event_resource_id = value.event_resource_id;
           } else {
             node.type = value;
           }
@@ -226,7 +259,7 @@ export class FileDatabase {
   styleUrls: ['events-tree.component.css'],
   providers: [FileDatabase]
 })
-export class EventsTreeComponent implements AfterViewInit {
+export class EventsTreeComponent {
   treeControl: NestedTreeControl<FileNode>;
   dataSource: MatTreeNestedDataSource<FileNode>;
 
@@ -241,22 +274,55 @@ export class EventsTreeComponent implements AfterViewInit {
     database.dataChange.subscribe(data => {
       this.dataSource.data = data;
       this.treeControl.dataNodes = data;
-    });
-  }
 
-  ngAfterViewInit() {
-    this.tree.treeControl.expandAll();
+      if (data.length > 0) {
+        const message = this.findNode(data, database.eventId);
+        message['action'] = 'load';
+
+        this.messageEvent.emit(message);   // send message to load data
+        this.treeControl.expandAll();
+      }
+
+    });
   }
 
   hasNestedChild = (_: number, nodeData: FileNode) => !nodeData.type;
 
   private _getChildren = (node: FileNode) => node.children;
 
+  findNode(data, eventId) {
+    let message = {};
+    if (data.length === 0) {
+      return message;
+    }
+    for (let i = 0; i <= data.length - 1; i++) {
+      if (data[i].hasOwnProperty('children')) {
+        for (let j = 0; j <= data[i].children.length - 1; j++) {
+          if (data[i].children[j].hasOwnProperty('children')) {
+            for (let k = 0; k <= data[i].children[j].children.length - 1; k++) {
+              if (data[i].children[j].children[k].hasOwnProperty('children')) {
+                for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
+                  if (data[i].children[j].children[k].children[m].event_resource_id === eventId) {
+                    message = data[i].children[j].children[k].children[m];
+                    return message;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+
   selectEvent() {
 
     if (this.hasOwnProperty('selectedNode')) {
 
       const message = this['selectedNode'];
+      this.database.eventId = message.event_resource_id;  // save selection
       message.action = 'load';
 
       this.messageEvent.emit(message);
@@ -280,10 +346,10 @@ export class EventsTreeComponent implements AfterViewInit {
 
       const parent = this['activeParent'];
 
-      if (parent.level === 2 && this.treeControl.isExpanded(parent) && this.treeControl.getDescendants(parent).length === 0) {
+      if (parent.level === 2 && this.treeControl.getDescendants(parent).length === 0) {
         const date = moment(parent.date);
         if (date.isValid()) {
-          this.database.getEvents(date);
+          this.database.getEventsForDate(date);
         }
         console.log('need to load more data');
       }

@@ -9,6 +9,8 @@ export const environment = {
   apiUrlCatalog: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog',
   // URL of development API
   apiUrlCatalogBoundaries: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog_boundaries',
+  // URL of development API
+  apiUrlEvent: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/events',
   // viewer chart height in pixels
   chartHeight: 120,
   // page Y offset to start channel viewers due to toolbars, pagination, etc.

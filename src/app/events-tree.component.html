@@ -3,7 +3,7 @@
     <li class="mat-tree-node" [ngClass]="{ 'background-highlight': activeNode === node, 'accepted': node.eval_status === 'A', 'rejected': node.eval_status === 'R' }">
       <button mat-icon-button>
         <mat-icon>
-          {{selectedNode == node ? 'radio_button_checked' : 'radio_button_unchecked'}}
+          {{selectedNode == node || (!selectedNode && node.select)? 'radio_button_checked' : 'radio_button_unchecked'}}
         </mat-icon></button>
     {{node.eval_status}}{{node.type}} {{node.name}} {{node.magnitude}}
     </li>
@@ -16,7 +16,7 @@
                 [attr.aria-label]="'toggle ' + node.name"
                 (click)='activeParent = node; activeDay()'>
           <mat-icon class="mat-icon-rtl-mirror">
-            {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+            {{treeControl.isExpanded(node) && node.children.length > 0 ? 'expand_more' : 'chevron_right'}}
           </mat-icon>
         </button>
         {{node.name}}

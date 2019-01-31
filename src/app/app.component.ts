@@ -18,6 +18,7 @@ export class AppComponent implements OnInit {
 
     public catalog: any;
     public allChannels: any[];
+    public allPicks: any[];
     public activeChannels: any[];
     public zeroTime: any;
 
@@ -43,7 +44,6 @@ export class AppComponent implements OnInit {
     private destroyCharts: Function;
     private setChartKeys: Function;
     private getEvent: Function;
-    private getEventInfo: Function;
     private parseMiniseed: Function;
     private loadEvent: Function;
 
@@ -74,6 +74,7 @@ export class AppComponent implements OnInit {
     private back: Function;
     private showPage: Function;
     private pageChange: Function;
+    private sort_array_by: Function;
 
     private page_size: number;
     public page_number: number;
@@ -83,10 +84,13 @@ export class AppComponent implements OnInit {
     public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
       '    Sep', 'Oct', 'Nov', 'Dec'];
 
+    public currentEventId: string;
+
     getNotification(message) {
+        console.log('Message received');
         console.log(message);
         this.eventMessage = message;
-        if (message.action === 'load') {
+        if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
         }
         const dt = new Date(message.time_utc);
@@ -109,8 +113,6 @@ export class AppComponent implements OnInit {
         $('#infoEvalMode')[0].innerHTML = '<strong>Evaluation mode: </strong>' + (message.evaluation_mode ? message.evaluation_mode : '-');
         $('#infoStatus')[0].innerHTML = '<strong>Status: </strong>' + (message.status ? message.status : '-');
         $('#infoPicks')[0].innerHTML = '<strong>Picks: </strong>' + (message.npick ? message.npick : '-');
-        // $('#infoTimeRes')[0].innerHTML = '<strong>Time residual: </strong>' + (message.time_residual ? message.time_residual : '-');
-        // $('#infoUncertainty')[0].innerHTML = '<strong>Uncertainty: </strong>' + (message.uncertainty ? message.uncertainty : '-');
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -140,20 +142,6 @@ export class AppComponent implements OnInit {
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 /*
-        this._catalogService.get_boundaries().subscribe(bounds => {
-            if (typeof bounds === 'object' && bounds.hasOwnProperty('max_time')) {
-                this._catalogService.get_day_events(bounds.max_time).subscribe(data => {
-                        this.catalog = data;
-                        this.catalog.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-                        const event = this.catalog[0];
-                        this.loadEvent(event);
-                    },
-                    err => console.error(err),
-                    () => console.log('done loading')
-                );
-            }
-        });
-/*
         this._catalogService.get_day_events().subscribe(data => {
                 this.catalog = data;
                 this.catalog.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
@@ -164,30 +152,60 @@ export class AppComponent implements OnInit {
             () => console.log('done loading')
         );
 */
+
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file')) {
+                const id = event.event_resource_id;
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('channels')) {
                             self.allChannels = eventData.channels;
                             self.zeroTime = eventData.zeroTime;
+                            self.currentEventId = id;
                             if (self.allChannels.length > 0) {
-                                self.page_number = 1;
-                                self.pageChange();
+                                // get picks
+                                this._catalogService.get_picks_by_id(id).subscribe(picks => {
+                                  self.allPicks = picks;
+                                  this.addPickData();
+
+                                  if (Array.isArray(self.allChannels)) {
+                                      self.allChannels.sort
+                                          (this.sort_array_by('p-time_utc', false, function(x) { return x ? x : moment.now(); }));
+                                  }
+
+                                  // display data (first page)
+                                  self.page_number = 1;
+                                  self.pageChange();
+
+                                  console.log('Loaded data for ' + self.allChannels.length + ' channels');
+                                  const dt = eventData.zeroTime.toDate();
+                                  $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
+                                    ('0' + dt.getDate()).slice(-2) + ' ' +
+                                    this.monthNames[dt.getMonth()] + ' ' +
+                                    dt.getFullYear() + ', ' +
+                                    dt.toLocaleTimeString('en-gb');
+
+                                });
                             }
-                            console.log('Loaded data for ' + self.allChannels.length + ' channels');
-                            const dt = eventData.zeroTime.toDate();
-                            $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
-                                ('0' + dt.getDate()).slice(-2) + ' ' +
-                                this.monthNames[dt.getMonth()] + ' ' +
-                                dt.getFullYear() + ', ' +
-                                dt.toLocaleTimeString('en-gb');
                         }
                     }
                 });
-                self.getEventInfo(event);
             }
+        };
+
+        this.sort_array_by = (field, reverse, primer) => {
+
+           const key = primer ?
+               function(x) {return primer(x[field]); } :
+               function(x) {return x[field]; };
+
+           reverse = !reverse ? 1 : -1;
+
+           return function (a, b) {
+               const A = key(a), B = key(b);
+               return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1, 1][+!!reverse];
+           };
         };
 
         this.showPage = (pageNumber, pageSize) => {
@@ -761,40 +779,44 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.addPickData = (pickType, data, obj) => {
-            obj.picks = ( typeof obj.picks !== 'undefined' && obj.picks instanceof Array ) ? obj.picks : [];
-            const pickKey = pickType === 'P' ? 'p-pick' : pickType === 'S' ? 's-pick' : '';
-            if (pickKey !== '') {
-                if (data.hasOwnProperty(pickKey)) {
-                    const datesplit = data[pickKey].split('.');
-                    const pickTime = new Date(datesplit[0] + 'Z');  // to UTC
-                    obj.picks.push({
-                        value: parseInt(datesplit[1], 10),
-                         // + (pickTime === zeroTime ? 0 : (pickTime.getTime() - zeroTime.getTime()) * 1000),
-                        thickness: 2,
-                        color: pickKey === 'p-pick' ? 'blue' : pickKey === 's-pick' ? 'red' : 'black',
-                        label: pickType,
-                        labelAlign: 'far'
-                    });
+        this.addPickData = () => {
+            for (const pick of self.allPicks) {
+                if (moment(pick.time_utc).isValid()) {
+                    let foundChannel = false;
+                    for (const channel of self.allChannels) {
+                        if (pick.site_id === channel.site_id) {
+                            channel.picks = ( typeof channel.picks !== 'undefined' && channel.picks instanceof Array ) ? channel.picks : [];
+                            const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
+                            if (pickKey !== '') {
+                                const pickTime = moment(pick.time_utc);  // to UTC
+                                const microsec = pick.time_utc.split('.')[1].replace('Z', ' ');
+                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                                if (pickKey === 'P') {
+                                    channel['p-time_utc'] = pickTime;  // for storting purposes, write to all channels of the site
+                                } else if (pickKey === 'S') {
+                                    channel['s-time_utc'] = pickTime;
+                                }
+                                if (!foundChannel) { // for one channel only (of same site) write picks data
+                                    channel.picks.push({
+                                        value: parseInt(microsec, 10) + offset,
+                                        thickness: 2,
+                                        color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+                                        label: pickKey,
+                                        labelAlign: 'far'
+                                    });
+                                }
+                                foundChannel = true;
+                            }
+                            // break;
+                        }
+                    }
+                    if (!foundChannel) {
+                        console.log('Waveform data not found for pick ' + pick.site_id + ' (' + pick.phase_hint + ')');
+                    }
+                } else {
+                    console.log('Invalid pick time for ' + pick.site_id + ' (' + pick.phase_hint + '): ' + pick.time_utc);
                 }
             }
-        };
-
-        this.getEventInfo = (event) => {
-          const qmlhr = new XMLHttpRequest();
-          qmlhr.open('GET', event.event_file , true);
-          qmlhr.onreadystatechange = function() {
-            if (this.readyState === this.DONE) {
-              if (this.status === 200) {
-                // Typical action to be performed when the document is ready:
-                const qml = qmlhr.responseXML;
-                console.log(qml);
-              } else {
-                console.log('Error getting QuakeML', this.statusText);
-              }
-            }
-          };
-          qmlhr.send();
         };
 
         this.parseMiniseed = (file): any => {
@@ -813,14 +835,18 @@ export class AppComponent implements OnInit {
                     if (i === 0) {
                         sampleRate = sg.sampleRate();
                         zTime = sg.start();  // starting time (use it up to second)
+                        zTime.millisecond(0);
                     } else {
                         if (!sg.start().isSame(zTime, 'second')) {
                             zTime = moment.min(zTime, sg.start());
+                            zTime.millisecond(0);
                             changeOriginTime = true;
                         }
                     }
                     chans[i] = {};
                     chans[i].station = sg.codes();
+                    chans[i].site_id = sg.stationCode();
+                    chans[i].channel_id = sg.channelCode();
                     chans[i].start = sg.start();  // moment object (good up to milisecond)
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     chans[i].microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
@@ -832,9 +858,7 @@ export class AppComponent implements OnInit {
                         });
                     }
                     chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;  // in microseconds
-                    self.addPickData('P', sg, chans[i]);
-                    self.addPickData('S', sg, chans[i]);
-                    chans[i].index = i.toString();
+                    // chans[i].index = i.toString();
                     i ++;
                 }
             });

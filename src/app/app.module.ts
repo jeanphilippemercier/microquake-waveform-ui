@@ -12,7 +12,6 @@ import { CatalogApiService } from './catalog-api.service';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { TreeModule } from 'angular-tree-component';
 
 
 @NgModule({
@@ -31,8 +30,7 @@ import { TreeModule } from 'angular-tree-component';
     ReactiveFormsModule,
     AngularFontAwesomeModule,
     NgxLoadingModule.forRoot({}),
-    NgxPaginationModule,
-    TreeModule.forRoot()
+    NgxPaginationModule
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [CatalogApiService],
@@ -40,4 +38,4 @@ import { TreeModule } from 'angular-tree-component';
 })
 export class AppModule { }
 
-platformBrowserDynamic().bootstrapModule(AppModule);
+// platformBrowserDynamic().bootstrapModule(AppModule);
