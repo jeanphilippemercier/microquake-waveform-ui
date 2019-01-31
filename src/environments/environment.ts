@@ -20,7 +20,13 @@ export const environment = {
   // steps for wheel mouse zoom sensitivity
   zoomSteps: 5,
   // sensitivity for capturing picks to drag
-  snapDistance: 10
+  snapDistance: 10,
+  // colors for components line plots
+  linecolor : {
+    'X': 'red',
+    'Y': 'blue',
+    'Z': 'black'
+  }
 };
 
 /*
