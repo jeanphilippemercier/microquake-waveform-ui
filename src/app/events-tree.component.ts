@@ -34,6 +34,7 @@ export class FileNode {
   date: string;
   level: number;
   event_resource_id: string;
+  select: boolean;
 }
 
 /**
@@ -122,7 +123,7 @@ export class FileDatabase {
                 if (data[i].children[j].children[k].hasOwnProperty('children')) {
                   for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
                     if (data[i].children[j].children[k].children[m].event_resource_id === this.eventId) {
-                      data[i].children[j].children[k].children[m]['select'] = 'true';
+                      data[i].children[j].children[k].children[m]['select'] = true;
                       console.log(data[i].children[j].children[k].children[m]);
                       return data;
                     }
@@ -239,6 +240,7 @@ export class FileDatabase {
             node.time_residual = value.time_residual;
             node.uncertainty = value.uncertainty;
             node.event_resource_id = value.event_resource_id;
+            node.select = value.select;
           } else {
             node.type = value;
           }
