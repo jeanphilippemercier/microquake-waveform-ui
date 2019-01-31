@@ -2,7 +2,7 @@
 <header></header>
 <div class='container-fluid content'> <!-- container centers content on large screens -->
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
-  <div *ngFor="let item of allChannels | paginate: { itemsPerPage: page_size, currentPage: page_number }"></div>
+  <div *ngFor="let item of allSites | paginate: { itemsPerPage: page_size, currentPage: page_number }"></div>
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
       <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
@@ -26,8 +26,8 @@
             <div class='card-text' id='infoEvalStatus'></div>
             <div class='card-text' id='infoEvalMode'></div>
             <div class='card-text' id='infoStatus'></div>
-            <!--p class='card-text' id='infoTimeRes'></p>
-            <p class='card-text' id='infoUncertainty'></p-->
+            <div class='card-text' id='infoTimeRes'></div>
+            <div class='card-text' id='infoUncertainty'></div>
           </div>
         </div>
       </div>

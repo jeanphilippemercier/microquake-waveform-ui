@@ -17,9 +17,9 @@ export class AppComponent implements OnInit {
     title = 'waveform-ui-angular';
 
     public catalog: any;
-    public allChannels: any[];
+    public allSites: any[];
     public allPicks: any[];
-    public activeChannels: any[];
+    public activeSites: any[];
     public zeroTime: any;
 
     public commonTimeState: Boolean;
@@ -113,6 +113,9 @@ export class AppComponent implements OnInit {
         $('#infoEvalMode')[0].innerHTML = '<strong>Evaluation mode: </strong>' + (message.evaluation_mode ? message.evaluation_mode : '-');
         $('#infoStatus')[0].innerHTML = '<strong>Status: </strong>' + (message.status ? message.status : '-');
         $('#infoPicks')[0].innerHTML = '<strong>Picks: </strong>' + (message.npick ? message.npick : '-');
+        $('#infoTimeRes')[0].innerHTML = '<strong>Time residual: </strong>' + (message.time_residual ? message.time_residual : '-');
+        $('#infoUncertainty')[0].innerHTML = '<strong>Uncertainty: </strong>' + (message.uncertainty ? message.uncertainty : '-');
+
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -159,26 +162,26 @@ export class AppComponent implements OnInit {
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
-                        if (eventData && eventData.hasOwnProperty('channels')) {
-                            self.allChannels = eventData.channels;
+                        if (eventData && eventData.hasOwnProperty('sites')) {
+                            self.allSites = eventData.sites;
                             self.zeroTime = eventData.zeroTime;
                             self.currentEventId = id;
-                            if (self.allChannels.length > 0) {
+                            if (self.allSites.length > 0) {
                                 // get picks
                                 this._catalogService.get_picks_by_id(id).subscribe(picks => {
                                   self.allPicks = picks;
                                   this.addPickData();
-
+/*
                                   if (Array.isArray(self.allChannels)) {
                                       self.allChannels.sort
                                           (this.sort_array_by('p-time_utc', false, function(x) { return x ? x : moment.now(); }));
                                   }
-
+*/
                                   // display data (first page)
                                   self.page_number = 1;
                                   self.pageChange();
 
-                                  console.log('Loaded data for ' + self.allChannels.length + ' channels');
+                                  console.log('Loaded data for ' + self.allSites.length + ' sites');
                                   const dt = eventData.zeroTime.toDate();
                                   $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
                                     ('0' + dt.getDate()).slice(-2) + ' ' +
@@ -209,9 +212,9 @@ export class AppComponent implements OnInit {
         };
 
         this.showPage = (pageNumber, pageSize) => {
-            if (pageNumber > 0 && pageNumber <= Math.ceil(self.allChannels.length / self.page_size)) {
-                self.activeChannels = self.allChannels.slice
-                    ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allChannels.length));
+            if (pageNumber > 0 && pageNumber <= Math.ceil(self.allSites.length / self.page_size)) {
+                self.activeSites = self.allSites.slice
+                    ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
                 self.renderCharts();
                 self.setChartKeys();
             }
@@ -245,10 +248,10 @@ export class AppComponent implements OnInit {
         };
 
         this.destroyCharts = () => {
-            if (self.activeChannels) {
-                for (let i = 0; i < self.activeChannels.length; i++) {
-                    self.activeChannels[i].chart.destroy();
-                    const elem = document.getElementById(self.activeChannels[i].container);
+            if (self.activeSites) {
+                for (let i = 0; i < self.activeSites.length; i++) {
+                    self.activeSites[i].chart.destroy();
+                    const elem = document.getElementById(self.activeSites[i].container);
                     elem.parentElement.removeChild(elem);
                 }
             }
@@ -257,15 +260,29 @@ export class AppComponent implements OnInit {
         this.renderCharts = () => {
            // Chart Options, Render
 
-            for (let i = 0; i < self.activeChannels.length; i++) {
+            for (let i = 0; i < self.activeSites.length; i++) {
 
-                self.activeChannels[i].container = i.toString() + 'Container';
+                self.activeSites[i].container = i.toString() + 'Container';
 
-                if ( $('#' + self.activeChannels[i].container).length === 0 ) {
+                if ( $('#' + self.activeSites[i].container).length === 0 ) {
                     $('<div>').attr({
-                        'id': self.activeChannels[i].container,
+                        'id': self.activeSites[i].container,
                         'style': divStyle
                     }).appendTo('#waveform-panel');
+                }
+
+                const data = [];
+                for (const channel of self.activeSites[i].channels) {
+                    data.push(
+                        {
+                            name: channel.channel_id,
+                            type: 'line',
+                            // lineColor: 'black',
+                            lineThickness: 1,
+                            showInLegend: true,
+                            // highlightEnabled: true,
+                            dataPoints: channel.data
+                    });
                 }
 
                 const options = {
@@ -290,13 +307,17 @@ export class AppComponent implements OnInit {
                         }
                     },
                     title: {
-                        text: self.activeChannels[i].station,
+                        text: self.activeSites[i].site_id,
                         dockInsidePlotArea: true,
                         fontSize: 12,
                         fontFamily: 'tahoma',
                         fontColor: 'blue',
                         horizontalAlign: 'left'
                     },
+                    legend: {
+                       dockInsidePlotArea: true,
+                       horizontalAlign: 'left'
+                     },
                     toolTip: {
                         enabled: self.showTooltip,
                         contentFormatter: function (e) {
@@ -322,7 +343,7 @@ export class AppComponent implements OnInit {
                                 return  e.value / 1000000 + ' s' ;
                             }
                         },
-                        stripLines: self.activeChannels[i].picks
+                        stripLines: self.activeSites[i].picks
                     },
                     axisY: {
                         // minimum: -self.getYmax(i),
@@ -337,25 +358,17 @@ export class AppComponent implements OnInit {
                             }
                         }
                     },
-                    data: [
-                        {
-                            type: 'line',
-                            lineColor: 'black',
-                            lineThickness: 1,
-                            highlightEnabled: true,
-                            dataPoints: self.activeChannels[i].data
-                        }
-                    ]
+                    data: data
                 };
-                self.activeChannels[i].chart = new CanvasJS.Chart(self.activeChannels[i].container, options);
-                self.activeChannels[i].chart.render();
+                self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
+                self.activeSites[i].chart.render();
             }
-            console.log(self.activeChannels.length + ' total activeChannels');
+            console.log(self.activeSites.length + ' total activeSites');
         };
 
         this.setChartKeys = () => {
-            for (let j = 0; j < self.activeChannels.length; j++) {
-                const canvas_chart = '#' + self.activeChannels[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
+            for (let j = 0; j < self.activeSites.length; j++) {
+                const canvas_chart = '#' + self.activeSites[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
                 // Drag picks
                 $(canvas_chart).last().on('mousedown', function(e) {
                     self.lastDownTarget = e.target;
@@ -368,7 +381,7 @@ export class AppComponent implements OnInit {
                         }
                     }
                     const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                    const chart = self.activeChannels[ind].chart;
+                    const chart = self.activeSites[ind].chart;
                     const parentOffset = $(this).parent().offset();
                     const relX = e.pageX - parentOffset.left;
                     const relY = e.pageY - parentOffset.top;
@@ -405,7 +418,7 @@ export class AppComponent implements OnInit {
                 $(canvas_chart).last().on('mousemove', function(e) {  // move selected stripLine
                     if (self.selected !== -1) {
                         const i = parseInt( $(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeChannels[i].chart;
+                        const chart = self.activeSites[i].chart;
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
                         chart.options.axisX.stripLines[self.selected].value = chart.axisX[0].convertPixelToValue(relX);
@@ -420,9 +433,9 @@ export class AppComponent implements OnInit {
                         $(this).removeClass('pointerClass');
                         // let i = parseInt( $(this).parent()[0].id.replace('Container',''));
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeChannels[i].chart;
+                        const chart = self.activeSites[i].chart;
                         chart.options.zoomEnabled = true;   // turn zoom back on
-                        // document.getElementById(self.activeChannels[i].button).style.display = 'inline';
+                        // document.getElementById(self.activeSites[i].button).style.display = 'inline';
                         chart.render();
                     }
                 });
@@ -434,7 +447,7 @@ export class AppComponent implements OnInit {
                         e.preventDefault();
 
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeChannels[i].chart;
+                        const chart = self.activeSites[i].chart;
 
                         const relOffsetY = e.clientY - environment.pageOffsetY - i * environment.chartHeight;
 
@@ -486,7 +499,7 @@ export class AppComponent implements OnInit {
                     }
                 });
 
-                $('#' + self.activeChannels[j].container).on('contextmenu', e => {
+                $('#' + self.activeSites[j].container).on('contextmenu', e => {
                       e.preventDefault();
                       const origin = {
                         left: e.pageX,
@@ -525,7 +538,7 @@ export class AppComponent implements OnInit {
         $('#showTooltip').on('click', () => {
             self.showTooltip = !self.showTooltip;
             $(this).toggleClass('active');
-            for (let i = 0; i < self.activeChannels.length; i++) {
+            for (let i = 0; i < self.activeSites.length; i++) {
                 self.toggleTooltip(i, self.showTooltip);
             }
         });
@@ -595,8 +608,8 @@ export class AppComponent implements OnInit {
         };
 
         this.updateZoomStackCharts = (vpMin, vpMax) => {
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                const chart = self.activeChannels[i].chart;
+            for (let i = 0; i < self.activeSites.length; i++) {
+                const chart = self.activeSites[i].chart;
                 if (!chart.options.viewportMinStack) {
                     chart.options.viewportMinStack = [];
                     chart.options.viewportMaxStack = [];
@@ -607,20 +620,20 @@ export class AppComponent implements OnInit {
         };
 
         this.resetAllChartsViewX = () => {
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                self.resetChartViewX(self.activeChannels[i].chart);
+            for (let i = 0; i < self.activeSites.length; i++) {
+                self.resetChartViewX(self.activeSites[i].chart);
             }
         };
 
         this.resetAllChartsViewY = () => {
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                self.resetChartViewY(self.activeChannels[i].chart);
+            for (let i = 0; i < self.activeSites.length; i++) {
+                self.resetChartViewY(self.activeSites[i].chart);
             }
         };
 
         this.resetAllChartsViewXY = () => {
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                self.resetChartViewXY(self.activeChannels[i].chart);
+            for (let i = 0; i < self.activeSites.length; i++) {
+                self.resetChartViewXY(self.activeSites[i].chart);
             }
         };
 
@@ -661,7 +674,7 @@ export class AppComponent implements OnInit {
         };
 
         this.getXmax = (pos) => {
-            const endMicrosec = self.activeChannels[pos].microsec + self.activeChannels[pos].duration;
+            const endMicrosec = self.activeSites[pos].channels[0].microsec + self.activeSites[pos].channels[0].duration;
             return self.commonTimeState ?
                 Math.max(endMicrosec, environment.fixedDuration * 1000000) :  endMicrosec;
         };
@@ -676,21 +689,30 @@ export class AppComponent implements OnInit {
 
         this.getValueMaxAll = () => {
             let val;
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                val = i === 0 ?
-                    self.maxValue(self.activeChannels[0].data, null) : Math.max(self.maxValue(self.activeChannels[i].data, null), val);
+            for (let i = 0; i < self.activeSites.length; i++) {
+                for (let j = 0; j < self.activeSites[i].channels.length; j++) {
+                    val = i === 0 && j === 0 ?
+                        self.maxValue(self.activeSites[0].channels[0].data) :
+                        Math.max(self.maxValue(self.activeSites[i].channels[j].data), val);
+                }
             }
             return val;
         };
 
-        this.getYmax = (channel) => {
-            return self.commonYState ?  self.getValueMaxAll() : self.maxValue(self.activeChannels[channel].data, null);
+        this.getYmax = (site) => {
+            let val;
+            for (let j = 0; j < self.activeSites[site].channels.length; j++) {
+                val = j === 0 ?
+                    self.maxValue(self.activeSites[site].channels[0].data) :
+                    Math.max(self.maxValue(self.activeSites[site].channels[j].data), val);
+            }
+            return self.commonYState ?  self.getValueMaxAll() : val;
         };
 
         this.getAxisMinAll = (isXaxis) => {
             let min;
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                const chart = self.activeChannels[i].chart;
+            for (let i = 0; i < self.activeSites.length; i++) {
+                const chart = self.activeSites[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 min = i === 0 ? axis.get('minimum') : Math.min(axis.get('minimum'), min);
             }
@@ -699,8 +721,8 @@ export class AppComponent implements OnInit {
 
         this.getAxisMaxAll = (isXaxis) => {
             let max;
-            for (let i = 0; i < self.activeChannels.length; i++) {
-                const chart = self.activeChannels[i].chart;
+            for (let i = 0; i < self.activeSites.length; i++) {
+                const chart = self.activeSites[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 max = i === 0 ? axis.get('maximum') : Math.max(axis.get('maximum'), max);
             }
@@ -710,8 +732,8 @@ export class AppComponent implements OnInit {
         this.zoomAllCharts = (vpMin, vpMax, isXaxis) => {
             self.updateZoomStackCharts(vpMin, vpMax);
             if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
-                for (let i = 0; i < self.activeChannels.length; i++) {
-                    const chart = self.activeChannels[i].chart;
+                for (let i = 0; i < self.activeSites.length; i++) {
+                    const chart = self.activeSites[i].chart;
                     const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                     axis.set('viewportMinimum', vpMin, false);
                     axis.set('viewportMaximum', vpMax);
@@ -721,43 +743,43 @@ export class AppComponent implements OnInit {
         };
 
         this.addPick = (ind, pickType, value) => {
-            const chart = self.activeChannels[ind].chart;
+            const chart = self.activeSites[ind].chart;
             const position = value ? value : self.lastSelectedXPosition;
-            self.activeChannels[ind].picks.push({
+            self.activeSites[ind].picks.push({
                 value: position,
                 thickness: 2,
                 color: pickType === 'P' ? 'red' : pickType === 'S' ? 'blue' : 'black',
                 label: pickType,
                 labelAlign: 'far'
             });
-            chart.options.axisX.stripLines = self.activeChannels[ind].picks;
+            chart.options.axisX.stripLines = self.activeSites[ind].picks;
             chart.render();
         };
 
         this.deletePicks = (ind, pickType, value) => {
-            const chart = self.activeChannels[ind].chart;
+            const chart = self.activeSites[ind].chart;
             if (value) {
-                self.activeChannels[ind].picks = self.activeChannels[ind].picks
+                self.activeSites[ind].picks = self.activeSites[ind].picks
                 .filter( el => el.label !== pickType || el.label === pickType && el.value !== value);
             } else {  // no value specified delete all picks of this type
-                self.activeChannels[ind].picks = self.activeChannels[ind].picks.filter( el => el.label !== pickType);
+                self.activeSites[ind].picks = self.activeSites[ind].picks.filter( el => el.label !== pickType);
             }
-            chart.options.axisX.stripLines = self.activeChannels[ind].picks;
+            chart.options.axisX.stripLines = self.activeSites[ind].picks;
             chart.render();
         };
 
         this.toggleTooltip = (ind, value) => {
-            value = value ? value : !self.activeChannels[ind].chart.options.toolTip.enabled;
-            self.activeChannels[ind].chart.options.toolTip.enabled = value;
-            self.activeChannels[ind].chart.render();
+            value = value ? value : !self.activeSites[ind].chart.options.toolTip.enabled;
+            self.activeSites[ind].chart.options.toolTip.enabled = value;
+            self.activeSites[ind].chart.render();
         };
 
         this.back = () => {
-            for (let j = 0; j < self.activeChannels.length; j++) {
-                const canvas_chart = '#' + self.activeChannels[j].container +
+            for (let j = 0; j < self.activeSites.length; j++) {
+                const canvas_chart = '#' + self.activeSites[j].container +
                     ' > .canvasjs-chart-container' + ' > .canvasjs-chart-canvas';
                 if (self.zoomAll || self.lastDownTarget === $(canvas_chart)[1]) {
-                    const chart = self.activeChannels[j].chart;
+                    const chart = self.activeSites[j].chart;
                     const viewportMinStack = chart.options.viewportMinStack;
                     const viewportMaxStack = chart.options.viewportMaxStack;
                     if (!chart.options.axisX) {
@@ -780,37 +802,31 @@ export class AppComponent implements OnInit {
         };
 
         this.addPickData = () => {
+            const findValue = (obj, key, value) => obj.find(v => v[key] === value);
             for (const pick of self.allPicks) {
                 if (moment(pick.time_utc).isValid()) {
-                    let foundChannel = false;
-                    for (const channel of self.allChannels) {
-                        if (pick.site_id === channel.site_id) {
-                            channel.picks = ( typeof channel.picks !== 'undefined' && channel.picks instanceof Array ) ? channel.picks : [];
-                            const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
-                            if (pickKey !== '') {
-                                const pickTime = moment(pick.time_utc);  // to UTC
-                                const microsec = pick.time_utc.split('.')[1].replace('Z', ' ');
-                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
-                                if (pickKey === 'P') {
-                                    channel['p-time_utc'] = pickTime;  // for storting purposes, write to all channels of the site
-                                } else if (pickKey === 'S') {
-                                    channel['s-time_utc'] = pickTime;
-                                }
-                                if (!foundChannel) { // for one channel only (of same site) write picks data
-                                    channel.picks.push({
-                                        value: parseInt(microsec, 10) + offset,
-                                        thickness: 2,
-                                        color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
-                                        label: pickKey,
-                                        labelAlign: 'far'
-                                    });
-                                }
-                                foundChannel = true;
+                    const site = findValue(self.allSites, 'site_id', pick.site_id);
+                    if (site) {
+                        site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+                        const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
+                        if (pickKey !== '') {
+                            const pickTime = moment(pick.time_utc);  // to UTC
+                            const microsec = pick.time_utc.split('.')[1].replace('Z', ' ');
+                            const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                            if (pickKey === 'P') {
+                                site['p-time_utc'] = pickTime;
+                            } else if (pickKey === 'S') {
+                                site['s-time_utc'] = pickTime;
                             }
-                            // break;
+                            site.picks.push({
+                                value: parseInt(microsec, 10) + offset,
+                                thickness: 2,
+                                color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+                                label: pickKey,
+                                labelAlign: 'far'
+                            });
                         }
-                    }
-                    if (!foundChannel) {
+                    } else  {
                         console.log('Waveform data not found for pick ' + pick.site_id + ' (' + pick.phase_hint + ')');
                     }
                 } else {
@@ -822,18 +838,16 @@ export class AppComponent implements OnInit {
         this.parseMiniseed = (file): any => {
             const records = miniseed.parseDataRecords(file);
             const channelsMap = miniseed.byChannel(records);
-            const chans = [];
-            let i = 0;
+            const sites = [];
             let zTime = null;
             const eventData = {};
-            let sampleRate = 0;
             let changeOriginTime = false;
+            const findValue = (obj, key, value) => obj.find(v => v[key] === value);
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
                 if (sg._y.includes(NaN) === false) {
-                    if (i === 0) {
-                        sampleRate = sg.sampleRate();
+                    if (!zTime) {
                         zTime = sg.start();  // starting time (use it up to second)
                         zTime.millisecond(0);
                     } else {
@@ -843,38 +857,43 @@ export class AppComponent implements OnInit {
                             changeOriginTime = true;
                         }
                     }
-                    chans[i] = {};
-                    chans[i].station = sg.codes();
-                    chans[i].site_id = sg.stationCode();
-                    chans[i].channel_id = sg.channelCode();
-                    chans[i].start = sg.start();  // moment object (good up to milisecond)
+                    const channel = {};
+                    channel['code_id'] = sg.codes();
+                    channel['site_id'] = sg.stationCode();
+                    channel['channel_id'] = sg.channelCode();
+                    channel['sample_rate'] = sg.sampleRate();
+                    channel['start'] = sg.start();  // moment object (good up to milisecond)
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
-                    chans[i].microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-                    chans[i].data = [];
+                    channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+                    channel['data'] = [];
                     for (let k = 0; k < sg.numPoints(); k++) {
-                        chans[i].data.push({
-                            x: chans[i].microsec + (k * 1000000 / sampleRate),   // trace microsecond offset
+                        channel['data'].push({
+                            x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
                             y: sg._y[k]
                         });
                     }
-                    chans[i].duration = (sg.numPoints() - 1) * 1000000 / sampleRate;  // in microseconds
-                    // chans[i].index = i.toString();
-                    i ++;
+                    channel['duration'] = (sg.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
+                    let site = findValue(sites, 'site_id', sg.stationCode());
+                    if (!site) {
+                        site = { site_id: sg.stationCode(), channels: [] };
+                        sites.push(site);
+                    }
+                    site.channels.push(channel);
                 }
             });
             if (changeOriginTime) {
                 console.log('***changeOriginTime channels change in earliest time second detected');
-                for (let j = 0; j < chans.length; j++) {
-                    if (!chans[j].start.isSame(zTime, 'second')) {
-                        const offset = chans[j].start.diff(zTime, 'seconds') * 1000000;
-                        chans[j].microsec = chans[j].microsec + offset;
-                        for (let k = 0; k < chans[j].data.length; k++) {
-                            chans[j].data[k]['x'] = chans[j].data[k]['x'] + offset;  // microsecond offset from zeroTime
+                for (let j = 0; j < sites.length; j++) {
+                    if (!sites[j].start.isSame(zTime, 'second')) {
+                        const offset = sites[j].start.diff(zTime, 'seconds') * 1000000;
+                        sites[j].microsec = sites[j].microsec + offset;
+                        for (let k = 0; k < sites[j].data.length; k++) {
+                            sites[j].data[k]['x'] = sites[j].data[k]['x'] + offset;  // microsecond offset from zeroTime
                         }
                     }
                 }
             }
-            eventData['channels'] = chans;
+            eventData['sites'] = sites;
             eventData['zeroTime'] = zTime;
             return(eventData);
         };

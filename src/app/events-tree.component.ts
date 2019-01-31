@@ -203,7 +203,6 @@ export class FileDatabase {
     const numKeys = Object.keys(obj).map(function(item) {
       return parseInt(item, 10);
     });
-    const self = this;
     let sortedEntries = Object.keys(obj).sort().reverse();
     if (level < 2) {
       sortedEntries = numKeys.sort(function(a, b) { return b - a; }).map(String);
@@ -212,9 +211,9 @@ export class FileDatabase {
       const value = obj[key];
       const node = new FileNode();
       node.name = level === 1 ? monthNames[key] : key;
-      self.date = level === 0 ? key : level === 1 ? self.date.substring(0, 4) + '-' + ('0' + (1 + parseInt(key, 10)).toString()).slice(-2) :
-                  level === 2 ? self.date.substring(0, 7) + '-' + key : self.date;
-      node.date = level === 2 ? self.date : null;
+      this.date = level === 0 ? key : level === 1 ? this.date.substring(0, 4) + '-' + ('0' + (1 + parseInt(key, 10)).toString()).slice(-2) :
+                  level === 2 ? this.date.substring(0, 7) + '-' + key : this.date;
+      node.date = level === 2 ? this.date : null;
       node.level = level;
 
       if (value != null) {
