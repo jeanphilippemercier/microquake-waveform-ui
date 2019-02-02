@@ -5,6 +5,7 @@ import * as CanvasJS from './canvasjs.min';
 import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
+import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 
 @Component({
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit {
     public showTooltip: Boolean;
     public showHelp: Boolean;
     public zoomAll: Boolean;
+    public display3C: Boolean;
 
     private convYUnits: number;
 
@@ -46,6 +48,7 @@ export class AppComponent implements OnInit {
     private getEvent: Function;
     private parseMiniseed: Function;
     private loadEvent: Function;
+    private addCompositeTrace: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -129,6 +132,7 @@ export class AppComponent implements OnInit {
         self.showTooltip = false;
         self.showHelp = false;
         self.zoomAll = false;
+        self.display3C = false;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -163,7 +167,7 @@ export class AppComponent implements OnInit {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites')) {
-                            self.allSites = eventData.sites;
+                            self.allSites = this.addCompositeTrace(eventData.sites);
                             self.zeroTime = eventData.zeroTime;
                             self.currentEventId = id;
                             if (self.allSites.length > 0) {
@@ -273,17 +277,22 @@ export class AppComponent implements OnInit {
 
                 const data = [];
                 for (const channel of self.activeSites[i].channels) {
-                    data.push(
-                        {
-                            name: channel.channel_id,
-                            type: 'line',
-                            color: environment.linecolor[channel.channel_id],
-                            lineThickness: 1,
-                            showInLegend: true,
-                            // highlightEnabled: true,
-                            dataPoints: channel.data
-                    });
+                    if ( (self.display3C && channel.channel_id !== environment.compositeChannelCode)
+                        || (!self.display3C && channel.channel_id === environment.compositeChannelCode) ) {
+                        data.push(
+                            {
+                                name: channel.code_id,
+                                type: 'line',
+                                color: environment.linecolor[channel.channel_id],
+                                lineThickness: 1,
+                                showInLegend: true,
+                                // highlightEnabled: true,
+                                dataPoints: channel.data
+                        });
+                    }
                 }
+
+                const yMax = self.getYmax(i);
 
                 const options = {
                     zoomEnabled: true,
@@ -322,9 +331,9 @@ export class AppComponent implements OnInit {
                         enabled: self.showTooltip,
                         contentFormatter: function (e) {
                             const content = ' ' +
-                             '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000) / 1000 + ' mm/s</strong>' +
+                             '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
                              '<br/>' +
-                             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000) / 1000 + ' s</strong>';
+                             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
                             return content;
                         }
                     },
@@ -346,9 +355,9 @@ export class AppComponent implements OnInit {
                         stripLines: self.activeSites[i].picks
                     },
                     axisY: {
-                        // minimum: -self.getYmax(i),
-                        // maximum: self.getYmax(i),
-                        interval: self.commonYState ? null : self.getYmax(i) / 2,
+                        minimum: -yMax,
+                        maximum: yMax,
+                        interval: self.commonYState ? null : yMax / 2,
                         includeZero: true,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
@@ -551,6 +560,12 @@ export class AppComponent implements OnInit {
         $('#zoomAll').on('click', () => {
             self.zoomAll = !self.zoomAll;
             $(this).toggleClass('active');
+        });
+
+        $('#display3C').on('click', () => {
+            self.display3C = !self.display3C;
+            $(this).toggleClass('active');
+            self.pageChange();
         });
 
         $('#resetAll').on('click', () => {
@@ -844,15 +859,16 @@ export class AppComponent implements OnInit {
             let changeOriginTime = false;
             const findValue = (obj, key, value) => obj.find(v => v[key] === value);
             channelsMap.forEach( function(this, value, key, map) {
-                const sg = miniseed.createSeismogram(channelsMap.get(key));
+                let sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
+                sg = filter.rMean(sg);
                 if (sg._y.includes(NaN) === false) {
                     if (!zTime) {
-                        zTime = sg.start();  // starting time (use it up to second)
+                        zTime = moment(sg.start());  // starting time (use it up to second)
                         zTime.millisecond(0);
                     } else {
                         if (!sg.start().isSame(zTime, 'second')) {
-                            zTime = moment.min(zTime, sg.start());
+                            zTime = moment(moment.min(zTime, sg.start()));
                             zTime.millisecond(0);
                             changeOriginTime = true;
                         }
@@ -865,13 +881,14 @@ export class AppComponent implements OnInit {
                     channel['start'] = sg.start();  // moment object (good up to milisecond)
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-                    channel['data'] = [];
+                    const waveform = [];
                     for (let k = 0; k < sg.numPoints(); k++) {
-                        channel['data'].push({
+                        waveform.push({
                             x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
                             y: sg._y[k]
                         });
                     }
+                    channel['data'] = waveform;
                     channel['duration'] = (sg.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
                     let site = findValue(sites, 'site_id', sg.stationCode());
                     if (!site) {
@@ -883,12 +900,14 @@ export class AppComponent implements OnInit {
             });
             if (changeOriginTime) {
                 console.log('***changeOriginTime channels change in earliest time second detected');
-                for (let j = 0; j < sites.length; j++) {
-                    if (!sites[j].start.isSame(zTime, 'second')) {
-                        const offset = sites[j].start.diff(zTime, 'seconds') * 1000000;
-                        sites[j].microsec = sites[j].microsec + offset;
-                        for (let k = 0; k < sites[j].data.length; k++) {
-                            sites[j].data[k]['x'] = sites[j].data[k]['x'] + offset;  // microsecond offset from zeroTime
+                for (let i = 0; i < sites.length; i++) {
+                    for (let j = 0; j < sites[i].channels.length; j++) {
+                        if (!sites[i].channels[j].start.isSame(zTime, 'second')) {
+                            const offset = sites[i].channels[j].start.diff(zTime, 'seconds') * 1000000;
+                            sites[i].channels[j].microsec = sites[i].channels[j].microsec + offset;
+                            for (let k = 0; k < sites[i].channels[j].data.length; k++) { // microsecond offset from zeroTime
+                                sites[i].channels[j].data[k]['x'] = sites[i].channels[j].data[k]['x'] + offset;
+                            }
                         }
                     }
                 }
@@ -896,6 +915,68 @@ export class AppComponent implements OnInit {
             eventData['sites'] = sites;
             eventData['zeroTime'] = zTime;
             return(eventData);
+        };
+
+        this.addCompositeTrace = (sites): any[] => {
+            for (const site of sites) {
+                if (site.channels.length === 3) {
+                    if (site.channels[0].start.isSame(site.channels[1].start) &&
+                        site.channels[0].start.isSame(site.channels[2].start) &&
+                        site.channels[0].microsec === site.channels[1].microsec &&
+                        site.channels[0].microsec === site.channels[2].microsec) {
+                        if (site.channels[0].sample_rate === site.channels[1].sample_rate &&
+                            site.channels[0].sample_rate === site.channels[2].sample_rate) {
+                            if (site.channels[0].data.length === site.channels[1].data.length &&
+                                site.channels[0].data.length === site.channels[2].data.length) {
+                                const compositeTrace = {};
+                                compositeTrace['code_id'] = site.channels[0].code_id.slice(0, -1) + environment.compositeChannelCode;
+                                compositeTrace['site_id'] = site.site_id;
+                                compositeTrace['channel_id'] = environment.compositeChannelCode;
+                                compositeTrace['sample_rate'] = site.channels[0].sample_rate;
+                                compositeTrace['start'] = site.channels[0].start;  // moment object (good up to milisecond)
+                                compositeTrace['microsec'] = site.channels[0].microsec;
+                                compositeTrace['data'] = [];
+                                compositeTrace['duration'] = site.channels[0].duration;  // in microseconds
+                                for (let k = 0; k < site.channels[0].data.length; k++) {
+                                    let compositeValue = 0, sign = 0;
+                                    for (let j = 0; j < 3; j++) {
+                                        const value = site.channels[j].data[k]['y'];
+                                        sign = site.channels[j].channel_id === environment.signComponent ?
+                                            Math.sign(value) : sign;
+                                        compositeValue += Math.pow(value, 2);
+                                    }
+                                    compositeValue = Math.sqrt(compositeValue) * sign;
+                                    if (sign === 0) {
+                                        console.log(site['site_id'], compositeValue,
+                                            site.channels[0].data[k]['x'], site.channels[0].data[k]['y'],
+                                            site.channels[1].data[k]['y'], site.channels[2].data[k]['y']);
+                                    }
+                                    compositeTrace['data'].push({
+                                        x: site.channels[0].data[k]['x'],
+                                        y: compositeValue
+                                    });
+                                }
+                                site.channels.push(compositeTrace);
+                            } else {
+                                console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different channel lengths');
+                            }
+                        } else {
+                            console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different sample rates: ' +
+                                site.channels[0].sample_rate + site.channels[2].sample_rate + site.channels[2].sample_rate);
+                        }
+                    } else {
+                        console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different channels start times ' +
+                            site.channels[0].start.toISOString() + site.channels[1].start.toISOString()
+                            + site.channels[2].start.toISOString());
+                    }
+                } else {
+                    console.log('Cannot create 3C composite trace for site: ' + site['site_id'] +
+                        ' available channels: ' + site.channels.length + ' (' +
+                        (site.channels.length > 0 ? site.channels[0].channel_id +
+                        (site.channels.length > 1 ? + site.channels[1].channel_id : ' ') : ' ') + ')');
+                }
+            }
+            return sites;
         };
 
         this.getEvent = (event): any => {

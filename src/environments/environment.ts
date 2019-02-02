@@ -24,9 +24,14 @@ export const environment = {
   // colors for components line plots
   linecolor : {
     'X': 'red',
-    'Y': 'blue',
-    'Z': 'black'
-  }
+    'Y': 'green',
+    'Z': 'blue',
+    'C': 'black'
+  },
+  // component to determine sign for composite trace
+  signComponent: 'X',
+  // composite trace component code
+  compositeChannelCode: 'C'
 };
 
 /*
