@@ -22,6 +22,10 @@
             <div class='card-text' id='infoLocationY'></div>
             <p class='card-text' id='infoLocationZ'></p>
             <div class='card-text' id='infoPicks'></div>
+            <div id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
+              <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
+              {{picksWarning}}
+            </div>
             <div class='card-text' id='infoEventType'></div>
             <div class='card-text' id='infoEvalStatus'></div>
             <div class='card-text' id='infoEvalMode'></div>
@@ -39,7 +43,7 @@
           <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Zoom All <fa name='link' size='lg'></fa></button>
           <button id='backBtn' title='Undo last Zoom or Pan' type='button' class='btn btn-primary'>Back Zoom <fa name='arrow-left' size='lg'></fa></button>
           <button id='resetAll' title='Reset View after Zoom or Pan' type='button' class='btn btn-primary'>Reset View <fa name='undo' size='lg'></fa></button>
-          <button id='display3C' title='Display 3-C or composite traces' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Display 3-C <fa name='link' size='lg'></fa></button>
+          <button id='display3C' title='Display 3-C or Composite Traces' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Display 3-C <fa name='link' size='lg'></fa></button>
           <!--<button id='showTooltip' title='Show Tooltips' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Show Tooltips <fa name='info-circle' size='lg'></fa></button>-->
           <div>
             <app-help-dialog></app-help-dialog>

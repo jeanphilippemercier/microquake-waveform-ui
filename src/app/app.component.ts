@@ -89,9 +89,10 @@ export class AppComponent implements OnInit {
 
     public currentEventId: string;
 
+    private picksWarning: string;
+
     getNotification(message) {
-        console.log('Message received');
-        console.log(message);
+        // console.log(message);
         this.eventMessage = message;
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
@@ -103,11 +104,9 @@ export class AppComponent implements OnInit {
             dt.format('HH:mm:ss') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
         $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + ' (' + message.magnitude_type + ')';
         $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>';
-            // + 'X:' + message.x +
-            // 'm East ' + 'Y:' + message.y + 'm North ' + 'Z:' + message.z + 'm Up';
         $('#infoLocationX')[0].innerHTML = '<strong>X: </strong>' + message.x + 'm East ';
         $('#infoLocationY')[0].innerHTML = '<strong>Y: </strong>' + message.y + 'm North ';
-        $('#infoLocationZ')[0].innerHTML = '<strong>Z: </strong>' + message.z + 'm Up ';
+        $('#infoLocationZ')[0].innerHTML = '<strong>Z: </strong>' + message.z + 'm';
         const event_type = message.event_type === 'earthquake' ? 'seismic event (E)' :
            message.event_type === 'blast' || message.event_type === 'explosion' ? 'blast (B)' : 'other (O)';
         $('#infoEventType')[0].innerHTML = '<strong>Event type: </strong>' + event_type;
@@ -118,7 +117,6 @@ export class AppComponent implements OnInit {
         $('#infoPicks')[0].innerHTML = '<strong>Picks: </strong>' + (message.npick ? message.npick : '-');
         $('#infoTimeRes')[0].innerHTML = '<strong>Time residual: </strong>' + (message.time_residual ? message.time_residual : '-');
         $('#infoUncertainty')[0].innerHTML = '<strong>Uncertainty: </strong>' + (message.uncertainty ? message.uncertainty : '-');
-
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -187,7 +185,7 @@ export class AppComponent implements OnInit {
 
                                   console.log('Loaded data for ' + self.allSites.length + ' sites');
                                   const dt = moment(eventData.zeroTime).tz(environment.zone);
-                                  $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
+                                  $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                     ('0' + dt.date()).slice(-2) + ' ' +
                                     this.monthNames[dt.month()] + ' ' +
                                     dt.year() + ', ' +
@@ -374,7 +372,6 @@ export class AppComponent implements OnInit {
                 self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
                 self.activeSites[i].chart.render();
             }
-            console.log(self.activeSites.length + ' total activeSites');
         };
 
         this.setChartKeys = () => {
@@ -820,6 +817,8 @@ export class AppComponent implements OnInit {
 
         this.addPickData = () => {
             const findValue = (obj, key, value) => obj.find(v => v[key] === value);
+            const missingSites = [];
+            self.picksWarning = '';
             for (const pick of self.allPicks) {
                 if (moment(pick.time_utc).isValid()) {
                     const site = findValue(self.allSites, 'site_id', pick.site_id);
@@ -844,11 +843,16 @@ export class AppComponent implements OnInit {
                             });
                         }
                     } else  {
-                        console.log('Waveform data not found for pick ' + pick.site_id + ' (' + pick.phase_hint + ')');
+                        if (!missingSites.includes(pick.site_id)) {
+                            missingSites.push(pick.site_id);
+                        }
                     }
                 } else {
                     console.log('Invalid pick time for ' + pick.site_id + ' (' + pick.phase_hint + '): ' + pick.time_utc);
                 }
+            }
+            if (missingSites.length > 0) {
+                self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
             }
         };
 

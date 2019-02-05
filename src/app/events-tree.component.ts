@@ -124,7 +124,6 @@ export class FileDatabase {
                   for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
                     if (data[i].children[j].children[k].children[m].event_resource_id === this.eventId) {
                       data[i].children[j].children[k].children[m]['select'] = true;
-                      console.log(data[i].children[j].children[k].children[m]);
                       return data;
                     }
                   }
@@ -352,7 +351,6 @@ export class EventsTreeComponent {
         if (date.isValid()) {
           this.database.getEventsForDate(date);
         }
-        console.log('need to load more data');
       }
 
     }
