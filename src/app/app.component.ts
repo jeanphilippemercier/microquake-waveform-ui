@@ -6,7 +6,7 @@ import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
 @Component({
   selector: 'app-root',
@@ -96,11 +96,11 @@ export class AppComponent implements OnInit {
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
         }
-        const dt = new Date(message.time_utc);
-        $('#infoTime')[0].innerHTML = ('0' + dt.getDate()).slice(-2) + ' ' +
-            this.monthNames[dt.getMonth()] + ' ' +
-            dt.getFullYear() + ', ' +
-            dt.toLocaleTimeString('en-gb') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
+        const dt = moment(message.time_utc).tz(environment.zone);
+        $('#infoTime')[0].innerHTML = ('0' + dt.date()).slice(-2) + ' ' +
+            this.monthNames[dt.month()] + ' ' +
+            dt.year() + ', ' +
+            dt.format('HH:mm:ss') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
         $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + ' (' + message.magnitude_type + ')';
         $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>';
             // + 'X:' + message.x +
@@ -186,12 +186,12 @@ export class AppComponent implements OnInit {
                                   self.pageChange();
 
                                   console.log('Loaded data for ' + self.allSites.length + ' sites');
-                                  const dt = eventData.zeroTime.toDate();
+                                  const dt = moment(eventData.zeroTime).tz(environment.zone);
                                   $('#zeroTime')[0].innerHTML = '<strong>Traces start time: </strong>' +
-                                    ('0' + dt.getDate()).slice(-2) + ' ' +
-                                    this.monthNames[dt.getMonth()] + ' ' +
-                                    dt.getFullYear() + ', ' +
-                                    dt.toLocaleTimeString('en-gb');
+                                    ('0' + dt.date()).slice(-2) + ' ' +
+                                    this.monthNames[dt.month()] + ' ' +
+                                    dt.year() + ', ' +
+                                    dt.format('HH:mm:ss');
 
                                 });
                             }
@@ -278,7 +278,8 @@ export class AppComponent implements OnInit {
                 const data = [];
                 for (const channel of self.activeSites[i].channels) {
                     if ( (self.display3C && channel.channel_id !== environment.compositeChannelCode)
-                        || (!self.display3C && channel.channel_id === environment.compositeChannelCode) ) {
+                        || (!self.display3C && channel.channel_id === environment.compositeChannelCode)
+                        || (!self.display3C && self.activeSites[i].channels.length === 1)) {
                         data.push(
                             {
                                 name: channel.code_id,
@@ -347,7 +348,8 @@ export class AppComponent implements OnInit {
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                return self.zeroTime.toISOString().split('.')[0].replace('T', ' ');
+                                const d = moment(self.zeroTime).tz(environment.zone);
+                                return d.format('HH:mm:ss');
                             } else {
                                 return  e.value / 1000000 + ' s' ;
                             }
@@ -825,7 +827,7 @@ export class AppComponent implements OnInit {
                         site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                         const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
                         if (pickKey !== '') {
-                            const pickTime = moment(pick.time_utc);  // to UTC
+                            const pickTime = moment(pick.time_utc);  // UTC
                             const microsec = pick.time_utc.split('.')[1].replace('Z', ' ');
                             const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
                             if (pickKey === 'P') {

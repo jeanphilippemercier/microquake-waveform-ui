@@ -6,7 +6,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
 /**
  * File node data with nested structure.
@@ -142,8 +142,8 @@ export class FileDatabase {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'];
     if (moment(this.min_time).isValid() && moment(this.max_time).isValid()) {
-      const date = moment(this.max_time);
-      const dateMin = moment(this.min_time);
+      const date = moment(this.max_time).tz(environment.zone);
+      const dateMin = moment(this.min_time).tz(environment.zone);
       while (date.isSameOrAfter(dateMin)) {
         const year = date.year();
         const month = date.month();
@@ -168,12 +168,12 @@ export class FileDatabase {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
-            const d = new Date(value.time_utc);
+            const d = moment(value.time_utc).tz(environment.zone);
             const microsec = value.time_utc.slice(-8, -1);
-            const year = d.getFullYear();
-            const month = d.getMonth();
-            const day =  ('0' + d.getDate()).slice(-2);
-            const event_time = d.toLocaleTimeString('en-gb') + microsec;
+            const year = d.year();
+            const month = d.month();
+            const day =  ('0' + d.date()).slice(-2);
+            const event_time = d.format('HH:mm:ss') + microsec;
               if (!dataTree.hasOwnProperty(year)) {
                 dataTree[year] = {};
               }
@@ -348,7 +348,7 @@ export class EventsTreeComponent {
       const parent = this['activeParent'];
 
       if (parent.level === 2 && this.treeControl.getDescendants(parent).length === 0) {
-        const date = moment(parent.date);
+        const date = moment.tz(parent.date, environment.zone);  // date on timezone
         if (date.isValid()) {
           this.database.getEventsForDate(date);
         }

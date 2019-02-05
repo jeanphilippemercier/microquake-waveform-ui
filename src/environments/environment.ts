@@ -31,7 +31,9 @@ export const environment = {
   // component to determine sign for composite trace
   signComponent: 'X',
   // composite trace component code
-  compositeChannelCode: 'C'
+  compositeChannelCode: 'C',
+  //time zone for data display,
+  zone: 'Asia/Ulaanbaatar'
 };
 
 /*

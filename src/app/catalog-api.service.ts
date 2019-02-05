@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +19,7 @@ export class CatalogApiService {
     }
 
     get_day_events(date) {
-        const day = moment(date);
+        const day = moment.tz(date, environment.zone);
         day.hour(0);
         day.minute(0);
         day.second(0);
