@@ -47,3 +47,11 @@
     top: 0;
     z-index: 9;
 }
+
+.table > tbody > tr:first-child > td {
+    border: none;
+}
+
+.table > tbody > tr:first-child > th {
+    border: none;
+}

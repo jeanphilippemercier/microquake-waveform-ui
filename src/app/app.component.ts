@@ -22,13 +22,14 @@ export class AppComponent implements OnInit {
     public allPicks: any[];
     public activeSites: any[];
     public zeroTime: any;
+    public origin: any;
 
     public commonTimeState: Boolean;
     public commonYState: Boolean;
     public showTooltip: Boolean;
     public showHelp: Boolean;
     public zoomAll: Boolean;
-    public display3C: Boolean;
+    public displayComposite: Boolean;
 
     private convYUnits: number;
 
@@ -97,26 +98,27 @@ export class AppComponent implements OnInit {
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
         }
-        const dt = moment(message.time_utc).tz(environment.zone);
-        $('#infoTime')[0].innerHTML = ('0' + dt.date()).slice(-2) + ' ' +
-            this.monthNames[dt.month()] + ' ' +
-            dt.year() + ', ' +
-            dt.format('HH:mm:ss') + '<small>' + message.time_utc.slice(-8, -1) + '</small>';
-        $('#infoMagnitude')[0].innerHTML = '<strong>Magnitude: </strong>' + message.magnitude + ' (' + message.magnitude_type + ')';
-        $('#infoLocation')[0].innerHTML = '<strong>Location: </strong>';
-        $('#infoLocationX')[0].innerHTML = '<strong>X: </strong>' + message.x + 'm East ';
-        $('#infoLocationY')[0].innerHTML = '<strong>Y: </strong>' + message.y + 'm North ';
-        $('#infoLocationZ')[0].innerHTML = '<strong>Z: </strong>' + message.z + 'm';
-        const event_type = message.event_type === 'earthquake' ? 'seismic event (E)' :
-           message.event_type === 'blast' || message.event_type === 'explosion' ? 'blast (B)' : 'other (O)';
-        $('#infoEventType')[0].innerHTML = '<strong>Event type: </strong>' + event_type;
-        const eval_status = message.eval_status === 'A' ? 'accepted (A)' : 'rejected (R)';
-        $('#infoEvalStatus')[0].innerHTML = '<strong>Evaluation status: </strong>' + eval_status;
-        $('#infoEvalMode')[0].innerHTML = '<strong>Evaluation mode: </strong>' + (message.evaluation_mode ? message.evaluation_mode : '-');
-        $('#infoStatus')[0].innerHTML = '<strong>Status: </strong>' + (message.status ? message.status : '-');
-        $('#infoPicks')[0].innerHTML = '<strong>Picks: </strong>' + (message.npick ? message.npick : '-');
-        $('#infoTimeRes')[0].innerHTML = '<strong>Time residual: </strong>' + (message.time_residual ? message.time_residual : '-');
-        $('#infoUncertainty')[0].innerHTML = '<strong>Uncertainty: </strong>' + (message.uncertainty ? message.uncertainty : '-');
+        $('#infoTime')[0].innerHTML = 'Event ' +
+                    moment(message.time_utc).tz(environment.zone).format('YYYY-MM-DD HH:mm:ss') +
+//                    '<small>'
+                    + message.time_utc.slice(-8, -1) +
+                    moment().tz(environment.zone).format('Z');
+//                    + '</small>';
+        this.picksWarning = '';
+        this.origin['magnitude'] = message.magnitude ? message.magnitude + ' (' + message.magnitude_type + ')' : '';
+        this.origin['x'] = message.x ? message.x : '';
+        this.origin['y'] = message.y ? message.y : '';
+        this.origin['z'] = message.z ? message.z : '';
+        this.origin['npick'] = message.npick ? message.npick : '';
+        this.origin['eval'] =  message.eval_status === 'A' ? 'Accepted (A)' : 'Rejected (R)';
+        this.origin['type'] = message.event_type === 'earthquake' ? 'Seismic Event (E)' :
+           message.event_type === 'blast' || message.event_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
+        this.origin['mode'] = message.evaluation_mode ?
+            message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
+        this.origin['status'] = message.status ?
+            message.status[0].toUpperCase() + message.status.substr(1).toLowerCase() : '';
+        this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
+        this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -130,7 +132,7 @@ export class AppComponent implements OnInit {
         self.showTooltip = false;
         self.showHelp = false;
         self.zoomAll = false;
-        self.display3C = false;
+        self.displayComposite = true;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -144,6 +146,8 @@ export class AppComponent implements OnInit {
 
         self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
         self.page_number = 0;
+
+        self.origin = {};
 
         const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 /*
@@ -184,13 +188,8 @@ export class AppComponent implements OnInit {
                                   self.pageChange();
 
                                   console.log('Loaded data for ' + self.allSites.length + ' sites');
-                                  const dt = moment(eventData.zeroTime).tz(environment.zone);
                                   $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                    ('0' + dt.date()).slice(-2) + ' ' +
-                                    this.monthNames[dt.month()] + ' ' +
-                                    dt.year() + ', ' +
-                                    dt.format('HH:mm:ss');
-
+                                      moment(eventData.zeroTime).tz(environment.zone).format().replace('T', ' ');
                                 });
                             }
                         }
@@ -275,9 +274,9 @@ export class AppComponent implements OnInit {
 
                 const data = [];
                 for (const channel of self.activeSites[i].channels) {
-                    if ( (self.display3C && channel.channel_id !== environment.compositeChannelCode)
-                        || (!self.display3C && channel.channel_id === environment.compositeChannelCode)
-                        || (!self.display3C && self.activeSites[i].channels.length === 1)) {
+                    if ( (!self.displayComposite && channel.channel_id !== environment.compositeChannelCode)
+                        || (self.displayComposite && channel.channel_id === environment.compositeChannelCode)
+                        || (self.displayComposite && self.activeSites[i].channels.length === 1)) {
                         data.push(
                             {
                                 name: channel.code_id,
@@ -561,8 +560,8 @@ export class AppComponent implements OnInit {
             $(this).toggleClass('active');
         });
 
-        $('#display3C').on('click', () => {
-            self.display3C = !self.display3C;
+        $('#displayComposite').on('click', () => {
+            self.displayComposite = !self.displayComposite;
             $(this).toggleClass('active');
             self.pageChange();
         });
@@ -757,28 +756,31 @@ export class AppComponent implements OnInit {
         };
 
         this.addPick = (ind, pickType, value) => {
-            const chart = self.activeSites[ind].chart;
+            const site = self.activeSites[ind];
+            const chart = site.chart;
             const position = value ? value : self.lastSelectedXPosition;
-            self.activeSites[ind].picks.push({
+            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            site.picks.push({
                 value: position,
                 thickness: 2,
                 color: pickType === 'P' ? 'red' : pickType === 'S' ? 'blue' : 'black',
                 label: pickType,
                 labelAlign: 'far'
             });
-            chart.options.axisX.stripLines = self.activeSites[ind].picks;
+            chart.options.axisX.stripLines = site.picks;
             chart.render();
         };
 
         this.deletePicks = (ind, pickType, value) => {
-            const chart = self.activeSites[ind].chart;
+            const site = self.activeSites[ind];
+            const chart = site.chart;
             if (value) {
-                self.activeSites[ind].picks = self.activeSites[ind].picks
+                site.picks = site.picks
                 .filter( el => el.label !== pickType || el.label === pickType && el.value !== value);
             } else {  // no value specified delete all picks of this type
-                self.activeSites[ind].picks = self.activeSites[ind].picks.filter( el => el.label !== pickType);
+                site.picks = site.picks.filter( el => el.label !== pickType);
             }
-            chart.options.axisX.stripLines = self.activeSites[ind].picks;
+            chart.options.axisX.stripLines = site.picks;
             chart.render();
         };
 

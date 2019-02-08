@@ -45,5 +45,9 @@ export class CatalogApiService {
         return this.http.get(API_URL);
     }
 
+    get_origins_by_id = (eventId): any => {
+        const API_URL = environment.apiUrlEvent + '/' + eventId + '/origins';
+        return this.http.get(API_URL);
+    }
 
 }
