@@ -3,6 +3,7 @@ import {NestedTreeControl} from '@angular/cdk/tree';
 import {Component, Injectable, OnInit, AfterViewInit, Output, EventEmitter, ViewChild} from '@angular/core';
 import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatIconModule} from '@angular/material/icon';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';

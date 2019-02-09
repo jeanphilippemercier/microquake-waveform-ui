@@ -11,10 +11,8 @@ export const environment = {
   apiUrlCatalogBoundaries: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/catalog_boundaries',
   // URL of development API
   apiUrlEvent: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/events',
-  // viewer chart height in pixels
-  chartHeight: 125,
-  // page Y offset to start channel viewers due to toolbars, pagination, etc.
-  pageOffsetY: 60,
+  // number of charts per page
+  chartsPerPage: 8,
   // fixed duration to display, in seconds
   fixedDuration: 2,
   // steps for wheel mouse zoom sensitivity
@@ -32,6 +30,8 @@ export const environment = {
   signComponent: 'X',
   // composite trace component code
   compositeChannelCode: 'C',
+  // filtered trace component code suffix
+  filteredChannelCode: 'F',
   // time zone for data display
   zone: 'Asia/Ulaanbaatar'
 };

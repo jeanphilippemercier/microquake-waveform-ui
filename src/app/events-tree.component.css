@@ -20,3 +20,5 @@
   margin-bottom: 0;
   list-style-type: none;
 }
+
+.mat-tree-node { min-height: 30px }

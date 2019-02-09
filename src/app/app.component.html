@@ -15,7 +15,7 @@
       <div class="card border-primary" [style.height.px]="window_height*0.33">
         <div class='card-header' id='infoTime'>Event Information</div>
         <div style="overflow: auto" id="eventInfoCard" class="mb-0">
-          <div class='card-body'>
+          <div class='card-body' style="padding:0px 20px;">
             <h5 class='card-text' id='infoTime'></h5>
             <table class="table table-sm">
               <tbody>
@@ -76,13 +76,13 @@
       </div>
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
-      <div class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
-          <button id='commonTime' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="fas fa-arrows-alt-h fa-lg"></i></button>
-          <button id='commonAmplitude' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="fas fa-arrows-alt-v fa-lg"></i></button>
-          <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="fas fa-link fa-lg"></i></button>
-          <button id='backBtn' title='Undo last Zoom or Pan' type='button' class='btn btn-primary'><i class="fas fa-arrow-left fa-lg"></i></button>
-          <button id='resetAll' title='Reset View after Zoom or Pan' type='button' class='btn btn-primary'><i class="fas fa-undo fa-lg"></i></button>
-          <button id='displayComposite' title='Display Composite or 3-Component Traces' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="fab fa-creative-commons-sampling-plus fa-lg"></i></button>
+      <div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
+          <button id='commonTime' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="material-icons md-24">more_horiz</i></button>
+          <button id='commonAmplitude' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="material-icons md-24">more_vert</i></button>
+          <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="material-icons md-24">link</i></button>
+          <button id='backBtn' title='Undo last Zoom or Pan' type='button' class='btn btn-primary'><i class="material-icons md-24">undo</i></button>
+          <button id='resetAll' title='Reset View after Zoom or Pan' type='button' class='btn btn-primary'><i class="material-icons md-24">settings_backup_restore</i></button>
+          <button id='displayComposite' title='Display Composite or 3-Component Traces' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="material-icons md-24">filter_3</i></button>
           <!--<button id='showTooltip' title='Show Tooltips' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Show Tooltips <fa name='info-circle' size='lg'></fa></button>-->
           <div>
             <app-help-dialog></app-help-dialog>
@@ -91,8 +91,8 @@
             <pagination-controls (pageChange)="page_number = $event; pageChange()"></pagination-controls>
           </div>
       </div>
-      <div id='waveform-panel' style='position: relative; top: 40px'>
-        <div id='zeroTime'></div>
+      <div id='waveform-panel' style='position: relative; top: 50px'>
+        <div id='zeroTime'>Traces time origin</div>
       </div>
     </div>
   </div>

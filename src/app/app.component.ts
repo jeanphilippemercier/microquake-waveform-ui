@@ -24,6 +24,13 @@ export class AppComponent implements OnInit {
     public zeroTime: any;
     public origin: any;
 
+    private butterworth: any;
+    private numPoles: any;
+    private passband: any;
+    private lowFreqCorner: any;
+    private highFreqCorner: any;
+    private sample_rate: any;
+
     public commonTimeState: Boolean;
     public commonYState: Boolean;
     public showTooltip: Boolean;
@@ -50,6 +57,7 @@ export class AppComponent implements OnInit {
     private parseMiniseed: Function;
     private loadEvent: Function;
     private addCompositeTrace: Function;
+    private filterTraces: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -77,12 +85,15 @@ export class AppComponent implements OnInit {
     private toggleTooltip: Function;
     private back: Function;
     private showPage: Function;
-    private pageChange: Function;
+    public pageChange: Function;
     private sort_array_by: Function;
+    private createButterworthFilter: Function;
 
-    private page_size: number;
+    public page_size = environment.chartsPerPage;
     public page_number: number;
     public window_height = window.innerHeight;
+    public chartHeight: number;
+    public pageOffsetY: number;
 
     public loading = false;
     public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
@@ -90,7 +101,7 @@ export class AppComponent implements OnInit {
 
     public currentEventId: string;
 
-    private picksWarning: string;
+    public picksWarning: string;
 
     getNotification(message) {
         // console.log(message);
@@ -100,10 +111,10 @@ export class AppComponent implements OnInit {
         }
         $('#infoTime')[0].innerHTML = 'Event ' +
                     moment(message.time_utc).tz(environment.zone).format('YYYY-MM-DD HH:mm:ss') +
-//                    '<small>'
+                    '<small>'
                     + message.time_utc.slice(-8, -1) +
-                    moment().tz(environment.zone).format('Z');
-//                    + '</small>';
+                    moment().tz(environment.zone).format('Z')
+                    + '</small>';
         this.picksWarning = '';
         this.origin['magnitude'] = message.magnitude ? message.magnitude + ' (' + message.magnitude_type + ')' : '';
         this.origin['x'] = message.x ? message.x : '';
@@ -144,12 +155,19 @@ export class AppComponent implements OnInit {
         self.menu = document.querySelector('.menu');
         self.menuVisible = false;
 
-        self.page_size = Math.floor((window.innerHeight - environment.pageOffsetY) / environment.chartHeight);
+        self.pageOffsetY = $('#waveform-panel').position().top + + $('#zeroTime').height();
+        self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY) / environment.chartsPerPage);
         self.page_number = 0;
 
         self.origin = {};
 
-        const divStyle = 'height: ' + environment.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
+        self.numPoles = 4;
+        self.passband = filter.BAND_PASS;
+        self.lowFreqCorner = 0;
+        self.highFreqCorner = 1;
+
+        const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
+
 /*
         this._catalogService.get_day_events().subscribe(data => {
                 this.catalog = data;
@@ -456,7 +474,7 @@ export class AppComponent implements OnInit {
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const chart = self.activeSites[i].chart;
 
-                        const relOffsetY = e.clientY - environment.pageOffsetY - i * environment.chartHeight;
+                        const relOffsetY = e.clientY - self.pageOffsetY - i * self.chartHeight;
 
                         if (e.clientX < chart.plotArea.x1 ||
                          e.clientX > chart.plotArea.x2 ||
@@ -870,7 +888,7 @@ export class AppComponent implements OnInit {
                 let sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
                 sg = filter.rMean(sg);
-                if (sg._y.includes(NaN) === false) {
+                if (sg.y().includes(NaN) === false) {
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to second)
                         zTime.millisecond(0);
@@ -893,7 +911,7 @@ export class AppComponent implements OnInit {
                     for (let k = 0; k < sg.numPoints(); k++) {
                         waveform.push({
                             x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-                            y: sg._y[k]
+                            y: sg.y()[k]
                         });
                     }
                     channel['data'] = waveform;
@@ -920,9 +938,42 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
+            if (sites.length > 0 && sites[0].channels[0].sample_rate !== self.sample_rate) {
+                self.sample_rate = sites[0].channels[0].sample_rate;
+                self.createButterworthFilter();
+            }
             eventData['sites'] = sites;
             eventData['zeroTime'] = zTime;
             return(eventData);
+        };
+
+
+        this.createButterworthFilter = () => {
+             self.butterworth = filter.createButterworth(
+                                 self.numPoles, // poles
+                                 self.passband,
+                                 self.lowFreqCorner, // low corner
+                                 self.highFreqCorner, // high corner
+                                 1 / self.sample_rate
+            );
+             console.log(self.butterworth);
+        };
+
+        this.addCompositeTrace = (sites): any[] => {
+            for (const site of sites) {
+                for (const channel of site.channels) {
+                    const filteredTrace = {};
+                    filteredTrace['code_id'] = site.channel.code_id + environment.filteredChannelCode;
+                    filteredTrace['site_id'] = site.site_id;
+                    filteredTrace['channel_id'] = site.channel.channel_id + environment.filteredChannelCode;
+                    filteredTrace['sample_rate'] = site.channel.sample_rate;
+                    filteredTrace['start'] = site.channel.start;  // moment object (good up to milisecond)
+                    filteredTrace['microsec'] = site.channel.microsec;
+                    filteredTrace['data'] = [];
+                    filteredTrace['duration'] = site.channel.duration;  // in microseconds
+                }
+            }
+            return sites;
         };
 
         this.addCompositeTrace = (sites): any[] => {
