@@ -14,7 +14,8 @@ export class CatalogApiService {
     get_recent_events_years( n ) {
         const endTime =  new Date();
         const startTime = new Date(endTime.getTime() - n * 31536000000);
-        const API_URL = environment.apiUrlCatalog + '?start_time=' + startTime.toISOString() + '&end_time=' + endTime.toISOString();
+        const API_URL = environment.apiUrl + environment.apiCatalog +
+            '?start_time=' + startTime.toISOString() + '&end_time=' + endTime.toISOString();
         return this.http.get(API_URL);
     }
 
@@ -26,27 +27,38 @@ export class CatalogApiService {
         day.millisecond(0);
         const startTime = day.toISOString();
         const endTime = day.add(1, 'days').toISOString();
-        const API_URL = environment.apiUrlCatalog + '?start_time=' + startTime + '&end_time=' + endTime;
+        const API_URL = environment.apiUrl + environment.apiCatalog +
+            '?start_time=' + startTime + '&end_time=' + endTime;
         return this.http.get(API_URL);
     }
 
     get_boundaries = (): any => {
-        const API_URL = environment.apiUrlCatalogBoundaries;
+        const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
         return this.http.get(API_URL);
     }
 
     get_event_by_id = (eventId): any => {
-        const API_URL = environment.apiUrlEvent + '/' + eventId;
-        return this.http.get(API_URL);
-    }
-
-    get_picks_by_id = (eventId): any => {
-        const API_URL = environment.apiUrlEvent + '/' + eventId + '/picks';
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         return this.http.get(API_URL);
     }
 
     get_origins_by_id = (eventId): any => {
-        const API_URL = environment.apiUrlEvent + '/' + eventId + '/origins';
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
+            '/' + environment.apiOrigins;
+        return this.http.get(API_URL);
+    }
+
+    get_arrivals_by_id = (eventId, originId): any => {
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
+            '/' + (originId ? environment.apiOrigins + '/' + originId + '/' : '') +
+            environment.apiArrivals;
+        return this.http.get(API_URL);
+    }
+
+    get_traveltimes_by_id = (eventId, originId): any => {
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
+            '/' + environment.apiOrigins + '/' + originId +
+            '/' + environment.apiTravelTimes;
         return this.http.get(API_URL);
     }
 

@@ -15,14 +15,16 @@ import * as moment from 'moment-timezone';
 })
 
 export class AppComponent implements OnInit {
-    title = 'waveform-ui-angular';
+    title = 'waveform-ui';
 
     public catalog: any;
     public allSites: any[];
     public allPicks: any[];
+    public originTravelTimes: any[];
     public activeSites: any[];
     public zeroTime: any;
     public origin: any;
+    public waveformOrigin: any;
 
     private butterworth: any;
     private numPoles: any;
@@ -82,12 +84,15 @@ export class AppComponent implements OnInit {
     private addPick: Function;
     private deletePicks: Function;
     private addPickData: Function;
+    private addCalculatedPickData: Function;
     private toggleTooltip: Function;
     private back: Function;
     private showPage: Function;
     public pageChange: Function;
     private sort_array_by: Function;
     private createButterworthFilter: Function;
+    private findValue: Function;
+    private addTime: Function;
 
     public page_size = environment.chartsPerPage;
     public page_number: number;
@@ -106,6 +111,7 @@ export class AppComponent implements OnInit {
     getNotification(message) {
         // console.log(message);
         this.eventMessage = message;
+        this.picksWarning = '';
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
         }
@@ -115,7 +121,7 @@ export class AppComponent implements OnInit {
                     + message.time_utc.slice(-8, -1) +
                     moment().tz(environment.zone).format('Z')
                     + '</small>';
-        this.picksWarning = '';
+        this.origin['time_utc'] = message.time_utc;
         this.origin['magnitude'] = message.magnitude ? message.magnitude + ' (' + message.magnitude_type + ')' : '';
         this.origin['x'] = message.x ? message.x : '';
         this.origin['y'] = message.y ? message.y : '';
@@ -160,6 +166,7 @@ export class AppComponent implements OnInit {
         self.page_number = 0;
 
         self.origin = {};
+        self.waveformOrigin = {};
 
         self.numPoles = 4;
         self.passband = filter.BAND_PASS;
@@ -191,23 +198,33 @@ export class AppComponent implements OnInit {
                             self.zeroTime = eventData.zeroTime;
                             self.currentEventId = id;
                             if (self.allSites.length > 0) {
-                                // get picks
-                                this._catalogService.get_picks_by_id(id).subscribe(picks => {
-                                  self.allPicks = picks;
-                                  this.addPickData();
-/*
-                                  if (Array.isArray(self.allChannels)) {
-                                      self.allChannels.sort
-                                          (this.sort_array_by('p-time_utc', false, function(x) { return x ? x : moment.now(); }));
-                                  }
-*/
-                                  // display data (first page)
-                                  self.page_number = 1;
-                                  self.pageChange();
+                                // get origins
+                                this._catalogService.get_origins_by_id(id).subscribe(origins => {
+                                    const origin = self.findValue(origins, 'preferred_origin', true);
+                                    self.waveformOrigin = origin;
+                                    // get travel times for preferred origin
+                                    this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                        self.originTravelTimes = traveltimes;
+                                        this.addCalculatedPickData();
+                                        // get arrivals
+                                        this._catalogService.get_arrivals_by_id(id, '').subscribe(picks => {
+                                          self.allPicks = picks;
+                                          this.addPickData();
+                                          if (Array.isArray(self.allSites)) {
+                                              self.allSites.sort
+                                                  (this.sort_array_by
+                                                      ('p-time_calc_utc', false, function(x) { return x ? x : moment.now(); })
+                                                      );
+                                          }
+                                          // display data (first page)
+                                          self.page_number = 1;
+                                          self.pageChange();
 
-                                  console.log('Loaded data for ' + self.allSites.length + ' sites');
-                                  $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                      moment(eventData.zeroTime).tz(environment.zone).format().replace('T', ' ');
+                                          console.log('Loaded data for ' + self.allSites.length + ' sites');
+                                          $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
+                                              moment(eventData.zeroTime).tz(environment.zone).format().replace('T', ' ');
+                                        });
+                                    });
                                 });
                             }
                         }
@@ -229,6 +246,8 @@ export class AppComponent implements OnInit {
                return ( (A < B) ? -1 : ((A > B) ? 1 : 0) ) * [-1, 1][+!!reverse];
            };
         };
+
+        this.findValue = (obj, key, value) => obj.find(v => v[key] === value);
 
         this.showPage = (pageNumber, pageSize) => {
             if (pageNumber > 0 && pageNumber <= Math.ceil(self.allSites.length / self.page_size)) {
@@ -578,7 +597,7 @@ export class AppComponent implements OnInit {
             $(this).toggleClass('active');
         });
 
-        $('#displayComposite').on('click', () => {
+        $('#display3C').on('click', () => {
             self.displayComposite = !self.displayComposite;
             $(this).toggleClass('active');
             self.pageChange();
@@ -836,18 +855,16 @@ export class AppComponent implements OnInit {
         };
 
         this.addPickData = () => {
-            const findValue = (obj, key, value) => obj.find(v => v[key] === value);
             const missingSites = [];
-            self.picksWarning = '';
             for (const pick of self.allPicks) {
                 if (moment(pick.time_utc).isValid()) {
-                    const site = findValue(self.allSites, 'site_id', pick.site_id);
+                    const site = self.findValue(self.allSites, 'site_id', pick.site_id);
                     if (site) {
                         site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                         const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
                         if (pickKey !== '') {
                             const pickTime = moment(pick.time_utc);  // UTC
-                            const microsec = pick.time_utc.split('.')[1].replace('Z', ' ');
+                            const microsec = pick.time_utc.slice(-7, -1);
                             const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
                             if (pickKey === 'P') {
                                 site['p-time_utc'] = pickTime;
@@ -876,6 +893,51 @@ export class AppComponent implements OnInit {
             }
         };
 
+
+        this.addTime = (start_time, traveltime): String => {
+            const d = moment(start_time);
+            d.millisecond(0);   // to second precision
+            const seconds = parseFloat(start_time.slice(-8, -1)) + traveltime;
+            const end_time = moment(d).add(Math.floor(seconds), 'seconds'); // to the second
+            return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
+        };
+
+        this.addCalculatedPickData = () => {
+            for (const station of self.originTravelTimes) {
+                if (station.hasOwnProperty('station_id')) {
+                    const site = self.findValue(self.allSites, 'site_id', station.station_id);
+                    if (site) {
+                        site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+                        for (const pickKey of ['P', 'S']) {
+                            const key = 'travel_time_' + pickKey.toLowerCase();
+                            if (station.hasOwnProperty(key)) {
+                                const picktime_utc = this.addTime(this.waveformOrigin.time_utc, station[key]);
+                                const pickTime = moment(picktime_utc);  // UTC
+                                const microsec = picktime_utc.slice(-7, -1);
+                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                                if (offset < 0 && !self.picksWarning) {
+                                    self.picksWarning += 'Predicted picks outside the display time window\n';
+                                }
+                                if (pickKey === 'P') {
+                                    site['p-time_calc_utc'] = pickTime;
+                                } else if (pickKey === 'S') {
+                                    site['s-time_calc_utc'] = pickTime;
+                                }
+                                site.picks.push({
+                                    value: parseInt(microsec, 10) + offset,
+                                    thickness: 2,
+                                    lineDashType: 'dash',
+                                    color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+                                    label: pickKey.toLowerCase(),
+                                    labelAlign: 'far'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
         this.parseMiniseed = (file): any => {
             const records = miniseed.parseDataRecords(file);
             const channelsMap = miniseed.byChannel(records);
@@ -883,7 +945,6 @@ export class AppComponent implements OnInit {
             let zTime = null;
             const eventData = {};
             let changeOriginTime = false;
-            const findValue = (obj, key, value) => obj.find(v => v[key] === value);
             channelsMap.forEach( function(this, value, key, map) {
                 let sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
@@ -916,7 +977,7 @@ export class AppComponent implements OnInit {
                     }
                     channel['data'] = waveform;
                     channel['duration'] = (sg.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
-                    let site = findValue(sites, 'site_id', sg.stationCode());
+                    let site = self.findValue(sites, 'site_id', sg.stationCode());
                     if (!site) {
                         site = { site_id: sg.stationCode(), channels: [] };
                         sites.push(site);
