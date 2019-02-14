@@ -79,3 +79,18 @@ deploy:
   - docker build . -t $UI_IMAGE:latest -t $UI_IMAGE:$(echo $CI_COMMIT_SHA | cut -c1-8) --build-arg SSH_PRIVATE_KEY
   - docker push $UI_IMAGE:latest
   - docker push $UI_IMAGE:$(echo $CI_COMMIT_SHA | cut -c1-8)
+
+kube:
+  image: docker:stable
+  stage: deploy
+  services:
+    - name: docker:stable-dind
+      entrypoint:
+        - dockerd-entrypoint.sh
+  before_script:
+    - apk add --update openssh-client make ca-certificates openssl python git bash
+  script:
+    - wget https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
+    - chmod +x kubectl
+    - echo "$KUBE" > admin.conf
+    - ./kubectl --kubeconfig admin.conf set image deployment.v1.apps/waveform-ui-staging waveform-ui-staging=registry.microquake.org/rio-tinto/microquake-waveform-ui/ui:$(echo $CI_COMMIT_SHA | cut -c1-8) --record
