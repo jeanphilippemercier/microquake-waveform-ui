@@ -1058,19 +1058,15 @@ export class AppComponent implements OnInit {
                                 compositeTrace['data'] = [];
                                 compositeTrace['duration'] = site.channels[0].duration;  // in microseconds
                                 for (let k = 0; k < site.channels[0].data.length; k++) {
-                                    let compositeValue = 0, sign = 0;
+                                    let compositeValue = 0, sign = 1;
                                     for (let j = 0; j < 3; j++) {
                                         const value = site.channels[j].data[k]['y'];
                                         sign = site.channels[j].channel_id === environment.signComponent ?
                                             Math.sign(value) : sign;
                                         compositeValue += Math.pow(value, 2);
                                     }
+                                    sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
                                     compositeValue = Math.sqrt(compositeValue) * sign;
-                                    if (sign === 0) {
-                                        console.log(site['site_id'], compositeValue,
-                                            site.channels[0].data[k]['x'], site.channels[0].data[k]['y'],
-                                            site.channels[1].data[k]['y'], site.channels[2].data[k]['y']);
-                                    }
                                     compositeTrace['data'].push({
                                         x: site.channels[0].data[k]['x'],
                                         y: compositeValue
