@@ -55,9 +55,9 @@ test:nglint:
   # tags:
   # - docker
 
-deploy:
+docker:
   image: docker:stable
-  stage: deploy
+  stage: docker
   services:
   - name: docker:stable-dind
     entrypoint:
