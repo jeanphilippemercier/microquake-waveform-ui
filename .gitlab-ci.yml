@@ -1,0 +1,46 @@
+variables:
+  CLI_VERSION: 6.2.1
+
+build:
+  stage: build
+  image: trion/ng-cli
+  before_script:
+  - npm ci
+  script:
+  - ng build --prod
+  artifacts:
+    expire_in: 2 months
+    paths:
+    - dist/
+  tags:
+  - docker
+
+test:e2e:
+  stage: test
+  image: trion/ng-cli-e2e:${CLI_VERSION}
+  allow_failure: false
+  script:
+  - ng e2e
+  tags:
+  - docker
+
+test:karma:
+  stage: test
+  image: trion/ng-cli-karma
+  allow_failure: false
+  script:
+  - ng test --code-coverage --progress false --watch false
+  coverage: '/Lines \W+: (\d+\.\d+)%.*/'
+  artifacts:
+    paths:
+    - coverage/
+  tags:
+  - docker
+
+test:nglint:
+  stage: test
+  image: trion/ng-cli:${CLI_VERSION}
+  script:
+  - ng lint
+  tags:
+  - docker
