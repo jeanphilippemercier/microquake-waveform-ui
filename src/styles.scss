@@ -1,0 +1,21 @@
+/* You can add global styles to this file, and also import other style files */
+@import 'styles-variables';
+
+@import '~bootstrap/scss/bootstrap-reboot';
+@import '~bootstrap/scss/bootstrap-grid';
+
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+body {
+  font-family: Roboto, Arial, sans-serif;
+  margin: 0;
+}
+
+.basic-container {
+  padding: 0px;
+}
+
+.version-info {
+  font-size: 8pt;
+  float: right;
+}
