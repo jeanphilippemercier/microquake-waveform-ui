@@ -12,8 +12,8 @@ build:
     expire_in: 2 months
     paths:
     - dist/
-  tags:
-  - docker
+  # tags:
+  # - docker
 
 test:e2e:
   stage: test
@@ -21,8 +21,8 @@ test:e2e:
   allow_failure: false
   script:
   - ng e2e
-  tags:
-  - docker
+  # tags:
+  # - docker
 
 test:karma:
   stage: test
@@ -34,13 +34,13 @@ test:karma:
   artifacts:
     paths:
     - coverage/
-  tags:
-  - docker
+  # tags:
+  # - docker
 
 test:nglint:
   stage: test
   image: trion/ng-cli:${CLI_VERSION}
   script:
   - ng lint
-  tags:
-  - docker
+  # tags:
+  # - docker
