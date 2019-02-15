@@ -2,7 +2,7 @@ export const environment = {
   production: true,
 
   // URL of the API
-  apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/',
+  apiUrl: 'http://api.microquake.org/api/v1/',
   // Catalog API endpoint
   apiCatalog: 'catalog',
   // Catalog Boundaries API endpoint
