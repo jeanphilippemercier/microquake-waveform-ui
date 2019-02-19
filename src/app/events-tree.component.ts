@@ -7,7 +7,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
 import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
-import * as moment from 'moment-timezone';
+import * as moment from 'moment';
 
 /**
  * File node data with nested structure.
@@ -52,7 +52,6 @@ export class FileDatabase {
 
   get data(): FileNode[] { return this.dataChange.value; }
 
-  public min_time: any;
   public max_time: any;
   public treeObject: any;
   public date: string;
@@ -69,7 +68,6 @@ export class FileDatabase {
 
     this._catalogService.get_boundaries().subscribe(bounds => {
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
-        this.min_time = bounds['min_time'];
         this.max_time = bounds['max_time'];
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
@@ -141,9 +139,9 @@ export class FileDatabase {
     const dataTree = {};
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'];
-    if (moment(this.min_time).isValid() && moment(this.max_time).isValid()) {
-      const date = moment(this.max_time).tz(environment.zone);
-      const dateMin = moment(this.min_time).tz(environment.zone);
+    if (moment(bounds.min_time).isValid() && moment(bounds.max_time).isValid()) {
+      const date = moment(bounds.max_time).utc().utcOffset(environment.timezone);
+      const dateMin = moment(bounds.min_time).utc().utcOffset(environment.timezone);
       while (date.isSameOrAfter(dateMin)) {
         const year = date.year();
         const month = date.month();
@@ -168,7 +166,7 @@ export class FileDatabase {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
-            const d = moment(value.time_utc).tz(environment.zone);
+            const d = moment(value.time_utc).utc().utcOffset(environment.timezone);
             const microsec = value.time_utc.slice(-8, -1);
             const year = d.year();
             const month = d.month();
@@ -345,10 +343,10 @@ export class EventsTreeComponent {
   activeDay() {
     if (this.hasOwnProperty('activeParent')) {
 
-      const parent = this['activeParent'];
+      const node = this['activeParent'];
 
-      if (parent.level === 2 && this.treeControl.getDescendants(parent).length === 0) {
-        const date = moment.tz(parent.date, environment.zone);  // date on timezone
+      if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
+        const date = moment.parseZone(node.date + ' ' + environment.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
           this.database.getEventsForDate(date);
         }

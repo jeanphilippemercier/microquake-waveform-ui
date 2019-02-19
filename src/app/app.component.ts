@@ -6,7 +6,7 @@ import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
-import * as moment from 'moment-timezone';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-root',
@@ -39,6 +39,7 @@ export class AppComponent implements OnInit {
     public showHelp: Boolean;
     public zoomAll: Boolean;
     public displayComposite: Boolean;
+    public showPredictedPicks: Boolean;
 
     private convYUnits: number;
 
@@ -59,7 +60,6 @@ export class AppComponent implements OnInit {
     private parseMiniseed: Function;
     private loadEvent: Function;
     private addCompositeTrace: Function;
-    private filterTraces: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -84,7 +84,9 @@ export class AppComponent implements OnInit {
     private addPick: Function;
     private deletePicks: Function;
     private addPickData: Function;
-    private addCalculatedPickData: Function;
+    private addPredictedPicksData: Function;
+    private togglePredictedPicksVisibility: Function;
+    private togglePredictedPicks: Function;
     private toggleTooltip: Function;
     private back: Function;
     private showPage: Function;
@@ -116,10 +118,10 @@ export class AppComponent implements OnInit {
             this.loadEvent(message);
         }
         $('#infoTime')[0].innerHTML = 'Event ' +
-                    moment(message.time_utc).tz(environment.zone).format('YYYY-MM-DD HH:mm:ss') +
+                    moment(message.time_utc).utc().utcOffset(environment.timezone).format('YYYY-MM-DD HH:mm:ss') +
                     '<small>'
                     + message.time_utc.slice(-8, -1) +
-                    moment().tz(environment.zone).format('Z')
+                    moment().utc().utcOffset(environment.timezone).format('Z')
                     + '</small>';
         this.origin['time_utc'] = message.time_utc;
         this.origin['magnitude'] = message.magnitude ? message.magnitude + ' (' + message.magnitude_type + ')' : '';
@@ -150,6 +152,7 @@ export class AppComponent implements OnInit {
         self.showHelp = false;
         self.zoomAll = false;
         self.displayComposite = true;
+        self.showPredictedPicks = true;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -170,8 +173,8 @@ export class AppComponent implements OnInit {
 
         self.numPoles = 4;
         self.passband = filter.BAND_PASS;
-        self.lowFreqCorner = 0;
-        self.highFreqCorner = 1;
+        self.lowFreqCorner = 60;
+        self.highFreqCorner = 1000;
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -205,7 +208,7 @@ export class AppComponent implements OnInit {
                                     // get travel times for preferred origin
                                     this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                         self.originTravelTimes = traveltimes;
-                                        this.addCalculatedPickData();
+                                        this.addPredictedPicksData();
                                         // get arrivals
                                         this._catalogService.get_arrivals_by_id(id, '').subscribe(picks => {
                                           self.allPicks = picks;
@@ -222,7 +225,7 @@ export class AppComponent implements OnInit {
 
                                           console.log('Loaded data for ' + self.allSites.length + ' sites');
                                           $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                              moment(eventData.zeroTime).tz(environment.zone).format().replace('T', ' ');
+                                              moment(eventData.zeroTime).utc().utcOffset(environment.timezone).format().replace('T', ' ');
                                         });
                                     });
                                 });
@@ -382,7 +385,7 @@ export class AppComponent implements OnInit {
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                const d = moment(self.zeroTime).tz(environment.zone);
+                                const d = moment(self.zeroTime).utc().utcOffset(environment.timezone);
                                 return d.format('HH:mm:ss');
                             } else {
                                 return  e.value / 1000000 + ' s' ;
@@ -570,6 +573,9 @@ export class AppComponent implements OnInit {
         });
 
         document.addEventListener('keydown', e => {
+            if (e.keyCode === 80) {
+                self.togglePredictedPicks();
+            }
             if (e.keyCode === 90) {
                 self.toggleCommonTime();
             }
@@ -611,6 +617,12 @@ export class AppComponent implements OnInit {
             self.back();
         });
 
+        $('#togglePredictedPicks').on('click', () => {
+            self.showPredictedPicks = !self.showPredictedPicks;
+            self.togglePredictedPicksVisibility(self.showPredictedPicks);
+            $(this).toggleClass('active');
+        });
+
         // If the context menu element is clicked
         $('.menu li').click(function() {
             if (self.selectedContextMenu !== -1) {
@@ -632,6 +644,18 @@ export class AppComponent implements OnInit {
             self.selectedContextMenu = -1;
             self.toggleMenu('hide');
         });
+
+        this.togglePredictedPicks = () => {
+            self.showPredictedPicks = !self.showPredictedPicks;
+            if (self.showPredictedPicks) {
+                $('#togglePredictedPicks').addClass('active');
+                $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'true');
+            } else {
+                $('#togglePredictedPicks').removeClass('active focus');
+                $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'false');
+            }
+            self.togglePredictedPicksVisibility(self.showPredictedPicks);
+        };
 
         this.toggleCommonTime = () => {
             self.commonTimeState = !self.commonTimeState;
@@ -876,7 +900,7 @@ export class AppComponent implements OnInit {
                                 thickness: 2,
                                 color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                 label: pickKey,
-                                labelAlign: 'far'
+                                labelAlign: 'far',
                             });
                         }
                     } else  {
@@ -902,7 +926,7 @@ export class AppComponent implements OnInit {
             return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
         };
 
-        this.addCalculatedPickData = () => {
+        this.addPredictedPicksData = () => {
             for (const station of self.originTravelTimes) {
                 if (station.hasOwnProperty('station_id')) {
                     const site = self.findValue(self.allSites, 'site_id', station.station_id);
@@ -925,17 +949,34 @@ export class AppComponent implements OnInit {
                                 }
                                 site.picks.push({
                                     value: parseInt(microsec, 10) + offset,
-                                    thickness: 2,
+                                    thickness: 1,
                                     lineDashType: 'dash',
+                                    opacity: 0.5,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                     label: pickKey.toLowerCase(),
-                                    labelAlign: 'far'
+                                    labelAlign: 'far',
+                                    labelFormatter: function(e) {
+                                        return  e.stripLine.opacity === 0 ? '' : e.stripLine.label;
+                                    }
                                 });
                             }
                         }
                     }
                 }
             }
+        };
+
+        this.togglePredictedPicksVisibility = (show) => {
+            for (const site of this.allSites) {
+                if (site.hasOwnProperty('picks')) {
+                    for (const pick of site.picks) {
+                        if (pick.label === pick.label.toLowerCase()) {
+                            pick.opacity = show ? 0.5 : 0;
+                        }
+                    }
+                }
+            }
+            self.pageChange();
         };
 
         this.parseMiniseed = (file): any => {
@@ -945,10 +986,10 @@ export class AppComponent implements OnInit {
             let zTime = null;
             const eventData = {};
             let changeOriginTime = false;
+            let createFilter = true;
             channelsMap.forEach( function(this, value, key, map) {
-                let sg = miniseed.createSeismogram(channelsMap.get(key));
+                const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
-                sg = filter.rMean(sg);
                 if (sg.y().includes(NaN) === false) {
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to second)
@@ -960,6 +1001,13 @@ export class AppComponent implements OnInit {
                             changeOriginTime = true;
                         }
                     }
+                    if (createFilter) {
+                        self.sample_rate = sg.sampleRate();
+                        self.createButterworthFilter();
+                        createFilter = false;
+                    }
+                    const s = filter.rMean(sg);
+                    self.butterworth.filterInPlace(s.y());
                     const channel = {};
                     channel['code_id'] = sg.codes();
                     channel['site_id'] = sg.stationCode();
@@ -969,14 +1017,14 @@ export class AppComponent implements OnInit {
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
                     const waveform = [];
-                    for (let k = 0; k < sg.numPoints(); k++) {
+                    for (let k = 0; k < s.numPoints(); k++) {
                         waveform.push({
                             x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-                            y: sg.y()[k]
+                            y: s.y()[k]
                         });
                     }
                     channel['data'] = waveform;
-                    channel['duration'] = (sg.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
+                    channel['duration'] = (s.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
                     let site = self.findValue(sites, 'site_id', sg.stationCode());
                     if (!site) {
                         site = { site_id: sg.stationCode(), channels: [] };
@@ -999,10 +1047,6 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            if (sites.length > 0 && sites[0].channels[0].sample_rate !== self.sample_rate) {
-                self.sample_rate = sites[0].channels[0].sample_rate;
-                self.createButterworthFilter();
-            }
             eventData['sites'] = sites;
             eventData['zeroTime'] = zTime;
             return(eventData);
@@ -1017,24 +1061,6 @@ export class AppComponent implements OnInit {
                                  self.highFreqCorner, // high corner
                                  1 / self.sample_rate
             );
-             console.log(self.butterworth);
-        };
-
-        this.addCompositeTrace = (sites): any[] => {
-            for (const site of sites) {
-                for (const channel of site.channels) {
-                    const filteredTrace = {};
-                    filteredTrace['code_id'] = site.channel.code_id + environment.filteredChannelCode;
-                    filteredTrace['site_id'] = site.site_id;
-                    filteredTrace['channel_id'] = site.channel.channel_id + environment.filteredChannelCode;
-                    filteredTrace['sample_rate'] = site.channel.sample_rate;
-                    filteredTrace['start'] = site.channel.start;  // moment object (good up to milisecond)
-                    filteredTrace['microsec'] = site.channel.microsec;
-                    filteredTrace['data'] = [];
-                    filteredTrace['duration'] = site.channel.duration;  // in microseconds
-                }
-            }
-            return sites;
         };
 
         this.addCompositeTrace = (sites): any[] => {

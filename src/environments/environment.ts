@@ -6,7 +6,7 @@ export const environment = {
   production: false,
 
   // URL of the API
-  apiUrl: 'http://sppkube.eastus.cloudapp.azure.com/api/v1/',
+  apiUrl: 'http://api.microquake.org/api/v1/',
   // Catalog API endpoint
   apiCatalog: 'catalog',
   // Catalog Boundaries API endpoint
@@ -38,10 +38,10 @@ export const environment = {
   signComponent: 'X',
   // composite trace component code
   compositeChannelCode: 'C',
-  // filtered trace component code suffix
-  filteredChannelCode: 'F',
   // time zone for data display
-  zone: 'Asia/Ulaanbaatar'
+  zone: 'Asia/Ulaanbaatar',
+  // time zone offset
+  timezone: '+08:00'
 };
 
 /*
