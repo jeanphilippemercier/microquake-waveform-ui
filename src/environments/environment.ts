@@ -6,7 +6,7 @@ export const environment = {
   production: false,
 
   // URL of the API
-  apiUrl: 'http://api.microquake.org/api/v1/',
+  apiUrl: 'https://api.microquake.org/api/v1/',
   // Catalog API endpoint
   apiCatalog: 'catalog',
   // Catalog Boundaries API endpoint

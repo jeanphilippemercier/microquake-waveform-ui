@@ -1,0 +1,99 @@
+stages:
+- build
+- test
+- docker
+- deploy
+
+variables:
+  CLI_VERSION: 7.2.3
+  DOCKER_DRIVER: overlay2
+  UI_IMAGE: ${CI_REGISTRY_IMAGE}/ui
+  CI_APPLICATION_TAG: $(echo ${CI_COMMIT_SHA} | cut -c1-8)
+
+build:
+  stage: build
+  image: trion/ng-cli
+  before_script:
+  - npm ci
+  script:
+  - ng build --prod
+  artifacts:
+    expire_in: 2 months
+    paths:
+    - dist/
+  # tags:
+  # - docker
+
+test:e2e:
+  stage: test
+  image: trion/ng-cli-e2e:${CLI_VERSION}
+  allow_failure: true
+  script:
+  - ng e2e
+  # tags:
+  # - docker
+
+test:karma:
+  stage: test
+  image: trion/ng-cli-karma
+  allow_failure: true
+  script:
+  - ng test --code-coverage --progress false --watch false
+  coverage: '/Lines \W+: (\d+\.\d+)%.*/'
+  artifacts:
+    paths:
+    - coverage/
+  # tags:
+  # - docker
+
+test:nglint:
+  stage: test
+  image: trion/ng-cli:${CLI_VERSION}
+  allow_failure: true
+  script:
+  - ng lint
+  # tags:
+  # - docker
+
+docker:
+  image: docker:stable
+  stage: docker
+  services:
+  - name: docker:stable-dind
+    entrypoint:
+    - dockerd-entrypoint.sh
+  before_script:
+  - apk add --update openssh-client make ca-certificates openssl python git bash
+  script:
+  - eval $(ssh-agent -s)
+  - bash -c 'ssh-add <(echo "$SSH_PRIVATE_KEY")'
+
+  - mkdir -p ~/.ssh
+  - chmod -R 700 ~/.ssh
+  - ssh-keyscan -H git.microquake.org >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+  - git submodule update --init --recursive
+  - update-ca-certificates
+
+  - docker login -u deploy -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker build . -t $UI_IMAGE:latest -t $UI_IMAGE:$(echo $CI_COMMIT_SHA | cut -c1-8) --build-arg SSH_PRIVATE_KEY
+  - docker push $UI_IMAGE:latest
+  - docker push $UI_IMAGE:$(echo $CI_COMMIT_SHA | cut -c1-8)
+
+kube:
+  image: docker:stable
+  stage: deploy
+  only:
+    refs:
+    - master
+  services:
+  - name: docker:stable-dind
+    entrypoint:
+    - dockerd-entrypoint.sh
+  before_script:
+  - apk add --update openssh-client make ca-certificates openssl python git bash
+  script:
+  - wget https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
+  - chmod +x kubectl
+  - echo "$KUBE" > admin.conf
+  - ./kubectl --kubeconfig admin.conf set image deployment.v1.apps/waveform-ui-staging waveform-ui-staging=registry.microquake.org/rio-tinto/microquake-waveform-ui/ui:$(echo $CI_COMMIT_SHA | cut -c1-8) --record
