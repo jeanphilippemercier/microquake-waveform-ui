@@ -34,6 +34,6 @@ export const environment = {
   signComponent: 'X',
   // composite trace component code
   compositeChannelCode: 'C',
-  // time zone for data display
-  zone: 'Asia/Ulaanbaatar'
+  // time zone offset
+  timezone: '+08:00'
 };
