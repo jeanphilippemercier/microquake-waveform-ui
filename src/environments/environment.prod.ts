@@ -36,4 +36,6 @@ export const environment = {
   compositeChannelCode: 'C',
   // time zone for data display
   zone: 'Asia/Ulaanbaatar'
+  // time zone offset
+  timezone: '+08:00'
 };
