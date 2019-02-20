@@ -56,6 +56,7 @@ export class FileDatabase {
   public treeObject: any;
   public date: string;
   public eventId: string;
+  public timezone: string;
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
@@ -67,6 +68,7 @@ export class FileDatabase {
     this.eventId = url.searchParams.get('id');
 
     this._catalogService.get_boundaries().subscribe(bounds => {
+      this.timezone = environment.timezone;
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.max_time = bounds['max_time'];
         this.treeObject = this.createTree(bounds);
@@ -84,8 +86,15 @@ export class FileDatabase {
   }
 
   getEventsForDate(date) {
+    const day = moment(date).utc().utcOffset(this.timezone);
+    day.hour(0);
+    day.minute(0);
+    day.second(0);
+    day.millisecond(0);
+    const startTime = day.toISOString();
+    const endTime = day.add(1, 'days').toISOString();
 
-    this._catalogService.get_day_events(date).subscribe(events => {
+    this._catalogService.get_events(startTime, endTime).subscribe(events => {
 
         if (Array.isArray(events)) {
           events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
@@ -140,8 +149,8 @@ export class FileDatabase {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
     'September', 'October', 'November', 'December'];
     if (moment(bounds.min_time).isValid() && moment(bounds.max_time).isValid()) {
-      const date = moment(bounds.max_time).utc().utcOffset(environment.timezone);
-      const dateMin = moment(bounds.min_time).utc().utcOffset(environment.timezone);
+      const date = moment(bounds.max_time).utc().utcOffset(this.timezone);
+      const dateMin = moment(bounds.min_time).utc().utcOffset(this.timezone);
       while (date.isSameOrAfter(dateMin)) {
         const year = date.year();
         const month = date.month();
@@ -166,7 +175,7 @@ export class FileDatabase {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
-            const d = moment(value.time_utc).utc().utcOffset(environment.timezone);
+            const d = moment(value.time_utc).utc().utcOffset(this.timezone);
             const microsec = value.time_utc.slice(-8, -1);
             const year = d.year();
             const month = d.month();
@@ -223,7 +232,7 @@ export class FileDatabase {
             node.type = value.event_type === 'earthquake' ? 'E' :
                           value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
             node.evaluation_mode = value.evaluation_mode;
-            node.magnitude = value.magnitude.toPrecision(2);
+            node.magnitude = value.magnitude.toFixed(1);
             node.magnitude_type = value.magnitude_type;
             node.event_file = value.event_file;
             node.event_type = value.event_type;
@@ -277,6 +286,7 @@ export class EventsTreeComponent {
       if (data.length > 0) {
         const message = this.findNode(data, database.eventId);
         message['action'] = 'load';
+        message['timezone'] = database.timezone;
 
         this.messageEvent.emit(message);   // send message to load data
         this.treeControl.expandAll();
@@ -323,6 +333,7 @@ export class EventsTreeComponent {
       const message = this['selectedNode'];
       this.database.eventId = message.event_resource_id;  // save selection
       message.action = 'load';
+      message.timezone = this.database.timezone;
 
       this.messageEvent.emit(message);
     }
@@ -335,6 +346,7 @@ export class EventsTreeComponent {
 
       const message = this['activeNode'];
       message.action = 'info';
+      message.timezone = this.database.timezone;
 
       this.messageEvent.emit(message);
     }
@@ -346,7 +358,7 @@ export class EventsTreeComponent {
       const node = this['activeParent'];
 
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
-        const date = moment.parseZone(node.date + ' ' + environment.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
+        const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
           this.database.getEventsForDate(date);
         }

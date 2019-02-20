@@ -14,7 +14,7 @@ export const environment = {
   // Traveltimes API endpoint
   apiTravelTimes: 'traveltimes',
   // Arrivals API endpoint
-  apiArrivals: 'picks',
+  apiArrivals: 'arrivals',
   // number of charts per page
   chartsPerPage: 8,
   // fixed duration to display, in seconds
@@ -30,6 +30,12 @@ export const environment = {
     'Z': 'blue',
     'C': 'black'
   },
+  // thickness of the line in charts
+  lineThickness: 0.8,
+  // thickness of the pick lines
+  picksLineThickness: 2,
+  // thickness of the predicted pick lines
+  predictedPicksLineThickness: 1,
   // component to determine sign for composite trace
   signComponent: 'X',
   // composite trace component code

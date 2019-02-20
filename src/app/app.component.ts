@@ -48,8 +48,6 @@ export class AppComponent implements OnInit {
     public lastSelectedXPosition: number;
     public lastDownTarget: any;  // last mouse down selection
 
-    public eventMessage: any;
-
     private menu: any;
     private menuVisible: Boolean;
 
@@ -84,6 +82,7 @@ export class AppComponent implements OnInit {
     private addPick: Function;
     private deletePicks: Function;
     private addPickData: Function;
+    private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private togglePredictedPicksVisibility: Function;
     private togglePredictedPicks: Function;
@@ -95,6 +94,8 @@ export class AppComponent implements OnInit {
     private createButterworthFilter: Function;
     private findValue: Function;
     private addTime: Function;
+
+    private timezone: string;
 
     public page_size = environment.chartsPerPage;
     public page_number: number;
@@ -112,19 +113,21 @@ export class AppComponent implements OnInit {
 
     getNotification(message) {
         // console.log(message);
-        this.eventMessage = message;
-        this.picksWarning = '';
+        if (message.hasOwnProperty('timezone')) {
+            this.timezone = message.timezone;
+        }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.loadEvent(message);
         }
+        this.picksWarning = '';
         $('#infoTime')[0].innerHTML = 'Event ' +
-                    moment(message.time_utc).utc().utcOffset(environment.timezone).format('YYYY-MM-DD HH:mm:ss') +
+                    moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') +
                     '<small>'
                     + message.time_utc.slice(-8, -1) +
-                    moment().utc().utcOffset(environment.timezone).format('Z')
+                    moment().utc().utcOffset(this.timezone).format('Z')
                     + '</small>';
         this.origin['time_utc'] = message.time_utc;
-        this.origin['magnitude'] = message.magnitude ? message.magnitude + ' (' + message.magnitude_type + ')' : '';
+        this.origin['magnitude'] = message.magnitude ? parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
         this.origin['x'] = message.x ? message.x : '';
         this.origin['y'] = message.y ? message.y : '';
         this.origin['z'] = message.z ? message.z : '';
@@ -175,6 +178,7 @@ export class AppComponent implements OnInit {
         self.passband = filter.BAND_PASS;
         self.lowFreqCorner = 60;
         self.highFreqCorner = 1000;
+        self.timezone = "+00:00";
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -209,10 +213,10 @@ export class AppComponent implements OnInit {
                                     this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                         self.originTravelTimes = traveltimes;
                                         this.addPredictedPicksData();
-                                        // get arrivals
-                                        this._catalogService.get_arrivals_by_id(id, '').subscribe(picks => {
+                                        // get arrivals, picks for preferred origin
+                                        this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                           self.allPicks = picks;
-                                          this.addPickData();
+                                          this.addArrivalsPickData();
                                           if (Array.isArray(self.allSites)) {
                                               self.allSites.sort
                                                   (this.sort_array_by
@@ -225,7 +229,7 @@ export class AppComponent implements OnInit {
 
                                           console.log('Loaded data for ' + self.allSites.length + ' sites');
                                           $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                              moment(eventData.zeroTime).utc().utcOffset(environment.timezone).format().replace('T', ' ');
+                                              moment(eventData.zeroTime).utc().utcOffset(self.timezone).format().replace('T', ' ');
                                         });
                                     });
                                 });
@@ -322,7 +326,7 @@ export class AppComponent implements OnInit {
                                 name: channel.code_id,
                                 type: 'line',
                                 color: environment.linecolor[channel.channel_id],
-                                lineThickness: 1,
+                                lineThickness: environment.lineThickness,
                                 showInLegend: true,
                                 // highlightEnabled: true,
                                 dataPoints: channel.data
@@ -385,7 +389,7 @@ export class AppComponent implements OnInit {
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                const d = moment(self.zeroTime).utc().utcOffset(environment.timezone);
+                                const d = moment(self.zeroTime).utc().utcOffset(self.timezone);
                                 return d.format('HH:mm:ss');
                             } else {
                                 return  e.value / 1000000 + ' s' ;
@@ -823,7 +827,7 @@ export class AppComponent implements OnInit {
             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
             site.picks.push({
                 value: position,
-                thickness: 2,
+                thickness: environment.picksLineThickness,
                 color: pickType === 'P' ? 'red' : pickType === 'S' ? 'blue' : 'black',
                 label: pickType,
                 labelAlign: 'far'
@@ -878,6 +882,7 @@ export class AppComponent implements OnInit {
             }
         };
 
+        // when using picks API endpoint (currently unused)
         this.addPickData = () => {
             const missingSites = [];
             for (const pick of self.allPicks) {
@@ -897,7 +902,7 @@ export class AppComponent implements OnInit {
                             }
                             site.picks.push({
                                 value: parseInt(microsec, 10) + offset,
-                                thickness: 2,
+                                thickness: environment.picksLineThickness,
                                 color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                 label: pickKey,
                                 labelAlign: 'far',
@@ -917,6 +922,51 @@ export class AppComponent implements OnInit {
             }
         };
 
+        this.addArrivalsPickData = () => {
+            const missingSites = [];
+            for (const arrival of self.allPicks) {
+                if (arrival.hasOwnProperty('pick')) {
+                const pick = arrival.pick;
+                    if (moment(pick.time_utc).isValid()) {
+                        const site = self.findValue(self.allSites, 'site_id', pick.site_id);
+                        if (site) {
+                            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+                            // const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
+                            const pickKey = arrival.phase === 'P' ? 'P' : arrival.phase === 'S' ? 'S' : '';
+                            if (pickKey !== '') {
+                                const pickTime = moment(pick.time_utc);  // UTC
+                                const microsec = pick.time_utc.slice(-7, -1);
+                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                                if (pickKey === 'P') {
+                                    site['p-time_utc'] = pickTime;
+                                } else if (pickKey === 'S') {
+                                    site['s-time_utc'] = pickTime;
+                                }
+                                site.picks.push({
+                                    value: parseInt(microsec, 10) + offset,
+                                    thickness: environment.picksLineThickness,
+                                    color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+                                    label: pickKey,
+                                    labelAlign: 'far',
+                                });
+                            }
+                        } else  {
+                            if (!missingSites.includes(pick.site_id)) {
+                                missingSites.push(pick.site_id);
+                            }
+                        }
+                    } else {
+                        console.log('Invalid pick time for ' + pick.site_id + ' (' + pick.phase_hint + '): ' + pick.time_utc);
+                    }
+                } else {
+                    console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
+                }
+
+            }
+            if (missingSites.length > 0) {
+                self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
+            }
+        };
 
         this.addTime = (start_time, traveltime): String => {
             const d = moment(start_time);
@@ -949,7 +999,7 @@ export class AppComponent implements OnInit {
                                 }
                                 site.picks.push({
                                     value: parseInt(microsec, 10) + offset,
-                                    thickness: 1,
+                                    thickness: environment.predictedPicksLineThickness,
                                     lineDashType: 'dash',
                                     opacity: 0.5,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
