@@ -12,18 +12,19 @@ export class HelpDialogComponent {
     constructor(public dialog: MatDialog) {}
 
     openDialog(): void {
-        this.dialog.closeAll();
-        const dialogRef = this.dialog.open(HelpDialogSheetComponent, {
-          width: '600px',
-          hasBackdrop: false,
-          position: {
-            'bottom': '0',
-            'left': '0'
-          }
-        });
-        dialogRef.afterClosed().subscribe(result => {
-          console.log(`Dialog closed: ${result}`);
-        });
+        if (this.dialog.openDialogs.length > 0) {
+          this.dialog.closeAll();
+        } else {
+          const dialogRef = this.dialog.open(HelpDialogSheetComponent, {
+            width: '600px',
+            hasBackdrop: false,
+            position: {
+              'bottom': '0',
+              'left': '0'
+            }
+          });
+
+        }
     }
 
 }
@@ -36,7 +37,11 @@ export class HelpDialogSheetComponent {
 
   constructor(
     public dialogRef: MatDialogRef<HelpDialogSheetComponent>
-    ) {}
+  ) {}
+
+  closeModal() {
+    this.dialogRef.close();
+  }
 
 }
 

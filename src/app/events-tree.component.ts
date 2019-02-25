@@ -5,7 +5,6 @@ import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree'
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatIconModule} from '@angular/material/icon';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
-import { environment } from '../environments/environment';
 import { CatalogApiService } from './catalog-api.service';
 import * as moment from 'moment';
 
@@ -67,8 +66,9 @@ export class FileDatabase {
     const url = new URL(url_string);
     this.eventId = url.searchParams.get('id');
 
-    this._catalogService.get_boundaries().subscribe(bounds => {
-      this.timezone = environment.timezone;
+    this._catalogService.get_boundaries().subscribe(boundsArray => {
+      const bounds = boundsArray[0];
+      this.timezone = bounds.timezone;
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.max_time = bounds['max_time'];
         this.treeObject = this.createTree(bounds);

@@ -77,6 +77,7 @@
     </div>
     <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
       <div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
+          <!--
           <button id='commonTime' title='Common Time Scale for All Channels' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="material-icons md-24">more_horiz</i></button>
           <button id='commonAmplitude' title='Common Amplitude Scale for All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="material-icons md-24">more_vert</i></button>
           <button id='zoomAll' title='Zoom or Pan All Channels' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="material-icons md-24">link</i></button>
@@ -84,7 +85,15 @@
           <button id='resetAll' title='Reset View after Zoom or Pan' type='button' class='btn btn-primary'><i class="material-icons md-24">settings_backup_restore</i></button>
           <button id='display3C' title='Display Composite or 3-Component Traces' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><i class="material-icons md-24">filter_3</i></button>
           <button id='togglePredictedPicks' title='Toggle Predicted Picks' type='button' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><i class="material-icons md-24">blur_linear</i></button>
-          <!--<button id='showTooltip' title='Show Tooltips' type='button' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'>Show Tooltips <fa name='info-circle' size='lg'></fa></button>-->
+          -->
+          <button mat-mini-fab id='commonTime' title='Common Time Scale for All Channels' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>more_horiz</mat-icon></button>
+          <button mat-mini-fab id='commonAmplitude' title='Common Amplitude Scale for All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>more_vert</mat-icon></button>
+          <button mat-mini-fab id='zoomAll' title='Zoom or Pan All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>link</mat-icon></button>
+          <button mat-mini-fab id='backBtn' title='Undo last Zoom or Pan' class='btn btn-primary'><mat-icon>undo</mat-icon></button>
+          <button mat-mini-fab id='resetAll' title='Reset View after Zoom or Pan' class='btn btn-primary'><mat-icon>settings_backup_restore</mat-icon></button>
+          <button mat-mini-fab id='display3C' title='Display Composite or 3-Component Traces' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>filter_3</mat-icon></button>
+          <button mat-mini-fab id='togglePredictedPicks' title='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
+          <button mat-mini-fab id='togglePredictedPicksBias' title='Toggle Predicted Picks Bias' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
           <div>
             <app-help-dialog></app-help-dialog>
           </div>

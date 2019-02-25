@@ -43,9 +43,7 @@ export const environment = {
   // component to determine sign for composite trace
   signComponent: 'X',
   // composite trace component code
-  compositeChannelCode: 'C',
-  // time zone offset
-  timezone: '+08:00'
+  compositeChannelCode: 'C'
 };
 
 /*

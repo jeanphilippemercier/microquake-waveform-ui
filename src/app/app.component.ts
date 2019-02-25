@@ -26,6 +26,8 @@ export class AppComponent implements OnInit {
     public origin: any;
     public waveformOrigin: any;
 
+    public picksBias: number;
+
     private butterworth: any;
     private numPoles: any;
     private passband: any;
@@ -40,6 +42,7 @@ export class AppComponent implements OnInit {
     public zoomAll: Boolean;
     public displayComposite: Boolean;
     public showPredictedPicks: Boolean;
+    public removeBiasPredictedPicks: Boolean;
 
     private convYUnits: number;
 
@@ -85,6 +88,7 @@ export class AppComponent implements OnInit {
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private togglePredictedPicksVisibility: Function;
+    private togglePredictedPicksBias: Function;
     private togglePredictedPicks: Function;
     private toggleTooltip: Function;
     private back: Function;
@@ -156,6 +160,7 @@ export class AppComponent implements OnInit {
         self.zoomAll = false;
         self.displayComposite = true;
         self.showPredictedPicks = true;
+        self.removeBiasPredictedPicks = false;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -178,7 +183,8 @@ export class AppComponent implements OnInit {
         self.passband = filter.BAND_PASS;
         self.lowFreqCorner = 60;
         self.highFreqCorner = 1000;
-        self.timezone = "+00:00";
+        self.timezone = '+00:00';
+        self.picksBias = 0;
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -438,12 +444,15 @@ export class AppComponent implements OnInit {
                     const relY = e.pageY - parentOffset.top;
                     if (e.button === 0) {  // drag active on left mouse button only
                         // Get the selected stripLine & change the cursor
-                        for (let i = 0; i < chart.axisX[0].stripLines.length; i++) {
-                            if (chart.axisX[0].stripLines[i].get('bounds')) {
-                                if (relX > chart.axisX[0].stripLines[i].get('bounds').x1 - environment.snapDistance &&
-                                 relX < chart.axisX[0].stripLines[i].get('bounds').x2 + environment.snapDistance &&
-                                 relY > chart.axisX[0].stripLines[i].get('bounds').y1 &&
-                                 relY < chart.axisX[0].stripLines[i].get('bounds').y2) {
+                        const pickLines = chart.axisX[0].stripLines;
+                        for (let i = 0; i < pickLines.length; i++) {
+                            const label = pickLines[i].label;
+                            if (label !== label.toLowerCase() // exclude predicted picks (lowercase labels)
+                                && pickLines[i].get('bounds')) {
+                                if (relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
+                                 relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
+                                 relY > pickLines[i].get('bounds').y1 &&
+                                 relY < pickLines[i].get('bounds').y2) {
                                     if (e.ctrlKey) {  // remove pick
                                         const selLine = chart.options.axisX.stripLines[i];
                                         self.deletePicks(ind, selLine.label, selLine.value);
@@ -626,6 +635,13 @@ export class AppComponent implements OnInit {
             self.togglePredictedPicksVisibility(self.showPredictedPicks);
             $(this).toggleClass('active');
         });
+
+        $('#togglePredictedPicksBias').on('click', () => {
+            self.removeBiasPredictedPicks = !self.removeBiasPredictedPicks;
+            self.togglePredictedPicksBias(self.removeBiasPredictedPicks, true);
+            $(this).toggleClass('active');
+        });
+
 
         // If the context menu element is clicked
         $('.menu li').click(function() {
@@ -924,6 +940,8 @@ export class AppComponent implements OnInit {
 
         this.addArrivalsPickData = () => {
             const missingSites = [];
+            let picksTotalBias = 0;
+            let nPicksBias = 0;
             for (const arrival of self.allPicks) {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
@@ -942,13 +960,20 @@ export class AppComponent implements OnInit {
                                 } else if (pickKey === 'S') {
                                     site['s-time_utc'] = pickTime;
                                 }
+                                const pickValue = parseInt(microsec, 10) + offset;
                                 site.picks.push({
-                                    value: parseInt(microsec, 10) + offset,
+                                    value: pickValue,
                                     thickness: environment.picksLineThickness,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                     label: pickKey,
                                     labelAlign: 'far',
                                 });
+                                const predictedPick = site.picks.find(
+                                    function(el) { return el.label === pickKey.toLowerCase(); } );
+                                if (predictedPick) {
+                                    picksTotalBias += pickValue - predictedPick.value;
+                                    nPicksBias++;
+                                }
                             }
                         } else  {
                             if (!missingSites.includes(pick.site_id)) {
@@ -961,8 +986,11 @@ export class AppComponent implements OnInit {
                 } else {
                     console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
                 }
-
             }
+            self.picksBias = picksTotalBias / nPicksBias;
+            console.log(self.picksBias);
+            self.removeBiasPredictedPicks = true; // default to true
+            self.togglePredictedPicksBias(self.removeBiasPredictedPicks, false);
             if (missingSites.length > 0) {
                 self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
             }
@@ -1027,6 +1055,23 @@ export class AppComponent implements OnInit {
                 }
             }
             self.pageChange();
+        };
+
+        this.togglePredictedPicksBias = (removeBias, change) => {
+            if (self.picksBias !== 0) {
+                for (const site of this.allSites) {
+                    if (site.hasOwnProperty('picks')) {
+                        for (const pick of site.picks) {
+                            if (pick.label === pick.label.toLowerCase()) {
+                                pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
+                            }
+                        }
+                    }
+                }
+                if(change) {
+                    self.pageChange();
+                }
+            }
         };
 
         this.parseMiniseed = (file): any => {
