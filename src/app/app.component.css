@@ -55,3 +55,10 @@
 .table > tbody > tr:first-child > th {
     border: none;
 }
+.mat-form-field {
+    width: 15%;
+}
+
+.pagination /deep/ .ngx-pagination .current {
+    background: #69F;
+}

@@ -12,7 +12,6 @@ import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.comp
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 
-
 @NgModule({
   declarations: [
     AppComponent,

@@ -33,6 +33,11 @@ export class AppComponent implements OnInit {
     private passband: any;
     private lowFreqCorner: any;
     private highFreqCorner: any;
+    private createButterworthFilter: Function;
+    private applyFilter: Function;
+    private filterData: Function;
+    private changedFilter: Boolean;
+
     private sample_rate: any;
 
     public commonTimeState: Boolean;
@@ -95,7 +100,6 @@ export class AppComponent implements OnInit {
     private showPage: Function;
     public pageChange: Function;
     private sort_array_by: Function;
-    private createButterworthFilter: Function;
     private findValue: Function;
     private addTime: Function;
 
@@ -161,6 +165,7 @@ export class AppComponent implements OnInit {
         self.displayComposite = true;
         self.showPredictedPicks = true;
         self.removeBiasPredictedPicks = false;
+        self.changedFilter = true;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -186,6 +191,7 @@ export class AppComponent implements OnInit {
         self.timezone = '+00:00';
         self.picksBias = 0;
 
+
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
 /*
@@ -207,7 +213,7 @@ export class AppComponent implements OnInit {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites')) {
-                            self.allSites = this.addCompositeTrace(eventData.sites);
+                            this.filterData(eventData.sites);
                             self.zeroTime = eventData.zeroTime;
                             self.currentEventId = id;
                             if (self.allSites.length > 0) {
@@ -988,7 +994,6 @@ export class AppComponent implements OnInit {
                 }
             }
             self.picksBias = picksTotalBias / nPicksBias;
-            console.log(self.picksBias);
             self.removeBiasPredictedPicks = true; // default to true
             self.togglePredictedPicksBias(self.removeBiasPredictedPicks, false);
             if (missingSites.length > 0) {
@@ -1068,7 +1073,7 @@ export class AppComponent implements OnInit {
                         }
                     }
                 }
-                if(change) {
+                if (change) {
                     self.pageChange();
                 }
             }
@@ -1081,7 +1086,6 @@ export class AppComponent implements OnInit {
             let zTime = null;
             const eventData = {};
             let changeOriginTime = false;
-            let createFilter = true;
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
@@ -1096,13 +1100,7 @@ export class AppComponent implements OnInit {
                             changeOriginTime = true;
                         }
                     }
-                    if (createFilter) {
-                        self.sample_rate = sg.sampleRate();
-                        self.createButterworthFilter();
-                        createFilter = false;
-                    }
-                    const s = filter.rMean(sg);
-                    self.butterworth.filterInPlace(s.y());
+                    const seismogram = filter.rMean(sg);
                     const channel = {};
                     channel['code_id'] = sg.codes();
                     channel['site_id'] = sg.stationCode();
@@ -1111,15 +1109,16 @@ export class AppComponent implements OnInit {
                     channel['start'] = sg.start();  // moment object (good up to milisecond)
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+                    channel['raw'] = seismogram;
                     const waveform = [];
-                    for (let k = 0; k < s.numPoints(); k++) {
+                    for (let k = 0; k < seismogram.numPoints(); k++) {
                         waveform.push({
                             x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-                            y: s.y()[k]
+                            y: seismogram.y()[k]  // trace after mean removal
                         });
                     }
                     channel['data'] = waveform;
-                    channel['duration'] = (s.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
+                    channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
                     let site = self.findValue(sites, 'site_id', sg.stationCode());
                     if (!site) {
                         site = { site_id: sg.stationCode(), channels: [] };
@@ -1148,14 +1147,53 @@ export class AppComponent implements OnInit {
         };
 
 
-        this.createButterworthFilter = () => {
-             self.butterworth = filter.createButterworth(
-                                 self.numPoles, // poles
-                                 self.passband,
-                                 self.lowFreqCorner, // low corner
-                                 self.highFreqCorner, // high corner
-                                 1 / self.sample_rate
+        this.createButterworthFilter = (sample_rate) => {
+            if(self.lowFreqCorner <= 0 || self.highFreqCorner >= sample_rate/2 ) {
+                self.butterworth = null;
+            } else {
+                self.butterworth = filter.createButterworth(
+                                     self.numPoles, // poles
+                                     self.passband,
+                                     self.lowFreqCorner, // low corner
+                                     self.highFreqCorner, // high corner
+                                     1 / sample_rate
             );
+
+            }
+        };
+
+        this.applyFilter = () => {
+            if (self.changedFilter && self.allSites.length > 0) {
+                self.filterData(self.allSites);
+                self.pageChange();
+            }
+        };
+
+        this.filterData = (sites) => {
+            self.createButterworthFilter(sites[0].channels[0].sample_rate);
+            for (const site of sites) {
+                // remove composite traces if existing
+                const pos = site.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
+                if (pos >= 0) {
+                    site.channels.splice(pos, 1);
+                }
+                for (const channel of site.channels) {
+                    if (channel.hasOwnProperty('raw')) {
+                        const s = channel.raw.clone();
+                        if(self.butterworth) {
+                            self.butterworth.filterInPlace(s.y());
+                        }
+                        for (let k = 0; k < s.numPoints(); k++) {
+                            channel.data[k].y = s.y()[k];
+                        }
+                    } else {
+                        console.log('Error applying filter cannot find raw data');
+                        break;
+                    }
+                }
+            }
+            self.allSites = this.addCompositeTrace(sites); // recompute composite traces
+            self.changedFilter = false;
         };
 
         this.addCompositeTrace = (sites): any[] => {
