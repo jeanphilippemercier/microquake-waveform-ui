@@ -34,7 +34,7 @@ export class AppComponent implements OnInit {
     public lowFreqCorner: any;
     public highFreqCorner: any;
     private createButterworthFilter: Function;
-    private applyFilter: Function;
+    public applyFilter: Function;
     private filterData: Function;
     public changedFilter: Boolean;
 
