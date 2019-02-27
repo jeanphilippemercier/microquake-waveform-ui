@@ -29,14 +29,14 @@ export class AppComponent implements OnInit {
     public picksBias: number;
 
     private butterworth: any;
-    private numPoles: any;
+    public numPoles: any;
     private passband: any;
-    private lowFreqCorner: any;
-    private highFreqCorner: any;
+    public lowFreqCorner: any;
+    public highFreqCorner: any;
     private createButterworthFilter: Function;
     private applyFilter: Function;
     private filterData: Function;
-    private changedFilter: Boolean;
+    public changedFilter: Boolean;
 
     private sample_rate: any;
 
@@ -1148,7 +1148,7 @@ export class AppComponent implements OnInit {
 
 
         this.createButterworthFilter = (sample_rate) => {
-            if(self.lowFreqCorner <= 0 || self.highFreqCorner >= sample_rate/2 ) {
+            if (self.lowFreqCorner <= 0 || self.highFreqCorner >= sample_rate / 2 ) {
                 self.butterworth = null;
             } else {
                 self.butterworth = filter.createButterworth(
@@ -1180,7 +1180,7 @@ export class AppComponent implements OnInit {
                 for (const channel of site.channels) {
                     if (channel.hasOwnProperty('raw')) {
                         const s = channel.raw.clone();
-                        if(self.butterworth) {
+                        if (self.butterworth) {
                             self.butterworth.filterInPlace(s.y());
                         }
                         for (let k = 0; k < s.numPoints(); k++) {
