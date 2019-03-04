@@ -103,6 +103,9 @@ export class AppComponent implements OnInit {
     private findValue: Function;
     private addTime: Function;
 
+    private globalViewportMinStack: any[];
+    private globalViewportMaxStack: any[];
+
     private timezone: string;
 
     public page_size = environment.chartsPerPage;
@@ -191,7 +194,6 @@ export class AppComponent implements OnInit {
         self.timezone = '+00:00';
         self.picksBias = 0;
 
-
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
 /*
@@ -237,7 +239,7 @@ export class AppComponent implements OnInit {
                                           }
                                           // display data (first page)
                                           self.page_number = 1;
-                                          self.pageChange();
+                                          self.pageChange(true);
 
                                           console.log('Loaded data for ' + self.allSites.length + ' sites');
                                           $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
@@ -274,10 +276,22 @@ export class AppComponent implements OnInit {
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
                 self.renderCharts();
                 self.setChartKeys();
+                for (const site of self.activeSites) {
+                    site.chart.options.viewportMinStack = self.globalViewportMinStack;
+                    site.chart.options.viewportMaxStack = self.globalViewportMaxStack;
+                }
             }
         };
 
-        this.pageChange = () => {
+        this.pageChange = (reset) => {
+            // remember zoom history
+            if (reset) {
+                self.globalViewportMinStack = [];
+                self.globalViewportMaxStack = [];
+            } else {
+                self.globalViewportMinStack = self.activeSites[0].chart.options.viewportMinStack;
+                self.globalViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
+            }
             self.destroyCharts();
             self.showPage(self.page_number, self.page_size);
         };
@@ -394,8 +408,10 @@ export class AppComponent implements OnInit {
                     axisX: {
                         minimum: 0,
                         maximum: self.getXmax(i),
-                        viewportMinimum: self.getXvpMin(),
-                        viewportMaximum: self.getXvpMax(),
+                        viewportMinimum: self.zoomAll && self.globalViewportMinStack.length > 0 ?
+                            self.globalViewportMinStack[self.globalViewportMinStack.length - 1] : self.getXvpMin(),
+                        viewportMaximum: self.zoomAll && self.globalViewportMaxStack.length > 0 ?
+                            self.globalViewportMaxStack[self.globalViewportMaxStack.length - 1] : self.getXvpMax(),
                         includeZero: true,
                         labelAutoFit: false,
                         labelWrap: false,
@@ -625,7 +641,7 @@ export class AppComponent implements OnInit {
         $('#display3C').on('click', () => {
             self.displayComposite = !self.displayComposite;
             $(this).toggleClass('active');
-            self.pageChange();
+            self.pageChange(false);
         });
 
         $('#resetAll').on('click', () => {
@@ -708,14 +724,21 @@ export class AppComponent implements OnInit {
         };
 
         this.updateZoomStackCharts = (vpMin, vpMax) => {
-            for (let i = 0; i < self.activeSites.length; i++) {
-                const chart = self.activeSites[i].chart;
-                if (!chart.options.viewportMinStack) {
-                    chart.options.viewportMinStack = [];
-                    chart.options.viewportMaxStack = [];
+            if (self.globalViewportMinStack.length === 0 || self.globalViewportMinStack[self.globalViewportMinStack.length - 1] !== vpMin) {
+                self.globalViewportMinStack.push(vpMin);
+                self.globalViewportMaxStack.push(vpMax);
+                for (let i = 0; i < self.activeSites.length; i++) {
+                    const chart = self.activeSites[i].chart;
+                    if (!chart.options.viewportMinStack) {
+                        chart.options.viewportMinStack = [];
+                        chart.options.viewportMaxStack = [];
+                    }
+                    if (chart.options.viewportMinStack.length === 0 ||
+                        chart.options.viewportMinStack[chart.options.viewportMinStack.length - 1] !== vpMin) {
+                        chart.options.viewportMinStack.push(vpMin);
+                        chart.options.viewportMaxStack.push(vpMax);
+                    }
                 }
-                chart.options.viewportMinStack.push(vpMin);
-                chart.options.viewportMaxStack.push(vpMax);
             }
         };
 
@@ -878,26 +901,46 @@ export class AppComponent implements OnInit {
         };
 
         this.back = () => {
-            for (let j = 0; j < self.activeSites.length; j++) {
-                const canvas_chart = '#' + self.activeSites[j].container +
-                    ' > .canvasjs-chart-container' + ' > .canvasjs-chart-canvas';
-                if (self.zoomAll || self.lastDownTarget === $(canvas_chart)[1]) {
+            if (self.zoomAll) {
+                if (self.globalViewportMinStack && self.globalViewportMinStack.length > 0) {
+                    self.globalViewportMinStack.pop();
+                    self.globalViewportMaxStack.pop();
+                }
+                for (let j = 0; j < self.activeSites.length; j++) {
                     const chart = self.activeSites[j].chart;
-                    const viewportMinStack = chart.options.viewportMinStack;
-                    const viewportMaxStack = chart.options.viewportMaxStack;
+                    chart.options.viewportMinStack = self.globalViewportMinStack;
+                    chart.options.viewportMaxStack = self.globalViewportMaxStack;
                     if (!chart.options.axisX) {
                         chart.options.axisX = {};
                     }
-                    if (viewportMinStack && viewportMinStack.length >= 1) {
-                        viewportMinStack.pop();
-                        viewportMaxStack.pop();
-                        chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
-                        chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
+                    if (self.globalViewportMinStack && self.globalViewportMinStack.length > 0) {
+                        chart.options.axisX.viewportMinimum = self.globalViewportMinStack[self.globalViewportMinStack.length - 1];
+                        chart.options.axisX.viewportMaximum = self.globalViewportMaxStack[self.globalViewportMaxStack.length - 1];
                         chart.render();
                     } else {
                         self.resetChartViewX(chart);
                     }
-                    if (!self.zoomAll) {
+                }
+            } else {
+                for (let j = 0; j < self.activeSites.length; j++) {
+                    const canvas_chart = '#' + self.activeSites[j].container +
+                        ' > .canvasjs-chart-container' + ' > .canvasjs-chart-canvas';
+                    if (self.lastDownTarget === $(canvas_chart)[1]) {
+                        const chart = self.activeSites[j].chart;
+                        const viewportMinStack = chart.options.viewportMinStack;
+                        const viewportMaxStack = chart.options.viewportMaxStack;
+                        if (!chart.options.axisX) {
+                            chart.options.axisX = {};
+                        }
+                        if (viewportMinStack && viewportMinStack.length > 0) {
+                            viewportMinStack.pop();
+                            viewportMaxStack.pop();
+                            chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
+                            chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
+                            chart.render();
+                        } else {
+                            self.resetChartViewX(chart);
+                        }
                         break;
                     }
                 }
@@ -1059,7 +1102,7 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            self.pageChange();
+            self.pageChange(false);
         };
 
         this.togglePredictedPicksBias = (removeBias, change) => {
@@ -1074,7 +1117,7 @@ export class AppComponent implements OnInit {
                     }
                 }
                 if (change) {
-                    self.pageChange();
+                    self.pageChange(false);
                 }
             }
         };
@@ -1165,7 +1208,7 @@ export class AppComponent implements OnInit {
         this.applyFilter = () => {
             if (self.changedFilter && self.allSites.length > 0) {
                 self.filterData(self.allSites);
-                self.pageChange();
+                self.pageChange(false);
             }
         };
 
