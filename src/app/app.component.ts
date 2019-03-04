@@ -351,7 +351,7 @@ export class AppComponent implements OnInit {
                             {
                                 name: channel.code_id,
                                 type: 'line',
-                                color: environment.linecolor[channel.channel_id],
+                                color: environment.linecolor[channel.channel_id.toUpperCase()],
                                 lineThickness: environment.lineThickness,
                                 showInLegend: true,
                                 // highlightEnabled: true,
