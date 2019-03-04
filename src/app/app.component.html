@@ -88,24 +88,22 @@
           <div>
             <app-help-dialog></app-help-dialog>
           </div>
-          <div class='ml-2'>
-            <pagination-controls class="pagination" (pageChange)="page_number = $event; pageChange()"></pagination-controls>
-          </div>
-          <div class='ml-5'>
-            <mat-form-field appearance="fill">
+          <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
+          <div class = 'ml-5'>
+            <mat-form-field appearance="fill" class='input-form-width'>
               <mat-label>Low Corner</mat-label>
               <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" (change)='changedFilter = true' [(ngModel)]="lowFreqCorner">
             </mat-form-field>
-            <mat-form-field appearance="fill">
+            <mat-form-field appearance="fill" class='input-form-width'>
               <mat-label>High Corner</mat-label>
               <input matInput matTooltip="Butterworth Filter High Corner Frequency" type="number" step="100" (change)='changedFilter = true' [(ngModel)]="highFreqCorner">
             </mat-form-field>
-              <mat-form-field appearance="fill">
-                <mat-label>Poles</mat-label>
-                <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='changedFilter = true' [(ngModel)]="numPoles">
+            <mat-form-field appearance="fill" class='input-form-width-less'>
+              <mat-label>Poles</mat-label>
+              <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='changedFilter = true' [(ngModel)]="numPoles">
             </mat-form-field>
-            <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
           </div>
+          <pagination-controls class="pagination" (pageChange)="page_number = $event; pageChange()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>
         <div id='zeroTime'>Traces time origin</div>
