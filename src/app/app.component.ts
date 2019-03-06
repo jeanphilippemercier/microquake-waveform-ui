@@ -1223,11 +1223,12 @@ export class AppComponent implements OnInit {
                 for (const channel of site.channels) {
                     if (channel.hasOwnProperty('raw')) {
                         const s = channel.raw.clone();
+                        const seis = filter.taper.taper(s);
                         if (self.butterworth) {
-                            self.butterworth.filterInPlace(s.y());
+                            self.butterworth.filterInPlace(seis.y());
                         }
-                        for (let k = 0; k < s.numPoints(); k++) {
-                            channel.data[k].y = s.y()[k];
+                        for (let k = 0; k < seis.numPoints(); k++) {
+                            channel.data[k].y = seis.y()[k];
                         }
                     } else {
                         console.log('Error applying filter cannot find raw data');
