@@ -867,13 +867,22 @@ export class AppComponent implements OnInit {
 
         this.addPick = (ind, pickType, value) => {
             const site = self.activeSites[ind];
-            const chart = site.chart;
-            const position = value ? value : self.lastSelectedXPosition;
             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            if (self.findValue(site.picks, 'label', pickType)) {
+                window.alert('Not possible to add more than one ' + pickType + ' pick');
+                return;
+            }
+            const chart = site.chart;
+            const data = chart.options.data[0].dataPoints;
+            const position = value ? value : self.lastSelectedXPosition;
+            if (position < data[0].x || position > data[data.length - 1].x) {
+                window.alert('Pick cannot be created outside of the current trace view');
+                return;
+            }
             site.picks.push({
                 value: position,
                 thickness: environment.picksLineThickness,
-                color: pickType === 'P' ? 'red' : pickType === 'S' ? 'blue' : 'black',
+                color: pickType === 'P' ? 'blue' : pickType === 'S' ? 'red' : 'black',
                 label: pickType,
                 labelAlign: 'far'
             });
