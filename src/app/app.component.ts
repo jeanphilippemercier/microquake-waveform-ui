@@ -25,30 +25,30 @@ export class AppComponent implements OnInit {
     public zeroTime: any;
     public origin: any;
     public waveformOrigin: any;
+    public options: any;
+    private saveOption: Function;
 
-    public picksBias: number;
-
-    private butterworth: any;
+    public commonTimeState: Boolean;
+    public commonYState: Boolean;
+    public zoomAll: Boolean;
+    public displayComposite: Boolean;
+    public showPredictedPicks: Boolean;
+    public removeBiasPredictedPicks: Boolean;
     public numPoles: any;
-    private passband: any;
     public lowFreqCorner: any;
     public highFreqCorner: any;
+
+    private butterworth: any;
     private createButterworthFilter: Function;
+    private passband: any;
+
     public applyFilter: Function;
     private filterData: Function;
     public changedFilter: Boolean;
 
     private sample_rate: any;
-
-    public commonTimeState: Boolean;
-    public commonYState: Boolean;
-    public showTooltip: Boolean;
+    public picksBias: number;
     public showHelp: Boolean;
-    public zoomAll: Boolean;
-    public displayComposite: Boolean;
-    public showPredictedPicks: Boolean;
-    public removeBiasPredictedPicks: Boolean;
-
     private convYUnits: number;
 
     public selected: number;
@@ -160,15 +160,21 @@ export class AppComponent implements OnInit {
 
         const self = this;
 
+        self.options = JSON.parse(window.localStorage.getItem('viewer-options'));
+        self.options = self.options ? self.options : {};
+
         self.commonTimeState = true;
         self.commonYState = false;
-        self.showTooltip = false;
-        self.showHelp = false;
         self.zoomAll = false;
         self.displayComposite = true;
         self.showPredictedPicks = true;
         self.removeBiasPredictedPicks = false;
-        self.changedFilter = true;
+
+        self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : environment.numPoles;
+        self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : environment.lowFreqCorner;
+        self.highFreqCorner = self.options.hasOwnProperty('highFreqCorner') ? self.options.highFreqCorner : environment.highFreqCorner;
+
+        self.passband = filter.BAND_PASS;
 
         self.convYUnits = 1000; // factor to convert input units from m to mmm
         // self.convYUnits = 10000000;  // factor to convert input units (m/1e10) to mmm
@@ -187,12 +193,10 @@ export class AppComponent implements OnInit {
         self.origin = {};
         self.waveformOrigin = {};
 
-        self.numPoles = 4;
-        self.passband = filter.BAND_PASS;
-        self.lowFreqCorner = 60;
-        self.highFreqCorner = 1000;
         self.timezone = '+00:00';
         self.picksBias = 0;
+        self.showHelp = false;
+        self.changedFilter = true;
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -207,6 +211,11 @@ export class AppComponent implements OnInit {
             () => console.log('done loading')
         );
 */
+
+        this.saveOption = option => {
+            self.options[option] = self[option];
+            window.localStorage.setItem('viewer-options', JSON.stringify(self.options));
+        };
 
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file')) {
@@ -396,7 +405,7 @@ export class AppComponent implements OnInit {
                        horizontalAlign: 'left'
                      },
                     toolTip: {
-                        enabled: self.showTooltip,
+                        enabled: false,
                         contentFormatter: function (e) {
                             const content = ' ' +
                              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
@@ -619,14 +628,6 @@ export class AppComponent implements OnInit {
             }
         },
         false);
-
-        $('#showTooltip').on('click', () => {
-            self.showTooltip = !self.showTooltip;
-            $(this).toggleClass('active');
-            for (let i = 0; i < self.activeSites.length; i++) {
-                self.toggleTooltip(i, self.showTooltip);
-            }
-        });
 
         $('#showHelp').on('click', () => {
             self.showHelp = !self.showHelp;
@@ -1216,6 +1217,9 @@ export class AppComponent implements OnInit {
 
         this.applyFilter = () => {
             if (self.changedFilter && self.allSites.length > 0) {
+                self.saveOption('numPoles');
+                self.saveOption('lowFreqCorner');
+                self.saveOption('highFreqCorner');
                 self.filterData(self.allSites);
                 self.pageChange(false);
             }

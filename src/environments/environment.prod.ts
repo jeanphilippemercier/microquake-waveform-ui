@@ -39,5 +39,9 @@ export const environment = {
   // component to determine sign for composite trace
   signComponent: 'X',
   // composite trace component code
-  compositeChannelCode: 'C'
+  compositeChannelCode: 'C',
+  // filter defaults
+  numPoles: 4,
+  lowFreqCorner: 60,
+  highFreqCorner: 1000
 };
