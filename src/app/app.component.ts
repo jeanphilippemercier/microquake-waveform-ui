@@ -626,6 +626,18 @@ export class AppComponent implements OnInit {
             if (e.keyCode === 88) {
                 self.toggleCommonAmplitude();
             }
+            if (e.keyCode === 49 || e.keyCode === 97) {
+                if (self.page_number > 1) {
+                    self.page_number = self.page_number - 1;
+                    self.pageChange(false);
+                }
+            }
+            if (e.keyCode === 50 || e.keyCode === 98) {
+                if (self.page_number < Math.ceil(self.allSites.length / self.page_size)) {
+                    self.page_number = self.page_number + 1;
+                    self.pageChange(false);
+                }
+            }
         },
         false);
 
