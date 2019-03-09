@@ -3,7 +3,7 @@
     <button mat-icon-button (click)="closeModal()" tabindex=-1 color="primary"><mat-icon aria-label="Close">highlight_off</mat-icon></button>
   </ng-container>
 </mat-dialog-actions>
-<h1 mat-dialog-title>Interaction</h1>
+<h1 mat-dialog-title>Keyboard Interaction</h1>
 <mat-dialog-content>
   <p>Zoom and Pan</p>
   <div><b>ALT + WHEEL</b> - Time Pan</div>
@@ -21,10 +21,12 @@
   <div><b>Time Pan</b> - ALT + WHEEL or SHIFT + ARROWS LEFT/RIGHT</div>
 -->
   <hr>
-  <p>Picks</p>
-  <div><b>CTRL+LEFT on Pick / CONTEXT MENU</b> - Remove Picks</div>
-  <div><b>CTRL+MIDDLE</b> - Add P Pick at current position</div>
-  <div><b>SHIFT+MIDDLE</b> - Add S Pick at current position</div>
+  <p>Picking</p>
+  <div><b>d </b> - Toggle P Picking Mode</div>
+  <div><b>f </b> - Toggle S Picking Mode</div>
+  <div><b>LEFT in Picking Mode / CTRL+LEFT on Pick / CONTEXT</b> - Remove Pick</div>
+  <div><b>MID in P Picking Mode / CTRL+MID</b> - Add / Move P Pick</div>
+  <div><b>MID in S Picking Mode / SHIFT+MID</b> - Add / Move S Pick</div>
   <hr>
   <p>Navigation</p>
   <div><b>1</b> - Previous Page</div>

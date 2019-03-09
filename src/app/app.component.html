@@ -103,6 +103,11 @@
               <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='changedFilter = true' [(ngModel)]="numPoles">
             </mat-form-field>
           </div>
+          <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
+            <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
+            <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
+            <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
+          </mat-button-toggle-group>
           <pagination-controls class="pagination" (pageChange)="page_number = $event; pageChange()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>

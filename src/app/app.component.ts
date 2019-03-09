@@ -38,6 +38,9 @@ export class AppComponent implements OnInit {
     public lowFreqCorner: any;
     public highFreqCorner: any;
 
+    public pickingMode: any;
+    public onPickingModeChange: Function;
+
     private butterworth: any;
     private createButterworthFilter: Function;
     private passband: any;
@@ -197,6 +200,8 @@ export class AppComponent implements OnInit {
         self.picksBias = 0;
         self.showHelp = false;
         self.changedFilter = true;
+
+        self.pickingMode = 'none';
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -454,6 +459,12 @@ export class AppComponent implements OnInit {
             }
         };
 
+        this.onPickingModeChange = value => {
+            self.pickingMode = value;
+        };
+
+
+
         this.setChartKeys = () => {
             for (let j = 0; j < self.activeSites.length; j++) {
                 const canvas_chart = '#' + self.activeSites[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
@@ -474,33 +485,46 @@ export class AppComponent implements OnInit {
                     const relX = e.pageX - parentOffset.left;
                     const relY = e.pageY - parentOffset.top;
                     if (e.button === 0) {  // drag active on left mouse button only
-                        // Get the selected stripLine & change the cursor
-                        const pickLines = chart.axisX[0].stripLines;
-                        for (let i = 0; i < pickLines.length; i++) {
-                            const label = pickLines[i].label;
-                            if (label !== label.toLowerCase() // exclude predicted picks (lowercase labels)
-                                && pickLines[i].get('bounds')) {
-                                if (relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
-                                 relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
-                                 relY > pickLines[i].get('bounds').y1 &&
-                                 relY < pickLines[i].get('bounds').y2) {
-                                    if (e.ctrlKey) {  // remove pick
-                                        const selLine = chart.options.axisX.stripLines[i];
-                                        self.deletePicks(ind, selLine.label, selLine.value);
-                                    } else {  // move pick
-                                        self.selected = i;
-                                        $(this).addClass('pointerClass');
+                        if (self.pickingMode === 'P') {
+                            self.deletePicks(ind, 'P', null); // remove P picks on Left mouse click in P picking mode
+                        } else if (self.pickingMode === 'S') {
+                            self.deletePicks(ind, 'S', null); // remove S picks on Left mouse click in S picking mode
+                        } else {  // no picking mode active, check if we are on a pick
+                            // Get the selected stripLine & change the cursor
+                            const pickLines = chart.axisX[0].stripLines;
+                            for (let i = 0; i < pickLines.length; i++) {
+                                const label = pickLines[i].label;
+                                if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
+                                    if (pickLines[i].get('bounds') &&
+                                        relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
+                                        relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
+                                        relY > pickLines[i].get('bounds').y1 &&
+                                        relY < pickLines[i].get('bounds').y2) {
+                                            if (e.ctrlKey) {  // remove pick
+                                                const selLine = chart.options.axisX.stripLines[i];
+                                                self.deletePicks(ind, selLine.label, selLine.value);
+                                            } else {  // move pick
+                                                self.selected = i;
+                                                $(this).addClass('pointerClass');
+                                            }
+                                            break;
                                     }
-                                    break;
                                 }
                             }
+
                         }
-                    } else if (e.button === 1) {  // add new P or S
+                    } else if (e.button === 1) {  // add new P or S on Middle mouse Click
+                        if (self.pickingMode === 'P') {
+                            self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX)); // add P pick on Middle mouse click in P picking mode
+                        } else if (self.pickingMode === 'S') {
+                            self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX)); // add S pick on Middle mouse click in S picking mode
+                        } else {
                             if (e.ctrlKey) {  // add new P on Ctrl + center mouse button click
                                 self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
                             } else if (e.shiftKey) {   // add new S pick on Shift + center mouse button click
                                 self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
                             }
+                        }
                     } else if (e.button === 2) {  // save position on right mouse button, context menu
                         self.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
                     }
@@ -617,14 +641,28 @@ export class AppComponent implements OnInit {
         });
 
         document.addEventListener('keydown', e => {
-            if (e.keyCode === 80) {
+            if (e.keyCode === 80) {  // p
                 self.togglePredictedPicks();
             }
-            if (e.keyCode === 90) {
+            if (e.keyCode === 90) {  // z
                 self.toggleCommonTime();
             }
-            if (e.keyCode === 88) {
+            if (e.keyCode === 88) {   // x
                 self.toggleCommonAmplitude();
+            }
+            if (e.keyCode === 68) {   // d
+                if (self.pickingMode === 'P') {
+                    self.pickingMode = 'none';
+                } else {
+                    self.pickingMode = 'P';
+                }
+            }
+            if (e.keyCode === 70) {   // f
+                if (self.pickingMode === 'S') {
+                    self.pickingMode = 'none';
+                } else {
+                    self.pickingMode = 'S';
+                }
             }
             if (e.keyCode === 49 || e.keyCode === 97) {
                 if (self.page_number > 1) {
@@ -880,11 +918,6 @@ export class AppComponent implements OnInit {
 
         this.addPick = (ind, pickType, value) => {
             const site = self.activeSites[ind];
-            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
-            if (self.findValue(site.picks, 'label', pickType)) {
-                window.alert('Not possible to add more than one ' + pickType + ' pick');
-                return;
-            }
             const chart = site.chart;
             const data = chart.options.data[0].dataPoints;
             const position = value ? value : self.lastSelectedXPosition;
@@ -892,6 +925,14 @@ export class AppComponent implements OnInit {
                 window.alert('Pick cannot be created outside of the current trace view');
                 return;
             }
+            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            // remove any existing pick of this type
+            site.picks = site.picks.filter( el => el.label !== pickType);
+            /*
+            if (self.findValue(site.picks, 'label', pickType)) {
+                window.alert('Not possible to add more than one ' + pickType + ' pick');
+                return;
+            }*/
             site.picks.push({
                 value: position,
                 thickness: environment.picksLineThickness,
