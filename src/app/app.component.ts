@@ -96,7 +96,7 @@ export class AppComponent implements OnInit {
     private movePick: Function;
     private deletePicks: Function;
     private savePicksState: Function;
-    private undoLastPicking: Function;
+    public undoLastPicking: Function;
     private addPickData: Function;
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
