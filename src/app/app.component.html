@@ -108,6 +108,7 @@
             <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
+          <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
           <pagination-controls class="pagination" (pageChange)="page_number = $event; pageChange()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>

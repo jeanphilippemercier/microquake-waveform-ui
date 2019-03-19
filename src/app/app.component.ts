@@ -22,6 +22,7 @@ export class AppComponent implements OnInit {
     public allPicks: any[];
     public originTravelTimes: any[];
     public activeSites: any[];
+    public lastPicksState: any;
     public zeroTime: any;
     public origin: any;
     public waveformOrigin: any;
@@ -58,6 +59,7 @@ export class AppComponent implements OnInit {
     public selectedContextMenu: number;
     public lastSelectedXPosition: number;
     public lastDownTarget: any;  // last mouse down selection
+    private holdEventTrigger: Boolean;
 
     private menu: any;
     private menuVisible: Boolean;
@@ -91,7 +93,10 @@ export class AppComponent implements OnInit {
     private getAxisMinAll: Function;
     private zoomAllCharts: Function;
     private addPick: Function;
+    private movePick: Function;
     private deletePicks: Function;
+    private savePicksState: Function;
+    private undoLastPicking: Function;
     private addPickData: Function;
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
@@ -202,6 +207,7 @@ export class AppComponent implements OnInit {
         self.changedFilter = true;
 
         self.pickingMode = 'none';
+        self.lastPicksState = null;
 
         const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
 
@@ -298,6 +304,10 @@ export class AppComponent implements OnInit {
         };
 
         this.pageChange = (reset) => {
+            // reset last selected channel
+            self.lastDownTarget = null;
+            // reset picks last known state
+            self.lastPicksState = null;
             // remember zoom history
             if (reset) {
                 self.globalViewportMinStack = [];
@@ -381,6 +391,7 @@ export class AppComponent implements OnInit {
                     zoomType: 'x',
                     animationEnabled: true,
                     rangeChanged: function(e) {
+                        self.holdEventTrigger = true;
                         if (!e.chart.options.viewportMinStack) {
                             e.chart.options.viewportMinStack = [];
                             e.chart.options.viewportMaxStack = [];
@@ -463,14 +474,39 @@ export class AppComponent implements OnInit {
             self.pickingMode = value;
         };
 
-
-
         this.setChartKeys = () => {
             for (let j = 0; j < self.activeSites.length; j++) {
                 const canvas_chart = '#' + self.activeSites[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
+
+                $(canvas_chart).last().on('click', function(e) {
+                    if (self.selected === -1) { // ignore if we have a drag event
+                        const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
+                        const chart = self.activeSites[ind].chart;
+                        const parentOffset = $(this).parent().offset();
+                        const relX = e.pageX - parentOffset.left;
+                        if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
+                            if (!self.holdEventTrigger) {
+                                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
+                            }
+                        } else if (self.pickingMode === 'S') { // create or move S pick on Left mouse click in S picking mode
+                            if (!self.holdEventTrigger) {
+                                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+                            }
+                        } else {
+                            if (e.ctrlKey) {  // create or move P on Ctrl + left mouse button click
+                                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
+                            } else if (e.shiftKey) {   // create or move S pick on Shift + left mouse button click
+                                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+                            }
+                        }
+                    }
+                });
+
                 // Drag picks
                 $(canvas_chart).last().on('mousedown', function(e) {
-                    self.lastDownTarget = e.target;
+                    // e.target equals current canvaj_chart: $(canvas_chart)[1]
+                    const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
+                    self.lastDownTarget = ind;
 
                     if (!($(e.target).parents('.menu').length > 0)) {
                         if (self.menuVisible) {
@@ -479,50 +515,39 @@ export class AppComponent implements OnInit {
                             return;
                         }
                     }
-                    const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                     const chart = self.activeSites[ind].chart;
                     const parentOffset = $(this).parent().offset();
                     const relX = e.pageX - parentOffset.left;
                     const relY = e.pageY - parentOffset.top;
                     if (e.button === 0) {  // drag active on left mouse button only
-                        if (self.pickingMode === 'P') {
-                            self.deletePicks(ind, 'P', null); // remove P picks on Left mouse click in P picking mode
-                        } else if (self.pickingMode === 'S') {
-                            self.deletePicks(ind, 'S', null); // remove S picks on Left mouse click in S picking mode
-                        } else {  // no picking mode active, check if we are on a pick
-                            // Get the selected stripLine & change the cursor
-                            const pickLines = chart.axisX[0].stripLines;
-                            for (let i = 0; i < pickLines.length; i++) {
-                                const label = pickLines[i].label;
-                                if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
-                                    if (pickLines[i].get('bounds') &&
-                                        relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
-                                        relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
-                                        relY > pickLines[i].get('bounds').y1 &&
-                                        relY < pickLines[i].get('bounds').y2) {
-                                            if (e.ctrlKey) {  // remove pick
-                                                const selLine = chart.options.axisX.stripLines[i];
-                                                self.deletePicks(ind, selLine.label, selLine.value);
-                                            } else {  // move pick
-                                                self.selected = i;
-                                                $(this).addClass('pointerClass');
-                                            }
-                                            break;
-                                    }
+                        // check if we are on a pick
+                        // Get the selected stripLine & change the cursor
+                        const pickLines = chart.axisX[0].stripLines;
+                        for (let i = 0; i < pickLines.length; i++) {
+                            const label = pickLines[i].label;
+                            if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
+                                if (pickLines[i].get('bounds') &&
+                                    relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
+                                    relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
+                                    relY > pickLines[i].get('bounds').y1 &&
+                                    relY < pickLines[i].get('bounds').y2) {  // move pick
+                                        self.savePicksState(ind, self.activeSites[ind].site_id, self.activeSites[ind].picks);
+                                        $(this)[0].style.cursor = 'pointer';
+                                        self.selected = i;
+                                        break;
                                 }
                             }
-
                         }
-                    } else if (e.button === 1) {  // add new P or S on Middle mouse Click
+                    } else if (e.button === 1) {  // remove P or S on Middle mouse Click
                         if (self.pickingMode === 'P') {
-                            self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX)); // add P pick on Middle mouse click in P picking mode
+                            self.deletePicks(ind, 'P', null); // remove P picks on Middle mouse click in P picking mode
                         } else if (self.pickingMode === 'S') {
-                            self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX)); // add S pick on Middle mouse click in S picking mode
+                            self.deletePicks(ind, 'S', null); // remove S picks on Middle mouse click in S picking mode
                         } else {
-                            if (e.ctrlKey) {  // add new P on Ctrl + center mouse button click
-                                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
-                            } else if (e.shiftKey) {   // add new S pick on Shift + center mouse button click
-                                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+                            if (e.ctrlKey) {
+                                self.deletePicks(ind, 'P', null); // remove P on Ctrl + Middle mouse button click
+                            } else if (e.shiftKey) {
+                                self.deletePicks(ind, 'S', null); // remove S on Shift + Middle mouse button click
                             }
                         }
                     } else if (e.button === 2) {  // save position on right mouse button, context menu
@@ -532,25 +557,34 @@ export class AppComponent implements OnInit {
 
                 $(canvas_chart).last().on('mousemove', function(e) {  // move selected stripLine
                     if (self.selected !== -1) {
+                        self.holdEventTrigger = true;
                         const i = parseInt( $(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const chart = self.activeSites[i].chart;
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
-                        chart.options.axisX.stripLines[self.selected].value = chart.axisX[0].convertPixelToValue(relX);
-                        chart.options.zoomEnabled = false;
-                        chart.render();
+                        const data = chart.options.data[0].dataPoints;
+                        const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
+                        if (position >= data[0].x && position <= data[data.length - 1].x) {
+                            $(this)[0].style.cursor = 'pointer';
+                            chart.options.axisX.stripLines[self.selected].value = position;
+                            self.activeSites[i].picks = chart.options.axisX.stripLines;
+                            chart.options.zoomEnabled = false;
+                            chart.render();
+                        }
                     }
                 });
 
                 $(canvas_chart).last().on('mouseup', function(e) {
+                    setTimeout(function() {
+                        self.holdEventTrigger = false;
+                    }, 500);
                     if (self.selected !== -1) {   // clear selection and change the cursor
+                        $(this)[0].style.cursor = 'default';
                         self.selected = -1;
-                        $(this).removeClass('pointerClass');
-                        // let i = parseInt( $(this).parent()[0].id.replace('Container',''));
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const chart = self.activeSites[i].chart;
+                        chart.options.axisX.stripLines = self.activeSites[i].picks ;
                         chart.options.zoomEnabled = true;   // turn zoom back on
-                        // document.getElementById(self.activeSites[i].button).style.display = 'inline';
                         chart.render();
                     }
                 });
@@ -662,6 +696,27 @@ export class AppComponent implements OnInit {
                     self.pickingMode = 'none';
                 } else {
                     self.pickingMode = 'S';
+                }
+            }
+            if (e.keyCode === 83) {   // s
+                self.undoLastPicking();
+            }
+            if (e.keyCode === 39) {  // right arrow moves pick to right
+                if (self.lastDownTarget && self.pickingMode !== 'none') {
+                    if (e.shiftKey) { // shift key - fast mode - by 10 msec
+                        self.movePick(self.lastDownTarget, self.pickingMode, 10000, true);
+                    } else { // by 1 msec
+                        self.movePick(self.lastDownTarget, self.pickingMode, 1000, true);
+                    }
+                }
+            }
+            if (e.keyCode === 37) {  // left arrow moves pick to left 
+                if (self.lastDownTarget && self.pickingMode !== 'none') {
+                   if (e.shiftKey) { // shift key - fast mode - by 10 msec
+                       self.movePick(self.lastDownTarget, self.pickingMode, -10000, true);
+                   } else { // by 1 msec
+                       self.movePick(self.lastDownTarget, self.pickingMode, -1000, true);
+                   }
                 }
             }
             if (e.keyCode === 49 || e.keyCode === 97) {
@@ -916,23 +971,41 @@ export class AppComponent implements OnInit {
             }
         };
 
+        this.savePicksState = (ind, site, picks) => {
+            self.lastPicksState = {};
+            self.lastPicksState.index = ind;
+            self.lastPicksState.site_id = site;
+            self.lastPicksState.picks = JSON.parse(JSON.stringify(picks));
+        };
+
+        this.undoLastPicking = () => {
+            if (self.lastPicksState) {
+                const ind = self.lastPicksState.index;
+                const site = self.activeSites[ind];
+                if (self.lastPicksState.site_id === site.site_id) {
+                    const chart = site.chart;
+                    const picks = self.lastPicksState.picks;
+                    self.savePicksState(ind, site.site_id, site.picks);
+                    site.picks = picks;
+                    chart.options.axisX.stripLines = site.picks;
+                    chart.render();
+                }
+            }
+        };
+
         this.addPick = (ind, pickType, value) => {
             const site = self.activeSites[ind];
             const chart = site.chart;
             const data = chart.options.data[0].dataPoints;
-            const position = value ? value : self.lastSelectedXPosition;
+            const position = value ? Math.round(value) : Math.round(self.lastSelectedXPosition);
             if (position < data[0].x || position > data[data.length - 1].x) {
                 window.alert('Pick cannot be created outside of the current trace view');
                 return;
             }
             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            self.savePicksState(ind, site.site_id, site.picks);
             // remove any existing pick of this type
             site.picks = site.picks.filter( el => el.label !== pickType);
-            /*
-            if (self.findValue(site.picks, 'label', pickType)) {
-                window.alert('Not possible to add more than one ' + pickType + ' pick');
-                return;
-            }*/
             site.picks.push({
                 value: position,
                 thickness: environment.picksLineThickness,
@@ -946,6 +1019,7 @@ export class AppComponent implements OnInit {
 
         this.deletePicks = (ind, pickType, value) => {
             const site = self.activeSites[ind];
+            self.savePicksState(ind, site.site_id, site.picks);
             const chart = site.chart;
             if (value) {
                 site.picks = site.picks
@@ -956,6 +1030,32 @@ export class AppComponent implements OnInit {
             chart.options.axisX.stripLines = site.picks;
             chart.render();
         };
+
+        this.movePick = (ind, pickType, value, fromCurrentPosition) => {
+            const site = self.activeSites[ind];
+            const chart = site.chart;
+            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            // find existing pick of this type
+            const pick = self.findValue(site.picks, 'label', pickType);
+            if (!pick) {
+                window.alert('No ' + pickType + ' pick to move');
+                return;
+            }
+            const data = chart.options.data[0].dataPoints;
+            const position = fromCurrentPosition ? Math.round(pick.value + value) : Math.round(value);
+            if (position < data[0].x || position > data[data.length - 1].x) {
+                window.alert('Pick cannot be moved outside of the current trace view');
+                return;
+            }
+            self.savePicksState(ind, site.site_id, site.picks);
+            // move pick
+            pick.value = position;
+            site.picks = site.picks.filter( el => el.label !== pickType);
+            site.picks.push(pick);
+            chart.options.axisX.stripLines = site.picks;
+            chart.render();
+        };
+
 
         this.toggleTooltip = (ind, value) => {
             value = value ? value : !self.activeSites[ind].chart.options.toolTip.enabled;
@@ -985,26 +1085,21 @@ export class AppComponent implements OnInit {
                     }
                 }
             } else {
-                for (let j = 0; j < self.activeSites.length; j++) {
-                    const canvas_chart = '#' + self.activeSites[j].container +
-                        ' > .canvasjs-chart-container' + ' > .canvasjs-chart-canvas';
-                    if (self.lastDownTarget === $(canvas_chart)[1]) {
-                        const chart = self.activeSites[j].chart;
-                        const viewportMinStack = chart.options.viewportMinStack;
-                        const viewportMaxStack = chart.options.viewportMaxStack;
-                        if (!chart.options.axisX) {
-                            chart.options.axisX = {};
-                        }
-                        if (viewportMinStack && viewportMinStack.length > 0) {
-                            viewportMinStack.pop();
-                            viewportMaxStack.pop();
-                            chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
-                            chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
-                            chart.render();
-                        } else {
-                            self.resetChartViewX(chart);
-                        }
-                        break;
+                if (self.lastDownTarget) {
+                    const chart = self.activeSites[self.lastDownTarget].chart;
+                    const viewportMinStack = chart.options.viewportMinStack;
+                    const viewportMaxStack = chart.options.viewportMaxStack;
+                    if (!chart.options.axisX) {
+                        chart.options.axisX = {};
+                    }
+                    if (viewportMinStack && viewportMinStack.length > 0) {
+                        viewportMinStack.pop();
+                        viewportMaxStack.pop();
+                        chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
+                        chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
+                        chart.render();
+                    } else {
+                        self.resetChartViewX(chart);
                     }
                 }
             }
@@ -1099,7 +1194,7 @@ export class AppComponent implements OnInit {
                     console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
                 }
             }
-            self.picksBias = picksTotalBias / nPicksBias;
+            self.picksBias = Math.round(picksTotalBias / nPicksBias);
             self.removeBiasPredictedPicks = true; // default to true
             self.togglePredictedPicksBias(self.removeBiasPredictedPicks, false);
             if (missingSites.length > 0) {
