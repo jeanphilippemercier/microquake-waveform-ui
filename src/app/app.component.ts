@@ -78,7 +78,7 @@ export class AppComponent implements OnInit {
     private toggleCommonAmplitude: Function;
     private updateZoomStackCharts: Function;
     private resetAllChartsViewX: Function;
-    private resetAllChartsViewXY: Function;
+    public resetAllChartsViewXY: Function;
     private resetAllChartsViewY: Function;
     private resetChartViewX: Function;
     private resetChartViewXY: Function;
@@ -103,7 +103,7 @@ export class AppComponent implements OnInit {
     private togglePredictedPicksBias: Function;
     private togglePredictedPicks: Function;
     private toggleTooltip: Function;
-    private back: Function;
+    public back: Function;
     private showPage: Function;
     public pageChange: Function;
     private sort_array_by: Function;
