@@ -47,7 +47,9 @@ export const environment = {
   // filter defaults
   numPoles: 4,
   lowFreqCorner: 60,
-  highFreqCorner: 1000
+  highFreqCorner: 1000,
+  // resolution in milliseconds for moving the pick to left or right using the arrow keys
+  pickTimeStep: 0.5
 };
 
 /*

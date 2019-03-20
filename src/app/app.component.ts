@@ -52,7 +52,6 @@ export class AppComponent implements OnInit {
 
     private sample_rate: any;
     public picksBias: number;
-    public showHelp: Boolean;
     private convYUnits: number;
 
     public selected: number;
@@ -203,7 +202,6 @@ export class AppComponent implements OnInit {
 
         self.timezone = '+00:00';
         self.picksBias = 0;
-        self.showHelp = false;
         self.changedFilter = true;
 
         self.pickingMode = 'none';
@@ -698,24 +696,29 @@ export class AppComponent implements OnInit {
                     self.pickingMode = 'S';
                 }
             }
-            if (e.keyCode === 83) {   // s
+            if (e.keyCode === 83) {   // s, undo picking
                 self.undoLastPicking();
+            }
+            if (e.keyCode === 72) {   // h, help
+                document.getElementById('helpBtn').click();
             }
             if (e.keyCode === 39) {  // right arrow moves pick to right
                 if (self.lastDownTarget && self.pickingMode !== 'none') {
-                    if (e.shiftKey) { // shift key - fast mode - by 10 msec
-                        self.movePick(self.lastDownTarget, self.pickingMode, 10000, true);
-                    } else { // by 1 msec
-                        self.movePick(self.lastDownTarget, self.pickingMode, 1000, true);
+                    const step = environment.pickTimeStep * 1000; // in microseconds
+                    if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                        self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true);
+                    } else { // by step
+                        self.movePick(self.lastDownTarget, self.pickingMode, step, true);
                     }
                 }
             }
-            if (e.keyCode === 37) {  // left arrow moves pick to left 
+            if (e.keyCode === 37) {  // left arrow moves pick to left
                 if (self.lastDownTarget && self.pickingMode !== 'none') {
-                   if (e.shiftKey) { // shift key - fast mode - by 10 msec
-                       self.movePick(self.lastDownTarget, self.pickingMode, -10000, true);
-                   } else { // by 1 msec
-                       self.movePick(self.lastDownTarget, self.pickingMode, -1000, true);
+                   const step = environment.pickTimeStep * 1000; // in microseconds
+                   if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                       self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true);
+                   } else { // by step
+                       self.movePick(self.lastDownTarget, self.pickingMode, -step, true);
                    }
                 }
             }
@@ -734,11 +737,6 @@ export class AppComponent implements OnInit {
         },
         false);
 
-        $('#showHelp').on('click', () => {
-            self.showHelp = !self.showHelp;
-            $(this).toggleClass('active');
-        });
-
         $('#zoomAll').on('click', () => {
             self.zoomAll = !self.zoomAll;
             $(this).toggleClass('active');
@@ -748,14 +746,6 @@ export class AppComponent implements OnInit {
             self.displayComposite = !self.displayComposite;
             $(this).toggleClass('active');
             self.pageChange(false);
-        });
-
-        $('#resetAll').on('click', () => {
-            self.resetAllChartsViewXY();
-        });
-
-        $('#backBtn').on('click', () => {
-            self.back();
         });
 
         $('#togglePredictedPicks').on('click', () => {
