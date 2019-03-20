@@ -3,34 +3,35 @@
     <button mat-icon-button (click)="closeModal()" tabindex=-1 color="primary"><mat-icon aria-label="Close">highlight_off</mat-icon></button>
   </ng-container>
 </mat-dialog-actions>
-<h1 mat-dialog-title>Keyboard Interaction</h1>
+<h1 mat-dialog-title>Help</h1>
 <mat-dialog-content>
-  <p>Zoom and Pan</p>
+  <p><b>Zoom and Pan</b></p>
   <div><b>ALT + WHEEL</b> - Time Pan</div>
   <div><b>CTRL + WHEEL</b> - Amplitude Zoom</div>
   <div><b>SHIFT + WHEEL</b> - Time Zoom</div>
+  <!--div><b>Amplitude Zoom</b> - CTRL + WHEEL or CTRL + ARROWS UP/DOWN</div>
+  <div><b>Time Zoom</b> - SHIFT + WHEEL or SHIFT + ARROWS UP/DOWN</div>
+  <div><b>Amplitude Pan</b> - CTRL + ARROWS LEFT/RIGHT</div>
+  <div><b>Time Pan</b> - ALT + WHEEL or SHIFT + ARROWS LEFT/RIGHT</div-->
   <hr>
-  <p>Mode</p>
+  <p><b>Picking</b></p>
+  <div><b>d </b> - Toggle P Pick Mode</div>
+  <div><b>f </b> - Toggle S Pick Mode</div>
+  <div><b>s </b> - Undo Last Picking Operation</div>
+  <div><b>LEFT in P Mode / CTRL+LEFT / MENU</b> - Create / Move P Pick</div>
+  <div><b>MID in P Mode / CTRL+MID / MENU</b> - Remove P Pick</div>
+  <div><b>LEFT in S Mode / SHIFT+LEFT / MENU</b> - Create / Move S Pick</div>
+  <div><b>MID in S Mode / SHIFT+MID / MENU</b> - Remove S Pick</div>
+  <div><b>Right/Left Arrow in P/S Mode</b> - Move Pick Slowly to Right/Left</div>
+  <div><b>SHIFT+Right/Left Arrow in P/S Mode</b> - Move Pick Fast to Right/Left</div>
+  <hr>
+  <p><b>Navigation</b></p>
+  <div><b>1</b> - Previous Page</div>
+  <div><b>2</b> - Next Page</div>
+  <hr>
+  <p><b>Other</b></p>
   <div><b>z</b> - Toggle Common Time Mode</div>
   <div><b>x</b> - Toggle Common Amplitude Mode</div>
   <div><b>p</b> - Toggle Predicted Picks</div>
-  <!--
-  <div><b>Amplitude Zoom</b> - CTRL + WHEEL or CTRL + ARROWS UP/DOWN</div>
-  <div><b>Time Zoom</b> - SHIFT + WHEEL or SHIFT + ARROWS UP/DOWN</div>
-  <div><b>Amplitude Pan</b> - CTRL + ARROWS LEFT/RIGHT</div>
-  <div><b>Time Pan</b> - ALT + WHEEL or SHIFT + ARROWS LEFT/RIGHT</div>
--->
-  <hr>
-  <p>Picking</p>
-  <div><b>d </b> - Toggle P Picking Mode</div>
-  <div><b>LEFT in P Mode / CTRL+LEFT / MENU</b> - Create / Move P Pick</div>
-  <div><b>MID in P Mode / CTRL+MID / MENU</b> - Remove P Pick</div>
-  <div><b>f </b> - Toggle S Picking Mode</div>
-  <div><b>LEFT in S Mode / SHIFT+LEFT / MENU</b> - Create / Move S Pick</div>
-  <div><b>MID in S Mode / SHIFT+MID / MENU</b> - Remove S Pick</div>
-  <div><b>s </b> - Undo Last Picking Operation</div>
-  <hr>
-  <p>Navigation</p>
-  <div><b>1</b> - Previous Page</div>
-  <div><b>2</b> - Next Page</div>
+  <div><b>h</b> - Toggle Help</div>
 </mat-dialog-content>
