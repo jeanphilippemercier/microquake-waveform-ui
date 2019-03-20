@@ -176,11 +176,11 @@ export class FileDatabase {
           const value = dataObject[property];
           if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
             const d = moment(value.time_utc).utc().utcOffset(this.timezone);
-            const microsec = value.time_utc.slice(-8, -1);
+            const fsec = value.time_utc.slice(-8, -1);
             const year = d.year();
             const month = d.month();
             const day =  ('0' + d.date()).slice(-2);
-            const event_time = d.format('HH:mm:ss') + microsec;
+            const event_time = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(3).slice(-4);
               if (!dataTree.hasOwnProperty(year)) {
                 dataTree[year] = {};
               }
@@ -228,7 +228,9 @@ export class FileDatabase {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            node.eval_status = (value.status === 'reviewed' && value.evaluation_mode === 'manual') ? 'A' : 'R';
+            // A (accepted) if evaluation status is "preliminary", "confirmed", "reviewed", "final", "reported"
+            // R (rejected) if evaluation status is "rejected"
+            node.eval_status = (value.status === 'rejected') ? 'R' : 'A';
             node.type = value.event_type === 'earthquake' ? 'E' :
                           value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
             node.evaluation_mode = value.evaluation_mode;
