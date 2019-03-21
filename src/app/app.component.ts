@@ -1415,7 +1415,7 @@ export class AppComponent implements OnInit {
                                     let compositeValue = 0, sign = 1;
                                     for (let j = 0; j < 3; j++) {
                                         const value = site.channels[j].data[k]['y'];
-                                        sign = site.channels[j].channel_id === environment.signComponent ?
+                                        sign = site.channels[j].channel_id.toLowerCase() === environment.signComponent.toLowerCase() ?
                                             Math.sign(value) : sign;
                                         compositeValue += Math.pow(value, 2);
                                     }
