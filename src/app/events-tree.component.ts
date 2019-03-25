@@ -25,6 +25,8 @@ export class FileNode {
   status: string;           // from api, "preliminary" or "reviewed"
   time_utc: string;
   waveform_file: string;
+  variable_size_waveform_file: string;
+  preferred_origin_id: string;
   x: number;
   y: number;
   z: number;
@@ -241,6 +243,8 @@ export class FileDatabase {
             node.status = value.status;
             node.time_utc = value.time_utc;
             node.waveform_file = value.waveform_file;
+            node.variable_size_waveform_file = value.variable_size_waveform_file;
+            node.preferred_origin_id = value.preferred_origin_id;
             node.x = value.x;
             node.y = value.y;
             node.z = value.z;

@@ -23,7 +23,7 @@ export class AppComponent implements OnInit {
     public originTravelTimes: any[];
     public activeSites: any[];
     public lastPicksState: any;
-    public zeroTime: any;
+    public originTime: any;
     public origin: any;
     public waveformOrigin: any;
     public options: any;
@@ -119,6 +119,7 @@ export class AppComponent implements OnInit {
     public page_number: number;
     public window_height = window.innerHeight;
     public chartHeight: number;
+    public pageOffsetX: number;
     public pageOffsetY: number;
 
     public loading = false;
@@ -193,7 +194,8 @@ export class AppComponent implements OnInit {
         self.menu = document.querySelector('.menu');
         self.menuVisible = false;
 
-        self.pageOffsetY = $('#waveform-panel').position().top + + $('#zeroTime').height();
+        self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
+        self.pageOffsetY = $('#waveform-panel').position().top + $('#zeroTime').height();
         self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY) / environment.chartsPerPage);
         self.page_number = 0;
 
@@ -227,19 +229,20 @@ export class AppComponent implements OnInit {
         };
 
         this.loadEvent = event => {
-            if (event.hasOwnProperty('waveform_file')) {
+            if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
                 const id = event.event_resource_id;
+                const preferred_origin_id = event.preferred_origin_id;
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites')) {
                             this.filterData(eventData.sites);
-                            self.zeroTime = eventData.zeroTime;
+                            self.originTime = eventData.originTime;
                             self.currentEventId = id;
                             if (self.allSites.length > 0) {
                                 // get origins
                                 this._catalogService.get_origins_by_id(id).subscribe(origins => {
-                                    const origin = self.findValue(origins, 'preferred_origin', true);
+                                    const origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                                     self.waveformOrigin = origin;
                                     // get travel times for preferred origin
                                     this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
@@ -261,7 +264,7 @@ export class AppComponent implements OnInit {
 
                                           console.log('Loaded data for ' + self.allSites.length + ' sites');
                                           $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                              moment(eventData.zeroTime).utc().utcOffset(self.timezone).format().replace('T', ' ');
+                                              moment(eventData.originTime).utc().utcOffset(self.timezone).format('YYYY-MM-DD HH:mm:ss.S');
                                         });
                                     });
                                 });
@@ -407,7 +410,7 @@ export class AppComponent implements OnInit {
                         }
                     },
                     title: {
-                        text: self.activeSites[i].site_id,
+                        text: self.activeSites[i].station_code,
                         dockInsidePlotArea: true,
                         fontSize: 12,
                         fontFamily: 'tahoma',
@@ -429,7 +432,7 @@ export class AppComponent implements OnInit {
                         }
                     },
                     axisX: {
-                        minimum: 0,
+                        minimum: self.originTime ? self.originTime.millisecond() * 1000 : 0,
                         maximum: self.getXmax(i),
                         viewportMinimum: self.zoomAll && self.globalViewportMinStack.length > 0 ?
                             self.globalViewportMinStack[self.globalViewportMinStack.length - 1] : self.getXvpMin(),
@@ -440,8 +443,8 @@ export class AppComponent implements OnInit {
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                const d = moment(self.zeroTime).utc().utcOffset(self.timezone);
-                                return d.format('HH:mm:ss');
+                                const d = moment(self.origin).utc().utcOffset(self.timezone);
+                                return d.format('HH:mm:ss.S');
                             } else {
                                 return  e.value / 1000000 + ' s' ;
                             }
@@ -529,7 +532,7 @@ export class AppComponent implements OnInit {
                                     relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
                                     relY > pickLines[i].get('bounds').y1 &&
                                     relY < pickLines[i].get('bounds').y2) {  // move pick
-                                        self.savePicksState(ind, self.activeSites[ind].site_id, self.activeSites[ind].picks);
+                                        self.savePicksState(ind, self.activeSites[ind].station_code, self.activeSites[ind].picks);
                                         $(this)[0].style.cursor = 'pointer';
                                         self.selected = i;
                                         break;
@@ -596,10 +599,11 @@ export class AppComponent implements OnInit {
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const chart = self.activeSites[i].chart;
 
+                        const relOffsetX = e.clientX - self.pageOffsetX;
                         const relOffsetY = e.clientY - self.pageOffsetY - i * self.chartHeight;
 
-                        if (e.clientX < chart.plotArea.x1 ||
-                         e.clientX > chart.plotArea.x2 ||
+                        if (relOffsetX < chart.plotArea.x1 ||
+                         relOffsetX > chart.plotArea.x2 ||
                          relOffsetY < chart.plotArea.y1 ||
                          relOffsetY > chart.plotArea.y2) {
                             return;
@@ -860,7 +864,7 @@ export class AppComponent implements OnInit {
             const channel = parseInt( chart.container.id.replace('Container', ''), 10);
             chart.options.axisX.viewportMinimum = self.getXvpMin();
             chart.options.axisX.viewportMaximum = self.getXvpMax();
-            chart.options.axisX.minimum = 0;
+            chart.options.axisX.minimum = self.originTime ? self.originTime.millisecond() * 1000 : 0;
             chart.options.axisX.maximum = self.getXmax(channel);
             chart.options.viewportMinStack = [];
             chart.options.viewportMaxStack = [];
@@ -881,7 +885,7 @@ export class AppComponent implements OnInit {
             const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisX.viewportMinimum = self.getXvpMin();
             chart.options.axisX.viewportMaximum = self.getXvpMax();
-            chart.options.axisX.minimum = 0;
+            chart.options.axisX.minimum = self.originTime ? self.originTime.millisecond() * 1000 : 0;
             chart.options.axisX.maximum = self.getXmax(channel);
             chart.options.viewportMinStack = [];
             chart.options.viewportMaxStack = [];
@@ -964,7 +968,7 @@ export class AppComponent implements OnInit {
         this.savePicksState = (ind, site, picks) => {
             self.lastPicksState = {};
             self.lastPicksState.index = ind;
-            self.lastPicksState.site_id = site;
+            self.lastPicksState.station_code = site;
             self.lastPicksState.picks = JSON.parse(JSON.stringify(picks));
         };
 
@@ -972,10 +976,10 @@ export class AppComponent implements OnInit {
             if (self.lastPicksState) {
                 const ind = self.lastPicksState.index;
                 const site = self.activeSites[ind];
-                if (self.lastPicksState.site_id === site.site_id) {
+                if (self.lastPicksState.station_code === site.station_code) {
                     const chart = site.chart;
                     const picks = self.lastPicksState.picks;
-                    self.savePicksState(ind, site.site_id, site.picks);
+                    self.savePicksState(ind, site.station_code, site.picks);
                     site.picks = picks;
                     chart.options.axisX.stripLines = site.picks;
                     chart.render();
@@ -993,7 +997,7 @@ export class AppComponent implements OnInit {
                 return;
             }
             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
-            self.savePicksState(ind, site.site_id, site.picks);
+            self.savePicksState(ind, site.station_code, site.picks);
             // remove any existing pick of this type
             site.picks = site.picks.filter( el => el.label !== pickType);
             site.picks.push({
@@ -1009,7 +1013,7 @@ export class AppComponent implements OnInit {
 
         this.deletePicks = (ind, pickType, value) => {
             const site = self.activeSites[ind];
-            self.savePicksState(ind, site.site_id, site.picks);
+            self.savePicksState(ind, site.station_code, site.picks);
             const chart = site.chart;
             if (value) {
                 site.picks = site.picks
@@ -1037,7 +1041,7 @@ export class AppComponent implements OnInit {
                 window.alert('Pick cannot be moved outside of the current trace view');
                 return;
             }
-            self.savePicksState(ind, site.site_id, site.picks);
+            self.savePicksState(ind, site.station_code, site.picks);
             // move pick
             pick.value = position;
             site.picks = site.picks.filter( el => el.label !== pickType);
@@ -1095,46 +1099,6 @@ export class AppComponent implements OnInit {
             }
         };
 
-        // when using picks API endpoint (currently unused)
-        this.addPickData = () => {
-            const missingSites = [];
-            for (const pick of self.allPicks) {
-                if (moment(pick.time_utc).isValid()) {
-                    const site = self.findValue(self.allSites, 'site_id', pick.site_id);
-                    if (site) {
-                        site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
-                        const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
-                        if (pickKey !== '') {
-                            const pickTime = moment(pick.time_utc);  // UTC
-                            const microsec = pick.time_utc.slice(-7, -1);
-                            const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
-                            if (pickKey === 'P') {
-                                site['p-time_utc'] = pickTime;
-                            } else if (pickKey === 'S') {
-                                site['s-time_utc'] = pickTime;
-                            }
-                            site.picks.push({
-                                value: parseInt(microsec, 10) + offset,
-                                thickness: environment.picksLineThickness,
-                                color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
-                                label: pickKey,
-                                labelAlign: 'far',
-                            });
-                        }
-                    } else  {
-                        if (!missingSites.includes(pick.site_id)) {
-                            missingSites.push(pick.site_id);
-                        }
-                    }
-                } else {
-                    console.log('Invalid pick time for ' + pick.site_id + ' (' + pick.phase_hint + '): ' + pick.time_utc);
-                }
-            }
-            if (missingSites.length > 0) {
-                self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
-            }
-        };
-
         this.addArrivalsPickData = () => {
             const missingSites = [];
             let picksTotalBias = 0;
@@ -1143,7 +1107,7 @@ export class AppComponent implements OnInit {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {
-                        const site = self.findValue(self.allSites, 'site_id', pick.site_id);
+                        const site = self.findValue(self.allSites, 'station_code', pick.station_code);
                         if (site) {
                             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                             // const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
@@ -1151,7 +1115,9 @@ export class AppComponent implements OnInit {
                             if (pickKey !== '') {
                                 const pickTime = moment(pick.time_utc);  // UTC
                                 const microsec = pick.time_utc.slice(-7, -1);
-                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                                const zTime = moment(this.originTime);
+                                zTime.millisecond(0);
+                                const offset = pickTime.diff(zTime, 'seconds') * 1000000;
                                 if (pickKey === 'P') {
                                     site['p-time_utc'] = pickTime;
                                 } else if (pickKey === 'S') {
@@ -1173,12 +1139,12 @@ export class AppComponent implements OnInit {
                                 }
                             }
                         } else  {
-                            if (!missingSites.includes(pick.site_id)) {
-                                missingSites.push(pick.site_id);
+                            if (!missingSites.includes(pick.station_code)) {
+                                missingSites.push(pick.station_code);
                             }
                         }
                     } else {
-                        console.log('Invalid pick time for ' + pick.site_id + ' (' + pick.phase_hint + '): ' + pick.time_utc);
+                        console.log('Invalid pick time for ' + pick.station_code + ' (' + pick.phase_hint + '): ' + pick.time_utc);
                     }
                 } else {
                     console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
@@ -1203,7 +1169,7 @@ export class AppComponent implements OnInit {
         this.addPredictedPicksData = () => {
             for (const station of self.originTravelTimes) {
                 if (station.hasOwnProperty('station_id')) {
-                    const site = self.findValue(self.allSites, 'site_id', station.station_id);
+                    const site = self.findValue(self.allSites, 'station_code', station.station_id);
                     if (site) {
                         site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                         for (const pickKey of ['P', 'S']) {
@@ -1212,7 +1178,9 @@ export class AppComponent implements OnInit {
                                 const picktime_utc = this.addTime(this.waveformOrigin.time_utc, station[key]);
                                 const pickTime = moment(picktime_utc);  // UTC
                                 const microsec = picktime_utc.slice(-7, -1);
-                                const offset = pickTime.diff(this.zeroTime, 'seconds') * 1000000;
+                                const zTime = moment(this.originTime);
+                                zTime.millisecond(0);
+                                const offset = pickTime.diff(zTime, 'seconds') * 1000000;
                                 if (offset < 0 && !self.picksWarning) {
                                     self.picksWarning += 'Predicted picks outside the display time window\n';
                                 }
@@ -1274,7 +1242,7 @@ export class AppComponent implements OnInit {
             const records = miniseed.parseDataRecords(file);
             const channelsMap = miniseed.byChannel(records);
             const sites = [];
-            let zTime = null;
+            let zTime = null, originTime = null;
             const eventData = {};
             let changeOriginTime = false;
             channelsMap.forEach( function(this, value, key, map) {
@@ -1283,18 +1251,16 @@ export class AppComponent implements OnInit {
                 if (sg.y().includes(NaN) === false) {
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to second)
-                        zTime.millisecond(0);
                     } else {
                         if (!sg.start().isSame(zTime, 'second')) {
                             zTime = moment(moment.min(zTime, sg.start()));
-                            zTime.millisecond(0);
                             changeOriginTime = true;
                         }
                     }
                     const seismogram = filter.rMean(sg);
                     const channel = {};
                     channel['code_id'] = sg.codes();
-                    channel['site_id'] = sg.stationCode();
+                    channel['station_code'] = sg.stationCode();
                     channel['channel_id'] = sg.channelCode();
                     channel['sample_rate'] = sg.sampleRate();
                     channel['start'] = sg.start();  // moment object (good up to milisecond)
@@ -1310,14 +1276,17 @@ export class AppComponent implements OnInit {
                     }
                     channel['data'] = waveform;
                     channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
-                    let site = self.findValue(sites, 'site_id', sg.stationCode());
+                    let site = self.findValue(sites, 'station_code', sg.stationCode());
                     if (!site) {
-                        site = { site_id: sg.stationCode(), channels: [] };
+                        site = { station_code: sg.stationCode(), channels: [] };
                         sites.push(site);
                     }
                     site.channels.push(channel);
                 }
             });
+            originTime = moment(zTime);
+            originTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
+            zTime.millisecond(0);
             if (changeOriginTime) {
                 console.log('***changeOriginTime channels change in earliest time second detected');
                 for (let i = 0; i < sites.length; i++) {
@@ -1333,7 +1302,7 @@ export class AppComponent implements OnInit {
                 }
             }
             eventData['sites'] = sites;
-            eventData['zeroTime'] = zTime;
+            eventData['originTime'] = originTime;
             return(eventData);
         };
 
@@ -1404,7 +1373,7 @@ export class AppComponent implements OnInit {
                                 site.channels[0].data.length === site.channels[2].data.length) {
                                 const compositeTrace = {};
                                 compositeTrace['code_id'] = site.channels[0].code_id.slice(0, -1) + environment.compositeChannelCode;
-                                compositeTrace['site_id'] = site.site_id;
+                                compositeTrace['station_code'] = site.station_code;
                                 compositeTrace['channel_id'] = environment.compositeChannelCode;
                                 compositeTrace['sample_rate'] = site.channels[0].sample_rate;
                                 compositeTrace['start'] = site.channels[0].start;  // moment object (good up to milisecond)
@@ -1428,19 +1397,21 @@ export class AppComponent implements OnInit {
                                 }
                                 site.channels.push(compositeTrace);
                             } else {
-                                console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different channel lengths');
+                                console.log('Cannot create 3C composite trace for site: '
+                                    + site['station_code'] + ' different channel lengths');
                             }
                         } else {
-                            console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different sample rates: ' +
+                            console.log('Cannot create 3C composite trace for site: ' + site['station_code'] + ' different sample rates: ' +
                                 site.channels[0].sample_rate + site.channels[2].sample_rate + site.channels[2].sample_rate);
                         }
                     } else {
-                        console.log('Cannot create 3C composite trace for site: ' + site['site_id'] + ' different channels start times ' +
+                        console.log('Cannot create 3C composite trace for site: '
+                            + site['station_code'] + ' different channels start times ' +
                             site.channels[0].start.toISOString() + site.channels[1].start.toISOString()
                             + site.channels[2].start.toISOString());
                     }
                 } else {
-                    console.log('Cannot create 3C composite trace for site: ' + site['site_id'] +
+                    console.log('Cannot create 3C composite trace for site: ' + site['station_code'] +
                         ' available channels: ' + site.channels.length + ' (' +
                         (site.channels.length > 0 ? site.channels[0].channel_id +
                         (site.channels.length > 1 ? + site.channels[1].channel_id : ' ') : ' ') + ')');
@@ -1452,7 +1423,9 @@ export class AppComponent implements OnInit {
         this.getEvent = (event): any => {
             return new Promise(resolve => {
                 const mshr = new XMLHttpRequest();
-                mshr.open('GET', event.waveform_file, true);
+                const waveform_file = event.hasOwnProperty('waveform_file') && event.waveform_file ?
+                    event.waveform_file : event.variable_size_waveform_file;
+                mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
                 self.loading = true;
                 mshr.onreadystatechange = () => {
