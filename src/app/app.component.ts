@@ -590,8 +590,19 @@ export class AppComponent implements OnInit {
                     }
                 });
 
-                // Zoom: on mouse wheel event zoom on Y axis if Ctrl key is pressed, or on X axis if Shift key pressed
+                // Wheel events: zoomp/pan, move picks in picking mode
                 $(canvas_chart)[1].addEventListener('wheel', function(e) {
+                    // in pick mode wheel up moves pick left, wheel down moves pick right
+                    if (self.pickingMode !== 'none') {
+                        const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
+                        const step = environment.pickTimeStep * 1000; // in microseconds
+                        if (e.deltaY < 0) { // scrolling up
+                            self.movePick(i, self.pickingMode, -step, true);
+                        } else if (e.deltaY > 0) { // scrolling down
+                            self.movePick(i, self.pickingMode, step, true);
+                        }
+                    }
+                    // Y Zoom if Ctrl + Wheel, X axis (time) Zoom if Shift + Wheel; X axis (time) pan if Alt + Wheel
                     if (e.ctrlKey || e.shiftKey || e.altKey) {
 
                         e.preventDefault();
@@ -619,10 +630,10 @@ export class AppComponent implements OnInit {
                         let newViewportMin, newViewportMax;
 
                         if (e.ctrlKey || e.shiftKey) { // amplitude or time zoom
-                            if (e.deltaY < 0) {
+                            if (e.deltaY < 0) { // wheel down
                                 newViewportMin = viewportMin + interval;
                                 newViewportMax = viewportMax - interval;
-                            } else if (e.deltaY > 0) {
+                            } else if (e.deltaY > 0) { // wheel up
                                 newViewportMin = viewportMin - interval;
                                 newViewportMax = viewportMax + interval;
                             }
@@ -707,7 +718,7 @@ export class AppComponent implements OnInit {
                 document.getElementById('helpBtn').click();
             }
             if (e.keyCode === 39) {  // right arrow moves pick to right
-                if (self.lastDownTarget && self.pickingMode !== 'none') {
+                if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
                     const step = environment.pickTimeStep * 1000; // in microseconds
                     if (e.shiftKey) { // shift key - fast mode - by 10 * step
                         self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true);
@@ -717,7 +728,7 @@ export class AppComponent implements OnInit {
                 }
             }
             if (e.keyCode === 37) {  // left arrow moves pick to left
-                if (self.lastDownTarget && self.pickingMode !== 'none') {
+                if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
                    const step = environment.pickTimeStep * 1000; // in microseconds
                    if (e.shiftKey) { // shift key - fast mode - by 10 * step
                        self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true);
@@ -1079,7 +1090,7 @@ export class AppComponent implements OnInit {
                     }
                 }
             } else {
-                if (self.lastDownTarget) {
+                if (self.lastDownTarget !== null && self.lastDownTarget > -1) {
                     const chart = self.activeSites[self.lastDownTarget].chart;
                     const viewportMinStack = chart.options.viewportMinStack;
                     const viewportMaxStack = chart.options.viewportMaxStack;
