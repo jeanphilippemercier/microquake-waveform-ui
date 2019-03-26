@@ -42,7 +42,6 @@ export class AppComponent implements OnInit {
     public pickingMode: any;
     public onPickingModeChange: Function;
 
-    private butterworth: any;
     private createButterworthFilter: Function;
     private passband: any;
 
@@ -242,31 +241,41 @@ export class AppComponent implements OnInit {
                             if (self.allSites.length > 0) {
                                 // get origins
                                 this._catalogService.get_origins_by_id(id).subscribe(origins => {
-                                    const origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
-                                    self.waveformOrigin = origin;
-                                    // get travel times for preferred origin
-                                    this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
-                                        self.originTravelTimes = traveltimes;
-                                        this.addPredictedPicksData();
-                                        // get arrivals, picks for preferred origin
-                                        this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
-                                          self.allPicks = picks;
-                                          this.addArrivalsPickData();
-                                          if (Array.isArray(self.allSites)) {
-                                              self.allSites.sort
-                                                  (this.sort_array_by
-                                                      ('p-time_calc_utc', false, function(x) { return x ? x : moment.now(); })
-                                                      );
-                                          }
-                                          // display data (first page)
-                                          self.page_number = 1;
-                                          self.pageChange(true);
+                                    let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
+                                    if (!origin) {
+                                        window.alert('Warning: Event preferred origin from catalog not found');
+                                        origin = self.findValue(origins, 'preferred_origin', true);
+                                    }
+                                    if (origin) {
+                                        self.waveformOrigin = origin;
+                                        // get travel times for preferred origin
+                                        this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                            self.originTravelTimes = traveltimes;
+                                            this.addPredictedPicksData();
+                                            // get arrivals, picks for preferred origin
+                                            this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
+                                              self.allPicks = picks;
+                                              this.addArrivalsPickData();
+                                              if (Array.isArray(self.allSites)) {
+                                                  self.allSites.sort
+                                                      (this.sort_array_by
+                                                          ('p-time_calc_utc', false, function(x) { return x ? x : moment.now(); })
+                                                          );
+                                              }
+                                              // display data (first page)
+                                              self.page_number = 1;
+                                              self.pageChange(true);
 
-                                          console.log('Loaded data for ' + self.allSites.length + ' sites');
-                                          $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                              moment(eventData.originTime).utc().utcOffset(self.timezone).format('YYYY-MM-DD HH:mm:ss.S');
+                                              console.log('Loaded data for ' + self.allSites.length + ' sites');
+                                              $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
+                                                  moment(eventData.originTime).utc().utcOffset(self.timezone)
+                                                      .format('YYYY-MM-DD HH:mm:ss.S');
+                                            });
                                         });
-                                    });
+                                    } else {
+                                        window.alert('No event preferred origin found');
+                                    }
+
                                 });
                             }
                         }
@@ -1259,7 +1268,7 @@ export class AppComponent implements OnInit {
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
-                if (sg.y().includes(NaN) === false) {
+                if (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0)) {
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to second)
                     } else {
@@ -1318,19 +1327,18 @@ export class AppComponent implements OnInit {
         };
 
 
-        this.createButterworthFilter = (sample_rate) => {
-            if (self.lowFreqCorner <= 0 || self.highFreqCorner >= sample_rate / 2 ) {
-                self.butterworth = null;
-            } else {
-                self.butterworth = filter.createButterworth(
+        this.createButterworthFilter = (sample_rate): any => {
+            let butterworth = null;
+            if (self.lowFreqCorner > 0 && self.highFreqCorner < sample_rate / 2 ) {
+                butterworth = filter.createButterworth(
                                      self.numPoles, // poles
                                      self.passband,
                                      self.lowFreqCorner, // low corner
                                      self.highFreqCorner, // high corner
                                      1 / sample_rate
-            );
-
+                );
             }
+            return butterworth;
         };
 
         this.applyFilter = () => {
@@ -1344,7 +1352,6 @@ export class AppComponent implements OnInit {
         };
 
         this.filterData = (sites) => {
-            self.createButterworthFilter(sites[0].channels[0].sample_rate);
             for (const site of sites) {
                 // remove composite traces if existing
                 const pos = site.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
@@ -1353,10 +1360,14 @@ export class AppComponent implements OnInit {
                 }
                 for (const channel of site.channels) {
                     if (channel.hasOwnProperty('raw')) {
-                        const s = channel.raw.clone();
-                        const seis = filter.taper.taper(s);
-                        if (self.butterworth) {
-                            self.butterworth.filterInPlace(seis.y());
+                        const sg = channel.raw.clone();
+                        let seis = null;
+                        const butterworth = self.createButterworthFilter(channel.sample_rate);
+                        if (butterworth) {
+                            seis = filter.taper.taper(sg);
+                            butterworth.filterInPlace(seis.y());
+                        } else {
+                            seis = sg;
                         }
                         for (let k = 0; k < seis.numPoints(); k++) {
                             channel.data[k].y = seis.y()[k];
@@ -1372,6 +1383,7 @@ export class AppComponent implements OnInit {
         };
 
         this.addCompositeTrace = (sites): any[] => {
+            let message = '';
             for (const site of sites) {
                 if (site.channels.length === 3) {
                     if (site.channels[0].start.isSame(site.channels[1].start) &&
@@ -1422,11 +1434,16 @@ export class AppComponent implements OnInit {
                             + site.channels[2].start.toISOString());
                     }
                 } else {
-                    console.log('Cannot create 3C composite trace for site: ' + site['station_code'] +
+                    message += 'Cannot create 3C composite trace for site: ' + site['station_code'] +
                         ' available channels: ' + site.channels.length + ' (' +
                         (site.channels.length > 0 ? site.channels[0].channel_id +
-                        (site.channels.length > 1 ? + site.channels[1].channel_id : ' ') : ' ') + ')');
+                        (site.channels.length > 1 ? site.channels[1].channel_id
+                            : ' ') : ' ') + ')\n';
                 }
+            }
+            if (message) {
+                console.log(message);
+                // window.alert(message);
             }
             return sites;
         };
