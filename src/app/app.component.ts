@@ -606,9 +606,9 @@ export class AppComponent implements OnInit {
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const step = environment.pickTimeStep * 1000; // in microseconds
                         if (e.deltaY < 0) { // scrolling up
-                            self.movePick(i, self.pickingMode, -step, true);
+                            self.movePick(i, self.pickingMode, -step, true, false);
                         } else if (e.deltaY > 0) { // scrolling down
-                            self.movePick(i, self.pickingMode, step, true);
+                            self.movePick(i, self.pickingMode, step, true, false);
                         }
                     }
                     // Y Zoom if Ctrl + Wheel, X axis (time) Zoom if Shift + Wheel; X axis (time) pan if Alt + Wheel
@@ -730,9 +730,9 @@ export class AppComponent implements OnInit {
                 if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
                     const step = environment.pickTimeStep * 1000; // in microseconds
                     if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                        self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true);
+                        self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
                     } else { // by step
-                        self.movePick(self.lastDownTarget, self.pickingMode, step, true);
+                        self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
                     }
                 }
             }
@@ -740,9 +740,9 @@ export class AppComponent implements OnInit {
                 if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
                    const step = environment.pickTimeStep * 1000; // in microseconds
                    if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                       self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true);
+                       self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
                    } else { // by step
-                       self.movePick(self.lastDownTarget, self.pickingMode, -step, true);
+                       self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
                    }
                 }
             }
@@ -1045,14 +1045,16 @@ export class AppComponent implements OnInit {
             chart.render();
         };
 
-        this.movePick = (ind, pickType, value, fromCurrentPosition) => {
+        this.movePick = (ind, pickType, value, fromCurrentPosition, issueWarning) => {
             const site = self.activeSites[ind];
             const chart = site.chart;
             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
             // find existing pick of this type
             const pick = self.findValue(site.picks, 'label', pickType);
             if (!pick) {
-                window.alert('No ' + pickType + ' pick to move');
+                if(issueWarning) {
+                    window.alert('No ' + pickType + ' pick to move');
+                }
                 return;
             }
             const data = chart.options.data[0].dataPoints;
