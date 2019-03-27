@@ -45,5 +45,9 @@ export const environment = {
   lowFreqCorner: 60,
   highFreqCorner: 1000,
   // resolution in milliseconds for moving the pick to left or right using the arrow keys
-  pickTimeStep: 0.5
+  pickTimeStep: 0.5,
+  // enable loading waveforms with paging from API, if disabled load all waveforms at once
+  enablePagingLoad: false,
+  // total number of traces available (for use with pagination loading)
+  totalTraces: 120
 };

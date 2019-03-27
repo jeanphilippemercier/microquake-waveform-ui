@@ -66,8 +66,11 @@ export class AppComponent implements OnInit {
     private destroyCharts: Function;
     private setChartKeys: Function;
     private getEvent: Function;
+    private getEventPage: Function;
     private parseMiniseed: Function;
     private loadEvent: Function;
+    private loadEventFirstPage: Function;
+    private loadEventPages: Function;
     private addCompositeTrace: Function;
 
     private toggleMenu: Function;
@@ -109,8 +112,8 @@ export class AppComponent implements OnInit {
     private findValue: Function;
     private addTime: Function;
 
-    private globalViewportMinStack: any[];
-    private globalViewportMaxStack: any[];
+    private xViewPortMinStack: any[];
+    private xViewportMaxStack: any[];
 
     private timezone: string;
 
@@ -135,7 +138,11 @@ export class AppComponent implements OnInit {
             this.timezone = message.timezone;
         }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
-            this.loadEvent(message);
+            if (environment.enablePagingLoad) {
+                this.loadEventFirstPage(message);
+            } else {
+                this.loadEvent(message);
+            }
         }
         this.picksWarning = '';
         $('#infoTime')[0].innerHTML = 'Event ' +
@@ -235,7 +242,8 @@ export class AppComponent implements OnInit {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites')) {
-                            this.filterData(eventData.sites);
+                            // filter and recompute composite traces
+                            self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
                             self.originTime = eventData.originTime;
                             self.currentEventId = id;
                             if (self.allSites.length > 0) {
@@ -243,7 +251,8 @@ export class AppComponent implements OnInit {
                                 this._catalogService.get_origins_by_id(id).subscribe(origins => {
                                     let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                                     if (!origin) {
-                                        window.alert('Warning: Event preferred origin from catalog not found');
+                                        window.alert('Event preferred origin from catalog not found');
+                                        console.log('Event preferred origin from catalog not found');
                                         origin = self.findValue(origins, 'preferred_origin', true);
                                     }
                                     if (origin) {
@@ -265,12 +274,75 @@ export class AppComponent implements OnInit {
                                               // display data (first page)
                                               self.page_number = 1;
                                               self.pageChange(true);
+                                            });
+                                        });
+                                    } else {
+                                        console.log('No event preferred origin found');
+                                            // display data (first page)
+                                            self.page_number = 1;
+                                            self.pageChange(true);
 
-                                              console.log('Loaded data for ' + self.allSites.length + ' sites');
+                                    }
+
+                                });
+                              console.log('Loaded data for ' + self.allSites.length + ' sites');
+                              $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
+                                  moment(eventData.originTime).utc().utcOffset(self.timezone)
+                                      .format('YYYY-MM-DD HH:mm:ss.S');
+
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        this.loadEventFirstPage = event => {
+            if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
+                const id = event.event_resource_id;
+                const preferred_origin_id = event.preferred_origin_id;
+                // first page
+                self.getEventPage(id, 1).then(eventFile => {
+                    if (eventFile) {
+                        const eventData = self.parseMiniseed(eventFile);
+                        if (eventData && eventData.hasOwnProperty('sites')) {
+                            // filter and recompute composite traces
+                            self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
+                            for (let i = self.allSites.length; i < environment.totalTraces; i++) {
+                                self.allSites[i] = { 'channels': []};
+                            }
+                            self.originTime = eventData.originTime;
+                            self.currentEventId = id;
+                            if (self.allSites.length > 0) {
+                                // get origins
+                                this._catalogService.get_origins_by_id(id).subscribe(origins => {
+                                    let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
+                                    if (!origin) {
+                                        window.alert('Warning: Event preferred origin from catalog not found');
+                                        origin = self.findValue(origins, 'preferred_origin', true);
+                                    }
+                                    if (origin) {
+                                        self.waveformOrigin = origin;
+                                        // get travel times for preferred origin
+                                        this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                            self.originTravelTimes = traveltimes;
+                                            this.addPredictedPicksData();
+                                            // get arrivals, picks for preferred origin
+                                            this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
+                                              self.allPicks = picks;
+                                              this.addArrivalsPickData();
+                                              // display data (first page)
+                                              self.page_number = 1;
+                                              self.pageChange(true);
+
+                                              // console.log('Loaded data for ' + self.allSites.length + ' sites');
                                               $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                                   moment(eventData.originTime).utc().utcOffset(self.timezone)
                                                       .format('YYYY-MM-DD HH:mm:ss.S');
+
                                             });
+
+                                            self.loadEventPages(id);
                                         });
                                     } else {
                                         window.alert('No event preferred origin found');
@@ -283,6 +355,24 @@ export class AppComponent implements OnInit {
                 });
             }
         };
+
+        this.loadEventPages = event_id => {
+            for (let i = 2; i <= Math.ceil(environment.totalTraces / self.page_size); i++) {
+                self.getEventPage(event_id, i).then(eventFile => {
+                    if (eventFile) {
+                        const eventData = self.parseMiniseed(eventFile);
+                        if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
+                            // filter and recompute composite traces
+                            const sites = self.addCompositeTrace(self.filterData(eventData.sites));
+                            for (let j = 0; j < sites.length; j++) {
+                                self.allSites[self.page_size * (i - 1) + j] = sites[j];
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
 
         this.sort_array_by = (field, reverse, primer) => {
 
@@ -301,14 +391,16 @@ export class AppComponent implements OnInit {
         this.findValue = (obj, key, value) => obj.find(v => v[key] === value);
 
         this.showPage = (pageNumber, pageSize) => {
-            if (pageNumber > 0 && pageNumber <= Math.ceil(self.allSites.length / self.page_size)) {
+            const numPages = environment.enablePagingLoad ?
+                Math.ceil(environment.totalTraces / self.page_size) : Math.ceil(self.allSites.length / self.page_size);
+            if (pageNumber > 0 && pageNumber <= numPages) {
                 self.activeSites = self.allSites.slice
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
                 self.renderCharts();
                 self.setChartKeys();
                 for (const site of self.activeSites) {
-                    site.chart.options.viewportMinStack = self.globalViewportMinStack;
-                    site.chart.options.viewportMaxStack = self.globalViewportMaxStack;
+                    site.chart.options.viewportMinStack = self.xViewPortMinStack;
+                    site.chart.options.viewportMaxStack = self.xViewportMaxStack;
                 }
             }
         };
@@ -320,11 +412,11 @@ export class AppComponent implements OnInit {
             self.lastPicksState = null;
             // remember zoom history
             if (reset) {
-                self.globalViewportMinStack = [];
-                self.globalViewportMaxStack = [];
+                self.xViewPortMinStack = [];
+                self.xViewportMaxStack = [];
             } else {
-                self.globalViewportMinStack = self.activeSites[0].chart.options.viewportMinStack;
-                self.globalViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
+                self.xViewPortMinStack = self.activeSites[0].chart.options.viewportMinStack;
+                self.xViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
             }
             self.destroyCharts();
             self.showPage(self.page_number, self.page_size);
@@ -443,10 +535,10 @@ export class AppComponent implements OnInit {
                     axisX: {
                         minimum: self.originTime ? self.originTime.millisecond() * 1000 : 0,
                         maximum: self.getXmax(i),
-                        viewportMinimum: self.zoomAll && self.globalViewportMinStack.length > 0 ?
-                            self.globalViewportMinStack[self.globalViewportMinStack.length - 1] : self.getXvpMin(),
-                        viewportMaximum: self.zoomAll && self.globalViewportMaxStack.length > 0 ?
-                            self.globalViewportMaxStack[self.globalViewportMaxStack.length - 1] : self.getXvpMax(),
+                        viewportMinimum: self.zoomAll && self.xViewPortMinStack.length > 0 ?
+                            self.xViewPortMinStack[self.xViewPortMinStack.length - 1] : self.getXvpMin(),
+                        viewportMaximum: self.zoomAll && self.xViewportMaxStack.length > 0 ?
+                            self.xViewportMaxStack[self.xViewportMaxStack.length - 1] : self.getXvpMax(),
                         includeZero: true,
                         labelAutoFit: false,
                         labelWrap: false,
@@ -753,7 +845,9 @@ export class AppComponent implements OnInit {
                 }
             }
             if (e.keyCode === 50 || e.keyCode === 98) {
-                if (self.page_number < Math.ceil(self.allSites.length / self.page_size)) {
+                const numPages = environment.enablePagingLoad ?
+                    Math.ceil(environment.totalTraces / self.page_size) : Math.ceil(self.allSites.length / self.page_size);
+                if (self.page_number < numPages) {
                     self.page_number = self.page_number + 1;
                     self.pageChange(false);
                 }
@@ -844,9 +938,9 @@ export class AppComponent implements OnInit {
         };
 
         this.updateZoomStackCharts = (vpMin, vpMax) => {
-            if (self.globalViewportMinStack.length === 0 || self.globalViewportMinStack[self.globalViewportMinStack.length - 1] !== vpMin) {
-                self.globalViewportMinStack.push(vpMin);
-                self.globalViewportMaxStack.push(vpMax);
+            if (self.xViewPortMinStack.length === 0 || self.xViewPortMinStack[self.xViewPortMinStack.length - 1] !== vpMin) {
+                self.xViewPortMinStack.push(vpMin);
+                self.xViewportMaxStack.push(vpMax);
                 for (let i = 0; i < self.activeSites.length; i++) {
                     const chart = self.activeSites[i].chart;
                     if (!chart.options.viewportMinStack) {
@@ -973,7 +1067,9 @@ export class AppComponent implements OnInit {
         };
 
         this.zoomAllCharts = (vpMin, vpMax, isXaxis) => {
-            self.updateZoomStackCharts(vpMin, vpMax);
+            if (isXaxis) {
+                self.updateZoomStackCharts(vpMin, vpMax);
+            }
             if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
                 for (let i = 0; i < self.activeSites.length; i++) {
                     const chart = self.activeSites[i].chart;
@@ -1081,20 +1177,20 @@ export class AppComponent implements OnInit {
 
         this.back = () => {
             if (self.zoomAll) {
-                if (self.globalViewportMinStack && self.globalViewportMinStack.length > 0) {
-                    self.globalViewportMinStack.pop();
-                    self.globalViewportMaxStack.pop();
+                if (self.xViewPortMinStack && self.xViewPortMinStack.length > 0) {
+                    self.xViewPortMinStack.pop();
+                    self.xViewportMaxStack.pop();
                 }
                 for (let j = 0; j < self.activeSites.length; j++) {
                     const chart = self.activeSites[j].chart;
-                    chart.options.viewportMinStack = self.globalViewportMinStack;
-                    chart.options.viewportMaxStack = self.globalViewportMaxStack;
+                    chart.options.viewportMinStack = self.xViewPortMinStack;
+                    chart.options.viewportMaxStack = self.xViewportMaxStack;
                     if (!chart.options.axisX) {
                         chart.options.axisX = {};
                     }
-                    if (self.globalViewportMinStack && self.globalViewportMinStack.length > 0) {
-                        chart.options.axisX.viewportMinimum = self.globalViewportMinStack[self.globalViewportMinStack.length - 1];
-                        chart.options.axisX.viewportMaximum = self.globalViewportMaxStack[self.globalViewportMaxStack.length - 1];
+                    if (self.xViewPortMinStack && self.xViewPortMinStack.length > 0) {
+                        chart.options.axisX.viewportMinimum = self.xViewPortMinStack[self.xViewPortMinStack.length - 1];
+                        chart.options.axisX.viewportMaximum = self.xViewportMaxStack[self.xViewportMaxStack.length - 1];
                         chart.render();
                     } else {
                         self.resetChartViewX(chart);
@@ -1306,18 +1402,20 @@ export class AppComponent implements OnInit {
                     site.channels.push(channel);
                 }
             });
-            originTime = moment(zTime);
-            originTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
-            zTime.millisecond(0);
-            if (changeOriginTime) {
-                console.log('***changeOriginTime channels change in earliest time second detected');
-                for (let i = 0; i < sites.length; i++) {
-                    for (let j = 0; j < sites[i].channels.length; j++) {
-                        if (!sites[i].channels[j].start.isSame(zTime, 'second')) {
-                            const offset = sites[i].channels[j].start.diff(zTime, 'seconds') * 1000000;
-                            sites[i].channels[j].microsec = sites[i].channels[j].microsec + offset;
-                            for (let k = 0; k < sites[i].channels[j].data.length; k++) { // microsecond offset from zeroTime
-                                sites[i].channels[j].data[k]['x'] = sites[i].channels[j].data[k]['x'] + offset;
+            if (zTime && zTime.isValid()) {
+                originTime = moment(zTime);
+                originTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
+                zTime.millisecond(0);
+                if (changeOriginTime) {
+                    console.log('***changeOriginTime channels change in earliest time second detected');
+                    for (let i = 0; i < sites.length; i++) {
+                        for (let j = 0; j < sites[i].channels.length; j++) {
+                            if (!sites[i].channels[j].start.isSame(zTime, 'second')) {
+                                const offset = sites[i].channels[j].start.diff(zTime, 'seconds') * 1000000;
+                                sites[i].channels[j].microsec = sites[i].channels[j].microsec + offset;
+                                for (let k = 0; k < sites[i].channels[j].data.length; k++) { // microsecond offset from zeroTime
+                                    sites[i].channels[j].data[k]['x'] = sites[i].channels[j].data[k]['x'] + offset;
+                                }
                             }
                         }
                     }
@@ -1348,12 +1446,12 @@ export class AppComponent implements OnInit {
                 self.saveOption('numPoles');
                 self.saveOption('lowFreqCorner');
                 self.saveOption('highFreqCorner');
-                self.filterData(self.allSites);
+                self.allSites = self.addCompositeTrace(self.filterData(self.allSites)); // filter and recompute composite traces
                 self.pageChange(false);
             }
         };
 
-        this.filterData = (sites) => {
+        this.filterData = (sites): any[] => {
             for (const site of sites) {
                 // remove composite traces if existing
                 const pos = site.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
@@ -1380,8 +1478,8 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            self.allSites = this.addCompositeTrace(sites); // recompute composite traces
             self.changedFilter = false;
+            return sites;
         };
 
         this.addCompositeTrace = (sites): any[] => {
@@ -1472,6 +1570,31 @@ export class AppComponent implements OnInit {
                 mshr.send();
             });
         };
+
+        this.getEventPage = (event_id, page): any => {
+            return new Promise(resolve => {
+                const mshr = new XMLHttpRequest();
+                const waveform_file = environment.apiUrl + environment.apiEvents + '/' + event_id +
+                        '/waveform?page_number=' + page.toString() +
+                        '&traces_per_page=' + environment.chartsPerPage.toString();
+                mshr.open('GET', waveform_file, true);
+                mshr.responseType = 'arraybuffer';
+                self.loading = true;
+                mshr.onreadystatechange = () => {
+                    if (mshr.readyState === mshr.DONE) {
+                        if (mshr.status === 200)  {
+                            self.loading = false;
+                            resolve (mshr.response);
+                        } else {
+                            self.loading = false;
+                            console.log('Error getting miniseed', mshr.statusText);
+                        }
+                    }
+                };
+                mshr.send();
+            });
+        };
+
 
     }
 }
