@@ -166,6 +166,8 @@ export class AppComponent implements OnInit {
             message.status[0].toUpperCase() + message.status.substr(1).toLowerCase() : '';
         this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
         this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
+        this.origin['event_resource_id'] = message.event_resource_id;
+        this.origin['preferred_origin_id'] = message.preferred_origin_id;
     }
 
     constructor(private _catalogService: CatalogApiService) { }
