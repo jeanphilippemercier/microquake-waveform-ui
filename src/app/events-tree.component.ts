@@ -143,6 +143,7 @@ export class FileDatabase {
           }
         }
       }
+      return data;
   }
 
 
@@ -194,8 +195,16 @@ export class FileDatabase {
               }
               if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
                 dataTree[year][month][day][event_time] = {};
+                dataTree[year][month][day][event_time] = value;
+              } else { // duplicate node, same origin time already exists
+                const event_time_duplicate = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(4).slice(-5);
+                if (!dataTree[year][month][day].hasOwnProperty(event_time_duplicate)) {
+                  dataTree[year][month][day][event_time_duplicate] = {};
+                  dataTree[year][month][day][event_time_duplicate] = value;
+                } else {
+                  console.log('More than 2 events with same origin time found, skipped')
+                }
               }
-              dataTree[year][month][day][event_time] = value;
           }
       }
     }
@@ -289,7 +298,7 @@ export class EventsTreeComponent {
       this.dataSource.data = data;
       this.treeControl.dataNodes = data;
 
-      if (data.length > 0) {
+      if (data && data.length > 0) {
         const message = this.findNode(data, database.eventId);
         message['action'] = 'load';
         message['timezone'] = database.timezone;
