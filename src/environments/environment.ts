@@ -51,7 +51,9 @@ export const environment = {
   // resolution in milliseconds for moving the pick to left or right using the arrow keys
   pickTimeStep: 0.5,
   // enable loading waveforms with paging from API, if disabled load all waveforms at once
-  enablePagingLoad: true
+  enablePagingLoad: true,
+  // maximum number of pages to expect
+  max_num_pages: 20
 };
 
 /*

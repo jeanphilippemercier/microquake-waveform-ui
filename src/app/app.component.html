@@ -36,15 +36,21 @@
                   <td>Z {{origin.z}} m</td>
                 </tr>
                 <tr>
+                  <td colspan="2" id='alertMsg' *ngIf='sitesWarning' class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" (click)='sitesWarning = ""' aria-hidden="true">&times;</button>
+                    {{sitesWarning}}
+                  </td>
+                </tr>
+                <tr>
                   <th scope="row">Picks</th>
                   <td>{{origin.npick}}</td>
                 </tr>
-               <tr>
-                <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
-                  <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
-                  {{picksWarning}}
-                </td>
-              </tr>
+                <tr>
+                  <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
+                    {{picksWarning}}
+                  </td>
+                </tr>
                 <tr>
                   <th scope="row">Type</th>
                   <td>{{origin.type}}</td>
@@ -118,7 +124,7 @@
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
-          <pagination-controls class="pagination" (pageChange)="page_number = $event; displayPage()"></pagination-controls>
+          <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>
         <div id='zeroTime'>Traces time origin</div>

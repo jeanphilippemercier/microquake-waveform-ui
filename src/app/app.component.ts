@@ -112,7 +112,7 @@ export class AppComponent implements OnInit {
     private toggleTooltip: Function;
     public back: Function;
     private renderPage: Function;
-    public displayPage: Function;
+    public changePage: Function;
     private sort_array_by: Function;
     private findValue: Function;
     private addTime: Function;
@@ -140,6 +140,7 @@ export class AppComponent implements OnInit {
     public currentEventId: string;
 
     public picksWarning: string;
+    public sitesWarning: string;
 
     getNotification(message) {
         // console.log(message);
@@ -147,12 +148,14 @@ export class AppComponent implements OnInit {
             this.timezone = message.timezone;
         }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
+            this.page_number = 1;
             if (environment.enablePagingLoad) {
                 this.loadEventFirstPage(message);
             } else {
                 this.loadEvent(message);
             }
         }
+        this.sitesWarning = '';
         this.picksWarning = '';
         $('#infoTime')[0].innerHTML = 'Event ' +
                     moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') +
@@ -290,18 +293,14 @@ export class AppComponent implements OnInit {
                                               self.sortTraces();
 
                                               // display data (first page)
-                                              self.page_number = 1;
-                                              self.displayPage(true);
+                                              self.changePage(true);
                                             });
                                         });
                                     } else {
                                         console.log('No event preferred origin found');
                                             // display data (first page)
-                                            self.page_number = 1;
-                                            self.displayPage(true);
-
+                                            self.changePage(true);
                                     }
-
                                 });
                                 console.log('Loaded data for ' + self.allSites.length + ' sites');
                                 $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
@@ -368,8 +367,7 @@ export class AppComponent implements OnInit {
                                               $('#sortTraces').prop('disabled', true); // button disabled
 
                                               // display data (first page)
-                                              self.page_number = 1;
-                                              self.displayPage(true);
+                                              self.changePage(true);
 
                                               // console.log('Loaded data for ' + self.allSites.length + ' sites');
                                               $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
@@ -404,14 +402,10 @@ export class AppComponent implements OnInit {
                             for (let j = 0; j < sites.length; j++) {
                                 self.allSites[self.page_size * (i - 1) + j] = sites[j];
                             }
-                            if (i === self.num_pages && sites.length < self.page_size) { // last page, eliminate extra items
-                                const items = self.page_size - sites.length;
-                                self.allSites.splice(-items, items);
-                            }
-                            self.loaded_pages ++;
-                            if (self.loaded_pages === self.num_pages) {
-                                self.afterLoading();
-                            }
+                        }
+                        self.loaded_pages ++;
+                        if (self.loaded_pages === self.num_pages) {
+                            self.afterLoading();
                         }
                     }
                 });
@@ -419,6 +413,13 @@ export class AppComponent implements OnInit {
         };
 
         this.afterLoading = () => {
+            // eliminate placeholders, sanitize sites array
+            let index = self.allSites.findIndex(site => site.channels.length === 0);
+            while (index >= 0) {
+                self.allSites.splice(index, 1);
+                index = self.allSites.findIndex(site => site.channels.length === 0);
+            }
+            console.log('Loaded data for ' + self.allSites.length + ' sites');
             // enable toolbar buttons after all pages are loaded
             $('#sortTraces').prop('disabled', false);
             $('#togglePredictedPicksBias').prop('disabled', false);
@@ -457,7 +458,7 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.displayPage = (reset) => {
+        this.changePage = (reset) => {
             // reset last selected channel
             self.lastDownTarget = null;
             // reset picks last known state
@@ -892,7 +893,7 @@ export class AppComponent implements OnInit {
             if (e.keyCode === 49 || e.keyCode === 97) {
                 if (self.page_number > 1) {
                     self.page_number = self.page_number - 1;
-                    self.displayPage(false);
+                    self.changePage(false);
                 }
             }
             if (e.keyCode === 50 || e.keyCode === 98) {
@@ -900,7 +901,7 @@ export class AppComponent implements OnInit {
                     self.num_pages : Math.ceil(self.allSites.length / self.page_size);
                 if (self.page_number < numPages) {
                     self.page_number = self.page_number + 1;
-                    self.displayPage(false);
+                    self.changePage(false);
                 }
             }
         },
@@ -914,7 +915,7 @@ export class AppComponent implements OnInit {
         $('#display3C').on('click', () => {
             self.bDisplayComposite = !self.bDisplayComposite;
             $(this).toggleClass('active');
-            self.displayPage(false);
+            self.changePage(false);
         });
 
         $('#sortTraces').on('click', () => {
@@ -922,7 +923,7 @@ export class AppComponent implements OnInit {
                 self.bSortTraces = !self.bSortTraces;
                 $(this).toggleClass('active');
                 self.sortTraces();
-                self.displayPage(false);
+                self.changePage(false);
             }
         });
 
@@ -1383,7 +1384,7 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            self.displayPage(false);
+            self.changePage(false);
         };
 
         this.calcPicksBias = () => {
@@ -1431,7 +1432,7 @@ export class AppComponent implements OnInit {
                     }
                 }
                 if (show) {
-                    self.displayPage(false);
+                    self.changePage(false);
                 }
             }
         };
@@ -1455,7 +1456,7 @@ export class AppComponent implements OnInit {
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
-                if (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0)) {
+                if (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0)) { // this filters out zero channels
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to second)
                     } else {
@@ -1489,6 +1490,11 @@ export class AppComponent implements OnInit {
                         sites.push(site);
                     }
                     site.channels.push(channel);
+                } else {
+                    console.log('Skip zero data channel: ' + sg.codes());
+                    self.sitesWarning = self.sitesWarning ?
+                        (self.sitesWarning.includes(sg.stationCode()) ? self.sitesWarning : self.sitesWarning + ',' + sg.stationCode()) :
+                            'Sites with zero data skipped: ' + sg.stationCode();
                 }
             });
             if (zTime && zTime.isValid()) {
@@ -1536,7 +1542,7 @@ export class AppComponent implements OnInit {
                 self.saveOption('lowFreqCorner');
                 self.saveOption('highFreqCorner');
                 self.allSites = self.addCompositeTrace(self.filterData(self.allSites)); // filter and recompute composite traces
-                self.displayPage(false);
+                self.changePage(false);
             }
         };
 
@@ -1678,12 +1684,16 @@ export class AppComponent implements OnInit {
                                 if (filename.indexOf('of_') && filename.lastIndexOf('.') ) {
                                    self.num_pages = parseInt(
                                        filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
+
+                                } else {
+                                    self.num_pages = environment.max_num_pages;
                                 }
                             }
                             resolve (mshr.response);
                         } else {
                             self.loading = false;
                             console.log('Error getting miniseed', mshr.statusText);
+                            resolve (null);
                         }
                     }
                 };
@@ -1693,13 +1703,17 @@ export class AppComponent implements OnInit {
 
         this.getAttachmentFilename = (xhr): any => {
             let filename = '';
-            const disposition = xhr.getResponseHeader('Content-Disposition');
-            if (disposition && disposition.indexOf('attachment') !== -1) {
-                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                const matches = filenameRegex.exec(disposition);
-                if (matches != null && matches[1]) {
-                  filename = matches[1].replace(/['"]/g, '');
+            try {
+                const disposition = xhr.getResponseHeader('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) {
+                      filename = matches[1].replace(/['"]/g, '');
+                    }
                 }
+            } catch (err) {
+                console.log('Error getting Content-Disposition Headers');
             }
             return filename;
         };
