@@ -29,12 +29,13 @@ export class AppComponent implements OnInit {
     public options: any;
     private saveOption: Function;
 
-    public commonTimeState: Boolean;
-    public commonYState: Boolean;
-    public zoomAll: Boolean;
-    public displayComposite: Boolean;
-    public showPredictedPicks: Boolean;
-    public removeBiasPredictedPicks: Boolean;
+    public bCommonTime: Boolean;
+    public bCommonAmplitude: Boolean;
+    public bZoomAll: Boolean;
+    public bDisplayComposite: Boolean;
+    public bSortTraces: Boolean;
+    public bShowPredictedPicks: Boolean;
+    public bRemoveBias: Boolean;
     public numPoles: any;
     public lowFreqCorner: any;
     public highFreqCorner: any;
@@ -47,7 +48,7 @@ export class AppComponent implements OnInit {
 
     public applyFilter: Function;
     private filterData: Function;
-    public changedFilter: Boolean;
+    public bFilterChanged: Boolean;
 
     private sample_rate: any;
     public picksBias: number;
@@ -57,20 +58,22 @@ export class AppComponent implements OnInit {
     public selectedContextMenu: number;
     public lastSelectedXPosition: number;
     public lastDownTarget: any;  // last mouse down selection
-    private holdEventTrigger: Boolean;
+    private bHoldEventTrigger: Boolean;
 
     private menu: any;
-    private menuVisible: Boolean;
+    private bMenuVisible: Boolean;
 
     private renderCharts: Function;
     private destroyCharts: Function;
     private setChartKeys: Function;
     private getEvent: Function;
     private getEventPage: Function;
+    private getAttachmentFilename: Function;
     private parseMiniseed: Function;
     private loadEvent: Function;
     private loadEventFirstPage: Function;
     private loadEventPages: Function;
+    private afterLoading: Function;
     private addCompositeTrace: Function;
 
     private toggleMenu: Function;
@@ -102,15 +105,19 @@ export class AppComponent implements OnInit {
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private togglePredictedPicksVisibility: Function;
-    private togglePredictedPicksBias: Function;
+    private calcPicksBias: Function;
+    private changePredictedPicksByBias: Function;
+    private activateRemoveBias: Function;
     private togglePredictedPicks: Function;
     private toggleTooltip: Function;
     public back: Function;
-    private showPage: Function;
-    public pageChange: Function;
+    private renderPage: Function;
+    public displayPage: Function;
     private sort_array_by: Function;
     private findValue: Function;
     private addTime: Function;
+    private sortTraces: Function;
+
 
     private xViewPortMinStack: any[];
     private xViewportMaxStack: any[];
@@ -119,6 +126,8 @@ export class AppComponent implements OnInit {
 
     public page_size = environment.chartsPerPage;
     public page_number: number;
+    public num_pages: number;
+    public loaded_pages: number;
     public window_height = window.innerHeight;
     public chartHeight: number;
     public pageOffsetX: number;
@@ -179,12 +188,16 @@ export class AppComponent implements OnInit {
         self.options = JSON.parse(window.localStorage.getItem('viewer-options'));
         self.options = self.options ? self.options : {};
 
-        self.commonTimeState = true;
-        self.commonYState = false;
-        self.zoomAll = false;
-        self.displayComposite = true;
-        self.showPredictedPicks = true;
-        self.removeBiasPredictedPicks = false;
+        self.bCommonTime = true;
+        self.bCommonAmplitude = false;
+        self.bZoomAll = false;
+        self.bDisplayComposite = true;
+        self.bSortTraces = false;
+        self.bShowPredictedPicks = true;
+        self.bRemoveBias = false;
+        self.picksBias = 0;
+        self.num_pages = 0;
+        self.loaded_pages = 0;
 
         self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : environment.numPoles;
         self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : environment.lowFreqCorner;
@@ -200,7 +213,7 @@ export class AppComponent implements OnInit {
         self.lastSelectedXPosition = -1;
 
         self.menu = document.querySelector('.menu');
-        self.menuVisible = false;
+        self.bMenuVisible = false;
 
         self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
         self.pageOffsetY = $('#waveform-panel').position().top + $('#zeroTime').height();
@@ -211,8 +224,7 @@ export class AppComponent implements OnInit {
         self.waveformOrigin = {};
 
         self.timezone = '+00:00';
-        self.picksBias = 0;
-        self.changedFilter = true;
+        self.bFilterChanged = true;
 
         self.pickingMode = 'none';
         self.lastPicksState = null;
@@ -262,33 +274,37 @@ export class AppComponent implements OnInit {
                                         // get travel times for preferred origin
                                         this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
-                                            this.addPredictedPicksData();
+                                            this.addPredictedPicksData(self.allSites);
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData();
-                                              if (Array.isArray(self.allSites)) {
-                                                  self.allSites.sort
-                                                      (this.sort_array_by
-                                                          ('p-time_calc_utc', false, function(x) { return x ? x : moment.now(); })
-                                                          );
+                                              this.addArrivalsPickData(self.allSites);
+
+                                              self.activateRemoveBias(false);
+
+                                              if (!self.bSortTraces) { // sort traces on when loading all data (no pagination)
+                                                self.bSortTraces = !self.bSortTraces;
+                                                $('#sortTraces').toggleClass('active');
+                                                $('#sortTraces').prop('hidden', true); // hide button
                                               }
+                                              self.sortTraces();
+
                                               // display data (first page)
                                               self.page_number = 1;
-                                              self.pageChange(true);
+                                              self.displayPage(true);
                                             });
                                         });
                                     } else {
                                         console.log('No event preferred origin found');
                                             // display data (first page)
                                             self.page_number = 1;
-                                            self.pageChange(true);
+                                            self.displayPage(true);
 
                                     }
 
                                 });
-                              console.log('Loaded data for ' + self.allSites.length + ' sites');
-                              $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
+                                console.log('Loaded data for ' + self.allSites.length + ' sites');
+                                $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                   moment(eventData.originTime).utc().utcOffset(self.timezone)
                                       .format('YYYY-MM-DD HH:mm:ss.S');
 
@@ -310,7 +326,8 @@ export class AppComponent implements OnInit {
                         if (eventData && eventData.hasOwnProperty('sites')) {
                             // filter and recompute composite traces
                             self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
-                            for (let i = self.allSites.length; i < environment.totalTraces; i++) {
+                            self.loaded_pages = 1;
+                            for (let i = self.allSites.length; i < self.num_pages * self.page_size; i++) {
                                 self.allSites[i] = { 'channels': []};
                             }
                             self.originTime = eventData.originTime;
@@ -328,14 +345,31 @@ export class AppComponent implements OnInit {
                                         // get travel times for preferred origin
                                         this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
-                                            this.addPredictedPicksData();
+                                            this.addPredictedPicksData(self.allSites);
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData();
+                                              this.addArrivalsPickData(self.allSites);
+
+                                              self.picksBias = 0;
+                                              if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
+                                                self.bRemoveBias = !self.bRemoveBias;
+                                                $('#togglePredictedPicksBias').toggleClass('active');
+                                              }
+
+                                              if (self.bSortTraces) { // turn sort traces off by default when loading data with pagination
+                                                self.bSortTraces = !self.bSortTraces;
+                                                $('#sortTraces').toggleClass('active');
+                                                $('#sortTraces').prop('hidden', false); // button visible
+                                              }
+
+                                              // disable buttons until all pages are loaded
+                                              $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
+                                              $('#sortTraces').prop('disabled', true); // button disabled
+
                                               // display data (first page)
                                               self.page_number = 1;
-                                              self.pageChange(true);
+                                              self.displayPage(true);
 
                                               // console.log('Loaded data for ' + self.allSites.length + ' sites');
                                               $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
@@ -343,7 +377,6 @@ export class AppComponent implements OnInit {
                                                       .format('YYYY-MM-DD HH:mm:ss.S');
 
                                             });
-
                                             self.loadEventPages(id);
                                         });
                                     } else {
@@ -359,15 +392,25 @@ export class AppComponent implements OnInit {
         };
 
         this.loadEventPages = event_id => {
-            for (let i = 2; i <= Math.ceil(environment.totalTraces / self.page_size); i++) {
+            for (let i = 2; i <= self.num_pages; i++) {
                 self.getEventPage(event_id, i).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
                             // filter and recompute composite traces
                             const sites = self.addCompositeTrace(self.filterData(eventData.sites));
+                            this.addPredictedPicksData(sites);
+                            this.addArrivalsPickData(sites);
                             for (let j = 0; j < sites.length; j++) {
                                 self.allSites[self.page_size * (i - 1) + j] = sites[j];
+                            }
+                            if (i === self.num_pages && sites.length < self.page_size) { // last page, eliminate extra items
+                                const items = self.page_size - sites.length;
+                                self.allSites.splice(-items, items);
+                            }
+                            self.loaded_pages ++;
+                            if (self.loaded_pages === self.num_pages) {
+                                self.afterLoading();
                             }
                         }
                     }
@@ -375,6 +418,13 @@ export class AppComponent implements OnInit {
             }
         };
 
+        this.afterLoading = () => {
+            // enable toolbar buttons after all pages are loaded
+            $('#sortTraces').prop('disabled', false);
+            $('#togglePredictedPicksBias').prop('disabled', false);
+            // remove bias from predicted picks, force a refresh
+            // self.activateRemoveBias(true);
+        };
 
         this.sort_array_by = (field, reverse, primer) => {
 
@@ -392,9 +442,9 @@ export class AppComponent implements OnInit {
 
         this.findValue = (obj, key, value) => obj.find(v => v[key] === value);
 
-        this.showPage = (pageNumber, pageSize) => {
+        this.renderPage = (pageNumber, pageSize) => {
             const numPages = environment.enablePagingLoad ?
-                Math.ceil(environment.totalTraces / self.page_size) : Math.ceil(self.allSites.length / self.page_size);
+                self.num_pages : Math.ceil(self.allSites.length / self.page_size);
             if (pageNumber > 0 && pageNumber <= numPages) {
                 self.activeSites = self.allSites.slice
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
@@ -407,26 +457,25 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.pageChange = (reset) => {
+        this.displayPage = (reset) => {
             // reset last selected channel
             self.lastDownTarget = null;
             // reset picks last known state
             self.lastPicksState = null;
-            // remember zoom history
-            if (reset) {
+            if (reset) { // first page , new event
                 self.xViewPortMinStack = [];
                 self.xViewportMaxStack = [];
-            } else {
+            } else {             // remember zoom history
                 self.xViewPortMinStack = self.activeSites[0].chart.options.viewportMinStack;
                 self.xViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
             }
             self.destroyCharts();
-            self.showPage(self.page_number, self.page_size);
+            self.renderPage(self.page_number, self.page_size);
         };
 
         this.toggleMenu = command => {
          (<any>self.menu).style.display = command === 'show' ? 'block' : 'none';
-          self.menuVisible = !self.menuVisible;
+          self.bMenuVisible = !self.bMenuVisible;
         };
 
         this.setPosition = ({ top, left }) => {
@@ -472,9 +521,9 @@ export class AppComponent implements OnInit {
 
                 const data = [];
                 for (const channel of self.activeSites[i].channels) {
-                    if ( (!self.displayComposite && channel.channel_id !== environment.compositeChannelCode)
-                        || (self.displayComposite && channel.channel_id === environment.compositeChannelCode)
-                        || (self.displayComposite && self.activeSites[i].channels.length === 1)) {
+                    if ( (!self.bDisplayComposite && channel.channel_id !== environment.compositeChannelCode)
+                        || (self.bDisplayComposite && channel.channel_id === environment.compositeChannelCode)
+                        || (self.bDisplayComposite && self.activeSites[i].channels.length === 1)) {
                         data.push(
                             {
                                 name: channel.code_id,
@@ -495,13 +544,13 @@ export class AppComponent implements OnInit {
                     zoomType: 'x',
                     animationEnabled: true,
                     rangeChanged: function(e) {
-                        self.holdEventTrigger = true;
+                        self.bHoldEventTrigger = true;
                         if (!e.chart.options.viewportMinStack) {
                             e.chart.options.viewportMinStack = [];
                             e.chart.options.viewportMaxStack = [];
                         }
                         if (e.trigger === 'zoom') {
-                            if (self.zoomAll) {
+                            if (self.bZoomAll) {
                                 self.zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
                             } else {
                                 e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
@@ -537,9 +586,9 @@ export class AppComponent implements OnInit {
                     axisX: {
                         minimum: self.originTime ? self.originTime.millisecond() * 1000 : 0,
                         maximum: self.getXmax(i),
-                        viewportMinimum: self.zoomAll && self.xViewPortMinStack.length > 0 ?
+                        viewportMinimum: self.bZoomAll && self.xViewPortMinStack.length > 0 ?
                             self.xViewPortMinStack[self.xViewPortMinStack.length - 1] : self.getXvpMin(),
-                        viewportMaximum: self.zoomAll && self.xViewportMaxStack.length > 0 ?
+                        viewportMaximum: self.bZoomAll && self.xViewportMaxStack.length > 0 ?
                             self.xViewportMaxStack[self.xViewportMaxStack.length - 1] : self.getXvpMax(),
                         includeZero: true,
                         labelAutoFit: false,
@@ -557,7 +606,7 @@ export class AppComponent implements OnInit {
                     axisY: {
                         minimum: -yMax,
                         maximum: yMax,
-                        interval: self.commonYState ? null : yMax / 2,
+                        interval: self.bCommonAmplitude ? null : yMax / 2,
                         includeZero: true,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
@@ -589,11 +638,11 @@ export class AppComponent implements OnInit {
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
                         if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
-                            if (!self.holdEventTrigger) {
+                            if (!self.bHoldEventTrigger) {
                                 self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
                             }
                         } else if (self.pickingMode === 'S') { // create or move S pick on Left mouse click in S picking mode
-                            if (!self.holdEventTrigger) {
+                            if (!self.bHoldEventTrigger) {
                                 self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
                             }
                         } else {
@@ -613,7 +662,7 @@ export class AppComponent implements OnInit {
                     self.lastDownTarget = ind;
 
                     if (!($(e.target).parents('.menu').length > 0)) {
-                        if (self.menuVisible) {
+                        if (self.bMenuVisible) {
                             self.selectedContextMenu = -1;
                             self.toggleMenu('hide');
                             return;
@@ -661,7 +710,7 @@ export class AppComponent implements OnInit {
 
                 $(canvas_chart).last().on('mousemove', function(e) {  // move selected stripLine
                     if (self.selected !== -1) {
-                        self.holdEventTrigger = true;
+                        self.bHoldEventTrigger = true;
                         const i = parseInt( $(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const chart = self.activeSites[i].chart;
                         const parentOffset = $(this).parent().offset();
@@ -680,7 +729,7 @@ export class AppComponent implements OnInit {
 
                 $(canvas_chart).last().on('mouseup', function(e) {
                     setTimeout(function() {
-                        self.holdEventTrigger = false;
+                        self.bHoldEventTrigger = false;
                     }, 500);
                     if (self.selected !== -1) {   // clear selection and change the cursor
                         $(this)[0].style.cursor = 'default';
@@ -751,7 +800,7 @@ export class AppComponent implements OnInit {
                         }
 
                         if ((newViewportMax - newViewportMin) > (2 * interval)) {
-                            if (self.zoomAll) {
+                            if (self.bZoomAll) {
                                 self.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
                             } else {  // zoom selected trace only
                                 if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
@@ -779,13 +828,13 @@ export class AppComponent implements OnInit {
         };
 
         $('#commonAmplitude').on('click', () => {
-            self.commonYState = !self.commonYState;
+            self.bCommonAmplitude = !self.bCommonAmplitude;
             $(this).toggleClass('active');
             self.resetAllChartsViewY();
         });
 
         $('#commonTime').on('click', () => {
-            self.commonTimeState = !self.commonTimeState;
+            self.bCommonTime = !self.bCommonTime;
             $(this).toggleClass('active');
             self.resetAllChartsViewX();
         });
@@ -843,40 +892,52 @@ export class AppComponent implements OnInit {
             if (e.keyCode === 49 || e.keyCode === 97) {
                 if (self.page_number > 1) {
                     self.page_number = self.page_number - 1;
-                    self.pageChange(false);
+                    self.displayPage(false);
                 }
             }
             if (e.keyCode === 50 || e.keyCode === 98) {
                 const numPages = environment.enablePagingLoad ?
-                    Math.ceil(environment.totalTraces / self.page_size) : Math.ceil(self.allSites.length / self.page_size);
+                    self.num_pages : Math.ceil(self.allSites.length / self.page_size);
                 if (self.page_number < numPages) {
                     self.page_number = self.page_number + 1;
-                    self.pageChange(false);
+                    self.displayPage(false);
                 }
             }
         },
         false);
 
         $('#zoomAll').on('click', () => {
-            self.zoomAll = !self.zoomAll;
+            self.bZoomAll = !self.bZoomAll;
             $(this).toggleClass('active');
         });
 
         $('#display3C').on('click', () => {
-            self.displayComposite = !self.displayComposite;
+            self.bDisplayComposite = !self.bDisplayComposite;
             $(this).toggleClass('active');
-            self.pageChange(false);
+            self.displayPage(false);
+        });
+
+        $('#sortTraces').on('click', () => {
+            if (!self.bSortTraces) { // turn on once only
+                self.bSortTraces = !self.bSortTraces;
+                $(this).toggleClass('active');
+                self.sortTraces();
+                self.displayPage(false);
+            }
         });
 
         $('#togglePredictedPicks').on('click', () => {
-            self.showPredictedPicks = !self.showPredictedPicks;
-            self.togglePredictedPicksVisibility(self.showPredictedPicks);
+            self.bShowPredictedPicks = !self.bShowPredictedPicks;
+            self.togglePredictedPicksVisibility(self.bShowPredictedPicks);
             $(this).toggleClass('active');
         });
 
         $('#togglePredictedPicksBias').on('click', () => {
-            self.removeBiasPredictedPicks = !self.removeBiasPredictedPicks;
-            self.togglePredictedPicksBias(self.removeBiasPredictedPicks, true);
+            if (self.picksBias === 0) {  // if pagination is enabled calculate bias first time button is clicked
+                self.calcPicksBias();
+            }
+            self.bRemoveBias = !self.bRemoveBias;
+            self.changePredictedPicksByBias(self.bRemoveBias, true);
             $(this).toggleClass('active');
         });
 
@@ -904,20 +965,20 @@ export class AppComponent implements OnInit {
         });
 
         this.togglePredictedPicks = () => {
-            self.showPredictedPicks = !self.showPredictedPicks;
-            if (self.showPredictedPicks) {
+            self.bShowPredictedPicks = !self.bShowPredictedPicks;
+            if (self.bShowPredictedPicks) {
                 $('#togglePredictedPicks').addClass('active');
                 $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'true');
             } else {
                 $('#togglePredictedPicks').removeClass('active focus');
                 $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'false');
             }
-            self.togglePredictedPicksVisibility(self.showPredictedPicks);
+            self.togglePredictedPicksVisibility(self.bShowPredictedPicks);
         };
 
         this.toggleCommonTime = () => {
-            self.commonTimeState = !self.commonTimeState;
-            if (self.commonTimeState) {
+            self.bCommonTime = !self.bCommonTime;
+            if (self.bCommonTime) {
                 $('#commonTime').addClass('active');
                 $('#commonTime')[0].setAttribute('aria-pressed', 'true');
             } else {
@@ -928,8 +989,8 @@ export class AppComponent implements OnInit {
         };
 
         this.toggleCommonAmplitude = () => {
-            self.commonYState = !self.commonYState;
-            if (self.commonYState) {
+            self.bCommonAmplitude = !self.bCommonAmplitude;
+            if (self.bCommonAmplitude) {
                 $('#commonAmplitude').addClass('active');
                 $('#commonAmplitude')[0].setAttribute('aria-pressed', 'true');
             } else {
@@ -991,9 +1052,9 @@ export class AppComponent implements OnInit {
             const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.maximum = self.commonYState ? self.getYmax(channel) : null;
-            chart.options.axisY.minimum = self.commonYState ? -chart.options.axisY.maximum : null;
-            chart.options.axisY.interval = self.commonYState ? chart.options.axisY.maximum / 2 : null;
+            chart.options.axisY.maximum = self.bCommonAmplitude ? self.getYmax(channel) : null;
+            chart.options.axisY.minimum = self.bCommonAmplitude ? -chart.options.axisY.maximum : null;
+            chart.options.axisY.interval = self.bCommonAmplitude ? chart.options.axisY.maximum / 2 : null;
             chart.render();
         };
 
@@ -1014,16 +1075,16 @@ export class AppComponent implements OnInit {
 
         this.getXmax = (pos) => {
             const endMicrosec = self.activeSites[pos].channels[0].microsec + self.activeSites[pos].channels[0].duration;
-            return self.commonTimeState ?
+            return self.bCommonTime ?
                 Math.max(endMicrosec, environment.fixedDuration * 1000000) :  endMicrosec;
         };
 
         this.getXvpMax = () => {
-            return self.commonTimeState ? environment.fixedDuration * 1000000 : null;
+            return self.bCommonTime ? environment.fixedDuration * 1000000 : null;
         };
 
         this.getXvpMin = () => {
-            return self.commonTimeState ? 0 : null;
+            return self.bCommonTime ? 0 : null;
         };
 
         this.getValueMaxAll = () => {
@@ -1045,7 +1106,7 @@ export class AppComponent implements OnInit {
                     self.maxValue(self.activeSites[site].channels[0].data) :
                     Math.max(self.maxValue(self.activeSites[site].channels[j].data), val);
             }
-            return self.commonYState ?  self.getValueMaxAll() : val;
+            return self.bCommonAmplitude ?  self.getValueMaxAll() : val;
         };
 
         this.getAxisMinAll = (isXaxis) => {
@@ -1150,7 +1211,7 @@ export class AppComponent implements OnInit {
             // find existing pick of this type
             const pick = self.findValue(site.picks, 'label', pickType);
             if (!pick) {
-                if(issueWarning) {
+                if (issueWarning) {
                     window.alert('No ' + pickType + ' pick to move');
                 }
                 return;
@@ -1178,7 +1239,7 @@ export class AppComponent implements OnInit {
         };
 
         this.back = () => {
-            if (self.zoomAll) {
+            if (self.bZoomAll) {
                 if (self.xViewPortMinStack && self.xViewPortMinStack.length > 0) {
                     self.xViewPortMinStack.pop();
                     self.xViewportMaxStack.pop();
@@ -1219,18 +1280,15 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.addArrivalsPickData = () => {
+        this.addArrivalsPickData = (sites) => {
             const missingSites = [];
-            let picksTotalBias = 0;
-            let nPicksBias = 0;
             for (const arrival of self.allPicks) {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {
-                        const site = self.findValue(self.allSites, 'station_code', pick.station_code);
+                        const site = self.findValue(sites, 'station_code', pick.station_code);
                         if (site) {
                             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
-                            // const pickKey = pick.phase_hint === 'P' ? 'P' : pick.phase_hint === 'S' ? 'S' : '';
                             const pickKey = arrival.phase === 'P' ? 'P' : arrival.phase === 'S' ? 'S' : '';
                             if (pickKey !== '') {
                                 const pickTime = moment(pick.time_utc);  // UTC
@@ -1238,11 +1296,7 @@ export class AppComponent implements OnInit {
                                 const zTime = moment(this.originTime);
                                 zTime.millisecond(0);
                                 const offset = pickTime.diff(zTime, 'seconds') * 1000000;
-                                if (pickKey === 'P') {
-                                    site['p-time_utc'] = pickTime;
-                                } else if (pickKey === 'S') {
-                                    site['s-time_utc'] = pickTime;
-                                }
+                                site[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                                 const pickValue = parseInt(microsec, 10) + offset;
                                 site.picks.push({
                                     value: pickValue,
@@ -1251,15 +1305,9 @@ export class AppComponent implements OnInit {
                                     label: pickKey,
                                     labelAlign: 'far',
                                 });
-                                const predictedPick = site.picks.find(
-                                    function(el) { return el.label === pickKey.toLowerCase(); } );
-                                if (predictedPick) {
-                                    picksTotalBias += pickValue - predictedPick.value;
-                                    nPicksBias++;
-                                }
                             }
                         } else  {
-                            if (!missingSites.includes(pick.station_code)) {
+                            if (!environment.enablePagingLoad && !missingSites.includes(pick.station_code)) {
                                 missingSites.push(pick.station_code);
                             }
                         }
@@ -1270,9 +1318,6 @@ export class AppComponent implements OnInit {
                     console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
                 }
             }
-            self.picksBias = Math.round(picksTotalBias / nPicksBias);
-            self.removeBiasPredictedPicks = true; // default to true
-            self.togglePredictedPicksBias(self.removeBiasPredictedPicks, false);
             if (missingSites.length > 0) {
                 self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
             }
@@ -1286,11 +1331,15 @@ export class AppComponent implements OnInit {
             return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
         };
 
-        this.addPredictedPicksData = () => {
-            for (const station of self.originTravelTimes) {
-                if (station.hasOwnProperty('station_id')) {
-                    const site = self.findValue(self.allSites, 'station_code', station.station_id);
-                    if (site) {
+        this.addPredictedPicksData = (sites) => {
+            // for (const station of self.originTravelTimes) {
+            for (const site of sites) {
+                // if (station.hasOwnProperty('station_id')) {
+                if (site.hasOwnProperty('station_code')) {
+                    // const site = self.findValue(self.allSites, 'station_code', station.station_id);
+                    const station = self.findValue(self.originTravelTimes, 'station_id', site.station_code);
+                    // if (site) {
+                    if (station) {
                         site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                         for (const pickKey of ['P', 'S']) {
                             const key = 'travel_time_' + pickKey.toLowerCase();
@@ -1304,11 +1353,7 @@ export class AppComponent implements OnInit {
                                 if (offset < 0 && !self.picksWarning) {
                                     self.picksWarning += 'Predicted picks outside the display time window\n';
                                 }
-                                if (pickKey === 'P') {
-                                    site['p-time_calc_utc'] = pickTime;
-                                } else if (pickKey === 'S') {
-                                    site['s-time_calc_utc'] = pickTime;
-                                }
+                                site[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
                                 site.picks.push({
                                     value: parseInt(microsec, 10) + offset,
                                     thickness: environment.predictedPicksLineThickness,
@@ -1338,10 +1383,43 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            self.pageChange(false);
+            self.displayPage(false);
         };
 
-        this.togglePredictedPicksBias = (removeBias, change) => {
+        this.calcPicksBias = () => {
+            let picksTotalBias = 0; // calculate pickBias as average value of picks - predicted picks
+            let nPicksBias = 0;
+            for (const site of self.allSites) {
+                for (const pickKey of ['p', 's']) {
+                    const predicted_key = pickKey + '_predicted_time_utc';
+                    const pick_key = pickKey + '_pick_time_utc';
+                    if (site.hasOwnProperty(predicted_key) && site.hasOwnProperty(pick_key)) {
+                            const pickTime = moment(site[pick_key]);
+                            const zTime = moment(site[predicted_key]);
+                        if (pickTime.isValid() && zTime.isValid()) {
+                            const microsec = site[pick_key].slice(-7, -1);
+                            const microsec_ref = site[predicted_key].slice(-7, -1);
+                            zTime.millisecond(0);
+                            const offset = pickTime.diff(zTime, 'seconds') * 1000000;
+                            picksTotalBias += parseInt(microsec, 10) + offset - parseInt(microsec_ref, 10);
+                            nPicksBias++;
+                        }
+                    }
+                }
+            }
+            self.picksBias = Math.round(picksTotalBias / nPicksBias);
+        };
+
+        this.activateRemoveBias = (show) => {
+            if (!self.bRemoveBias) { // turn remove bias on when loading all data (no pagination)
+                self.bRemoveBias = !self.bRemoveBias;
+                $('#togglePredictedPicksBias').toggleClass('active');
+            }
+            self.calcPicksBias();
+            self.changePredictedPicksByBias(self.bRemoveBias, show);
+        };
+
+        this.changePredictedPicksByBias = (removeBias, show) => {
             if (self.picksBias !== 0) {
                 for (const site of this.allSites) {
                     if (site.hasOwnProperty('picks')) {
@@ -1352,10 +1430,19 @@ export class AppComponent implements OnInit {
                         }
                     }
                 }
-                if (change) {
-                    self.pageChange(false);
+                if (show) {
+                    self.displayPage(false);
                 }
             }
+        };
+
+        this.sortTraces = () => {
+          if (Array.isArray(self.allSites)) {
+              self.allSites.sort
+                (this.sort_array_by
+                 ('p_predicted_time_utc', false, function(x) { return x ? moment(x) : moment.now(); })
+                );
+          }
         };
 
         this.parseMiniseed = (file): any => {
@@ -1444,12 +1531,12 @@ export class AppComponent implements OnInit {
         };
 
         this.applyFilter = () => {
-            if (self.changedFilter && self.allSites.length > 0) {
+            if (self.bFilterChanged && self.allSites.length > 0) {
                 self.saveOption('numPoles');
                 self.saveOption('lowFreqCorner');
                 self.saveOption('highFreqCorner');
                 self.allSites = self.addCompositeTrace(self.filterData(self.allSites)); // filter and recompute composite traces
-                self.pageChange(false);
+                self.displayPage(false);
             }
         };
 
@@ -1480,7 +1567,7 @@ export class AppComponent implements OnInit {
                     }
                 }
             }
-            self.changedFilter = false;
+            self.bFilterChanged = false;
             return sites;
         };
 
@@ -1581,11 +1668,18 @@ export class AppComponent implements OnInit {
                         '&traces_per_page=' + environment.chartsPerPage.toString();
                 mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
-                self.loading = true;
+                self.loading = page === 1 ? true : false;
                 mshr.onreadystatechange = () => {
                     if (mshr.readyState === mshr.DONE) {
                         if (mshr.status === 200)  {
                             self.loading = false;
+                            if (page === 1) {
+                                const filename = self.getAttachmentFilename(mshr);
+                                if (filename.indexOf('of_') && filename.lastIndexOf('.') ) {
+                                   self.num_pages = parseInt(
+                                       filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
+                                }
+                            }
                             resolve (mshr.response);
                         } else {
                             self.loading = false;
@@ -1595,6 +1689,19 @@ export class AppComponent implements OnInit {
                 };
                 mshr.send();
             });
+        };
+
+        this.getAttachmentFilename = (xhr): any => {
+            let filename = '';
+            const disposition = xhr.getResponseHeader('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                  filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+            return filename;
         };
 
 

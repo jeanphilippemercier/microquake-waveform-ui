@@ -16,7 +16,7 @@ export const environment = {
   // Arrivals API endpoint
   apiArrivals: 'arrivals',
   // number of charts per page
-  chartsPerPage: 8,
+  chartsPerPage: 7,
   // fixed duration to display, in seconds
   fixedDuration: 2,
   // steps for wheel mouse zoom sensitivity
@@ -47,7 +47,5 @@ export const environment = {
   // resolution in milliseconds for moving the pick to left or right using the arrow keys
   pickTimeStep: 0.5,
   // enable loading waveforms with paging from API, if disabled load all waveforms at once
-  enablePagingLoad: false,
-  // total number of traces available (for use with pagination loading)
-  totalTraces: 120
+  enablePagingLoad: true
 };

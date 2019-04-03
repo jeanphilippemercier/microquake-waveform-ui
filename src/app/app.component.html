@@ -91,8 +91,9 @@
           <button mat-mini-fab matTooltip='Undo last Time Zoom or Pan' class='btn btn-primary' (click)='back()'><mat-icon>undo</mat-icon></button>
           <button mat-mini-fab matTooltip='Reset View after Zoom or Pan' class='btn btn-primary' (click)='resetAllChartsViewXY()'><mat-icon>settings_backup_restore</mat-icon></button>
           <button mat-mini-fab id='display3C' matTooltip='Display Composite or 3-Component Traces' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>filter_3</mat-icon></button>
+          <button mat-mini-fab id='sortTraces' matTooltip='Sort Traces by Distance to Origin' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>sort</mat-icon></button>
           <button mat-mini-fab id='togglePredictedPicks' matTooltip='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
-          <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Predicted Picks Bias' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
+          <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Remove Predicted Picks Bias' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
           <div>
             <app-help-dialog></app-help-dialog>
           </div>
@@ -117,7 +118,7 @@
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
-          <pagination-controls class="pagination" (pageChange)="page_number = $event; pageChange()"></pagination-controls>
+          <pagination-controls class="pagination" (pageChange)="page_number = $event; displayPage()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>
         <div id='zeroTime'>Traces time origin</div>
