@@ -1680,13 +1680,11 @@ export class AppComponent implements OnInit {
                         if (mshr.status === 200)  {
                             self.loading = false;
                             if (page === 1) {
+                                self.num_pages = environment.max_num_pages;
                                 const filename = self.getAttachmentFilename(mshr);
                                 if (filename.indexOf('of_') && filename.lastIndexOf('.') ) {
                                    self.num_pages = parseInt(
                                        filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
-
-                                } else {
-                                    self.num_pages = environment.max_num_pages;
                                 }
                             }
                             resolve (mshr.response);
