@@ -1681,11 +1681,12 @@ export class AppComponent implements OnInit {
                             self.loading = false;
                             if (page === 1) {
                                 self.num_pages = environment.max_num_pages;
+                                /*
                                 const filename = self.getAttachmentFilename(mshr);
                                 if (filename.indexOf('of_') && filename.lastIndexOf('.') ) {
                                    self.num_pages = parseInt(
                                        filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
-                                }
+                                }*/
                             }
                             resolve (mshr.response);
                         } else {
