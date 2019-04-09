@@ -16,11 +16,12 @@ export class CatalogApiService {
             '?start_time=' + startTime + '&end_time=' + endTime;
         return this.http.get(API_URL)
             .pipe(
-                timeout(30000), // 30 seconds
+                /*
+                timeout(60000), // 60 seconds
                 catchError(err => {
                     // console.log('caught mapping error and rethrowing', err);
                     return throwError(err);
-                }),
+                }),*/
                 catchError(err => {
                     console.log('caught rethrown error, providing fallback value');
                     return of([]);
@@ -32,11 +33,12 @@ export class CatalogApiService {
         const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
         return this.http.get(API_URL)
             .pipe(
-                timeout(30000), // 30 seconds
+                /*
+                timeout(60000),
                 catchError(err => {
                     // console.log('caught mapping error and rethrowing', err);
                     return throwError(err);
-                }),
+                }),*/
                 catchError(err => {
                     console.log('caught rethrown error, providing fallback value');
                     return of([]);
@@ -54,11 +56,12 @@ export class CatalogApiService {
             '/' + environment.apiOrigins;
         return this.http.get(API_URL)
             .pipe(
-                timeout(30000), // 30 seconds
+                /*
+                timeout(60000),
                 catchError(err => {
                     // console.log('caught mapping error and rethrowing', err);
                     return throwError(err);
-                }),
+                }),*/
                 catchError(err => {
                     console.log('caught rethrown error, providing fallback value');
                     return of([]);
@@ -73,11 +76,12 @@ export class CatalogApiService {
             environment.apiArrivals;
         return this.http.get(API_URL)
             .pipe(
-                timeout(30000), // 30 seconds
+                /*
+                timeout(60000),
                 catchError(err => {
                     // console.log('caught mapping error and rethrowing', err);
                     return throwError(err);
-                }),
+                }),*/
                 catchError(err => {
                     console.log('caught rethrown error, providing fallback value');
                     return of([]);
@@ -91,11 +95,12 @@ export class CatalogApiService {
             '/' + environment.apiTravelTimes;
         return this.http.get(API_URL)
             .pipe(
-                timeout(30000), // 30 seconds
+                /*
+                timeout(60000),
                 catchError(err => {
                     // console.log('caught mapping error and rethrowing', err);
                     return throwError(err);
-                }),
+                }),*/
                 catchError(err => {
                     console.log('caught rethrown error, providing fallback value');
                     return of([]);
