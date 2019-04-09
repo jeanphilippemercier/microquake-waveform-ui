@@ -27,7 +27,7 @@ build:
 test:e2e:
   stage: test
   image: trion/ng-cli-e2e:${CLI_VERSION}
-  allow_failure: true
+  allow_failure: false
   script:
   - ng e2e
   # tags:
