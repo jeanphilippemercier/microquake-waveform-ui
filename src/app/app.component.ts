@@ -73,7 +73,7 @@ export class AppComponent implements OnInit {
     private parseMiniseed: Function;
     private loadEvent: Function;
     private loadEventFirstPage: Function;
-    private loadEventPages: Function;
+    private asyncLoadEventPages: Function;
     private afterLoading: Function;
     private addCompositeTrace: Function;
 
@@ -119,7 +119,6 @@ export class AppComponent implements OnInit {
     private addTime: Function;
     private sortTraces: Function;
 
-
     private xViewPortMinStack: any[];
     private xViewportMaxStack: any[];
 
@@ -136,6 +135,7 @@ export class AppComponent implements OnInit {
 
     public loading = false;
     public bDataLoading = false;
+    public bResetLoading = false;
     public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
       '    Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -144,14 +144,20 @@ export class AppComponent implements OnInit {
     public picksWarning: string;
     public sitesWarning: string;
 
-    getNotification(message) {
+    async getNotification(message) {
         // console.log(message);
         if (message.hasOwnProperty('timezone')) {
             this.timezone = message.timezone;
         }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
-            this.page_number = 1;
             if (environment.enablePagingLoad) {
+                if (this.bDataLoading) {
+                    this.loading = true;
+                    this.bResetLoading = true; // cancel pending event loading
+                }
+                while (this.bDataLoading) {
+                    await this.delay(1000);
+                }
                 this.loadEventFirstPage(message);
             } else {
                 this.loadEvent(message);
@@ -182,6 +188,15 @@ export class AppComponent implements OnInit {
         this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
         this.origin['event_resource_id'] = message.event_resource_id;
         this.origin['preferred_origin_id'] = message.preferred_origin_id;
+    }
+
+    delay(timer) {
+        return new Promise(resolve => {
+            timer = timer || 2000;
+            setTimeout(function () {
+                resolve();
+            }, timer);
+        });
     }
 
     constructor(private _catalogService: CatalogApiService) { }
@@ -263,6 +278,7 @@ export class AppComponent implements OnInit {
                                         console.log('Event preferred origin from catalog not found');
                                         origin = self.findValue(origins, 'preferred_origin', true);
                                     }
+                                    this.page_number = 1;
                                     if (origin) {
                                         self.waveformOrigin = origin;
                                         // get travel times for preferred origin
@@ -310,7 +326,13 @@ export class AppComponent implements OnInit {
                 const id = event.event_resource_id;
                 const preferred_origin_id = event.preferred_origin_id;
                 // first page
+                this.page_number = 1;
+                self.bDataLoading = true;
                 self.getEventPage(id, 1).then(eventFile => {
+                    if (self.bResetLoading) {
+                        self.bResetLoading = false;
+                        self.bDataLoading = false;
+                    }
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites')) {
@@ -360,14 +382,13 @@ export class AppComponent implements OnInit {
 
                                               // display data (first page)
                                               self.changePage(true);
-                                              self.bDataLoading = true;
 
                                               $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                                   moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                                       .format('YYYY-MM-DD HH:mm:ss.S');
 
                                             });
-                                            self.loadEventPages(id);
+                                            asyncLoadEventPages(id);
                                         });
                                     } else {
                                         window.alert('No event preferred origin found');
@@ -381,19 +402,24 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.loadEventPages = event_id => {
+        async function asyncLoadEventPages (event_id) {
             for (let i = 2; i <= self.num_pages; i++) {
-                self.getEventPage(event_id, i).then(eventFile => {
+                if (self.bResetLoading) {
+                    self.bResetLoading = false;
+                    self.bDataLoading = false;
+                    break;
+                }
+                await self.getEventPage(event_id, i).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
                             if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
-                                console.log('Warning: Different origin time on page: ', i);
+                                console.log('Warning: Different origin time on page: ', i, eventData.timeOrigin.toISOString());
                             }
                             // filter and recompute composite traces
                             const sites = self.addCompositeTrace(self.filterData(eventData.sites));
-                            this.addPredictedPicksData(sites);
-                            this.addArrivalsPickData(sites);
+                            self.addPredictedPicksData(sites);
+                            self.addArrivalsPickData(sites);
                             for (let j = 0; j < sites.length; j++) {
                                 self.allSites[self.page_size * (i - 1) + j] = sites[j];
                             }
@@ -405,9 +431,14 @@ export class AppComponent implements OnInit {
                     }
                 });
             }
-        };
+        }
+
 
         this.afterLoading = () => {
+            if (self.bResetLoading) {
+                self.bResetLoading = false;
+                self.bDataLoading = false;
+            }
             // eliminate placeholders, sanitize sites array
             let index = self.allSites.findIndex(site => site.channels.length === 0);
             while (index >= 0) {
@@ -415,7 +446,6 @@ export class AppComponent implements OnInit {
                 index = self.allSites.findIndex(site => site.channels.length === 0);
             }
             self.num_pages = Math.ceil(self.allSites.length / self.page_size);
-            self.page_number = 1; // make sure pagination hasn't changed
             self.bDataLoading = false; // unlock page changes
             console.log('Loaded data for ' + self.allSites.length + ' sites');
             // enable toolbar buttons after all pages are loaded
@@ -457,7 +487,7 @@ export class AppComponent implements OnInit {
         };
 
         this.changePage = (reset) => {
-            if (self.bDataLoading) {
+            if (self.bDataLoading && self.page_number > self.loaded_pages) {
                 return;  // no page change til data is fully loaded
             }
             // reset last selected channel
