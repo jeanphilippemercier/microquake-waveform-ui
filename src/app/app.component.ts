@@ -285,7 +285,7 @@ export class AppComponent implements OnInit {
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData(self.allSites, picks);
+                                              this.addArrivalsPickData(self.allSites);
 
                                               self.activateRemoveBias(false);
 
@@ -356,7 +356,7 @@ export class AppComponent implements OnInit {
                                                 // get arrivals, picks for preferred origin
                                                 this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                                   self.allPicks = picks;
-                                                  this.addArrivalsPickData(self.allSites, picks);
+                                                  this.addArrivalsPickData(self.allSites);
 
                                                   self.picksBias = 0;
                                                   if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
@@ -381,8 +381,8 @@ export class AppComponent implements OnInit {
                                                       moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                                           .format('YYYY-MM-DD HH:mm:ss.S');
 
+                                                  asyncLoadEventPages(id);
                                                 });
-                                                asyncLoadEventPages(id);
                                             });
                                         } else {
                                             window.alert('No event preferred origin found');
@@ -413,7 +413,7 @@ export class AppComponent implements OnInit {
                             // filter and recompute composite traces
                             const sites = self.addCompositeTrace(self.filterData(eventData.sites));
                             self.addPredictedPicksData(sites);
-                            self.addArrivalsPickData(sites, self.allPicks);
+                            self.addArrivalsPickData(sites);
                             for (let j = 0; j < sites.length; j++) {
                                 self.allSites[self.page_size * (i - 1) + j] = sites[j];
                             }
@@ -1310,9 +1310,9 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.addArrivalsPickData = (sites, picks) => {
+        this.addArrivalsPickData = (sites) => {
             const missingSites = [];
-            for (const arrival of picks) {
+            for (const arrival of self.allPicks) {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {

@@ -2,7 +2,7 @@
 <header></header>
 <div class='container-fluid content'> <!-- container centers content on large screens -->
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
-  <div *ngFor="let item of allSites | paginate: { itemsPerPage: page_size, currentPage: page_number }"></div>
+  <div *ngFor="let item of allSites | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
       <div class="card border-primary" [style.height.px]="window_height*0.66">
