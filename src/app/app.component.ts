@@ -128,6 +128,7 @@ export class AppComponent implements OnInit {
     public page_number: number;
     public num_pages: number;
     public loaded_pages: number;
+    public progressValue: number;
     public window_height = window.innerHeight;
     public chartHeight: number;
     public pageOffsetX: number;
@@ -135,7 +136,6 @@ export class AppComponent implements OnInit {
 
     public loading = false;
     public bDataLoading = false;
-    public bResetLoading = false;
     public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
       '    Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -150,13 +150,10 @@ export class AppComponent implements OnInit {
             this.timezone = message.timezone;
         }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
+            this.currentEventId = message.event_resource_id;
             if (environment.enablePagingLoad) {
                 if (this.bDataLoading) {
                     this.loading = true;
-                    this.bResetLoading = true; // cancel pending event loading
-                }
-                while (this.bDataLoading) {
-                    await this.delay(1000);
                 }
                 this.loadEventFirstPage(message);
             } else {
@@ -218,6 +215,7 @@ export class AppComponent implements OnInit {
         self.picksBias = 0;
         self.num_pages = 0;
         self.loaded_pages = 0;
+        self.progressValue = 0;
 
         self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : environment.numPoles;
         self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : environment.lowFreqCorner;
@@ -268,7 +266,6 @@ export class AppComponent implements OnInit {
                             self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
                             self.timeOrigin = eventData.timeOrigin;
                             self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
-                            self.currentEventId = id;
                             if (self.allSites.length > 0) {
                                 // get origins
                                 this._catalogService.get_origins_by_id(id).subscribe(origins => {
@@ -288,7 +285,7 @@ export class AppComponent implements OnInit {
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData(self.allSites);
+                                              this.addArrivalsPickData(self.allSites, picks);
 
                                               self.activateRemoveBias(false);
 
@@ -329,88 +326,85 @@ export class AppComponent implements OnInit {
                 this.page_number = 1;
                 self.bDataLoading = true;
                 self.getEventPage(id, 1).then(eventFile => {
-                    if (self.bResetLoading) {
-                        self.bResetLoading = false;
-                        self.bDataLoading = false;
-                    }
-                    if (eventFile) {
-                        const eventData = self.parseMiniseed(eventFile);
-                        if (eventData && eventData.hasOwnProperty('sites')) {
-                            // filter and recompute composite traces
-                            self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
-                            self.loaded_pages = 1;
-                            for (let i = self.allSites.length; i < self.num_pages * self.page_size; i++) {
-                                self.allSites[i] = { 'channels': []};
-                            }
-                            self.timeOrigin = eventData.timeOrigin;
-                            self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
-                            self.currentEventId = id;
-                            if (self.allSites.length > 0) {
-                                // get origins
-                                this._catalogService.get_origins_by_id(id).subscribe(origins => {
-                                    let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
-                                    if (!origin) {
-                                        window.alert('Warning: Event preferred origin from catalog not found');
-                                        origin = self.findValue(origins, 'preferred_origin', true);
-                                    }
-                                    if (origin) {
-                                        self.waveformOrigin = origin;
-                                        // get travel times for preferred origin
-                                        this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
-                                            self.originTravelTimes = traveltimes;
-                                            this.addPredictedPicksData(self.allSites);
-                                            // get arrivals, picks for preferred origin
-                                            this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
-                                              self.allPicks = picks;
-                                              this.addArrivalsPickData(self.allSites);
+                    if (id === self.currentEventId) {
+                        if (eventFile) {
+                            const eventData = self.parseMiniseed(eventFile);
+                            if (eventData && eventData.hasOwnProperty('sites')) {
+                                // filter and recompute composite traces
+                                self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
+                                self.loaded_pages = 1;
+                                self.progressValue = (self.loaded_pages / self.num_pages) * 100;
+                                for (let i = self.allSites.length; i < self.num_pages * self.page_size; i++) {
+                                    self.allSites[i] = { 'channels': []};
+                                }
+                                self.timeOrigin = eventData.timeOrigin;
+                                self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
+                                if (self.allSites.length > 0) {
+                                    // get origins
+                                    this._catalogService.get_origins_by_id(id).subscribe(origins => {
+                                        let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
+                                        if (!origin) {
+                                            window.alert('Warning: Event preferred origin from catalog not found');
+                                            origin = self.findValue(origins, 'preferred_origin', true);
+                                        }
+                                        if (origin) {
+                                            self.waveformOrigin = origin;
+                                            // get travel times for preferred origin
+                                            this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                                self.originTravelTimes = traveltimes;
+                                                this.addPredictedPicksData(self.allSites);
+                                                // get arrivals, picks for preferred origin
+                                                this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
+                                                  self.allPicks = picks;
+                                                  this.addArrivalsPickData(self.allSites, picks);
 
-                                              self.picksBias = 0;
-                                              if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
-                                                self.bRemoveBias = !self.bRemoveBias;
-                                                $('#togglePredictedPicksBias').toggleClass('active');
-                                              }
+                                                  self.picksBias = 0;
+                                                  if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
+                                                    self.bRemoveBias = !self.bRemoveBias;
+                                                    $('#togglePredictedPicksBias').toggleClass('active');
+                                                  }
 
-                                              if (self.bSortTraces) { // turn sort traces off by default when loading data with pagination
-                                                self.bSortTraces = !self.bSortTraces;
-                                                $('#sortTraces').toggleClass('active');
-                                                $('#sortTraces').prop('hidden', false); // button visible
-                                              }
+                                                  if (self.bSortTraces) { // turn sort traces off by default when loading data with pagination
+                                                    self.bSortTraces = !self.bSortTraces;
+                                                    $('#sortTraces').toggleClass('active');
+                                                    $('#sortTraces').prop('hidden', false); // button visible
+                                                  }
 
-                                              // disable buttons until all pages are loaded
-                                              $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
-                                              $('#sortTraces').prop('disabled', true); // button disabled
+                                                  // disable buttons until all pages are loaded
+                                                  $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
+                                                  $('#sortTraces').prop('disabled', true); // button disabled
 
-                                              // display data (first page)
-                                              self.changePage(true);
+                                                  // display data (first page)
+                                                  self.changePage(true);
 
-                                              $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                                  moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                                                      .format('YYYY-MM-DD HH:mm:ss.S');
+                                                  $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
+                                                      moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
+                                                          .format('YYYY-MM-DD HH:mm:ss.S');
 
+                                                });
+                                                asyncLoadEventPages(id);
                                             });
-                                            asyncLoadEventPages(id);
-                                        });
-                                    } else {
-                                        window.alert('No event preferred origin found');
-                                    }
-
-                                });
+                                        } else {
+                                            window.alert('No event preferred origin found');
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
+
                 });
             }
         };
 
         async function asyncLoadEventPages (event_id) {
             for (let i = 2; i <= self.num_pages; i++) {
-                if (self.bResetLoading) {
-                    self.bResetLoading = false;
-                    self.bDataLoading = false;
+                if (event_id !== self.currentEventId) {
+                    console.log('Changed event on loading pages');
                     break;
                 }
                 await self.getEventPage(event_id, i).then(eventFile => {
-                    if (eventFile) {
+                    if (event_id === self.currentEventId) {
                         const eventData = self.parseMiniseed(eventFile);
                         if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
                             if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
@@ -419,25 +413,28 @@ export class AppComponent implements OnInit {
                             // filter and recompute composite traces
                             const sites = self.addCompositeTrace(self.filterData(eventData.sites));
                             self.addPredictedPicksData(sites);
-                            self.addArrivalsPickData(sites);
+                            self.addArrivalsPickData(sites, self.allPicks);
                             for (let j = 0; j < sites.length; j++) {
                                 self.allSites[self.page_size * (i - 1) + j] = sites[j];
                             }
                         }
                         self.loaded_pages ++;
+                        self.progressValue = self.loaded_pages / self.num_pages * 100;
                         if (self.loaded_pages === self.num_pages) {
-                            self.afterLoading();
+                            self.afterLoading(event_id);
                         }
+                    } else {
+                        console.log('Changed event on await loading');
                     }
                 });
             }
         }
 
 
-        this.afterLoading = () => {
-            if (self.bResetLoading) {
-                self.bResetLoading = false;
-                self.bDataLoading = false;
+        this.afterLoading = (event_id) => {
+            if (event_id !== self.currentEventId) {
+                console.log('Changed event on afterloading');
+                return;
             }
             // eliminate placeholders, sanitize sites array
             let index = self.allSites.findIndex(site => site.channels.length === 0);
@@ -488,6 +485,7 @@ export class AppComponent implements OnInit {
 
         this.changePage = (reset) => {
             if (self.bDataLoading && self.page_number > self.loaded_pages) {
+                window.alert('Please wait for requested page to load');
                 return;  // no page change til data is fully loaded
             }
             // reset last selected channel
@@ -930,7 +928,7 @@ export class AppComponent implements OnInit {
             if (e.keyCode === 50 || e.keyCode === 98) {
                 const numPages = environment.enablePagingLoad ?
                     self.num_pages : Math.ceil(self.allSites.length / self.page_size);
-                if (self.page_number < numPages) {
+                if (self.page_number < numPages && self.page_number < self.loaded_pages) {
                     self.page_number = self.page_number + 1;
                     self.changePage(false);
                 }
@@ -1312,9 +1310,9 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.addArrivalsPickData = (sites) => {
+        this.addArrivalsPickData = (sites, picks) => {
             const missingSites = [];
-            for (const arrival of self.allPicks) {
+            for (const arrival of picks) {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {
@@ -1679,11 +1677,11 @@ export class AppComponent implements OnInit {
             return sites;
         };
 
-        this.getEvent = (event): any => {
+        this.getEvent = (event, bContext): any => {
             return new Promise(resolve => {
                 const mshr = new XMLHttpRequest();
-                const waveform_file = event.hasOwnProperty('waveform_file') && event.waveform_file ?
-                    event.waveform_file : event.variable_size_waveform_file;
+                const waveform_file = bContext ? event.waveform_context_file :
+                    event.hasOwnProperty('waveform_file') && event.waveform_file ? event.waveform_file : event.variable_size_waveform_file;
                 mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
                 self.loading = true;
