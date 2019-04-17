@@ -25,6 +25,7 @@ export class FileNode {
   status: string;           // from api, "preliminary" or "reviewed"
   time_utc: string;
   waveform_file: string;
+  waveform_context_file: string;
   variable_size_waveform_file: string;
   preferred_origin_id: string;
   x: number;
@@ -239,8 +240,8 @@ export class FileDatabase {
           node.children = this.buildFileTree(value, level + 1);
         } else {
           if (typeof value === 'object' && value.hasOwnProperty('event_type')) {
-            // A (accepted) if evaluation status is "preliminary", "confirmed", "reviewed", "final", "reported"
-            // R (rejected) if evaluation status is "rejected"
+            // Evaluation = A (accepted) if status is "preliminary", "confirmed", "reviewed", "final", "reported"
+            // Evaluation = R (rejected) if status is "rejected"
             node.eval_status = (value.status === 'rejected') ? 'R' : 'A';
             node.type = value.event_type === 'earthquake' ? 'E' :
                           value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
@@ -253,6 +254,7 @@ export class FileDatabase {
             node.time_utc = value.time_utc;
             node.waveform_file = value.waveform_file;
             node.variable_size_waveform_file = value.variable_size_waveform_file;
+            node.waveform_context_file = value.waveform_context_file;
             node.preferred_origin_id = value.preferred_origin_id;
             node.x = value.x;
             node.y = value.y;

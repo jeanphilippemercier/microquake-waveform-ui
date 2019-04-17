@@ -19,11 +19,13 @@ export class AppComponent implements OnInit {
 
     public catalog: any;
     public allSites: any[];
+    public contextSite: any[];
     public allPicks: any[];
     public originTravelTimes: any[];
     public activeSites: any[];
     public lastPicksState: any;
     public timeOrigin: any;
+    public contextTimeOrigin: any;
     public timeEnd: any;
     public origin: any;
     public waveformOrigin: any;
@@ -105,6 +107,7 @@ export class AppComponent implements OnInit {
     private addPickData: Function;
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
+    private calculateTimeOffset: Function;
     private togglePredictedPicksVisibility: Function;
     private calcPicksBias: Function;
     private changePredictedPicksByBias: Function;
@@ -144,6 +147,18 @@ export class AppComponent implements OnInit {
     public picksWarning: string;
     public sitesWarning: string;
 
+    public eventTypes = [
+        {value: 'earthquake', viewValue: 'Seismic Event (E)'},
+        {value: 'blast', viewValue: 'Blast (B)'},
+        {value: 'explosion', viewValue: 'Explosion (B)'},
+        {value: 'other', viewValue: 'Other (O)'}
+    ];
+
+    public evalTypes = [
+        {value: 'A', viewValue: 'Accepted (A)'},
+        {value: 'R', viewValue: 'Rejected (R)'}
+    ];
+
     async getNotification(message) {
         // console.log(message);
         if (message.hasOwnProperty('timezone')) {
@@ -174,9 +189,11 @@ export class AppComponent implements OnInit {
         this.origin['y'] = message.y ? message.y : '';
         this.origin['z'] = message.z ? message.z : '';
         this.origin['npick'] = message.npick ? message.npick : '';
-        this.origin['eval'] =  message.eval_status === 'A' ? 'Accepted (A)' : 'Rejected (R)';
-        this.origin['type'] = message.event_type === 'earthquake' ? 'Seismic Event (E)' :
-           message.event_type === 'blast' || message.event_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
+        this.origin['type'] = message.event_type;
+        // this.origin['type'] = message.event_type === 'earthquake' ? 'Seismic Event (E)' :
+        //   message.event_type === 'blast' || message.event_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
+        this.origin['eval'] =  message.eval_status;
+        // this.origin['eval'] =  message.eval_status === 'A' ? 'Accepted (A)' : 'Rejected (R)';
         this.origin['mode'] = message.evaluation_mode ?
             message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
         this.origin['status'] = message.status ?
@@ -281,11 +298,11 @@ export class AppComponent implements OnInit {
                                         // get travel times for preferred origin
                                         this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
-                                            this.addPredictedPicksData(self.allSites);
+                                            this.addPredictedPicksData(self.allSites, self.timeOrigin);
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData(self.allSites);
+                                              this.addArrivalsPickData(self.allSites, self.timeOrigin);
 
                                               self.activateRemoveBias(false);
 
@@ -320,6 +337,7 @@ export class AppComponent implements OnInit {
 
         this.loadEventFirstPage = event => {
             if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
+                const message = event;
                 const id = event.event_resource_id;
                 const preferred_origin_id = event.preferred_origin_id;
                 // first page
@@ -334,7 +352,7 @@ export class AppComponent implements OnInit {
                                 self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
                                 self.loaded_pages = 1;
                                 self.progressValue = (self.loaded_pages / self.num_pages) * 100;
-                                for (let i = self.allSites.length; i < self.num_pages * self.page_size; i++) {
+                                for (let i = self.allSites.length; i < self.num_pages * (self.page_size - 1); i++) {
                                     self.allSites[i] = { 'channels': []};
                                 }
                                 self.timeOrigin = eventData.timeOrigin;
@@ -352,11 +370,11 @@ export class AppComponent implements OnInit {
                                             // get travel times for preferred origin
                                             this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                                 self.originTravelTimes = traveltimes;
-                                                this.addPredictedPicksData(self.allSites);
+                                                this.addPredictedPicksData(self.allSites, self.timeOrigin);
                                                 // get arrivals, picks for preferred origin
                                                 this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                                   self.allPicks = picks;
-                                                  this.addArrivalsPickData(self.allSites);
+                                                  this.addArrivalsPickData(self.allSites, self.timeOrigin);
 
                                                   self.picksBias = 0;
                                                   if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
@@ -374,14 +392,27 @@ export class AppComponent implements OnInit {
                                                   $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
                                                   $('#sortTraces').prop('disabled', true); // button disabled
 
-                                                  // display data (first page)
-                                                  self.changePage(true);
+                                                  self.getEvent(event, true).then(contextFile => {
+                                                    if (id === self.currentEventId) {
+                                                        if (contextFile) {
+                                                            const contextData = self.parseMiniseed(contextFile);
+                                                            if (contextData && contextData.hasOwnProperty('sites')) {
+                                                                self.contextSite = self.filterData(contextData.sites);
+                                                                self.contextTimeOrigin = contextData.timeOrigin;
+                                                                self.addPredictedPicksData(self.contextSite, self.contextTimeOrigin);
+                                                                self.addArrivalsPickData(self.contextSite, self.contextTimeOrigin);
+                                                            }
+                                                        }
+                                                        self.changePage(true);  // display data (first page)
+                                                        asyncLoadEventPages(id);  // load next pages
+                                                    }
+                                                  });
+
 
                                                   $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                                       moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                                           .format('YYYY-MM-DD HH:mm:ss.S');
 
-                                                  asyncLoadEventPages(id);
                                                 });
                                             });
                                         } else {
@@ -412,10 +443,10 @@ export class AppComponent implements OnInit {
                             }
                             // filter and recompute composite traces
                             const sites = self.addCompositeTrace(self.filterData(eventData.sites));
-                            self.addPredictedPicksData(sites);
-                            self.addArrivalsPickData(sites);
+                            self.addPredictedPicksData(sites, self.timeOrigin);
+                            self.addArrivalsPickData(sites, self.timeOrigin);
                             for (let j = 0; j < sites.length; j++) {
-                                self.allSites[self.page_size * (i - 1) + j] = sites[j];
+                                self.allSites[(self.page_size - 1) * (i - 1) + j] = sites[j];
                             }
                         }
                         self.loaded_pages ++;
@@ -442,7 +473,7 @@ export class AppComponent implements OnInit {
                 self.allSites.splice(index, 1);
                 index = self.allSites.findIndex(site => site.channels.length === 0);
             }
-            self.num_pages = Math.ceil(self.allSites.length / self.page_size);
+            self.num_pages = Math.ceil(self.allSites.length / (self.page_size - 1));
             self.bDataLoading = false; // unlock page changes
             console.log('Loaded data for ' + self.allSites.length + ' sites');
             // enable toolbar buttons after all pages are loaded
@@ -468,12 +499,15 @@ export class AppComponent implements OnInit {
 
         this.findValue = (obj, key, value) => obj.find(v => v[key] === value);
 
-        this.renderPage = (pageNumber, pageSize) => {
+        this.renderPage = () => {
+            const pageNumber = self.page_number;
+            const pageSize = self.page_size - 1; // traces loaded from PAI
             const numPages = environment.enablePagingLoad ?
-                self.num_pages : Math.ceil(self.allSites.length / self.page_size);
+                self.num_pages : Math.ceil(self.allSites.length / pageSize);
             if (pageNumber > 0 && pageNumber <= numPages) {
                 self.activeSites = self.allSites.slice
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
+                self.activeSites.push(self.contextSite[0]);  // context trace is last
                 self.renderCharts();
                 self.setChartKeys();
                 for (const site of self.activeSites) {
@@ -500,7 +534,7 @@ export class AppComponent implements OnInit {
                 self.xViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
             }
             self.destroyCharts();
-            self.renderPage(self.page_number, self.page_size);
+            self.renderPage();
         };
 
         this.toggleMenu = command => {
@@ -523,6 +557,14 @@ export class AppComponent implements OnInit {
             }
             const ret = Math.ceil(maximum * (self.convYUnits * 1000)) / (self.convYUnits * 1000);
             return ret;
+        };
+
+        this.calculateTimeOffset = (time, origin) => {  // time offset in microseconds from the origin full second
+            const diff =
+                moment(time).millisecond(0)
+                .diff(moment(origin).millisecond(0), 'seconds') * 1000000
+                + moment(time).millisecond() * 1000;
+            return diff;
         };
 
         this.destroyCharts = () => {
@@ -625,7 +667,7 @@ export class AppComponent implements OnInit {
                         labelWrap: false,
                         labelFormatter: function(e) {
                             if (e.value === 0) {
-                                const d = moment(self.origin).utc().utcOffset(self.timezone);
+                                const d = moment(self.timeOrigin).utc().utcOffset(self.timezone);
                                 return d.format('HH:mm:ss.S');
                             } else {
                                 return  e.value / 1000000 + ' s' ;
@@ -648,7 +690,74 @@ export class AppComponent implements OnInit {
                     },
                     data: data
                 };
-                self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
+
+                if (i === (self.activeSites.length - 1)) {
+                    const timeOriginValue = self.calculateTimeOffset(self.timeOrigin, self.contextTimeOrigin);
+                    const optionsContext = {
+                        zoomEnabled: false,
+                        animationEnabled: true,
+                        title: {
+                            text: self.activeSites[i].station_code,
+                            dockInsidePlotArea: true,
+                            fontSize: 12,
+                            fontFamily: 'tahoma',
+                            fontColor: 'blue',
+                            horizontalAlign: 'left'
+                        },
+                        legend: {
+                           dockInsidePlotArea: true,
+                           horizontalAlign: 'left'
+                         },
+                        toolTip: {
+                            enabled: true,
+                            contentFormatter: function (e) {
+                                const content = ' ' +
+                                 '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+                                 '<br/>' +
+                                 '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
+                                return content;
+                            }
+                        },
+                        axisX: {
+                            minimum: self.contextTimeOrigin.millisecond() * 1000,
+                            maximum: Math.max(
+                                self.contextSite[0].channels[0].microsec + self.contextSite[0].channels[0].duration,
+                                self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
+                            includeZero: true,
+                            labelAutoFit: false,
+                            labelWrap: false,
+                            labelFormatter: function(e) {
+                                return  e.value / 1000000 + ' s' ;
+                            },
+                            stripLines: self.activeSites[i].picks.concat([
+                            {
+                                startValue: timeOriginValue,
+                                endValue: timeOriginValue + environment.fixedDuration * 1000000,
+                                color: 'rgba(83, 223, 128, .2)'
+                            }])
+                        },
+                        axisY: {
+                            minimum: -yMax,
+                            maximum: yMax,
+                            interval: self.bCommonAmplitude ? null : yMax / 2,
+                            includeZero: true,
+                            labelFormatter: function(e) {
+                                if (e.value === 0) {
+                                    return  '0 mm/s';
+                                } else {
+                                    return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
+                                }
+                            }
+                        },
+                        data: data
+                    };
+                    optionsContext.data[0].dataPoints[0]['indexLabel'] =
+                        moment(self.contextSite[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
+                    self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, optionsContext);
+                } else {
+                    self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
+                }
+
                 self.activeSites[i].chart.render();
             }
         };
@@ -658,7 +767,7 @@ export class AppComponent implements OnInit {
         };
 
         this.setChartKeys = () => {
-            for (let j = 0; j < self.activeSites.length; j++) {
+            for (let j = 0; j < self.activeSites.length - 1; j++) {
                 const canvas_chart = '#' + self.activeSites[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
 
                 $(canvas_chart).last().on('click', function(e) {
@@ -927,8 +1036,8 @@ export class AppComponent implements OnInit {
             }
             if (e.keyCode === 50 || e.keyCode === 98) {
                 const numPages = environment.enablePagingLoad ?
-                    self.num_pages : Math.ceil(self.allSites.length / self.page_size);
-                if (self.page_number < numPages && self.page_number < self.loaded_pages) {
+                    self.loaded_pages : Math.ceil(self.allSites.length / (self.page_size - 1));
+                if (self.page_number < numPages) {
                     self.page_number = self.page_number + 1;
                     self.changePage(false);
                 }
@@ -1050,19 +1159,19 @@ export class AppComponent implements OnInit {
         };
 
         this.resetAllChartsViewX = () => {
-            for (let i = 0; i < self.activeSites.length; i++) {
+            for (let i = 0; i < self.activeSites.length - 1; i++) {
                 self.resetChartViewX(self.activeSites[i].chart);
             }
         };
 
         this.resetAllChartsViewY = () => {
-            for (let i = 0; i < self.activeSites.length; i++) {
+            for (let i = 0; i < self.activeSites.length - 1; i++) {
                 self.resetChartViewY(self.activeSites[i].chart);
             }
         };
 
         this.resetAllChartsViewXY = () => {
-            for (let i = 0; i < self.activeSites.length; i++) {
+            for (let i = 0; i < self.activeSites.length - 1; i++) {
                 self.resetChartViewXY(self.activeSites[i].chart);
             }
         };
@@ -1164,7 +1273,7 @@ export class AppComponent implements OnInit {
                 self.updateZoomStackCharts(vpMin, vpMax);
             }
             if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
-                for (let i = 0; i < self.activeSites.length; i++) {
+                for (let i = 0; i < self.activeSites.length - 1; i++) {
                     const chart = self.activeSites[i].chart;
                     const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                     axis.set('viewportMinimum', vpMin, false);
@@ -1310,7 +1419,7 @@ export class AppComponent implements OnInit {
             }
         };
 
-        this.addArrivalsPickData = (sites) => {
+        this.addArrivalsPickData = (sites, origin) => {
             const missingSites = [];
             for (const arrival of self.allPicks) {
                 if (arrival.hasOwnProperty('pick')) {
@@ -1321,12 +1430,9 @@ export class AppComponent implements OnInit {
                             site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
                             const pickKey = arrival.phase === 'P' ? 'P' : arrival.phase === 'S' ? 'S' : '';
                             if (pickKey !== '') {
-                                const microsec = pick.time_utc.slice(-7, -1);
-                                const offset = moment(pick.time_utc).millisecond(0)
-                                    .diff(moment(this.timeOrigin).millisecond(0), 'seconds') * 1000000;
                                 site[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                                 site.picks.push({
-                                    value: offset + parseInt(microsec, 10),   // value is relative to timeOrigin's full second
+                                    value: self.calculateTimeOffset(pick.time_utc, origin),   // value is relative to timeOrigin's full second
                                     thickness: environment.picksLineThickness,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                     label: pickKey,
@@ -1358,7 +1464,7 @@ export class AppComponent implements OnInit {
             return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
         };
 
-        this.addPredictedPicksData = (sites) => {
+        this.addPredictedPicksData = (sites, origin) => {
             // for (const station of self.originTravelTimes) {
             for (const site of sites) {
                 // if (station.hasOwnProperty('station_id')) {
@@ -1373,15 +1479,12 @@ export class AppComponent implements OnInit {
                             if (station.hasOwnProperty(key)) {
                                 const picktime_utc = this.addTime(this.waveformOrigin.time_utc, station[key]);
                                 const pickTime = moment(picktime_utc);  // UTC
-                                if (!self.picksWarning && (pickTime.isBefore(this.timeOrigin) || pickTime.isAfter(this.timeEnd))) {
+                                if (!self.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
                                     self.picksWarning += 'Predicted picks outside the display time window\n';
                                 }
-                                const microsec = picktime_utc.slice(-7, -1);
-                                const offset = moment(pickTime).millisecond(0)
-                                    .diff(moment(this.timeOrigin).millisecond(0), 'seconds') * 1000000;
                                 site[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
                                 site.picks.push({
-                                    value: offset + parseInt(microsec, 10),  // value is relative to timeOrigin's full second
+                                    value: self.calculateTimeOffset(picktime_utc, origin),  // value is relative to timeOrigin's full second
                                     thickness: environment.predictedPicksLineThickness,
                                     lineDashType: 'dash',
                                     opacity: 0.5,
@@ -1456,6 +1559,13 @@ export class AppComponent implements OnInit {
                         }
                     }
                 }
+                if (self.contextSite[0].hasOwnProperty('picks')) {
+                    for (const pick of self.contextSite[0].picks) {
+                        if (pick.label === pick.label.toLowerCase()) {
+                            pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
+                        }
+                    }
+                }
                 if (show) {
                     self.changePage(false);
                 }
@@ -1491,7 +1601,8 @@ export class AppComponent implements OnInit {
                 const header = channelsMap.get(key)[0].header;
                 if (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0)) { // this filters out zero channels
                     if (!zTime) {
-                        zTime = moment(sg.start());  // starting time (use it up to second)
+                        zTime = moment(sg.start());  // starting time (use it up to tenth of second)
+                        zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
                     } else {
                         if (!sg.start().isSame(zTime, 'second')) {
                             zTime = moment(moment.min(zTime, sg.start()));
@@ -1508,14 +1619,14 @@ export class AppComponent implements OnInit {
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
                     channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
                     channel['raw'] = seismogram;
-                    const waveform = [];
+                    const data = [];
                     for (let k = 0; k < seismogram.numPoints(); k++) {
-                        waveform.push({
+                        data.push({
                             x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-                            y: seismogram.y()[k]  // trace after mean removal
+                            y: seismogram.y()[k],  // trace after mean removal
                         });
                     }
-                    channel['data'] = waveform;
+                    channel['data'] = data;
                     channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
                     let site = self.findValue(sites, 'station_code', sg.stationCode());
                     if (!site) {
@@ -1532,7 +1643,6 @@ export class AppComponent implements OnInit {
             });
             if (zTime && zTime.isValid()) {
                 timeOrigin = moment(zTime);
-                timeOrigin.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
                 if (changetimeOrigin) {
                     console.log('***changetimeOrigin channels change in earliest time second detected');
                     zTime.millisecond(0);
@@ -1705,7 +1815,7 @@ export class AppComponent implements OnInit {
                 const mshr = new XMLHttpRequest();
                 const waveform_file = environment.apiUrl + environment.apiEvents + '/' + event_id +
                         '/waveform?page_number=' + page.toString() +
-                        '&traces_per_page=' + environment.chartsPerPage.toString();
+                        '&traces_per_page=' + (environment.chartsPerPage - 1).toString();
                 mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
                 self.loading = page === 1 ? true : false;

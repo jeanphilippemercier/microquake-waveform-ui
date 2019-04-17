@@ -53,11 +53,27 @@
                 </tr>
                 <tr>
                   <th scope="row">Type</th>
-                  <td>{{origin.type}}</td>
+                  <td>
+                    <mat-form-field>
+                      <mat-select [(value)]="origin.type">
+                        <mat-option *ngFor="let type of eventTypes" [value]="type.value">
+                        {{type.viewValue}}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row">Evaluation</th>
-                  <td>{{origin.eval}}</td>
+                  <td>
+                    <mat-form-field>
+                      <mat-select [(value)]="origin.eval">
+                        <mat-option *ngFor="let type of evalTypes" [value]="type.value">
+                        {{type.viewValue}}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row">Mode</th>

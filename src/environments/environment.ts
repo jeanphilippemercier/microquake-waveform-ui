@@ -32,7 +32,8 @@ export const environment = {
     'X': 'red',
     'Y': 'green',
     'Z': 'blue',
-    'C': 'black'
+    'A': 'black',
+    'C': 'indigo'
   },
   // thickness of the line in charts
   lineThickness: 0.8,
@@ -43,7 +44,7 @@ export const environment = {
   // component to determine sign for composite trace
   signComponent: 'X',
   // composite trace component code
-  compositeChannelCode: 'C',
+  compositeChannelCode: 'A',
   // filter defaults
   numPoles: 4,
   lowFreqCorner: 60,
