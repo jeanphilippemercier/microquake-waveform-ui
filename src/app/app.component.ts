@@ -1383,7 +1383,7 @@ export class AppComponent implements OnInit {
                     self.xViewPortMinStack.pop();
                     self.xViewportMaxStack.pop();
                 }
-                for (let j = 0; j < self.activeSites.length; j++) {
+                for (let j = 0; j < self.activeSites.length - 1; j++) {
                     const chart = self.activeSites[j].chart;
                     chart.options.viewportMinStack = self.xViewPortMinStack;
                     chart.options.viewportMaxStack = self.xViewportMaxStack;
