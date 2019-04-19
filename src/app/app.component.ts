@@ -67,6 +67,7 @@ export class AppComponent implements OnInit {
     private bMenuVisible: Boolean;
 
     private renderCharts: Function;
+    private renderContextChart: Function;
     private destroyCharts: Function;
     private setChartKeys: Function;
     private getEvent: Function;
@@ -277,7 +278,7 @@ export class AppComponent implements OnInit {
                 const preferred_origin_id = event.preferred_origin_id;
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
-                        const eventData = self.parseMiniseed(eventFile);
+                        const eventData = self.parseMiniseed(eventFile, false);
                         if (eventData && eventData.hasOwnProperty('sites')) {
                             // filter and recompute composite traces
                             self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
@@ -346,7 +347,7 @@ export class AppComponent implements OnInit {
                 self.getEventPage(id, 1).then(eventFile => {
                     if (id === self.currentEventId) {
                         if (eventFile) {
-                            const eventData = self.parseMiniseed(eventFile);
+                            const eventData = self.parseMiniseed(eventFile, false);
                             if (eventData && eventData.hasOwnProperty('sites')) {
                                 // filter and recompute composite traces
                                 self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
@@ -395,12 +396,11 @@ export class AppComponent implements OnInit {
                                                   self.getEvent(event, true).then(contextFile => {
                                                     if (id === self.currentEventId) {
                                                         if (contextFile) {
-                                                            const contextData = self.parseMiniseed(contextFile);
+                                                            const contextData = self.parseMiniseed(contextFile, true);
                                                             if (contextData && contextData.hasOwnProperty('sites')) {
                                                                 self.contextSite = self.filterData(contextData.sites);
+                                                                self.contextSite = contextData.sites;
                                                                 self.contextTimeOrigin = contextData.timeOrigin;
-                                                                self.addPredictedPicksData(self.contextSite, self.contextTimeOrigin);
-                                                                self.addArrivalsPickData(self.contextSite, self.contextTimeOrigin);
                                                             }
                                                         }
                                                         self.changePage(true);  // display data (first page)
@@ -436,7 +436,7 @@ export class AppComponent implements OnInit {
                 }
                 await self.getEventPage(event_id, i).then(eventFile => {
                     if (event_id === self.currentEventId) {
-                        const eventData = self.parseMiniseed(eventFile);
+                        const eventData = self.parseMiniseed(eventFile, false);
                         if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
                             if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
                                 console.log('Warning: Different origin time on page: ', i, eventData.timeOrigin.toISOString());
@@ -509,6 +509,7 @@ export class AppComponent implements OnInit {
                     ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
                 self.activeSites.push(self.contextSite[0]);  // context trace is last
                 self.renderCharts();
+                self.renderContextChart();
                 self.setChartKeys();
                 for (const site of self.activeSites) {
                     site.chart.options.viewportMinStack = self.xViewPortMinStack;
@@ -580,7 +581,7 @@ export class AppComponent implements OnInit {
         this.renderCharts = () => {
            // Chart Options, Render
 
-            for (let i = 0; i < self.activeSites.length; i++) {
+            for (let i = 0; i < self.activeSites.length - 1; i++) {
 
                 self.activeSites[i].container = i.toString() + 'Container';
 
@@ -691,75 +692,105 @@ export class AppComponent implements OnInit {
                     data: data
                 };
 
-                if (i === (self.activeSites.length - 1)) {
-                    const timeOriginValue = self.calculateTimeOffset(self.timeOrigin, self.contextTimeOrigin);
-                    const optionsContext = {
-                        zoomEnabled: false,
-                        animationEnabled: true,
-                        title: {
-                            text: self.activeSites[i].station_code,
-                            dockInsidePlotArea: true,
-                            fontSize: 12,
-                            fontFamily: 'tahoma',
-                            fontColor: 'blue',
-                            horizontalAlign: 'left'
-                        },
-                        legend: {
-                           dockInsidePlotArea: true,
-                           horizontalAlign: 'left'
-                         },
-                        toolTip: {
-                            enabled: true,
-                            contentFormatter: function (e) {
-                                const content = ' ' +
-                                 '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
-                                 '<br/>' +
-                                 '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
-                                return content;
-                            }
-                        },
-                        axisX: {
-                            minimum: self.contextTimeOrigin.millisecond() * 1000,
-                            maximum: Math.max(
-                                self.contextSite[0].channels[0].microsec + self.contextSite[0].channels[0].duration,
-                                self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
-                            includeZero: true,
-                            labelAutoFit: false,
-                            labelWrap: false,
-                            labelFormatter: function(e) {
-                                return  e.value / 1000000 + ' s' ;
-                            },
-                            stripLines: self.activeSites[i].picks.concat([
-                            {
-                                startValue: timeOriginValue,
-                                endValue: timeOriginValue + environment.fixedDuration * 1000000,
-                                color: 'rgba(83, 223, 128, .2)'
-                            }])
-                        },
-                        axisY: {
-                            minimum: -yMax,
-                            maximum: yMax,
-                            interval: self.bCommonAmplitude ? null : yMax / 2,
-                            includeZero: true,
-                            labelFormatter: function(e) {
-                                if (e.value === 0) {
-                                    return  '0 mm/s';
-                                } else {
-                                    return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
-                                }
-                            }
-                        },
-                        data: data
-                    };
-                    optionsContext.data[0].dataPoints[0]['indexLabel'] =
-                        moment(self.contextSite[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
-                    self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, optionsContext);
-                } else {
-                    self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
-                }
+                self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
 
                 self.activeSites[i].chart.render();
             }
+        };
+
+        this.renderContextChart = () => {
+           // Chart Options, Render
+
+            const i = self.activeSites.length - 1;
+
+            self.activeSites[i].container = i.toString() + 'Container';
+
+            if ( $('#' + self.activeSites[i].container).length === 0 ) {
+                $('<div>').attr({
+                    'id': self.activeSites[i].container,
+                    'style': divStyle
+                }).appendTo('#waveform-panel');
+            }
+
+            const data = [];
+            for (const channel of self.activeSites[i].channels) {
+                data.push(
+                    {
+                        name: channel.code_id,
+                        type: 'line',
+                        color: environment.context.linecolor,
+                        lineThickness: environment.lineThickness,
+                        showInLegend: true,
+                        // highlightEnabled: true,
+                        dataPoints: channel.data
+                });
+            }
+
+            const yMax = self.getYmax(i);
+
+            const timeOriginValue = self.calculateTimeOffset(self.timeOrigin, self.contextTimeOrigin);
+            const optionsContext = {
+                zoomEnabled: false,
+                animationEnabled: true,
+                title: {
+                    text: self.activeSites[i].station_code,
+                    dockInsidePlotArea: true,
+                    fontSize: 12,
+                    fontFamily: 'tahoma',
+                    fontColor: 'blue',
+                    horizontalAlign: 'left'
+                },
+                legend: {
+                   dockInsidePlotArea: true,
+                   horizontalAlign: 'left'
+                 },
+                toolTip: {
+                    enabled: true,
+                    contentFormatter: function (e) {
+                        const content = ' ' +
+                         '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+                         '<br/>' +
+                         '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
+                        return content;
+                    }
+                },
+                axisX: {
+                    minimum: self.contextTimeOrigin.millisecond() * 1000,
+                    maximum: Math.max(
+                        self.contextSite[0].channels[0].microsec + self.contextSite[0].channels[0].duration,
+                        self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
+                    includeZero: true,
+                    labelAutoFit: false,
+                    labelWrap: false,
+                    labelFormatter: function(e) {
+                        return  e.value / 1000000 + ' s' ;
+                    },
+                    stripLines: [{
+                        startValue: timeOriginValue,
+                        endValue: timeOriginValue + environment.fixedDuration * 1000000,
+                        color: environment.context.highlightColor
+                    }]
+                },
+                axisY: {
+                    minimum: -yMax,
+                    maximum: yMax,
+                    interval: self.bCommonAmplitude ? null : yMax / 2,
+                    includeZero: true,
+                    labelFormatter: function(e) {
+                        if (e.value === 0) {
+                            return  '0 mm/s';
+                        } else {
+                            return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
+                        }
+                    }
+                },
+                data: data
+            };
+            optionsContext.data[0].dataPoints[0]['indexLabel'] =
+                moment(self.contextSite[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
+            self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, optionsContext);
+
+            self.activeSites[i].chart.render();
         };
 
         this.onPickingModeChange = value => {
@@ -1589,7 +1620,7 @@ export class AppComponent implements OnInit {
           }
         };
 
-        this.parseMiniseed = (file): any => {
+        this.parseMiniseed = (file, isContext): any => {
             const records = miniseed.parseDataRecords(file);
             const channelsMap = miniseed.byChannel(records);
             const sites = [];
@@ -1611,9 +1642,9 @@ export class AppComponent implements OnInit {
                     }
                     const seismogram = filter.rMean(sg);
                     const channel = {};
-                    channel['code_id'] = sg.codes();
+                    channel['code_id'] = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
                     channel['station_code'] = sg.stationCode();
-                    channel['channel_id'] = sg.channelCode();
+                    channel['channel_id'] = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
                     channel['sample_rate'] = sg.sampleRate();
                     channel['start'] = sg.start();  // moment object (good up to milisecond)
                     // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
@@ -1686,6 +1717,7 @@ export class AppComponent implements OnInit {
                 self.saveOption('lowFreqCorner');
                 self.saveOption('highFreqCorner');
                 self.allSites = self.addCompositeTrace(self.filterData(self.allSites)); // filter and recompute composite traces
+                self.contextSite = self.filterData(self.contextSite);
                 self.changePage(false);
             }
         };
