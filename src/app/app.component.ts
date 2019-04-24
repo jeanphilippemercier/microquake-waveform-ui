@@ -369,7 +369,8 @@ export class AppComponent implements OnInit {
                                         if (origin) {
                                             self.waveformOrigin = origin;
                                             // get travel times for preferred origin
-                                            this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                            this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id)
+                                                .subscribe(traveltimes => {
                                                 self.originTravelTimes = traveltimes;
                                                 this.addPredictedPicksData(self.allSites, self.timeOrigin);
                                                 // get arrivals, picks for preferred origin
@@ -378,12 +379,12 @@ export class AppComponent implements OnInit {
                                                   this.addArrivalsPickData(self.allSites, self.timeOrigin);
 
                                                   self.picksBias = 0;
-                                                  if (self.bRemoveBias) { // turn remove bias off by default when loading data with pagination
+                                                  if (self.bRemoveBias) { // by default turn remove bias off with paged loading
                                                     self.bRemoveBias = !self.bRemoveBias;
                                                     $('#togglePredictedPicksBias').toggleClass('active');
                                                   }
 
-                                                  if (self.bSortTraces) { // turn sort traces off by default when loading data with pagination
+                                                  if (self.bSortTraces) { // by default turn off sort traces with paged loading
                                                     self.bSortTraces = !self.bSortTraces;
                                                     $('#sortTraces').toggleClass('active');
                                                     $('#sortTraces').prop('hidden', false); // button visible
@@ -1127,7 +1128,7 @@ export class AppComponent implements OnInit {
 
 
         // If the context menu element is clicked
-        $('.menu li').click(function() {
+        $('.menu li').on('click', function() {
             if (self.selectedContextMenu !== -1) {
                 // This is the triggered action name
                 const action = $(this).attr('data-action');
@@ -1477,7 +1478,7 @@ export class AppComponent implements OnInit {
                             if (pickKey !== '') {
                                 site[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                                 site.picks.push({
-                                    value: self.calculateTimeOffset(pick.time_utc, origin),   // value is relative to timeOrigin's full second
+                                    value: self.calculateTimeOffset(pick.time_utc, origin),   // rel timeOrigin full second
                                     thickness: environment.picksLineThickness,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                     label: pickKey,

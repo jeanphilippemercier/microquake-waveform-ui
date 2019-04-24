@@ -212,7 +212,7 @@ export class FileDatabase {
                   dataTree[year][month][day][event_time_duplicate] = {};
                   dataTree[year][month][day][event_time_duplicate] = value;
                 } else {
-                  console.log('More than 2 events with same origin time found, skipped')
+                  console.log('More than 2 events with same origin time found, skipped');
                 }
               }
           }
