@@ -1,3 +1,5 @@
+image: nginx:latest
+
 stages:
 - build
 - test
