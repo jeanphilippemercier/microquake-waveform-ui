@@ -951,13 +951,24 @@ export class AppComponent implements OnInit {
 
                         let newViewportMin, newViewportMax;
 
-                        if (e.ctrlKey || e.shiftKey) { // amplitude or time zoom
+                        if (e.ctrlKey) { // amplitude zoom
                             if (e.deltaY < 0) { // wheel down
                                 newViewportMin = viewportMin + interval;
                                 newViewportMax = viewportMax - interval;
                             } else if (e.deltaY > 0) { // wheel up
                                 newViewportMin = viewportMin - interval;
                                 newViewportMax = viewportMax + interval;
+                            }
+                        } else if (e.shiftKey) {  // time zoom
+                            const frac = 2 * ((chart.plotArea.x1 + chart.plotArea.x2) / 2 - relOffsetX)
+                                / (chart.plotArea.x2 - chart.plotArea.x1);
+
+                            if (e.deltaY < 0) { // wheel down
+                                newViewportMin = viewportMin + interval * (1 - frac);
+                                newViewportMax = viewportMax - interval * (1 + frac);
+                            } else if (e.deltaY > 0) { // wheel up
+                                newViewportMin = viewportMin - interval * (1 - frac);
+                                newViewportMax = viewportMax + interval * (1 + frac);
                             }
                         } else if (e.altKey) {  // time pan
                             if (e.deltaY < 0) {
@@ -1009,68 +1020,71 @@ export class AppComponent implements OnInit {
             self.resetAllChartsViewX();
         });
 
-        document.addEventListener('keydown', e => {
-            if (e.keyCode === 80) {  // p
-                self.togglePredictedPicks();
-            }
-            if (e.keyCode === 90) {  // z
-                self.toggleCommonTime();
-            }
-            if (e.keyCode === 88) {   // x
-                self.toggleCommonAmplitude();
-            }
-            if (e.keyCode === 68) {   // d
-                if (self.pickingMode === 'P') {
-                    self.pickingMode = 'none';
-                } else {
-                    self.pickingMode = 'P';
+        document.addEventListener('keydown', (e: any) => {
+            const target = e.target || e.srcElement;
+            if ( !/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName) ) {
+                if (e.keyCode === 80) {  // p
+                    self.togglePredictedPicks();
                 }
-            }
-            if (e.keyCode === 70) {   // f
-                if (self.pickingMode === 'S') {
-                    self.pickingMode = 'none';
-                } else {
-                    self.pickingMode = 'S';
+                if (e.keyCode === 90) {  // z
+                    self.toggleCommonTime();
                 }
-            }
-            if (e.keyCode === 83) {   // s, undo picking
-                self.undoLastPicking();
-            }
-            if (e.keyCode === 72) {   // h, help
-                document.getElementById('helpBtn').click();
-            }
-            if (e.keyCode === 39) {  // right arrow moves pick to right
-                if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
-                    const step = environment.pickTimeStep * 1000; // in microseconds
-                    if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                        self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
-                    } else { // by step
-                        self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
+                if (e.keyCode === 88) {   // x
+                    self.toggleCommonAmplitude();
+                }
+                if (e.keyCode === 68) {   // d
+                    if (self.pickingMode === 'P') {
+                        self.pickingMode = 'none';
+                    } else {
+                        self.pickingMode = 'P';
                     }
                 }
-            }
-            if (e.keyCode === 37) {  // left arrow moves pick to left
-                if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
-                   const step = environment.pickTimeStep * 1000; // in microseconds
-                   if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                       self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
-                   } else { // by step
-                       self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
-                   }
+                if (e.keyCode === 70) {   // f
+                    if (self.pickingMode === 'S') {
+                        self.pickingMode = 'none';
+                    } else {
+                        self.pickingMode = 'S';
+                    }
                 }
-            }
-            if (e.keyCode === 49 || e.keyCode === 97) {
-                if (self.page_number > 1) {
-                    self.page_number = self.page_number - 1;
-                    self.changePage(false);
+                if (e.keyCode === 83) {   // s, undo picking
+                    self.undoLastPicking();
                 }
-            }
-            if (e.keyCode === 50 || e.keyCode === 98) {
-                const numPages = environment.enablePagingLoad ?
-                    self.loaded_pages : Math.ceil(self.allSites.length / (self.page_size - 1));
-                if (self.page_number < numPages) {
-                    self.page_number = self.page_number + 1;
-                    self.changePage(false);
+                if (e.keyCode === 72) {   // h, help
+                    document.getElementById('helpBtn').click();
+                }
+                if (e.keyCode === 39) {  // right arrow moves pick to right
+                    if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
+                        const step = environment.pickTimeStep * 1000; // in microseconds
+                        if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                            self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
+                        } else { // by step
+                            self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
+                        }
+                    }
+                }
+                if (e.keyCode === 37) {  // left arrow moves pick to left
+                    if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+                       const step = environment.pickTimeStep * 1000; // in microseconds
+                       if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                           self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
+                       } else { // by step
+                           self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
+                       }
+                    }
+                }
+                if (e.keyCode === 49 || e.keyCode === 97) {
+                    if (self.page_number > 1) {
+                        self.page_number = self.page_number - 1;
+                        self.changePage(false);
+                    }
+                }
+                if (e.keyCode === 50 || e.keyCode === 98) {
+                    const numPages = environment.enablePagingLoad ?
+                        self.loaded_pages : Math.ceil(self.allSites.length / (self.page_size - 1));
+                    if (self.page_number < numPages) {
+                        self.page_number = self.page_number + 1;
+                        self.changePage(false);
+                    }
                 }
             }
         },
@@ -1246,11 +1260,11 @@ export class AppComponent implements OnInit {
         this.getXmax = (pos) => {
             const endMicrosec = self.activeSites[pos].channels[0].microsec + self.activeSites[pos].channels[0].duration;
             return self.bCommonTime ?
-                Math.max(endMicrosec, environment.fixedDuration * 1000000) :  endMicrosec;
+                Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + environment.fixedDuration * 1000000) :  endMicrosec;
         };
 
         this.getXvpMax = () => {
-            return self.bCommonTime ? environment.fixedDuration * 1000000 : null;
+            return self.bCommonTime ? self.timeOrigin.millisecond() * 1000 + environment.fixedDuration * 1000000 : null;
         };
 
         this.getXvpMin = () => {
@@ -1834,6 +1848,7 @@ export class AppComponent implements OnInit {
                             resolve (mshr.response);
                         } else {
                             self.loading = false;
+                            window.alert('Error getting miniseed data file');
                             console.log('Error getting miniseed', mshr.statusText);
                         }
                     }
