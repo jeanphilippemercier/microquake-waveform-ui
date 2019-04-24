@@ -59,6 +59,7 @@ export class FileDatabase {
   public date: string;
   public eventId: string;
   public timezone: string;
+  public bInit: boolean;
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
@@ -68,6 +69,7 @@ export class FileDatabase {
     const url_string = window.location.href;
     const url = new URL(url_string);
     this.eventId = url.searchParams.get('id');
+    this.bInit = true;
 
     this._catalogService.get_boundaries().subscribe(boundsArray => {
       const bounds = boundsArray[0];
@@ -77,18 +79,18 @@ export class FileDatabase {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
            this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc);
+             this.getEventsForDate(event.time_utc, null);
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time);
+            this.getEventsForDate(bounds.max_time, null);
         }
       }
 
     });
   }
 
-  getEventsForDate(date) {
+  getEventsForDate(date, tree) {
     const day = moment(date).utc().utcOffset(this.timezone);
     day.hour(0);
     day.minute(0);
@@ -109,15 +111,13 @@ export class FileDatabase {
 
         this.treeObject = this.convertTree(events, this.treeObject);
 
-        // Build the tree nodes from Json object. The result is a list of `FileNode` with nested
-        //     file node as children.
-        let data = this.buildFileTree(this.treeObject, 0);
+        // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
+        const data = this.buildFileTree(this.treeObject, 0);
 
-        data = this.markNodeSelected(data);
+        this.selectNode(tree, data, this.eventId, 'select');
 
         // Notify the change.
         this.dataChange.next(data);
-
       },
       err => console.error(err)
       // , () => console.log('done loading')
@@ -125,17 +125,26 @@ export class FileDatabase {
 
   }
 
-  markNodeSelected(data) {
-      for (let i = 0; i <= data.length - 1; i++) {
-        if (data[i].hasOwnProperty('children')) {
-          for (let j = 0; j <= data[i].children.length - 1; j++) {
-            if (data[i].children[j].hasOwnProperty('children')) {
-              for (let k = 0; k <= data[i].children[j].children.length - 1; k++) {
-                if (data[i].children[j].children[k].hasOwnProperty('children')) {
-                  for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
-                    if (data[i].children[j].children[k].children[m].event_resource_id === this.eventId) {
-                      data[i].children[j].children[k].children[m]['select'] = true;
-                      return data;
+  selectNode(tree, data, eventId, action) {
+    let message = {};
+    for (const yearNode of data) {
+      if (yearNode.hasOwnProperty('children')) {
+        for (const monthNode of yearNode.children) {
+          if (monthNode.hasOwnProperty('children')) {
+            for (const dayNode of monthNode.children) {
+              if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
+                if (tree) {
+                  tree.expand(yearNode);
+                  tree.expand(monthNode);
+                  tree.expand(dayNode);
+                }
+                for (const event of dayNode.children) {
+                  if (event.event_resource_id === eventId) {
+                    if (action === 'select') {
+                      event[action] = true;
+                      return event;
+                    } else {
+                      message = event;
                     }
                   }
                 }
@@ -144,9 +153,9 @@ export class FileDatabase {
           }
         }
       }
-      return data;
+    }
+    return message;
   }
-
 
   createTree(bounds) {
     const dataTree = {};
@@ -301,12 +310,11 @@ export class EventsTreeComponent {
       this.treeControl.dataNodes = data;
 
       if (data && data.length > 0) {
-        const message = this.findNode(data, database.eventId);
+        const message = this.database.selectNode(this.treeControl, this.treeControl.dataNodes, database.eventId, 'expand');
         message['action'] = 'load';
         message['timezone'] = database.timezone;
 
         this.messageEvent.emit(message);   // send message to load data
-        this.treeControl.expandAll();
       }
 
     });
@@ -315,33 +323,6 @@ export class EventsTreeComponent {
   hasNestedChild = (_: number, nodeData: FileNode) => !nodeData.type;
 
   private _getChildren = (node: FileNode) => node.children;
-
-  findNode(data, eventId) {
-    let message = {};
-    if (data.length === 0) {
-      return message;
-    }
-    for (let i = 0; i <= data.length - 1; i++) {
-      if (data[i].hasOwnProperty('children')) {
-        for (let j = 0; j <= data[i].children.length - 1; j++) {
-          if (data[i].children[j].hasOwnProperty('children')) {
-            for (let k = 0; k <= data[i].children[j].children.length - 1; k++) {
-              if (data[i].children[j].children[k].hasOwnProperty('children')) {
-                for (let m = 0; m <= data[i].children[j].children[k].children.length - 1; m++) {
-                  if (data[i].children[j].children[k].children[m].event_resource_id === eventId) {
-                    message = data[i].children[j].children[k].children[m];
-                    return message;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-
 
   selectEvent() {
 
@@ -373,11 +354,12 @@ export class EventsTreeComponent {
     if (this.hasOwnProperty('activeParent')) {
 
       const node = this['activeParent'];
+      this.database.bInit = false;
 
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          this.database.getEventsForDate(date);
+          this.database.getEventsForDate(date, this.treeControl);
         }
       }
 

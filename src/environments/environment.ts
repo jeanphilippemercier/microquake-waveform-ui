@@ -24,7 +24,7 @@ export const environment = {
   // fixed duration to display, in seconds
   fixedDuration: 2,
   // steps for wheel mouse zoom sensitivity
-  zoomSteps: 5,
+  zoomSteps: 50,
   // sensitivity for capturing picks to drag
   snapDistance: 10,
   // colors for components line plots
