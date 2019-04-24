@@ -4,7 +4,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatDialogModule } from "@angular/material";
+import { MatDialogModule } from '@angular/material';
 import { DemoMaterialModule} from './material-modules';
 import { AppComponent } from './app.component';
 import { EventsTreeComponent } from './events-tree.component';

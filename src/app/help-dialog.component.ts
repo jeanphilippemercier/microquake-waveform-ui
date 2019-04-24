@@ -15,7 +15,8 @@ export class HelpDialogComponent {
         if (this.dialog.openDialogs.length > 0) {
           this.dialog.closeAll();
         } else {
-          const dialogRef = this.dialog.open(HelpDialogSheetComponent, {
+          const help = HelpDialogSheetComponent;
+          const dialogRef = this.dialog.open(help, {
             width: '600px',
             hasBackdrop: false,
             position: {
