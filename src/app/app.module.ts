@@ -18,6 +18,7 @@ import { NgxPaginationModule } from 'ngx-pagination';
 import { LoginComponent } from './login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
+import { NotifierComponent } from './notifier/notifier.component';
 
 export function tokenGetter() {
   return localStorage.getItem('access_token');
@@ -30,7 +31,8 @@ export function tokenGetter() {
     HelpDialogComponent,
     HelpDialogSheetComponent,
     LoginComponent,
-    WaveformComponent
+    WaveformComponent,
+    NotifierComponent
   ],
   imports: [
     BrowserModule,
