@@ -18,7 +18,7 @@ export class LoginComponent {
     this.auth.login(this.username, this.password)
       .pipe(first())
       .subscribe(
-        result => this.router.navigate(['todos']),
+        result => this.router.navigate(['dashboard']),
         err => this.error = 'Could not authenticate'
       );
   }
