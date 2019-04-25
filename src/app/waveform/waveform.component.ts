@@ -1,21 +1,20 @@
 /*jshint esversion: 6 */
 import { Component, ViewChild, OnInit } from '@angular/core';
 import * as $ from 'jquery';
-import * as CanvasJS from './canvasjs.min';
-import { environment } from '../environments/environment';
-import { CatalogApiService } from './catalog-api.service';
+import * as CanvasJS from '../canvasjs.min';
+import { environment } from '../../environments/environment';
+import { CatalogApiService } from '../catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  selector: 'app-waveform',
+  templateUrl: './waveform.component.html',
+  styleUrls: ['./waveform.component.css']
 })
 
-export class AppComponent implements OnInit {
-    title = 'waveform-ui';
+export class WaveformComponent implements OnInit {
 
     public catalog: any;
     public allSites: any[];
