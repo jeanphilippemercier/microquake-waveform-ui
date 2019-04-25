@@ -36,25 +36,25 @@ build:
   # tags:
   # - docker
 
-test:e2e:
-  stage: test
-  allow_failure: true
-  script:
-  - node_modules/.bin/ng e2e
-  # tags:
-  # - docker
+# test:e2e:
+#   stage: test
+#   allow_failure: true
+#   script:
+#   - node_modules/.bin/ng e2e
+#   # tags:
+#   # - docker
 
-test:karma:
-  stage: test
-  allow_failure: true
-  script:
-  - node_modules/.bin/ng test --code-coverage --progress false --watch false
-  coverage: '/Lines \W+: (\d+\.\d+)%.*/'
-  artifacts:
-    paths:
-    - coverage/
-  # tags:
-  # - docker
+# test:karma:
+#   stage: test
+#   allow_failure: true
+#   script:
+#   - node_modules/.bin/ng test --code-coverage --progress false --watch false
+#   coverage: '/Lines \W+: (\d+\.\d+)%.*/'
+#   artifacts:
+#     paths:
+#     - coverage/
+#   # tags:
+#   # - docker
 
 test:nglint:
   stage: test
