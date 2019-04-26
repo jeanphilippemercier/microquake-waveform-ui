@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { ComponentsModule } from './components/components.module';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
@@ -19,6 +20,7 @@ import { LoginComponent } from './login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
+// import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 export function tokenGetter() {
   return localStorage.getItem('access_token');
@@ -32,11 +34,13 @@ export function tokenGetter() {
     HelpDialogSheetComponent,
     LoginComponent,
     WaveformComponent,
+    // AdminLayoutComponent,
     NotifierComponent
   ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
+    ComponentsModule,
     FormsModule,
     HttpClientModule,
     JwtModule.forRoot({
