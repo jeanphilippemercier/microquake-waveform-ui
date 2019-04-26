@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
 import { Component, ViewChild, OnInit } from '@angular/core';
 import * as $ from 'jquery';
-import * as CanvasJS from '../canvasjs.min';
+import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
 import { CatalogApiService } from '../catalog-api.service';
 import * as miniseed from 'seisplotjs-miniseed';
