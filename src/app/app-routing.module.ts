@@ -7,8 +7,8 @@ import { LoginComponent } from './login/login.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
-  // { path: 'dashboard', component: WaveformComponent },
+  // { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
+  { path: 'dashboard', component: WaveformComponent },
   { path: 'notifier', component: NotifierComponent },
   { path: 'login', component: LoginComponent }
 ];
