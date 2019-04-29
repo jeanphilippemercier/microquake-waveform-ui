@@ -1,6 +1,7 @@
 <mat-tree #tree [dataSource]='dataSource' [treeControl]='treeControl' class="example-tree">
   <mat-tree-node *matTreeNodeDef='let node' matTreeNodeToggle (click)='activeNode = node; activeEvent()' (dblclick)='selectedNode = node; selectEvent()'>
-    <li class="mat-tree-node" [ngClass]="{ 'background-highlight': activeNode === node, 'accepted': node.eval_status === 'A', 'rejected': node.eval_status === 'R' }">
+    <li class="mat-tree-node" [ngClass]="{ 'background-highlight': activeNode === node, 'accepted-automatic': node.eval_status === 'A' && node.evaluation_mode === 'automatic', 'accepted-manual': node.eval_status === 'A' && node.evaluation_mode === 'manual','rejected-automatic': node.eval_status === 'R' && node.evaluation_mode === 'automatic',
+    'rejected-manual': node.eval_status === 'R' && node.evaluation_mode === 'manual'}">
       <button mat-icon-button>
         <mat-icon>
           {{selectedNode == node || (!selectedNode && node.select)? 'radio_button_checked' : 'radio_button_unchecked'}}
@@ -14,7 +15,7 @@
       <div class="mat-tree-node">
         <button mat-icon-button matTreeNodeToggle
                 [attr.aria-label]="'toggle ' + node.name"
-                (click)='activeParent = node; selectedNode = null; activeDay()'>
+                (click)='activeParent = node; activeDay()'>
           <mat-icon class="mat-icon-rtl-mirror">
             {{treeControl.isExpanded(node) && node.children.length > 0 ? 'expand_more' : 'chevron_right'}}
           </mat-icon>

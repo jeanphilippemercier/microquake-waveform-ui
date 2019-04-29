@@ -120,26 +120,28 @@
             <app-help-dialog></app-help-dialog>
           </div>
           <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
-          <div class = 'ml-5'>
-            <mat-form-field appearance="fill" class='input-form-width'>
-              <mat-label>Low Corner</mat-label>
-              <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="lowFreqCorner">
-            </mat-form-field>
-            <mat-form-field appearance="fill" class='input-form-width'>
-              <mat-label>High Corner</mat-label>
-              <input matInput matTooltip="Butterworth Filter High Corner Frequency" type="number" step="100" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="highFreqCorner">
-            </mat-form-field>
-            <mat-form-field appearance="fill" class='input-form-width-less'>
-              <mat-label>Poles</mat-label>
-              <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="numPoles">
-            </mat-form-field>
+          <div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
+              <mat-form-field appearance="fill" class='input-form-width'>
+                <mat-label>Low Corner</mat-label>
+                <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="lowFreqCorner" [ngModelOptions]="{standalone: true}">
+              </mat-form-field>
+              <mat-form-field appearance="fill" class='input-form-width'>
+                <mat-label>High Corner</mat-label>
+                <input matInput matTooltip="Butterworth Filter High Corner Frequency" type="number" step="100" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="highFreqCorner" [ngModelOptions]="{standalone: true}">
+              </mat-form-field>
+              <mat-form-field appearance="fill" class='input-form-width-less'>
+                <mat-label>Poles</mat-label>
+                <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="numPoles" [ngModelOptions]="{standalone: true}">
+              </mat-form-field>
           </div>
+          <div class = 'ml-5'>
           <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
             <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
             <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
+          </div>
           <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>

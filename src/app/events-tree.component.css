@@ -2,12 +2,20 @@
   background-color: lightblue;
 }
 
-.accepted {
+.accepted-manual {
   color: green;
 }
 
-.rejected {
+.accepted-automatic {
+  color: blue;
+}
+
+.rejected-manual {
   color: red;
+}
+
+.rejected-automatic {
+  color: purple;
 }
 
 .example-tree-invisible {

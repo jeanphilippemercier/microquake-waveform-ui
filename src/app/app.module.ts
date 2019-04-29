@@ -8,7 +8,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialogModule } from '@angular/material';
 import { DemoMaterialModule} from './material-modules';
 import { AppComponent } from './app.component';
-import { EventsTreeComponent } from './events-tree.component';
+// import { EventsTreeComponent } from './events-tree.component';
+import {CatalogTreeModule} from './catalog-tree/catalog-tree.module';
 import { CatalogApiService } from './catalog-api.service';
 import { JwtModule } from '@auth0/angular-jwt';
 import { AuthService } from './auth.service';
@@ -16,6 +17,7 @@ import { AuthGuard } from './auth.guard';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
+import { FlexLayoutModule } from '@angular/flex-layout';
 import { LoginComponent } from './login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
@@ -29,7 +31,7 @@ export function tokenGetter() {
 @NgModule({
   declarations: [
     AppComponent,
-    EventsTreeComponent,
+    // EventsTreeComponent,
     HelpDialogComponent,
     HelpDialogSheetComponent,
     LoginComponent,
@@ -41,6 +43,7 @@ export function tokenGetter() {
     BrowserModule,
     BrowserAnimationsModule,
     ComponentsModule,
+    CatalogTreeModule,
     FormsModule,
     HttpClientModule,
     JwtModule.forRoot({
@@ -51,6 +54,7 @@ export function tokenGetter() {
     }),
     DemoMaterialModule,
     MatDialogModule,
+    FlexLayoutModule,
     ReactiveFormsModule,
     NgxLoadingModule.forRoot({}),
     NgxPaginationModule,
