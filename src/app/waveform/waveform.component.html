@@ -2,17 +2,52 @@
 <header></header>
 <div class='container-fluid content'> <!-- container centers content on large screens -->
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
-  <div *ngFor="let item of allSites | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
+  <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
-      <div class="card border-primary" [style.height.px]="window_height*0.66">
+      <div class="card border-primary" [style.height.px]="window_height*0.15">
+        <div class='card-header'>Site and Network</div>
+        <div style="overflow: auto" id="siteInfoCard" class="mb-0">
+          <div class='card-body' style="padding:0px 20px;">
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <th scope="row">Site</th>
+                  <td>
+                    <mat-form-field>
+                      <mat-select [(ngModel)]="site.code" (selectionChange)='onChangeSite($event)'>
+                        <mat-option *ngFor="let element of sites" [value]="element.code">
+                        {{element.name}}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Network</th>
+                  <td>
+                    <mat-form-field>
+                      <mat-select [(ngModel)]="network.code" (selectionChange)='onChangeNetwork($event)'>
+                        <mat-option *ngFor="let element of networks" [value]="element.code">
+                        {{element.name}}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card border-primary" [style.height.px]="window_height*0.45">
         <div class='card-header'>Catalog</div>
         <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
         <div class='mat-app-background basic-container' style="overflow: auto">
           <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
         </div>
       </div>
-      <div class="card border-primary" [style.height.px]="window_height*0.33">
+      <div class="card border-primary" [style.height.px]="window_height*0.35">
         <div class='card-header' id='infoTime'>Event Information</div>
         <div style="overflow: auto" id="eventInfoCard" class="mb-0">
           <div class='card-body' style="padding:0px 20px;">
@@ -36,9 +71,9 @@
                   <td>Z {{origin.z}} m</td>
                 </tr>
                 <tr>
-                  <td colspan="2" id='alertMsg' *ngIf='sitesWarning' class="alert alert-warning alert-dismissable">
-                    <button type="button" class="close" (click)='sitesWarning = ""' aria-hidden="true">&times;</button>
-                    {{sitesWarning}}
+                  <td colspan="2" id='alertMsg' *ngIf='tracesInfo' class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" (click)='tracesInfo = ""' aria-hidden="true">&times;</button>
+                    {{tracesInfo}}
                   </td>
                 </tr>
                 <tr>
@@ -55,20 +90,20 @@
                   <th scope="row">Type</th>
                   <td>
                     <mat-form-field>
-                      <mat-select [(value)]="origin.type">
-                        <mat-option *ngFor="let type of eventTypes" [value]="type.value">
-                        {{type.viewValue}}
+                      <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
+                        <mat-option *ngFor="let type of microquakeEventTypes" [value]="type.quakeml_type">
+                          {{type.viewValue}}
                         </mat-option>
                       </mat-select>
                     </mat-form-field>
                   </td>
                 </tr>
                 <tr>
-                  <th scope="row">Evaluation</th>
+                  <th scope="row">Status (Evaluation)</th>
                   <td>
                     <mat-form-field>
-                      <mat-select [(value)]="origin.eval">
-                        <mat-option *ngFor="let type of evalTypes" [value]="type.value">
+                      <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
+                        <mat-option *ngFor="let type of evalTypes" [value]="type.status">
                         {{type.viewValue}}
                         </mat-option>
                       </mat-select>
@@ -78,10 +113,6 @@
                 <tr>
                   <th scope="row">Mode</th>
                   <td>{{origin.mode}}</td>
-                </tr>
-                <tr>
-                  <th scope="row">Status</th>
-                  <td>{{origin.status}}</td>
                 </tr>
                 <tr *ngIf='origin.time_residual'>
                   <th scope="row">Time Residual</th>
@@ -116,6 +147,7 @@
           <button mat-mini-fab id='sortTraces' matTooltip='Sort Traces by Distance to Origin' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>sort</mat-icon></button>
           <button mat-mini-fab id='togglePredictedPicks' matTooltip='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
           <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Remove Predicted Picks Bias' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
+          <button mat-mini-fab id='toggleSaveEvent' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
           <div>
             <app-help-dialog></app-help-dialog>
           </div>
