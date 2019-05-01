@@ -3,6 +3,10 @@ export const environment = {
 
   // URL of the API
   apiUrl: 'https://api.microquake.org/api/v1/',
+  // Sites API endpoint
+  apiSites: 'sites',
+  // Networks API endpoint
+  apiNetworks: 'networks',
   // Catalog API endpoint
   apiCatalog: 'catalog',
   // Catalog Boundaries API endpoint
@@ -15,6 +19,8 @@ export const environment = {
   apiTravelTimes: 'traveltimes',
   // Arrivals API endpoint
   apiArrivals: 'arrivals',
+  // Microquake event types API endpoint (to be changed once network becomes available throught API)
+  apiMicroquakeEventTypes: 'https://api.microquake.org/api/v2/site/OT/network/HNUG/inventory/microquake_event_types',
   // number of charts per page
   chartsPerPage: 7,
   // fixed duration to display, in seconds

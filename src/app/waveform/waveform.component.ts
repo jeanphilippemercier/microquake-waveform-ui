@@ -16,12 +16,16 @@ import * as moment from 'moment';
 
 export class WaveformComponent implements OnInit {
 
+    public site: any;
+    public sites: any[];
+    public network: any;
+    public networks: any[];
     public catalog: any;
-    public allSites: any[];
-    public contextSite: any[];
+    public allStations: any[];
+    public contextStation: any[];
     public allPicks: any[];
     public originTravelTimes: any[];
-    public activeSites: any[];
+    public activeStations: any[];
     public lastPicksState: any;
     public timeOrigin: any;
     public contextTimeOrigin: any;
@@ -44,6 +48,10 @@ export class WaveformComponent implements OnInit {
 
     public pickingMode: any;
     public onPickingModeChange: Function;
+    public onChangeSite: Function;
+    public onChangeNetwork: Function;
+    public onChangeEvaluationStatus: Function;
+    public onChangeEventType: Function;
 
     private createButterworthFilter: Function;
     private passband: any;
@@ -51,6 +59,7 @@ export class WaveformComponent implements OnInit {
     public applyFilter: Function;
     private filterData: Function;
     public bFilterChanged: Boolean;
+    public bEventUnsaved: Boolean;
 
     private sample_rate: any;
     public picksBias: number;
@@ -78,6 +87,9 @@ export class WaveformComponent implements OnInit {
     private asyncLoadEventPages: Function;
     private afterLoading: Function;
     private addCompositeTrace: Function;
+    private loadSites: Function;
+    private loadNetworks: Function;
+    private loadMicroquakeEventTypes: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -145,18 +157,17 @@ export class WaveformComponent implements OnInit {
     public currentEventId: string;
 
     public picksWarning: string;
-    public sitesWarning: string;
+    public tracesInfo: string;
 
-    public eventTypes = [
-        {value: 'earthquake', viewValue: 'Seismic Event (E)'},
-        {value: 'blast', viewValue: 'Blast (B)'},
-        {value: 'explosion', viewValue: 'Explosion (B)'},
-        {value: 'other', viewValue: 'Other (O)'}
-    ];
+    public microquakeEventTypes = [];
 
     public evalTypes = [
-        {value: 'A', viewValue: 'Accepted (A)'},
-        {value: 'R', viewValue: 'Rejected (R)'}
+        {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
+        {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
+        {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
+        {status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)'},
+        {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
+        {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
     ];
 
     async getNotification(message) {
@@ -175,7 +186,7 @@ export class WaveformComponent implements OnInit {
                 this.loadEvent(message);
             }
         }
-        this.sitesWarning = '';
+        this.tracesInfo = '';
         this.picksWarning = '';
         $('#infoTime')[0].innerHTML = 'Event ' +
                     moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') +
@@ -189,15 +200,12 @@ export class WaveformComponent implements OnInit {
         this.origin['y'] = message.y ? message.y : '';
         this.origin['z'] = message.z ? message.z : '';
         this.origin['npick'] = message.npick ? message.npick : '';
-        this.origin['type'] = message.event_type;
-        // this.origin['type'] = message.event_type === 'earthquake' ? 'Seismic Event (E)' :
-        //   message.event_type === 'blast' || message.event_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
-        this.origin['eval'] =  message.eval_status;
-        // this.origin['eval'] =  message.eval_status === 'A' ? 'Accepted (A)' : 'Rejected (R)';
+        this.origin['event_type'] = message.event_type;
+        this.origin['type'] = message.type;
+        this.origin['eval_status'] =  message.eval_status;
         this.origin['mode'] = message.evaluation_mode ?
             message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
-        this.origin['status'] = message.status ?
-            message.status[0].toUpperCase() + message.status.substr(1).toLowerCase() : '';
+        this.origin['status'] = message.status;
         this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
         this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
         this.origin['event_resource_id'] = message.event_resource_id;
@@ -258,8 +266,21 @@ export class WaveformComponent implements OnInit {
         self.origin = {};
         self.waveformOrigin = {};
 
+        self.site = self.options.hasOwnProperty('site') ? self.options.site : {
+            'code': '',
+            'name': '',
+            'timezone': '+00:00'
+        };
+
+        self.network = self.options.hasOwnProperty('network') ? self.options.network : {
+            'code': '',
+            'name': ''
+        };
+
         self.timezone = '+00:00';
         self.bFilterChanged = true;
+
+        self.bEventUnsaved = false;
 
         self.pickingMode = 'none';
         self.lastPicksState = null;
@@ -271,6 +292,32 @@ export class WaveformComponent implements OnInit {
             window.localStorage.setItem('viewer-options', JSON.stringify(self.options));
         };
 
+        this.loadNetworks = () => {
+            this._catalogService.get_networks().subscribe(networks => {
+              self.networks = networks;
+            });
+        };
+
+        this.loadSites = () => {
+            this._catalogService.get_sites().subscribe(sites => {
+              self.sites = sites;
+              // this.loadNetworks();
+            });
+        };
+
+        this.loadMicroquakeEventTypes = () => {
+            this._catalogService.get_microquake_event_types().subscribe(types => {
+              for (const type of types) {
+                  type['viewValue'] =  type.quakeml_type === 'earthquake' ? 'Seismic Event (E)' :
+                    type.quakeml_type === 'blast' || type.quakeml_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
+              }
+              self.microquakeEventTypes = types;
+            });
+        };
+
+        this.loadSites();
+        this.loadMicroquakeEventTypes();
+
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
                 const id = event.event_resource_id;
@@ -278,12 +325,12 @@ export class WaveformComponent implements OnInit {
                 self.getEvent(event).then(eventFile => {
                     if (eventFile) {
                         const eventData = self.parseMiniseed(eventFile, false);
-                        if (eventData && eventData.hasOwnProperty('sites')) {
+                        if (eventData && eventData.hasOwnProperty('stations')) {
                             // filter and recompute composite traces
-                            self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
+                            self.allStations = self.addCompositeTrace(self.filterData(eventData.stations));
                             self.timeOrigin = eventData.timeOrigin;
                             self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
-                            if (self.allSites.length > 0) {
+                            if (self.allStations.length > 0) {
                                 // get origins
                                 this._catalogService.get_origins_by_id(id).subscribe(origins => {
                                     let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
@@ -298,11 +345,11 @@ export class WaveformComponent implements OnInit {
                                         // get travel times for preferred origin
                                         this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
-                                            this.addPredictedPicksData(self.allSites, self.timeOrigin);
+                                            this.addPredictedPicksData(self.allStations, self.timeOrigin);
                                             // get arrivals, picks for preferred origin
                                             this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                               self.allPicks = picks;
-                                              this.addArrivalsPickData(self.allSites, self.timeOrigin);
+                                              this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
                                               self.activateRemoveBias(false);
 
@@ -312,6 +359,8 @@ export class WaveformComponent implements OnInit {
                                                 $('#sortTraces').prop('hidden', true); // hide button
                                               }
                                               self.sortTraces();
+
+                                              $('#toggleSaveEvent').prop('disabled', true); // save button disabled initially
 
                                               // display data (first page)
                                               self.changePage(true);
@@ -323,7 +372,7 @@ export class WaveformComponent implements OnInit {
                                             self.changePage(true);
                                     }
                                 });
-                                console.log('Loaded data for ' + self.allSites.length + ' sites');
+                                console.log('Loaded data for ' + self.allStations.length + ' stations');
                                 $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
                                   moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                       .format('YYYY-MM-DD HH:mm:ss.S');
@@ -347,17 +396,17 @@ export class WaveformComponent implements OnInit {
                     if (id === self.currentEventId) {
                         if (eventFile) {
                             const eventData = self.parseMiniseed(eventFile, false);
-                            if (eventData && eventData.hasOwnProperty('sites')) {
+                            if (eventData && eventData.hasOwnProperty('stations')) {
                                 // filter and recompute composite traces
-                                self.allSites = self.addCompositeTrace(self.filterData(eventData.sites));
+                                self.allStations = self.addCompositeTrace(self.filterData(eventData.stations));
                                 self.loaded_pages = 1;
                                 self.progressValue = (self.loaded_pages / self.num_pages) * 100;
-                                for (let i = self.allSites.length; i < self.num_pages * (self.page_size - 1); i++) {
-                                    self.allSites[i] = { 'channels': []};
+                                for (let i = self.allStations.length; i < self.num_pages * (self.page_size - 1); i++) {
+                                    self.allStations[i] = { 'channels': []};
                                 }
                                 self.timeOrigin = eventData.timeOrigin;
                                 self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
-                                if (self.allSites.length > 0) {
+                                if (self.allStations.length > 0) {
                                     // get origins
                                     this._catalogService.get_origins_by_id(id).subscribe(origins => {
                                         let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
@@ -371,11 +420,11 @@ export class WaveformComponent implements OnInit {
                                             this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id)
                                                 .subscribe(traveltimes => {
                                                 self.originTravelTimes = traveltimes;
-                                                this.addPredictedPicksData(self.allSites, self.timeOrigin);
+                                                this.addPredictedPicksData(self.allStations, self.timeOrigin);
                                                 // get arrivals, picks for preferred origin
                                                 this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
                                                   self.allPicks = picks;
-                                                  this.addArrivalsPickData(self.allSites, self.timeOrigin);
+                                                  this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
                                                   self.picksBias = 0;
                                                   if (self.bRemoveBias) { // by default turn remove bias off with paged loading
@@ -389,6 +438,8 @@ export class WaveformComponent implements OnInit {
                                                     $('#sortTraces').prop('hidden', false); // button visible
                                                   }
 
+                                                  $('#toggleSaveEvent').prop('disabled', true); // save button disabled initially
+
                                                   // disable buttons until all pages are loaded
                                                   $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
                                                   $('#sortTraces').prop('disabled', true); // button disabled
@@ -397,9 +448,9 @@ export class WaveformComponent implements OnInit {
                                                     if (id === self.currentEventId) {
                                                         if (contextFile) {
                                                             const contextData = self.parseMiniseed(contextFile, true);
-                                                            if (contextData && contextData.hasOwnProperty('sites')) {
-                                                                self.contextSite = self.filterData(contextData.sites);
-                                                                self.contextSite = contextData.sites;
+                                                            if (contextData && contextData.hasOwnProperty('stations')) {
+                                                                self.contextStation = self.filterData(contextData.stations);
+                                                                self.contextStation = contextData.stations;
                                                                 self.contextTimeOrigin = contextData.timeOrigin;
                                                             }
                                                         }
@@ -437,16 +488,16 @@ export class WaveformComponent implements OnInit {
                 await self.getEventPage(event_id, i).then(eventFile => {
                     if (event_id === self.currentEventId) {
                         const eventData = self.parseMiniseed(eventFile, false);
-                        if (eventData && eventData.hasOwnProperty('sites') && eventData.sites.length > 0) {
+                        if (eventData && eventData.hasOwnProperty('stations') && eventData.stations.length > 0) {
                             if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
                                 console.log('Warning: Different origin time on page: ', i, eventData.timeOrigin.toISOString());
                             }
                             // filter and recompute composite traces
-                            const sites = self.addCompositeTrace(self.filterData(eventData.sites));
-                            self.addPredictedPicksData(sites, self.timeOrigin);
-                            self.addArrivalsPickData(sites, self.timeOrigin);
-                            for (let j = 0; j < sites.length; j++) {
-                                self.allSites[(self.page_size - 1) * (i - 1) + j] = sites[j];
+                            const stations = self.addCompositeTrace(self.filterData(eventData.stations));
+                            self.addPredictedPicksData(stations, self.timeOrigin);
+                            self.addArrivalsPickData(stations, self.timeOrigin);
+                            for (let j = 0; j < stations.length; j++) {
+                                self.allStations[(self.page_size - 1) * (i - 1) + j] = stations[j];
                             }
                         }
                         self.loaded_pages ++;
@@ -467,15 +518,15 @@ export class WaveformComponent implements OnInit {
                 console.log('Changed event on afterloading');
                 return;
             }
-            // eliminate placeholders, sanitize sites array
-            let index = self.allSites.findIndex(site => site.channels.length === 0);
+            // eliminate placeholders, sanitize stations array
+            let index = self.allStations.findIndex(station => station.channels.length === 0);
             while (index >= 0) {
-                self.allSites.splice(index, 1);
-                index = self.allSites.findIndex(site => site.channels.length === 0);
+                self.allStations.splice(index, 1);
+                index = self.allStations.findIndex(station => station.channels.length === 0);
             }
-            self.num_pages = Math.ceil(self.allSites.length / (self.page_size - 1));
+            self.num_pages = Math.ceil(self.allStations.length / (self.page_size - 1));
             self.bDataLoading = false; // unlock page changes
-            console.log('Loaded data for ' + self.allSites.length + ' sites');
+            console.log('Loaded data for ' + self.allStations.length + ' stations');
             // enable toolbar buttons after all pages are loaded
             $('#sortTraces').prop('disabled', false);
             $('#togglePredictedPicksBias').prop('disabled', false);
@@ -503,17 +554,17 @@ export class WaveformComponent implements OnInit {
             const pageNumber = self.page_number;
             const pageSize = self.page_size - 1; // traces loaded from PAI
             const numPages = environment.enablePagingLoad ?
-                self.num_pages : Math.ceil(self.allSites.length / pageSize);
+                self.num_pages : Math.ceil(self.allStations.length / pageSize);
             if (pageNumber > 0 && pageNumber <= numPages) {
-                self.activeSites = self.allSites.slice
-                    ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allSites.length));
-                self.activeSites.push(self.contextSite[0]);  // context trace is last
+                self.activeStations = self.allStations.slice
+                    ((pageNumber - 1) * pageSize, Math.min( pageNumber * pageSize, self.allStations.length));
+                self.activeStations.push(self.contextStation[0]);  // context trace is last
                 self.renderCharts();
                 self.renderContextChart();
                 self.setChartKeys();
-                for (const site of self.activeSites) {
-                    site.chart.options.viewportMinStack = self.xViewPortMinStack;
-                    site.chart.options.viewportMaxStack = self.xViewportMaxStack;
+                for (const station of self.activeStations) {
+                    station.chart.options.viewportMinStack = self.xViewPortMinStack;
+                    station.chart.options.viewportMaxStack = self.xViewportMaxStack;
                 }
             }
         };
@@ -531,8 +582,8 @@ export class WaveformComponent implements OnInit {
                 self.xViewPortMinStack = [];
                 self.xViewportMaxStack = [];
             } else {             // remember zoom history
-                self.xViewPortMinStack = self.activeSites[0].chart.options.viewportMinStack;
-                self.xViewportMaxStack = self.activeSites[0].chart.options.viewportMaxStack;
+                self.xViewPortMinStack = self.activeStations[0].chart.options.viewportMinStack;
+                self.xViewportMaxStack = self.activeStations[0].chart.options.viewportMaxStack;
             }
             self.destroyCharts();
             self.renderPage();
@@ -569,10 +620,10 @@ export class WaveformComponent implements OnInit {
         };
 
         this.destroyCharts = () => {
-            if (self.activeSites) {
-                for (let i = 0; i < self.activeSites.length; i++) {
-                    self.activeSites[i].chart.destroy();
-                    const elem = document.getElementById(self.activeSites[i].container);
+            if (self.activeStations) {
+                for (let i = 0; i < self.activeStations.length; i++) {
+                    self.activeStations[i].chart.destroy();
+                    const elem = document.getElementById(self.activeStations[i].container);
                     elem.parentElement.removeChild(elem);
                 }
             }
@@ -581,22 +632,22 @@ export class WaveformComponent implements OnInit {
         this.renderCharts = () => {
            // Chart Options, Render
 
-            for (let i = 0; i < self.activeSites.length - 1; i++) {
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
 
-                self.activeSites[i].container = i.toString() + 'Container';
+                self.activeStations[i].container = i.toString() + 'Container';
 
-                if ( $('#' + self.activeSites[i].container).length === 0 ) {
+                if ( $('#' + self.activeStations[i].container).length === 0 ) {
                     $('<div>').attr({
-                        'id': self.activeSites[i].container,
+                        'id': self.activeStations[i].container,
                         'style': divStyle
                     }).appendTo('#waveform-panel');
                 }
 
                 const data = [];
-                for (const channel of self.activeSites[i].channels) {
+                for (const channel of self.activeStations[i].channels) {
                     if ( (!self.bDisplayComposite && channel.channel_id !== environment.compositeChannelCode)
                         || (self.bDisplayComposite && channel.channel_id === environment.compositeChannelCode)
-                        || (self.bDisplayComposite && self.activeSites[i].channels.length === 1)) {
+                        || (self.bDisplayComposite && self.activeStations[i].channels.length === 1)) {
                         data.push(
                             {
                                 name: channel.code_id,
@@ -635,7 +686,7 @@ export class WaveformComponent implements OnInit {
                         }
                     },
                     title: {
-                        text: self.activeSites[i].station_code,
+                        text: self.activeStations[i].station_code,
                         dockInsidePlotArea: true,
                         fontSize: 12,
                         fontFamily: 'tahoma',
@@ -674,7 +725,7 @@ export class WaveformComponent implements OnInit {
                                 return  e.value / 1000000 + ' s' ;
                             }
                         },
-                        stripLines: self.activeSites[i].picks
+                        stripLines: self.activeStations[i].picks
                     },
                     axisY: {
                         minimum: -yMax,
@@ -692,28 +743,28 @@ export class WaveformComponent implements OnInit {
                     data: data
                 };
 
-                self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, options);
+                self.activeStations[i].chart = new CanvasJS.Chart(self.activeStations[i].container, options);
 
-                self.activeSites[i].chart.render();
+                self.activeStations[i].chart.render();
             }
         };
 
         this.renderContextChart = () => {
            // Chart Options, Render
 
-            const i = self.activeSites.length - 1;
+            const i = self.activeStations.length - 1;
 
-            self.activeSites[i].container = i.toString() + 'Container';
+            self.activeStations[i].container = i.toString() + 'Container';
 
-            if ( $('#' + self.activeSites[i].container).length === 0 ) {
+            if ( $('#' + self.activeStations[i].container).length === 0 ) {
                 $('<div>').attr({
-                    'id': self.activeSites[i].container,
+                    'id': self.activeStations[i].container,
                     'style': divStyle
                 }).appendTo('#waveform-panel');
             }
 
             const data = [];
-            for (const channel of self.activeSites[i].channels) {
+            for (const channel of self.activeStations[i].channels) {
                 data.push(
                     {
                         name: channel.code_id,
@@ -733,7 +784,7 @@ export class WaveformComponent implements OnInit {
                 zoomEnabled: false,
                 animationEnabled: true,
                 title: {
-                    text: self.activeSites[i].station_code,
+                    text: self.activeStations[i].station_code,
                     dockInsidePlotArea: true,
                     fontSize: 12,
                     fontFamily: 'tahoma',
@@ -757,7 +808,7 @@ export class WaveformComponent implements OnInit {
                 axisX: {
                     minimum: self.contextTimeOrigin.millisecond() * 1000,
                     maximum: Math.max(
-                        self.contextSite[0].channels[0].microsec + self.contextSite[0].channels[0].duration,
+                        self.contextStation[0].channels[0].microsec + self.contextStation[0].channels[0].duration,
                         self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
                     includeZero: true,
                     labelAutoFit: false,
@@ -787,24 +838,48 @@ export class WaveformComponent implements OnInit {
                 data: data
             };
             optionsContext.data[0].dataPoints[0]['indexLabel'] =
-                moment(self.contextSite[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
-            self.activeSites[i].chart = new CanvasJS.Chart(self.activeSites[i].container, optionsContext);
+                moment(self.contextStation[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
+            self.activeStations[i].chart = new CanvasJS.Chart(self.activeStations[i].container, optionsContext);
 
-            self.activeSites[i].chart.render();
+            self.activeStations[i].chart.render();
         };
 
         this.onPickingModeChange = value => {
             self.pickingMode = value;
         };
 
+        this.onChangeSite = event => {
+            self.site = event.value;
+            self.saveOption('site');
+        };
+
+        this.onChangeNetwork = event => {
+            self.network = event.value;
+            self.saveOption('network');
+        };
+
+        this.onChangeEvaluationStatus = event => {
+            self.origin.eval_status = event.value.eval_status;
+            self.origin.status = event.value.status;
+            self.bEventUnsaved = true;
+            $('#toggleSaveEvent').prop('disabled', false);
+        };
+
+        this.onChangeEventType = event => {
+            self.origin.type = event.value.type;
+            self.bEventUnsaved = true;
+            $('#toggleSaveEvent').prop('disabled', false);
+        };
+
+
         this.setChartKeys = () => {
-            for (let j = 0; j < self.activeSites.length - 1; j++) {
-                const canvas_chart = '#' + self.activeSites[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
+            for (let j = 0; j < self.activeStations.length - 1; j++) {
+                const canvas_chart = '#' + self.activeStations[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
 
                 $(canvas_chart).last().on('click', function(e) {
                     if (self.selected === -1) { // ignore if we have a drag event
                         const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeSites[ind].chart;
+                        const chart = self.activeStations[ind].chart;
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
                         if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
@@ -838,7 +913,7 @@ export class WaveformComponent implements OnInit {
                             return;
                         }
                     }
-                    const chart = self.activeSites[ind].chart;
+                    const chart = self.activeStations[ind].chart;
                     const parentOffset = $(this).parent().offset();
                     const relX = e.pageX - parentOffset.left;
                     const relY = e.pageY - parentOffset.top;
@@ -854,7 +929,7 @@ export class WaveformComponent implements OnInit {
                                     relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
                                     relY > pickLines[i].get('bounds').y1 &&
                                     relY < pickLines[i].get('bounds').y2) {  // move pick
-                                        self.savePicksState(ind, self.activeSites[ind].station_code, self.activeSites[ind].picks);
+                                        self.savePicksState(ind, self.activeStations[ind].station_code, self.activeStations[ind].picks);
                                         $(this)[0].style.cursor = 'pointer';
                                         self.selected = i;
                                         break;
@@ -882,7 +957,7 @@ export class WaveformComponent implements OnInit {
                     if (self.selected !== -1) {
                         self.bHoldEventTrigger = true;
                         const i = parseInt( $(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeSites[i].chart;
+                        const chart = self.activeStations[i].chart;
                         const parentOffset = $(this).parent().offset();
                         const relX = e.pageX - parentOffset.left;
                         const data = chart.options.data[0].dataPoints;
@@ -890,7 +965,7 @@ export class WaveformComponent implements OnInit {
                         if (position >= data[0].x && position <= data[data.length - 1].x) {
                             $(this)[0].style.cursor = 'pointer';
                             chart.options.axisX.stripLines[self.selected].value = position;
-                            self.activeSites[i].picks = chart.options.axisX.stripLines;
+                            self.activeStations[i].picks = chart.options.axisX.stripLines;
                             chart.options.zoomEnabled = false;
                             chart.render();
                         }
@@ -905,8 +980,8 @@ export class WaveformComponent implements OnInit {
                         $(this)[0].style.cursor = 'default';
                         self.selected = -1;
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeSites[i].chart;
-                        chart.options.axisX.stripLines = self.activeSites[i].picks ;
+                        const chart = self.activeStations[i].chart;
+                        chart.options.axisX.stripLines = self.activeStations[i].picks ;
                         chart.options.zoomEnabled = true;   // turn zoom back on
                         chart.render();
                     }
@@ -930,7 +1005,7 @@ export class WaveformComponent implements OnInit {
                         e.preventDefault();
 
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-                        const chart = self.activeSites[i].chart;
+                        const chart = self.activeStations[i].chart;
 
                         const relOffsetX = e.clientX - self.pageOffsetX;
                         const relOffsetY = e.clientY - self.pageOffsetY - i * self.chartHeight;
@@ -994,7 +1069,7 @@ export class WaveformComponent implements OnInit {
                     }
                 });
 
-                $('#' + self.activeSites[j].container).on('contextmenu', e => {
+                $('#' + self.activeStations[j].container).on('contextmenu', e => {
                       e.preventDefault();
                       const origin = {
                         left: e.pageX,
@@ -1080,7 +1155,7 @@ export class WaveformComponent implements OnInit {
                 }
                 if (e.keyCode === 50 || e.keyCode === 98) {
                     const numPages = environment.enablePagingLoad ?
-                        self.loaded_pages : Math.ceil(self.allSites.length / (self.page_size - 1));
+                        self.loaded_pages : Math.ceil(self.allStations.length / (self.page_size - 1));
                     if (self.page_number < numPages) {
                         self.page_number = self.page_number + 1;
                         self.changePage(false);
@@ -1188,8 +1263,8 @@ export class WaveformComponent implements OnInit {
             if (self.xViewPortMinStack.length === 0 || self.xViewPortMinStack[self.xViewPortMinStack.length - 1] !== vpMin) {
                 self.xViewPortMinStack.push(vpMin);
                 self.xViewportMaxStack.push(vpMax);
-                for (let i = 0; i < self.activeSites.length; i++) {
-                    const chart = self.activeSites[i].chart;
+                for (let i = 0; i < self.activeStations.length; i++) {
+                    const chart = self.activeStations[i].chart;
                     if (!chart.options.viewportMinStack) {
                         chart.options.viewportMinStack = [];
                         chart.options.viewportMaxStack = [];
@@ -1204,20 +1279,20 @@ export class WaveformComponent implements OnInit {
         };
 
         this.resetAllChartsViewX = () => {
-            for (let i = 0; i < self.activeSites.length - 1; i++) {
-                self.resetChartViewX(self.activeSites[i].chart);
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
+                self.resetChartViewX(self.activeStations[i].chart);
             }
         };
 
         this.resetAllChartsViewY = () => {
-            for (let i = 0; i < self.activeSites.length - 1; i++) {
-                self.resetChartViewY(self.activeSites[i].chart);
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
+                self.resetChartViewY(self.activeStations[i].chart);
             }
         };
 
         this.resetAllChartsViewXY = () => {
-            for (let i = 0; i < self.activeSites.length - 1; i++) {
-                self.resetChartViewXY(self.activeSites[i].chart);
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
+                self.resetChartViewXY(self.activeStations[i].chart);
             }
         };
 
@@ -1258,7 +1333,7 @@ export class WaveformComponent implements OnInit {
         };
 
         this.getXmax = (pos) => {
-            const endMicrosec = self.activeSites[pos].channels[0].microsec + self.activeSites[pos].channels[0].duration;
+            const endMicrosec = self.activeStations[pos].channels[0].microsec + self.activeStations[pos].channels[0].duration;
             return self.bCommonTime ?
                 Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + environment.fixedDuration * 1000000) :  endMicrosec;
         };
@@ -1273,30 +1348,30 @@ export class WaveformComponent implements OnInit {
 
         this.getValueMaxAll = () => {
             let val;
-            for (let i = 0; i < self.activeSites.length; i++) {
-                for (let j = 0; j < self.activeSites[i].channels.length; j++) {
+            for (let i = 0; i < self.activeStations.length; i++) {
+                for (let j = 0; j < self.activeStations[i].channels.length; j++) {
                     val = i === 0 && j === 0 ?
-                        self.maxValue(self.activeSites[0].channels[0].data) :
-                        Math.max(self.maxValue(self.activeSites[i].channels[j].data), val);
+                        self.maxValue(self.activeStations[0].channels[0].data) :
+                        Math.max(self.maxValue(self.activeStations[i].channels[j].data), val);
                 }
             }
             return val;
         };
 
-        this.getYmax = (site) => {
+        this.getYmax = (station) => {
             let val;
-            for (let j = 0; j < self.activeSites[site].channels.length; j++) {
+            for (let j = 0; j < self.activeStations[station].channels.length; j++) {
                 val = j === 0 ?
-                    self.maxValue(self.activeSites[site].channels[0].data) :
-                    Math.max(self.maxValue(self.activeSites[site].channels[j].data), val);
+                    self.maxValue(self.activeStations[station].channels[0].data) :
+                    Math.max(self.maxValue(self.activeStations[station].channels[j].data), val);
             }
             return self.bCommonAmplitude ?  self.getValueMaxAll() : val;
         };
 
         this.getAxisMinAll = (isXaxis) => {
             let min;
-            for (let i = 0; i < self.activeSites.length; i++) {
-                const chart = self.activeSites[i].chart;
+            for (let i = 0; i < self.activeStations.length; i++) {
+                const chart = self.activeStations[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 min = i === 0 ? axis.get('minimum') : Math.min(axis.get('minimum'), min);
             }
@@ -1305,8 +1380,8 @@ export class WaveformComponent implements OnInit {
 
         this.getAxisMaxAll = (isXaxis) => {
             let max;
-            for (let i = 0; i < self.activeSites.length; i++) {
-                const chart = self.activeSites[i].chart;
+            for (let i = 0; i < self.activeStations.length; i++) {
+                const chart = self.activeStations[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 max = i === 0 ? axis.get('maximum') : Math.max(axis.get('maximum'), max);
             }
@@ -1318,8 +1393,8 @@ export class WaveformComponent implements OnInit {
                 self.updateZoomStackCharts(vpMin, vpMax);
             }
             if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
-                for (let i = 0; i < self.activeSites.length - 1; i++) {
-                    const chart = self.activeSites[i].chart;
+                for (let i = 0; i < self.activeStations.length - 1; i++) {
+                    const chart = self.activeStations[i].chart;
                     const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                     axis.set('viewportMinimum', vpMin, false);
                     axis.set('viewportMaximum', vpMax);
@@ -1328,72 +1403,72 @@ export class WaveformComponent implements OnInit {
             }
         };
 
-        this.savePicksState = (ind, site, picks) => {
+        this.savePicksState = (ind, station, picks) => {
             self.lastPicksState = {};
             self.lastPicksState.index = ind;
-            self.lastPicksState.station_code = site;
+            self.lastPicksState.station_code = station;
             self.lastPicksState.picks = JSON.parse(JSON.stringify(picks));
         };
 
         this.undoLastPicking = () => {
             if (self.lastPicksState) {
                 const ind = self.lastPicksState.index;
-                const site = self.activeSites[ind];
-                if (self.lastPicksState.station_code === site.station_code) {
-                    const chart = site.chart;
+                const station = self.activeStations[ind];
+                if (self.lastPicksState.station_code === station.station_code) {
+                    const chart = station.chart;
                     const picks = self.lastPicksState.picks;
-                    self.savePicksState(ind, site.station_code, site.picks);
-                    site.picks = picks;
-                    chart.options.axisX.stripLines = site.picks;
+                    self.savePicksState(ind, station.station_code, station.picks);
+                    station.picks = picks;
+                    chart.options.axisX.stripLines = station.picks;
                     chart.render();
                 }
             }
         };
 
         this.addPick = (ind, pickType, value) => {
-            const site = self.activeSites[ind];
-            const chart = site.chart;
+            const station = self.activeStations[ind];
+            const chart = station.chart;
             const data = chart.options.data[0].dataPoints;
             const position = value ? Math.round(value) : Math.round(self.lastSelectedXPosition);
             if (position < data[0].x || position > data[data.length - 1].x) {
                 window.alert('Pick cannot be created outside of the current trace view');
                 return;
             }
-            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
-            self.savePicksState(ind, site.station_code, site.picks);
+            station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
+            self.savePicksState(ind, station.station_code, station.picks);
             // remove any existing pick of this type
-            site.picks = site.picks.filter( el => el.label !== pickType);
-            site.picks.push({
+            station.picks = station.picks.filter( el => el.label !== pickType);
+            station.picks.push({
                 value: position,
                 thickness: environment.picksLineThickness,
                 color: pickType === 'P' ? 'blue' : pickType === 'S' ? 'red' : 'black',
                 label: pickType,
                 labelAlign: 'far'
             });
-            chart.options.axisX.stripLines = site.picks;
+            chart.options.axisX.stripLines = station.picks;
             chart.render();
         };
 
         this.deletePicks = (ind, pickType, value) => {
-            const site = self.activeSites[ind];
-            self.savePicksState(ind, site.station_code, site.picks);
-            const chart = site.chart;
+            const station = self.activeStations[ind];
+            self.savePicksState(ind, station.station_code, station.picks);
+            const chart = station.chart;
             if (value) {
-                site.picks = site.picks
+                station.picks = station.picks
                 .filter( el => el.label !== pickType || el.label === pickType && el.value !== value);
             } else {  // no value specified delete all picks of this type
-                site.picks = site.picks.filter( el => el.label !== pickType);
+                station.picks = station.picks.filter( el => el.label !== pickType);
             }
-            chart.options.axisX.stripLines = site.picks;
+            chart.options.axisX.stripLines = station.picks;
             chart.render();
         };
 
         this.movePick = (ind, pickType, value, fromCurrentPosition, issueWarning) => {
-            const site = self.activeSites[ind];
-            const chart = site.chart;
-            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+            const station = self.activeStations[ind];
+            const chart = station.chart;
+            station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
             // find existing pick of this type
-            const pick = self.findValue(site.picks, 'label', pickType);
+            const pick = self.findValue(station.picks, 'label', pickType);
             if (!pick) {
                 if (issueWarning) {
                     window.alert('No ' + pickType + ' pick to move');
@@ -1406,20 +1481,20 @@ export class WaveformComponent implements OnInit {
                 window.alert('Pick cannot be moved outside of the current trace view');
                 return;
             }
-            self.savePicksState(ind, site.station_code, site.picks);
+            self.savePicksState(ind, station.station_code, station.picks);
             // move pick
             pick.value = position;
-            site.picks = site.picks.filter( el => el.label !== pickType);
-            site.picks.push(pick);
-            chart.options.axisX.stripLines = site.picks;
+            station.picks = station.picks.filter( el => el.label !== pickType);
+            station.picks.push(pick);
+            chart.options.axisX.stripLines = station.picks;
             chart.render();
         };
 
 
         this.toggleTooltip = (ind, value) => {
-            value = value ? value : !self.activeSites[ind].chart.options.toolTip.enabled;
-            self.activeSites[ind].chart.options.toolTip.enabled = value;
-            self.activeSites[ind].chart.render();
+            value = value ? value : !self.activeStations[ind].chart.options.toolTip.enabled;
+            self.activeStations[ind].chart.options.toolTip.enabled = value;
+            self.activeStations[ind].chart.render();
         };
 
         this.back = () => {
@@ -1428,8 +1503,8 @@ export class WaveformComponent implements OnInit {
                     self.xViewPortMinStack.pop();
                     self.xViewportMaxStack.pop();
                 }
-                for (let j = 0; j < self.activeSites.length - 1; j++) {
-                    const chart = self.activeSites[j].chart;
+                for (let j = 0; j < self.activeStations.length - 1; j++) {
+                    const chart = self.activeStations[j].chart;
                     chart.options.viewportMinStack = self.xViewPortMinStack;
                     chart.options.viewportMaxStack = self.xViewportMaxStack;
                     if (!chart.options.axisX) {
@@ -1445,7 +1520,7 @@ export class WaveformComponent implements OnInit {
                 }
             } else {
                 if (self.lastDownTarget !== null && self.lastDownTarget > -1) {
-                    const chart = self.activeSites[self.lastDownTarget].chart;
+                    const chart = self.activeStations[self.lastDownTarget].chart;
                     const viewportMinStack = chart.options.viewportMinStack;
                     const viewportMaxStack = chart.options.viewportMaxStack;
                     if (!chart.options.axisX) {
@@ -1464,19 +1539,19 @@ export class WaveformComponent implements OnInit {
             }
         };
 
-        this.addArrivalsPickData = (sites, origin) => {
-            const missingSites = [];
+        this.addArrivalsPickData = (stations, origin) => {
+            const missingStations = [];
             for (const arrival of self.allPicks) {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {
-                        const site = self.findValue(sites, 'station_code', pick.station_code);
-                        if (site) {
-                            site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+                        const station = self.findValue(stations, 'station_code', pick.station_code);
+                        if (station) {
+                            station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
                             const pickKey = arrival.phase === 'P' ? 'P' : arrival.phase === 'S' ? 'S' : '';
                             if (pickKey !== '') {
-                                site[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
-                                site.picks.push({
+                                station[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
+                                station.picks.push({
                                     value: self.calculateTimeOffset(pick.time_utc, origin),   // rel timeOrigin full second
                                     thickness: environment.picksLineThickness,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
@@ -1485,8 +1560,8 @@ export class WaveformComponent implements OnInit {
                                 });
                             }
                         } else  {
-                            if (!environment.enablePagingLoad && !missingSites.includes(pick.station_code)) {
-                                missingSites.push(pick.station_code);
+                            if (!environment.enablePagingLoad && !missingStations.includes(pick.station_code)) {
+                                missingStations.push(pick.station_code);
                             }
                         }
                     } else {
@@ -1496,8 +1571,8 @@ export class WaveformComponent implements OnInit {
                     console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
                 }
             }
-            if (missingSites.length > 0) {
-                self.picksWarning = 'No waveforms for picks at sites: ' + missingSites.toString();
+            if (missingStations.length > 0) {
+                self.picksWarning = 'No waveforms for picks at stations: ' + missingStations.toString();
             }
         };
 
@@ -1509,26 +1584,22 @@ export class WaveformComponent implements OnInit {
             return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
         };
 
-        this.addPredictedPicksData = (sites, origin) => {
-            // for (const station of self.originTravelTimes) {
-            for (const site of sites) {
-                // if (station.hasOwnProperty('station_id')) {
-                if (site.hasOwnProperty('station_code')) {
-                    // const site = self.findValue(self.allSites, 'station_code', station.station_id);
-                    const station = self.findValue(self.originTravelTimes, 'station_id', site.station_code);
-                    // if (site) {
-                    if (station) {
-                        site.picks = ( typeof site.picks !== 'undefined' && site.picks instanceof Array ) ? site.picks : [];
+        this.addPredictedPicksData = (stations, origin) => {
+            for (const station of stations) {
+                if (station.hasOwnProperty('station_code')) {
+                    const stationOrigin = self.findValue(self.originTravelTimes, 'station_id', station.station_code);
+                    if (stationOrigin) {
+                        station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
                         for (const pickKey of ['P', 'S']) {
                             const key = 'travel_time_' + pickKey.toLowerCase();
-                            if (station.hasOwnProperty(key)) {
-                                const picktime_utc = this.addTime(this.waveformOrigin.time_utc, station[key]);
+                            if (stationOrigin.hasOwnProperty(key)) {
+                                const picktime_utc = this.addTime(this.waveformOrigin.time_utc, stationOrigin[key]);
                                 const pickTime = moment(picktime_utc);  // UTC
                                 if (!self.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
                                     self.picksWarning += 'Predicted picks outside the display time window\n';
                                 }
-                                site[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
-                                site.picks.push({
+                                station[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
+                                station.picks.push({
                                     value: self.calculateTimeOffset(picktime_utc, origin),  // value is relative to timeOrigin's full second
                                     thickness: environment.predictedPicksLineThickness,
                                     lineDashType: 'dash',
@@ -1548,9 +1619,9 @@ export class WaveformComponent implements OnInit {
         };
 
         this.togglePredictedPicksVisibility = (show) => {
-            for (const site of this.allSites) {
-                if (site.hasOwnProperty('picks')) {
-                    for (const pick of site.picks) {
+            for (const station of this.allStations) {
+                if (station.hasOwnProperty('picks')) {
+                    for (const pick of station.picks) {
                         if (pick.label === pick.label.toLowerCase()) {
                             pick.opacity = show ? 0.5 : 0;
                         }
@@ -1563,16 +1634,16 @@ export class WaveformComponent implements OnInit {
         this.calcPicksBias = () => {
             let picksTotalBias = 0; // calculate pickBias as average value of picks - predicted picks
             let nPicksBias = 0;
-            for (const site of self.allSites) {
+            for (const station of self.allStations) {
                 for (const pickKey of ['p', 's']) {
                     const predicted_key = pickKey + '_predicted_time_utc';
                     const pick_key = pickKey + '_pick_time_utc';
-                    if (site.hasOwnProperty(predicted_key) && site.hasOwnProperty(pick_key)) {
-                        const pickTime = moment(site[pick_key]);
-                        const referenceTime = moment(site[predicted_key]);
+                    if (station.hasOwnProperty(predicted_key) && station.hasOwnProperty(pick_key)) {
+                        const pickTime = moment(station[pick_key]);
+                        const referenceTime = moment(station[predicted_key]);
                         if (pickTime.isValid() && referenceTime.isValid()) {
-                            const microsec = site[pick_key].slice(-7, -1);
-                            const microsec_ref = site[predicted_key].slice(-7, -1);
+                            const microsec = station[pick_key].slice(-7, -1);
+                            const microsec_ref = station[predicted_key].slice(-7, -1);
                             const offset = pickTime.millisecond(0)
                                 .diff(referenceTime.millisecond(0), 'seconds') * 1000000;
                             picksTotalBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
@@ -1595,17 +1666,17 @@ export class WaveformComponent implements OnInit {
 
         this.changePredictedPicksByBias = (removeBias, show) => {
             if (self.picksBias !== 0) {
-                for (const site of this.allSites) {
-                    if (site.hasOwnProperty('picks')) {
-                        for (const pick of site.picks) {
+                for (const station of this.allStations) {
+                    if (station.hasOwnProperty('picks')) {
+                        for (const pick of station.picks) {
                             if (pick.label === pick.label.toLowerCase()) {
                                 pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
                             }
                         }
                     }
                 }
-                if (self.contextSite[0].hasOwnProperty('picks')) {
-                    for (const pick of self.contextSite[0].picks) {
+                if (self.contextStation[0].hasOwnProperty('picks')) {
+                    for (const pick of self.contextStation[0].picks) {
                         if (pick.label === pick.label.toLowerCase()) {
                             pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
                         }
@@ -1618,15 +1689,15 @@ export class WaveformComponent implements OnInit {
         };
 
         this.sortTraces = () => {
-          if (Array.isArray(self.allSites)) {
+          if (Array.isArray(self.allStations)) {
               let sortKey = '';
-              if (self.allSites.some(el => el.hasOwnProperty('p_predicted_time_utc'))) {
+              if (self.allStations.some(el => el.hasOwnProperty('p_predicted_time_utc'))) {
                   sortKey = 'p_predicted_time_utc';
-              } else if (self.allSites.some(el => el.hasOwnProperty('s_predicted_time_utc'))) {
+              } else if (self.allStations.some(el => el.hasOwnProperty('s_predicted_time_utc'))) {
                   sortKey = 's_predicted_time_utc';
               }
               if (sortKey) {
-                  self.allSites.sort
+                  self.allStations.sort
                     (this.sort_array_by
                      (sortKey, false, function(x) { return x ? moment(x) : moment.now(); })
                     );
@@ -1637,7 +1708,7 @@ export class WaveformComponent implements OnInit {
         this.parseMiniseed = (file, isContext): any => {
             const records = miniseed.parseDataRecords(file);
             const channelsMap = miniseed.byChannel(records);
-            const sites = [];
+            const stations = [];
             let zTime = null, timeOrigin = null;
             const eventData = {};
             let changetimeOrigin = false;
@@ -1673,16 +1744,16 @@ export class WaveformComponent implements OnInit {
                     }
                     channel['data'] = data;
                     channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
-                    let site = self.findValue(sites, 'station_code', sg.stationCode());
-                    if (!site) {
-                        site = { station_code: sg.stationCode(), channels: [] };
-                        sites.push(site);
+                    let station = self.findValue(stations, 'station_code', sg.stationCode());
+                    if (!station) {
+                        station = { station_code: sg.stationCode(), channels: [] };
+                        stations.push(station);
                     }
-                    site.channels.push(channel);
+                    station.channels.push(channel);
                 } else {
                     console.log('Skip zero data channel: ' + sg.codes());
-                    self.sitesWarning = self.sitesWarning ?
-                        (self.sitesWarning.includes(sg.codes()) ? self.sitesWarning : self.sitesWarning + ', ' + sg.codes()) :
+                    self.tracesInfo = self.tracesInfo ?
+                        (self.tracesInfo.includes(sg.codes()) ? self.tracesInfo : self.tracesInfo + ', ' + sg.codes()) :
                             'Zero traces: ' + sg.codes();
                 }
             });
@@ -1691,8 +1762,8 @@ export class WaveformComponent implements OnInit {
                 if (changetimeOrigin) {
                     console.log('***changetimeOrigin channels change in earliest time second detected');
                     zTime.millisecond(0);
-                    for (const site of sites) {
-                        for (const channel of site.channels) {
+                    for (const station of stations) {
+                        for (const channel of station.channels) {
                             if (!channel.start.isSame(zTime, 'second')) {
                                 const offset = channel.start.diff(zTime, 'seconds') * 1000000;
                                 channel.microsec += offset;
@@ -1705,7 +1776,7 @@ export class WaveformComponent implements OnInit {
 
                 }
             }
-            eventData['sites'] = sites;
+            eventData['stations'] = stations;
             eventData['timeOrigin'] = timeOrigin;
             return(eventData);
         };
@@ -1726,24 +1797,24 @@ export class WaveformComponent implements OnInit {
         };
 
         this.applyFilter = () => {
-            if (self.bFilterChanged && self.allSites.length > 0) {
+            if (self.bFilterChanged && self.allStations.length > 0) {
                 self.saveOption('numPoles');
                 self.saveOption('lowFreqCorner');
                 self.saveOption('highFreqCorner');
-                self.allSites = self.addCompositeTrace(self.filterData(self.allSites)); // filter and recompute composite traces
-                self.contextSite = self.filterData(self.contextSite);
+                self.allStations = self.addCompositeTrace(self.filterData(self.allStations)); // filter and recompute composite traces
+                self.contextStation = self.filterData(self.contextStation);
                 self.changePage(false);
             }
         };
 
-        this.filterData = (sites): any[] => {
-            for (const site of sites) {
+        this.filterData = (stations): any[] => {
+            for (const station of stations) {
                 // remove composite traces if existing
-                const pos = site.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
+                const pos = station.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
                 if (pos >= 0) {
-                    site.channels.splice(pos, 1);
+                    station.channels.splice(pos, 1);
                 }
-                for (const channel of site.channels) {
+                for (const channel of station.channels) {
                     if (channel.hasOwnProperty('raw')) {
                         const sg = channel.raw.clone();
                         let seis = null;
@@ -1764,65 +1835,65 @@ export class WaveformComponent implements OnInit {
                 }
             }
             self.bFilterChanged = false;
-            return sites;
+            return stations;
         };
 
-        this.addCompositeTrace = (sites): any[] => {
+        this.addCompositeTrace = (stations): any[] => {
             let message = '';
-            for (const site of sites) {
-                if (site.channels.length === 3) {
-                    if (site.channels[0].start.isSame(site.channels[1].start) &&
-                        site.channels[0].start.isSame(site.channels[2].start) &&
-                        site.channels[0].microsec === site.channels[1].microsec &&
-                        site.channels[0].microsec === site.channels[2].microsec) {
-                        if (site.channels[0].sample_rate === site.channels[1].sample_rate &&
-                            site.channels[0].sample_rate === site.channels[2].sample_rate) {
-                            if (site.channels[0].data.length === site.channels[1].data.length &&
-                                site.channels[0].data.length === site.channels[2].data.length) {
+            for (const station of stations) {
+                if (station.channels.length === 3) {
+                    if (station.channels[0].start.isSame(station.channels[1].start) &&
+                        station.channels[0].start.isSame(station.channels[2].start) &&
+                        station.channels[0].microsec === station.channels[1].microsec &&
+                        station.channels[0].microsec === station.channels[2].microsec) {
+                        if (station.channels[0].sample_rate === station.channels[1].sample_rate &&
+                            station.channels[0].sample_rate === station.channels[2].sample_rate) {
+                            if (station.channels[0].data.length === station.channels[1].data.length &&
+                                station.channels[0].data.length === station.channels[2].data.length) {
                                 const compositeTrace = {};
-                                compositeTrace['code_id'] = site.channels[0].code_id.slice(0, -1) + environment.compositeChannelCode;
-                                compositeTrace['station_code'] = site.station_code;
+                                compositeTrace['code_id'] = station.channels[0].code_id.slice(0, -1) + environment.compositeChannelCode;
+                                compositeTrace['station_code'] = station.station_code;
                                 compositeTrace['channel_id'] = environment.compositeChannelCode;
-                                compositeTrace['sample_rate'] = site.channels[0].sample_rate;
-                                compositeTrace['start'] = site.channels[0].start;  // moment object (good up to milisecond)
-                                compositeTrace['microsec'] = site.channels[0].microsec;
+                                compositeTrace['sample_rate'] = station.channels[0].sample_rate;
+                                compositeTrace['start'] = station.channels[0].start;  // moment object (good up to milisecond)
+                                compositeTrace['microsec'] = station.channels[0].microsec;
                                 compositeTrace['data'] = [];
-                                compositeTrace['duration'] = site.channels[0].duration;  // in microseconds
-                                for (let k = 0; k < site.channels[0].data.length; k++) {
+                                compositeTrace['duration'] = station.channels[0].duration;  // in microseconds
+                                for (let k = 0; k < station.channels[0].data.length; k++) {
                                     let compositeValue = 0, sign = 1;
                                     for (let j = 0; j < 3; j++) {
-                                        const value = site.channels[j].data[k]['y'];
-                                        sign = site.channels[j].channel_id.toLowerCase() === environment.signComponent.toLowerCase() ?
+                                        const value = station.channels[j].data[k]['y'];
+                                        sign = station.channels[j].channel_id.toLowerCase() === environment.signComponent.toLowerCase() ?
                                             Math.sign(value) : sign;
                                         compositeValue += Math.pow(value, 2);
                                     }
                                     sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
                                     compositeValue = Math.sqrt(compositeValue) * sign;
                                     compositeTrace['data'].push({
-                                        x: site.channels[0].data[k]['x'],
+                                        x: station.channels[0].data[k]['x'],
                                         y: compositeValue
                                     });
                                 }
-                                site.channels.push(compositeTrace);
+                                station.channels.push(compositeTrace);
                             } else {
-                                console.log('Cannot create 3C composite trace for site: '
-                                    + site['station_code'] + ' different channel lengths');
+                                console.log('Cannot create 3C composite trace for station: '
+                                    + station['station_code'] + ' different channel lengths');
                             }
                         } else {
-                            console.log('Cannot create 3C composite trace for site: ' + site['station_code'] + ' different sample rates: ' +
-                                site.channels[0].sample_rate + site.channels[2].sample_rate + site.channels[2].sample_rate);
+                            console.log('Cannot create 3C composite trace for station: ' + station['station_code'] + ' different sample rates: ' +
+                                station.channels[0].sample_rate + station.channels[2].sample_rate + station.channels[2].sample_rate);
                         }
                     } else {
-                        console.log('Cannot create 3C composite trace for site: '
-                            + site['station_code'] + ' different channels start times ' +
-                            site.channels[0].start.toISOString() + site.channels[1].start.toISOString()
-                            + site.channels[2].start.toISOString());
+                        console.log('Cannot create 3C composite trace for station: '
+                            + station['station_code'] + ' different channels start times ' +
+                            station.channels[0].start.toISOString() + station.channels[1].start.toISOString()
+                            + station.channels[2].start.toISOString());
                     }
                 } else {
-                    message += 'Cannot create 3C composite trace for site: ' + site['station_code'] +
-                        ' available channels: ' + site.channels.length + ' (' +
-                        (site.channels.length > 0 ? site.channels[0].channel_id +
-                        (site.channels.length > 1 ? site.channels[1].channel_id
+                    message += 'Cannot create 3C composite trace for station: ' + station['station_code'] +
+                        ' available channels: ' + station.channels.length + ' (' +
+                        (station.channels.length > 0 ? station.channels[0].channel_id +
+                        (station.channels.length > 1 ? station.channels[1].channel_id
                             : ' ') : ' ') + ')\n';
                 }
             }
@@ -1830,7 +1901,7 @@ export class WaveformComponent implements OnInit {
                 console.log(message);
                 // window.alert(message);
             }
-            return sites;
+            return stations;
         };
 
         this.getEvent = (event, bContext): any => {
