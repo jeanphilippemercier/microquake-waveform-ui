@@ -5,6 +5,7 @@
 export const environment = {
   production: false,
 
+  url: 'https://api.microquake.org/',
   // URL of the API
   apiUrl: 'https://api.microquake.org/api/v1/',
   // Sites API endpoint
