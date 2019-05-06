@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../environments/environment';
 import {MatSnackBar} from '@angular/material';
 
 @Component({
@@ -8,9 +9,11 @@ import {MatSnackBar} from '@angular/material';
 })
 export class NotifierComponent implements OnInit {
 
-  constructor(private snackBar: MatSnackBar) {}
+  constructor(private snackBar: MatSnackBar) {
+  }
 
   ngOnInit() {
+    this.connect();
   }
 
   openSnackBar(message: string, action: string) {
@@ -18,5 +21,13 @@ export class NotifierComponent implements OnInit {
       duration: 2000,
     });
   }
+
+  connect(): void {
+    let source = new EventSource(environment.url + 'events/');
+    source.addEventListener('message', message => {
+      this.openSnackBar('message received', 'OK');
+    });
+  }
+
 
 }

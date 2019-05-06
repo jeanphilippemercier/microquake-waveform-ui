@@ -9,7 +9,7 @@ export class AuthService {
   constructor(private http: HttpClient) { }
 
   login(username: string, password: string): Observable<boolean> {
-    return this.http.post<{token: string}>('https://api.microquake.org/token-auth/', {username: username, password: password})
+    return this.http.post<{token: string}>(environment.url + 'token-auth/', {username: username, password: password})
       .pipe(
         map(result => {
           localStorage.setItem('access_token', result.token);
