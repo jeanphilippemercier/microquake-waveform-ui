@@ -1,5 +1,6 @@
 /*jshint esversion: 6 */
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
+import { EventsTreeComponent} from '../events-tree.component';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
@@ -14,8 +15,11 @@ import * as moment from 'moment';
   styleUrls: ['./waveform.component.css']
 })
 
-export class WaveformComponent implements OnInit {
+export class WaveformComponent implements OnInit, AfterViewInit {
+    @ViewChild(EventsTreeComponent) eventsTreeReference;
 
+    public eventsTree: any;
+    public eventsDatabase: any;
     public site: any;
     public sites: any[];
     public network: any;
@@ -89,7 +93,6 @@ export class WaveformComponent implements OnInit {
     private addCompositeTrace: Function;
     private loadSites: Function;
     private loadNetworks: Function;
-    private loadMicroquakeEventTypes: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -159,7 +162,7 @@ export class WaveformComponent implements OnInit {
     public picksWarning: string;
     public tracesInfo: string;
 
-    public microquakeEventTypes = [];
+    public eventTypes = [];
 
     public evalTypes = [
         {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
@@ -170,8 +173,16 @@ export class WaveformComponent implements OnInit {
         {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
     ];
 
+    ngAfterViewInit() {
+        this.eventsTree = this.eventsTreeReference.treeControl;
+        this.eventsDatabase = this.eventsTreeReference.database;
+    }
+
     async getNotification(message) {
-        // console.log(message);
+        if (message.hasOwnProperty('init')) {
+            this.eventTypes = message.init;
+            return;
+        }
         if (message.hasOwnProperty('timezone')) {
             this.timezone = message.timezone;
         }
@@ -188,13 +199,8 @@ export class WaveformComponent implements OnInit {
         }
         this.tracesInfo = '';
         this.picksWarning = '';
-        $('#infoTime')[0].innerHTML = 'Event ' +
-                    moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') +
-                    '<small>'
-                    + message.time_utc.slice(-8, -1) +
-                    moment().utc().utcOffset(this.timezone).format('Z')
-                    + '</small>';
         this.origin['time_utc'] = message.time_utc;
+        this.origin['time_local'] = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
         this.origin['magnitude'] = message.magnitude ? parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
         this.origin['x'] = message.x ? message.x : '';
         this.origin['y'] = message.y ? message.y : '';
@@ -210,6 +216,11 @@ export class WaveformComponent implements OnInit {
         this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
         this.origin['event_resource_id'] = message.event_resource_id;
         this.origin['preferred_origin_id'] = message.preferred_origin_id;
+        $('#infoTime')[0].innerHTML = 'Event ' + this.origin['time_local'] +
+                    '<small>'
+                    + message.time_utc.slice(-8, -1) +
+                    moment().utc().utcOffset(this.timezone).format('Z')
+                    + '</small>';
     }
 
     delay(timer) {
@@ -305,18 +316,7 @@ export class WaveformComponent implements OnInit {
             });
         };
 
-        this.loadMicroquakeEventTypes = () => {
-            this._catalogService.get_microquake_event_types().subscribe(types => {
-              for (const type of types) {
-                  type['viewValue'] =  type.quakeml_type === 'earthquake' ? 'Seismic Event (E)' :
-                    type.quakeml_type === 'blast' || type.quakeml_type === 'explosion' ? 'Blast (B)' : 'Other (O)';
-              }
-              self.microquakeEventTypes = types;
-            });
-        };
-
         this.loadSites();
-        this.loadMicroquakeEventTypes();
 
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
@@ -859,14 +859,13 @@ export class WaveformComponent implements OnInit {
         };
 
         this.onChangeEvaluationStatus = event => {
-            self.origin.eval_status = event.value.eval_status;
-            self.origin.status = event.value.status;
+            self.origin.status = event.value;
             self.bEventUnsaved = true;
             $('#toggleSaveEvent').prop('disabled', false);
         };
 
         this.onChangeEventType = event => {
-            self.origin.type = event.value.type;
+            self.origin.type = event.value;
             self.bEventUnsaved = true;
             $('#toggleSaveEvent').prop('disabled', false);
         };
@@ -1200,6 +1199,20 @@ export class WaveformComponent implements OnInit {
             $(this).toggleClass('active');
         });
 
+        $('#toggleSaveEvent').on('click', () => {
+            if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
+                // change event in tree view (may not be selected one)
+                self._catalogService.update_event_by_id(self.origin.event_resource_id, self.origin.status, self.origin.event_type)
+                    .subscribe((response) => {
+                    self.eventsDatabase.updateEventsTree(response, self.eventsTree);
+                    self.bEventUnsaved = false;
+                    $('#toggleSaveEvent').prop('disabled', true);
+                },
+                (error) => {
+                    console.log('Error is: ', error);
+                });
+            }
+        });
 
         // If the context menu element is clicked
         $('.menu li').on('click', function() {
