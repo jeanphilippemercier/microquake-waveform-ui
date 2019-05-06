@@ -1209,7 +1209,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                     $('#toggleSaveEvent').prop('disabled', true);
                 },
                 (error) => {
-                    console.log('Error is: ', error);
+                    window.alert('Error updating event: ' + error.error.message);
                 });
             }
         });
@@ -1893,7 +1893,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                     + station['station_code'] + ' different channel lengths');
                             }
                         } else {
-                            console.log('Cannot create 3C composite trace for station: ' + station['station_code'] + ' different sample rates: ' +
+                            console.log('Cannot create 3C composite trace for station: ' +
+                                station['station_code'] + ' different sample rates: ' +
                                 station.channels[0].sample_rate + station.channels[2].sample_rate + station.channels[2].sample_rate);
                         }
                     } else {
