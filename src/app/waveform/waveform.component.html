@@ -91,7 +91,7 @@
                   <td>
                     <mat-form-field>
                       <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
-                        <mat-option *ngFor="let type of microquakeEventTypes" [value]="type.quakeml_type">
+                        <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
                           {{type.viewValue}}
                         </mat-option>
                       </mat-select>
@@ -103,8 +103,8 @@
                   <td>
                     <mat-form-field>
                       <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
-                        <mat-option *ngFor="let type of evalTypes" [value]="type.status">
-                        {{type.viewValue}}
+                        <mat-option *ngFor="let etype of evalTypes" [value]="etype.status">
+                        {{etype.viewValue}}
                         </mat-option>
                       </mat-select>
                     </mat-form-field>

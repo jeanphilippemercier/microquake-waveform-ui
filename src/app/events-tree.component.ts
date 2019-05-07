@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 import {NestedTreeControl} from '@angular/cdk/tree';
-import {Component, Injectable, OnInit, AfterViewInit, Output, EventEmitter, ViewChild} from '@angular/core';
+import {Component, Injectable, Output, EventEmitter} from '@angular/core';
 import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatIconModule} from '@angular/material/icon';
@@ -60,16 +60,27 @@ export class FileDatabase {
   public eventId: string;
   public timezone: string;
   public bInit: boolean;
+  public eventTypes = [];
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
   }
+
   initialize() {
 
     const url_string = window.location.href;
     const url = new URL(url_string);
     this.eventId = url.searchParams.get('id');
     this.bInit = true;
+
+    this._catalogService.get_microquake_event_types().subscribe(types => {
+      for (const type of types) {
+          const abbr = type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O';
+          type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
+          type['type'] =  abbr;
+      }
+      this.eventTypes = types;
+    });
 
     this._catalogService.get_boundaries().subscribe(boundsArray => {
       const bounds = boundsArray[0];
@@ -109,7 +120,7 @@ export class FileDatabase {
           this.eventId = events[0].event_resource_id;
         }
 
-        this.treeObject = this.convertTree(events, this.treeObject);
+        this.treeObject = this.convertTree(events, this.treeObject, false);
 
         // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
         const data = this.buildFileTree(this.treeObject, 0);
@@ -123,6 +134,35 @@ export class FileDatabase {
       // , () => console.log('done loading')
     );
 
+  }
+
+  updateEventsTree(node, tree) {
+
+    const data = tree.dataNodes;
+    for (const yearNode of data) {
+      if (yearNode.hasOwnProperty('children')) {
+        for (const monthNode of yearNode.children) {
+          if (monthNode.hasOwnProperty('children')) {
+            for (const dayNode of monthNode.children) {
+              if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
+                for (const event of dayNode.children) {
+                  if (event.event_resource_id === node.event_resource_id) {
+                      event.event_type = node.event_type;
+                      event.type = this.eventTypes.find(v => v.quakeml_type === node.event_type).type;
+                      event.status = node.status;
+                      event.eval_status = (node.status === 'rejected') ? 'R' : 'A';
+                      break;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Notify the change.
+    this.dataChange.next(data);
   }
 
   selectNode(tree, data, eventId, action) {
@@ -183,7 +223,7 @@ export class FileDatabase {
     return dataTree;
   }
 
-  convertTree(dataObject, dataTree) {
+  convertTree(dataObject, dataTree, replaceNode) {
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
@@ -203,13 +243,11 @@ export class FileDatabase {
               if (!dataTree[year][month].hasOwnProperty(day)) {
                 dataTree[year][month][day] = {};
               }
-              if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
-                dataTree[year][month][day][event_time] = {};
+              if (!dataTree[year][month][day].hasOwnProperty(event_time) || replaceNode) {
                 dataTree[year][month][day][event_time] = value;
-              } else { // duplicate node, same origin time already exists
+              } else { // if duplicate node, same origin time already exists, append new node
                 const event_time_duplicate = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(4).slice(-5);
                 if (!dataTree[year][month][day].hasOwnProperty(event_time_duplicate)) {
-                  dataTree[year][month][day][event_time_duplicate] = {};
                   dataTree[year][month][day][event_time_duplicate] = value;
                 } else {
                   console.log('More than 2 events with same origin time found, skipped');
@@ -252,8 +290,7 @@ export class FileDatabase {
             // Evaluation = A (accepted) if status is "preliminary", "confirmed", "reviewed", "final", "reported"
             // Evaluation = R (rejected) if status is "rejected"
             node.eval_status = (value.status === 'rejected') ? 'R' : 'A';
-            node.type = value.event_type === 'earthquake' ? 'E' :
-                          value.event_type === 'blast' || value.event_type === 'explosion' ? 'B' : 'O';
+            node.type = this.eventTypes.find(v => v.quakeml_type === value.event_type).type;
             node.evaluation_mode = value.evaluation_mode;
             node.magnitude = value.magnitude.toFixed(1);
             node.magnitude_type = value.magnitude_type;
@@ -296,25 +333,34 @@ export class FileDatabase {
 export class EventsTreeComponent {
   treeControl: NestedTreeControl<FileNode>;
   dataSource: MatTreeNestedDataSource<FileNode>;
+  init: boolean;
 
   @Output() messageEvent = new EventEmitter();
 
-  @ViewChild('tree') tree;
-
-  constructor(private database: FileDatabase) {
+  constructor(public database: FileDatabase) {
     this.treeControl = new NestedTreeControl<FileNode>(this._getChildren);
     this.dataSource = new MatTreeNestedDataSource();
+
+    this.init = true;
 
     database.dataChange.subscribe(data => {
       this.dataSource.data = data;
       this.treeControl.dataNodes = data;
 
       if (data && data.length > 0) {
+
+        if (this.init) {
+          const init_msg = {'init': this.database.eventTypes};
+          this.messageEvent.emit(init_msg);   // send message to init data
+          this.init = false;
+        }
+
         const message = this.database.selectNode(this.treeControl, this.treeControl.dataNodes, database.eventId, 'expand');
         message['action'] = 'load';
         message['timezone'] = database.timezone;
 
         this.messageEvent.emit(message);   // send message to load data
+
       }
 
     });

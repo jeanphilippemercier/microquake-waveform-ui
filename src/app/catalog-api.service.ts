@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of, pipe, throwError } from 'rxjs';
 import { timeout, catchError } from 'rxjs/operators';
 
@@ -65,6 +65,22 @@ export class CatalogApiService {
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         return this.http.get(API_URL);
     }
+
+    update_event_by_id = (eventId, status, event_type): any => {
+        const httpOptions = {
+          headers: new HttpHeaders({
+            'Content-Type':  'application/json'
+          })
+        };
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
+        const data = JSON.stringify({
+            'event_resource_id': eventId,
+            'status': status,
+            'event_type': event_type
+        });
+        return this.http.put(API_URL, data, httpOptions);
+    }
+
 
     get_origins_by_id = (eventId): any => {
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
