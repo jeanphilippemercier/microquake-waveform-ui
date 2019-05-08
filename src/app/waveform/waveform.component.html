@@ -5,7 +5,7 @@
   <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
   <div class='row'>             <!-- responsive row has 12 columns by default -->
     <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
-      <div class="card border-primary" [style.height.px]="window_height*0.15">
+      <!--div class="card border-primary" [style.height.px]="window_height*0.15">
         <div class='card-header'>Site and Network</div>
         <div style="overflow: auto" id="siteInfoCard" class="mb-0">
           <div class='card-body' style="padding:0px 20px;">
@@ -39,8 +39,8 @@
             </table>
           </div>
         </div>
-      </div>
-      <div class="card border-primary" [style.height.px]="window_height*0.45">
+      </div-->
+      <div class="card border-primary" [style.height.px]="window_height*0.6">
         <div class='card-header'>Catalog</div>
         <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
         <div class='mat-app-background basic-container' style="overflow: auto">
@@ -51,7 +51,6 @@
         <div class='card-header' id='infoTime'>Event Information</div>
         <div style="overflow: auto" id="eventInfoCard" class="mb-0">
           <div class='card-body' style="padding:0px 20px;">
-            <h5 class='card-text' id='infoTime'></h5>
             <table class="table table-sm">
               <tbody>
                 <tr>
@@ -87,7 +86,9 @@
                   </td>
                 </tr>
                 <tr>
-                  <th scope="row">Type</th>
+                  <th scope="row">Type
+                    <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+                  </th>
                   <td>
                     <mat-form-field>
                       <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
@@ -99,7 +100,9 @@
                   </td>
                 </tr>
                 <tr>
-                  <th scope="row">Status (Evaluation)</th>
+                  <th scope="row">Status
+                    <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+                  </th>
                   <td>
                     <mat-form-field>
                       <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
@@ -147,7 +150,6 @@
           <button mat-mini-fab id='sortTraces' matTooltip='Sort Traces by Distance to Origin' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>sort</mat-icon></button>
           <button mat-mini-fab id='togglePredictedPicks' matTooltip='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
           <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Remove Predicted Picks Bias' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
-          <button mat-mini-fab id='toggleSaveEvent' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
           <div>
             <app-help-dialog></app-help-dialog>
           </div>

@@ -54,7 +54,7 @@ export class FileDatabase {
 
   get data(): FileNode[] { return this.dataChange.value; }
 
-  public max_time: any;
+  public bounds: any;
   public treeObject: any;
   public date: string;
   public eventId: string;
@@ -84,24 +84,24 @@ export class FileDatabase {
 
     this._catalogService.get_boundaries().subscribe(boundsArray => {
       const bounds = boundsArray[0];
+      this.bounds = bounds;
       this.timezone = bounds.timezone;
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
-        this.max_time = bounds['max_time'];
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
            this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null);
+             this.getEventsForDate(event.time_utc, null, null, null);
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null);
+            this.getEventsForDate(bounds.max_time, null, null, null);
         }
       }
 
     });
   }
 
-  getEventsForDate(date, tree) {
+  getEventsForDate(date, tree, event_type, accepted) {
     const day = moment(date).utc().utcOffset(this.timezone);
     day.hour(0);
     day.minute(0);
@@ -110,25 +110,33 @@ export class FileDatabase {
     const startTime = day.toISOString();
     const endTime = day.add(1, 'days').toISOString();
 
-    this._catalogService.get_events(startTime, endTime).subscribe(events => {
+    this._catalogService.get_events(startTime, endTime, event_type, accepted).subscribe(events => {
 
         if (Array.isArray(events)) {
-          events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+
+          if (events.length > 0) {
+
+            events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+
+            console.log(this.eventId);
+
+            if (!tree && this.bounds.max_time === date) { // select most recent event by default
+              this.eventId = events[0].event_resource_id;
+            }
+
+            this.treeObject = this.convertTree(events, this.treeObject, false);
+
+          }
+          // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
+          const data = this.buildFileTree(this.treeObject, 0);
+
+          if (this.eventId) {
+            this.selectNode(tree, data, this.eventId, 'select');
+          }
+
+          // Notify the change.
+          this.dataChange.next(data);
         }
-
-        if (this.max_time === date) {
-          this.eventId = events[0].event_resource_id;
-        }
-
-        this.treeObject = this.convertTree(events, this.treeObject, false);
-
-        // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
-        const data = this.buildFileTree(this.treeObject, 0);
-
-        this.selectNode(tree, data, this.eventId, 'select');
-
-        // Notify the change.
-        this.dataChange.next(data);
       },
       err => console.error(err)
       // , () => console.log('done loading')
@@ -182,6 +190,7 @@ export class FileDatabase {
                   if (event.event_resource_id === eventId) {
                     if (action === 'select') {
                       event[action] = true;
+                      console.log(event);
                       return event;
                     } else {
                       message = event;
@@ -334,6 +343,11 @@ export class EventsTreeComponent {
   treeControl: NestedTreeControl<FileNode>;
   dataSource: MatTreeNestedDataSource<FileNode>;
   init: boolean;
+  public selectedStatus: string;
+  public statuses = ['Accepted', 'Rejected'];
+  public selectedEventType: string;
+  public eventTypes = [];
+  public selectedNode;
 
   @Output() messageEvent = new EventEmitter();
 
@@ -353,6 +367,7 @@ export class EventsTreeComponent {
           const init_msg = {'init': this.database.eventTypes};
           this.messageEvent.emit(init_msg);   // send message to init data
           this.init = false;
+          this.eventTypes = this.database.eventTypes;
         }
 
         const message = this.database.selectNode(this.treeControl, this.treeControl.dataNodes, database.eventId, 'expand');
@@ -370,11 +385,27 @@ export class EventsTreeComponent {
 
   private _getChildren = (node: FileNode) => node.children;
 
+  onSelectEventType() {
+    this.filterEventsByTypeStatus();
+  }
+
+  onSelectStatus() {
+    this.filterEventsByTypeStatus();
+  }
+
+  filterEventsByTypeStatus() {
+    this.database.treeObject = this.database.createTree(this.database.bounds);
+    const accepted = this.selectedStatus === 'Accepted' ? true : this.selectedStatus === 'Rejected' ? false : null;
+    this.database.getEventsForDate(this.database.bounds.max_time, null, this.selectedEventType, accepted);
+  }
+
   selectEvent() {
 
     if (this.hasOwnProperty('selectedNode')) {
 
-      const message = this['selectedNode'];
+      this.clearSelectTree();
+      this.selectedNode.select = true;
+      const message = this.selectedNode;
       this.database.eventId = message.event_resource_id;  // save selection
       message.action = 'load';
       message.timezone = this.database.timezone;
@@ -382,6 +413,24 @@ export class EventsTreeComponent {
       this.messageEvent.emit(message);
     }
 
+  }
+
+  clearSelectTree() {
+    for (const yearNode of this.treeControl.dataNodes) {
+      if (yearNode.hasOwnProperty('children')) {
+        for (const monthNode of yearNode.children) {
+          if (monthNode.hasOwnProperty('children')) {
+            for (const dayNode of monthNode.children) {
+              if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
+                for (const event of dayNode.children) {
+                  event.select = false;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   activeEvent() {
@@ -405,7 +454,8 @@ export class EventsTreeComponent {
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          this.database.getEventsForDate(date, this.treeControl);
+          const accepted = this.selectedStatus === 'Accepted' ? true : this.selectedStatus === 'Rejected' ? false : null;
+          this.database.getEventsForDate(date, this.treeControl, this.selectedEventType, accepted);
         }
       }
 
