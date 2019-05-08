@@ -136,6 +136,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     private findValue: Function;
     private addTime: Function;
     private sortTraces: Function;
+    private saveEventTypeStatus: Function;
 
     private xViewPortMinStack: any[];
     private xViewportMaxStack: any[];
@@ -179,8 +180,17 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     }
 
     async getNotification(message) {
+        console.log(message);
         if (message.hasOwnProperty('init')) {
             this.eventTypes = message.init;
+            return;
+        }
+        if (!message.hasOwnProperty('event_resource_id')) {
+            for (const property of Object.keys(this.origin)) {
+                this.origin[property] = '';
+            }
+            this.currentEventId = null;
+            this.destroyCharts();
             return;
         }
         if (message.hasOwnProperty('timezone')) {
@@ -197,30 +207,33 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                 this.loadEvent(message);
             }
         }
-        this.tracesInfo = '';
-        this.picksWarning = '';
-        this.origin['time_utc'] = message.time_utc;
-        this.origin['time_local'] = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
-        this.origin['magnitude'] = message.magnitude ? parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
-        this.origin['x'] = message.x ? message.x : '';
-        this.origin['y'] = message.y ? message.y : '';
-        this.origin['z'] = message.z ? message.z : '';
-        this.origin['npick'] = message.npick ? message.npick : '';
-        this.origin['event_type'] = message.event_type;
-        this.origin['type'] = message.type;
-        this.origin['eval_status'] =  message.eval_status;
-        this.origin['mode'] = message.evaluation_mode ?
-            message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
-        this.origin['status'] = message.status;
-        this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
-        this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
-        this.origin['event_resource_id'] = message.event_resource_id;
-        this.origin['preferred_origin_id'] = message.preferred_origin_id;
-        $('#infoTime')[0].innerHTML = 'Event ' + this.origin['time_local'] +
-                    '<small>'
-                    + message.time_utc.slice(-8, -1) +
-                    moment().utc().utcOffset(this.timezone).format('Z')
-                    + '</small>';
+        if (message.hasOwnProperty('time_utc')) {
+            this.tracesInfo = '';
+            this.picksWarning = '';
+            this.origin['time_utc'] = message.time_utc;
+            this.origin['time_local'] = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
+            this.origin['magnitude'] = message.magnitude ?
+                parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
+            this.origin['x'] = message.x ? message.x : '';
+            this.origin['y'] = message.y ? message.y : '';
+            this.origin['z'] = message.z ? message.z : '';
+            this.origin['npick'] = message.npick ? message.npick : '';
+            this.origin['event_type'] = message.event_type;
+            this.origin['type'] = message.type;
+            this.origin['eval_status'] =  message.eval_status;
+            this.origin['mode'] = message.evaluation_mode ?
+                message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
+            this.origin['status'] = message.status;
+            this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
+            this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
+            this.origin['event_resource_id'] = message.event_resource_id;
+            this.origin['preferred_origin_id'] = message.preferred_origin_id;
+            $('#infoTime')[0].innerHTML = 'Event ' + this.origin['time_local'] +
+                        '<small>'
+                        + message.time_utc.slice(-8, -1) +
+                        moment().utc().utcOffset(this.timezone).format('Z')
+                        + '</small>';
+        }
     }
 
     delay(timer) {
@@ -360,7 +373,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                               }
                                               self.sortTraces();
 
-                                              $('#toggleSaveEvent').prop('disabled', true); // save button disabled initially
+                                              $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
+                                              $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
 
                                               // display data (first page)
                                               self.changePage(true);
@@ -438,7 +452,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                                     $('#sortTraces').prop('hidden', false); // button visible
                                                   }
 
-                                                  $('#toggleSaveEvent').prop('disabled', true); // save button disabled initially
+                                                  $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
+                                                  $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
 
                                                   // disable buttons until all pages are loaded
                                                   $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
@@ -624,7 +639,9 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                 for (let i = 0; i < self.activeStations.length; i++) {
                     self.activeStations[i].chart.destroy();
                     const elem = document.getElementById(self.activeStations[i].container);
-                    elem.parentElement.removeChild(elem);
+                    if (elem) {
+                        elem.parentElement.removeChild(elem);
+                    }
                 }
             }
         };
@@ -861,13 +878,15 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         this.onChangeEvaluationStatus = event => {
             self.origin.status = event.value;
             self.bEventUnsaved = true;
-            $('#toggleSaveEvent').prop('disabled', false);
+            $('#toggleSaveEventType').prop('disabled', false);
+            $('#toggleSaveEventStatus').prop('disabled', false);
         };
 
         this.onChangeEventType = event => {
             self.origin.type = event.value;
             self.bEventUnsaved = true;
-            $('#toggleSaveEvent').prop('disabled', false);
+            $('#toggleSaveEventType').prop('disabled', false);
+            $('#toggleSaveEventStatus').prop('disabled', false);
         };
 
 
@@ -1199,7 +1218,15 @@ export class WaveformComponent implements OnInit, AfterViewInit {
             $(this).toggleClass('active');
         });
 
-        $('#toggleSaveEvent').on('click', () => {
+        $('#toggleSaveEventType').on('click', () => {
+            self.saveEventTypeStatus();
+        });
+
+        $('#toggleSaveEventStatus').on('click', () => {
+            self.saveEventTypeStatus();
+        });
+
+        this.saveEventTypeStatus = () => {
             if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
                 // change event in tree view (may not be selected one)
                 self._catalogService.update_event_by_id(self.origin.event_resource_id, self.origin.status, self.origin.event_type)
@@ -1212,7 +1239,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                     window.alert('Error updating event: ' + error.error.message);
                 });
             }
-        });
+        };
 
         // If the context menu element is clicked
         $('.menu li').on('click', function() {

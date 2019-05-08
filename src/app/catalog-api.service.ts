@@ -11,9 +11,11 @@ export class CatalogApiService {
 
     constructor(private http: HttpClient) {}
 
-    get_events(startTime, endTime) {
+    get_events(startTime, endTime, event_type, accepted) {
         const API_URL = environment.apiUrl + environment.apiCatalog +
-            '?start_time=' + startTime + '&end_time=' + endTime;
+            '?start_time=' + startTime + '&end_time=' + endTime +
+            (event_type ? '&event_type=' + event_type : '') +
+            (typeof accepted === 'boolean' ? '&accepted=' + accepted : '');
         return this.http.get(API_URL)
             .pipe(
                 /*

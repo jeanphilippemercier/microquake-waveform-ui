@@ -30,3 +30,17 @@
 }
 
 .mat-tree-node { min-height: 30px }
+
+.status-radio-group {
+  display: flex;
+  flex-direction: row;
+  margin: 15px 0;
+}
+
+.status-radio-button {
+  margin: 5px;
+}
+
+.input-form-width {
+    width: 200px;
+}
