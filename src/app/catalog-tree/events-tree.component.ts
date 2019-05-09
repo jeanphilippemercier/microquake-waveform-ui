@@ -5,7 +5,7 @@ import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree'
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatIconModule} from '@angular/material/icon';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
-import { CatalogApiService } from './catalog-api.service';
+import { CatalogApiService } from '../catalog-api.service';
 import * as moment from 'moment';
 
 /**
@@ -90,11 +90,11 @@ export class FileDatabase {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
            this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null, null, null);
+             this.getEventsForDate(event.time_utc, null, null, true);
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null, null, null);
+            this.getEventsForDate(bounds.max_time, null, null, true);
         }
       }
 
@@ -190,7 +190,6 @@ export class FileDatabase {
                   if (event.event_resource_id === eventId) {
                     if (action === 'select') {
                       event[action] = true;
-                      console.log(event);
                       return event;
                     } else {
                       message = event;
@@ -343,8 +342,7 @@ export class EventsTreeComponent {
   treeControl: NestedTreeControl<FileNode>;
   dataSource: MatTreeNestedDataSource<FileNode>;
   init: boolean;
-  public selectedStatus: string;
-  public statuses = ['Accepted', 'Rejected'];
+  public bRejectedEvents: boolean;
   public selectedEventType: string;
   public eventTypes = [];
   public selectedNode;
@@ -356,6 +354,7 @@ export class EventsTreeComponent {
     this.dataSource = new MatTreeNestedDataSource();
 
     this.init = true;
+    this.bRejectedEvents = false;
 
     database.dataChange.subscribe(data => {
       this.dataSource.data = data;
@@ -395,7 +394,7 @@ export class EventsTreeComponent {
 
   filterEventsByTypeStatus() {
     this.database.treeObject = this.database.createTree(this.database.bounds);
-    const accepted = this.selectedStatus === 'Accepted' ? true : this.selectedStatus === 'Rejected' ? false : null;
+    const accepted = this.bRejectedEvents ? null : true;
     this.database.getEventsForDate(this.database.bounds.max_time, null, this.selectedEventType, accepted);
   }
 
@@ -454,7 +453,7 @@ export class EventsTreeComponent {
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          const accepted = this.selectedStatus === 'Accepted' ? true : this.selectedStatus === 'Rejected' ? false : null;
+          const accepted = this.bRejectedEvents ? null : true;
           this.database.getEventsForDate(date, this.treeControl, this.selectedEventType, accepted);
         }
       }

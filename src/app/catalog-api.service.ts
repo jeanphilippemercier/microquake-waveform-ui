@@ -58,11 +58,6 @@ export class CatalogApiService {
         return this.http.get(API_URL);
     }
 
-    get_networks = (): any => {
-        const API_URL = environment.apiUrl + environment.apiNetworks;
-        return this.http.get(API_URL);
-    }
-
     get_event_by_id = (eventId): any => {
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         return this.http.get(API_URL);

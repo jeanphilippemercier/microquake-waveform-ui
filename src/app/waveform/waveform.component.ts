@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
-import { EventsTreeComponent} from '../events-tree.component';
+import { EventsTreeComponent} from '../catalog-tree/events-tree.component';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
@@ -21,10 +21,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     public eventsTree: any;
     public eventsDatabase: any;
     public site: any;
-    public sites: any[];
     public network: any;
-    public networks: any[];
-    public catalog: any;
     public allStations: any[];
     public contextStation: any[];
     public allPicks: any[];
@@ -52,8 +49,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
 
     public pickingMode: any;
     public onPickingModeChange: Function;
-    public onChangeSite: Function;
-    public onChangeNetwork: Function;
     public onChangeEvaluationStatus: Function;
     public onChangeEventType: Function;
 
@@ -91,8 +86,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     private asyncLoadEventPages: Function;
     private afterLoading: Function;
     private addCompositeTrace: Function;
-    private loadSites: Function;
-    private loadNetworks: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -142,6 +135,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     private xViewportMaxStack: any[];
 
     private timezone: string;
+    public eventHeader: string;
 
     public page_size = environment.chartsPerPage;
     public page_number: number;
@@ -180,7 +174,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     }
 
     async getNotification(message) {
-        console.log(message);
+        // console.log(message);
         if (message.hasOwnProperty('init')) {
             this.eventTypes = message.init;
             return;
@@ -283,7 +277,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         self.bMenuVisible = false;
 
         self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
-        self.pageOffsetY = $('#waveform-panel').position().top + $('#zeroTime').height();
+        self.pageOffsetY = $('#waveform-panel').position().top + 20; // $('#zeroTime').height();
         self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY) / environment.chartsPerPage);
         self.page_number = 0;
 
@@ -315,21 +309,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
             self.options[option] = self[option];
             window.localStorage.setItem('viewer-options', JSON.stringify(self.options));
         };
-
-        this.loadNetworks = () => {
-            this._catalogService.get_networks().subscribe(networks => {
-              self.networks = networks;
-            });
-        };
-
-        this.loadSites = () => {
-            this._catalogService.get_sites().subscribe(sites => {
-              self.sites = sites;
-              // this.loadNetworks();
-            });
-        };
-
-        this.loadSites();
 
         this.loadEvent = event => {
             if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
@@ -387,10 +366,12 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                     }
                                 });
                                 console.log('Loaded data for ' + self.allStations.length + ' stations');
-                                $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                  moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                                      .format('YYYY-MM-DD HH:mm:ss.S');
-
+                                this.eventHeader = 'Site: ' + this.site +
+                                    ' Network: ' + this.network + ' ' +
+                                    moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
+                                    .format('YYYY-MM-DD HH:mm:ss.S') +
+                                    'Site: ' + this.site +
+                                    'Network: ' + this.network;
                             }
                         }
                     }
@@ -474,11 +455,10 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                                     }
                                                   });
 
-
-                                                  $('#zeroTime')[0].innerHTML = '<strong>Traces time origin: </strong>' +
-                                                      moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
+                                                  this.eventHeader = 'Site: ' + this.site +
+                                                        ' Network: ' + this.network + ' ' +
+                                                          moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                                           .format('YYYY-MM-DD HH:mm:ss.S');
-
                                                 });
                                             });
                                         } else {
@@ -863,16 +843,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
 
         this.onPickingModeChange = value => {
             self.pickingMode = value;
-        };
-
-        this.onChangeSite = event => {
-            self.site = event.value;
-            self.saveOption('site');
-        };
-
-        this.onChangeNetwork = event => {
-            self.network = event.value;
-            self.saveOption('network');
         };
 
         this.onChangeEvaluationStatus = event => {
