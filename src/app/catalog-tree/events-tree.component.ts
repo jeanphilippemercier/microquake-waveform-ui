@@ -190,7 +190,6 @@ export class FileDatabase {
                   if (event.event_resource_id === eventId) {
                     if (action === 'select') {
                       event[action] = true;
-                      console.log(event);
                       return event;
                     } else {
                       message = event;
