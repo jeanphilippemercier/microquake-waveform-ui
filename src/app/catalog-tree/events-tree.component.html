@@ -7,13 +7,7 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-radio-group
-      class="status-radio-group"
-      [(ngModel)]="selectedStatus" (change)='onSelectStatus()'>
-      <mat-radio-button class="status-radio-button" *ngFor="let status of statuses" [value]="status">
-        {{status}}
-      </mat-radio-button>
-    </mat-radio-group>
+    <mat-checkbox [(ngModel)]="bRejectedEvents" (change)='onSelectStatus()'>Rejected</mat-checkbox>
 </div>
 <mat-tree #tree [dataSource]='dataSource' [treeControl]='treeControl' class="example-tree">
   <mat-tree-node *matTreeNodeDef='let node' matTreeNodeToggle (click)='activeNode = node; activeEvent()' (dblclick)='selectedNode = node; selectEvent()'>
