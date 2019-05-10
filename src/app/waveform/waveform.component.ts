@@ -263,6 +263,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : environment.numPoles;
         self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : environment.lowFreqCorner;
         self.highFreqCorner = self.options.hasOwnProperty('highFreqCorner') ? self.options.highFreqCorner : environment.highFreqCorner;
+        self.site = self.options.hasOwnProperty('site') ? self.options.site : '';
+        self.network = self.options.hasOwnProperty('network') ? self.options.network : '';
 
         self.passband = filter.BAND_PASS;
 
@@ -283,17 +285,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
 
         self.origin = {};
         self.waveformOrigin = {};
-
-        self.site = self.options.hasOwnProperty('site') ? self.options.site : {
-            'code': '',
-            'name': '',
-            'timezone': '+00:00'
-        };
-
-        self.network = self.options.hasOwnProperty('network') ? self.options.network : {
-            'code': '',
-            'name': ''
-        };
 
         self.timezone = '+00:00';
         self.bFilterChanged = true;
