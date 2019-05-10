@@ -61,6 +61,9 @@ export class FileDatabase {
   public timezone: string;
   public bInit: boolean;
   public eventTypes = [];
+  public site: string;
+  public network: string;
+  public options: any;
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
@@ -73,7 +76,12 @@ export class FileDatabase {
     this.eventId = url.searchParams.get('id');
     this.bInit = true;
 
-    this._catalogService.get_microquake_event_types().subscribe(types => {
+    this.options = JSON.parse(window.localStorage.getItem('viewer-options'));
+    this.options = this.options ? this.options : {};
+    this.site = this.options.hasOwnProperty('site') ? this.options.site : '';
+    this.network = this.options.hasOwnProperty('network') ? this.options.network : '';
+
+    this._catalogService.get_microquake_event_types(this.site, this.network).subscribe(types => {
       for (const type of types) {
           const abbr = type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O';
           type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
@@ -117,8 +125,6 @@ export class FileDatabase {
           if (events.length > 0) {
 
             events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-
-            console.log(this.eventId);
 
             if (!tree && this.bounds.max_time === date) { // select most recent event by default
               this.eventId = events[0].event_resource_id;

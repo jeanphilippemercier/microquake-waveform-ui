@@ -48,8 +48,8 @@ export class CatalogApiService {
             );
     }
 
-    get_microquake_event_types = (): any => {
-        const API_URL = environment.apiMicroquakeEventTypes;
+    get_microquake_event_types = (site, network): any => {
+        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiMicroquakeEventTypes;
         return this.http.get(API_URL);
     }
 
