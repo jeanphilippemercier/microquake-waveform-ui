@@ -13,10 +13,10 @@
         </div>
       </div>
       <div class="card border-primary" [style.height.px]="window_height*0.35">
-        <div class='card-header' id='infoTime'>Event Information</div>
+        <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}</div>
         <div style="overflow: auto" id="eventInfoCard" class="mb-0">
           <div class='card-body' style="padding:0px 20px;">
-            <table class="table table-sm">
+            <table class="table table-extra-condensed">
               <tbody>
                 <tr>
                   <th scope="row">Magnitude</th>
@@ -35,20 +35,8 @@
                   <td>Z {{origin.z}} m</td>
                 </tr>
                 <tr>
-                  <td colspan="2" id='alertMsg' *ngIf='tracesInfo' class="alert alert-warning alert-dismissable">
-                    <button type="button" class="close" (click)='tracesInfo = ""' aria-hidden="true">&times;</button>
-                    {{tracesInfo}}
-                  </td>
-                </tr>
-                <tr>
                   <th scope="row">Picks</th>
                   <td>{{origin.npick}}</td>
-                </tr>
-                <tr>
-                  <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
-                    <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
-                    {{picksWarning}}
-                  </td>
                 </tr>
                 <tr>
                   <th scope="row">Type
@@ -89,6 +77,18 @@
                 <tr *ngIf='origin.uncertainty'>
                   <th scope="row">Uncertainty</th>
                   <td>{{origin.uncertainty}}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" id='alertMsg' *ngIf='tracesInfo' class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" (click)='tracesInfo = ""' aria-hidden="true">&times;</button>
+                    {{tracesInfo}}
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
+                    {{picksWarning}}
+                  </td>
                 </tr>
                 <tr *ngIf='origin.event_resource_id'>
                   <th scope="row">event_resource_id</th>
@@ -135,8 +135,8 @@
           </div>
           <div class = 'ml-5'>
           <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
-            <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
-            <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
+            <mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
+            <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle>
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
@@ -144,7 +144,7 @@
           <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
       </div>
       <div id='waveform-panel' style='position: relative; top: 50px'>
-        <div id='zeroTime' *ngIf="eventHeader">{{eventHeader}}</div>
+        <div class='text-color' id='zeroTime' *ngIf="eventTimeOriginHeader">{{eventTimeOriginHeader}}</div>
         <mat-progress-bar mode="determinate" value="{{progressValue}}"></mat-progress-bar>
       </div>
     </div>

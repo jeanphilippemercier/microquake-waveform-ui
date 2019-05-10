@@ -135,6 +135,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     private xViewportMaxStack: any[];
 
     private timezone: string;
+    public eventTimeOriginHeader: string;
     public eventHeader: string;
 
     public page_size = environment.chartsPerPage;
@@ -204,29 +205,29 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         if (message.hasOwnProperty('time_utc')) {
             this.tracesInfo = '';
             this.picksWarning = '';
-            this.origin['time_utc'] = message.time_utc;
-            this.origin['time_local'] = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
-            this.origin['magnitude'] = message.magnitude ?
+            this.origin.time_utc = message.time_utc;
+            this.origin.time_local = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
+            this.origin.magnitude = message.magnitude ?
                 parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
-            this.origin['x'] = message.x ? message.x : '';
-            this.origin['y'] = message.y ? message.y : '';
-            this.origin['z'] = message.z ? message.z : '';
-            this.origin['npick'] = message.npick ? message.npick : '';
-            this.origin['event_type'] = message.event_type;
-            this.origin['type'] = message.type;
-            this.origin['eval_status'] =  message.eval_status;
-            this.origin['mode'] = message.evaluation_mode ?
+            this.origin.x = message.x ? message.x : '';
+            this.origin.y = message.y ? message.y : '';
+            this.origin.z = message.z ? message.z : '';
+            this.origin.npick = message.npick ? message.npick : '';
+            this.origin.event_type = message.event_type;
+            this.origin.type = message.type;
+            this.origin.eval_status =  message.eval_status;
+            this.origin.mode = message.evaluation_mode ?
                 message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
-            this.origin['status'] = message.status;
-            this.origin['time_residual'] = message.time_residual ? message.time_residual : '';
-            this.origin['uncertainty'] = message.uncertainty ? message.uncertainty : '';
-            this.origin['event_resource_id'] = message.event_resource_id;
-            this.origin['preferred_origin_id'] = message.preferred_origin_id;
-            $('#infoTime')[0].innerHTML = 'Event ' + this.origin['time_local'] +
-                        '<small>'
-                        + message.time_utc.slice(-8, -1) +
-                        moment().utc().utcOffset(this.timezone).format('Z')
-                        + '</small>';
+            this.origin.status = message.status;
+            this.origin.time_residual = message.time_residual ? message.time_residual : '';
+            this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
+            this.origin.event_resource_id = message.event_resource_id;
+            this.origin.preferred_origin_id = message.preferred_origin_id;
+            const fsec = message.time_utc.slice(-8, -1);
+            this.eventHeader = ' Event: ' + this.site + '/' + this.network + ' ' +
+                this.origin['time_local'] +
+                parseFloat(fsec).toFixed(3).slice(-4) +
+                moment().utc().utcOffset(this.timezone).format('Z');
         }
     }
 
@@ -357,12 +358,10 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                     }
                                 });
                                 console.log('Loaded data for ' + self.allStations.length + ' stations');
-                                this.eventHeader = 'Site: ' + this.site +
+                                this.eventTimeOriginHeader = 'Site: ' + this.site +
                                     ' Network: ' + this.network + ' ' +
                                     moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                                    .format('YYYY-MM-DD HH:mm:ss.S') +
-                                    'Site: ' + this.site +
-                                    'Network: ' + this.network;
+                                    .format('YYYY-MM-DD HH:mm:ss.S');
                             }
                         }
                     }
@@ -446,7 +445,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                                     }
                                                   });
 
-                                                  this.eventHeader = 'Site: ' + this.site +
+                                                  this.eventTimeOriginHeader = 'Site: ' + this.site +
                                                         ' Network: ' + this.network + ' ' +
                                                           moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                                                           .format('YYYY-MM-DD HH:mm:ss.S');

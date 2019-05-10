@@ -31,9 +31,15 @@ export class CatalogApiService {
             );
     }
 
-    get_boundaries = (): any => {
+    get_boundaries = (site, network): any => {
+        const httpOptions = {
+          headers: new HttpHeaders({
+            'X-CSRFToken':  localStorage.getItem('access_token')
+          })
+        };
+        // const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiCatalogBoundaries;
         const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
-        return this.http.get(API_URL)
+        return this.http.get(API_URL, httpOptions)
             .pipe(
                 /*
                 timeout(60000),
