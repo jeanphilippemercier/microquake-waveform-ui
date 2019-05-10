@@ -90,7 +90,7 @@ export class FileDatabase {
       this.eventTypes = types;
     });
 
-    this._catalogService.get_boundaries().subscribe(boundsArray => {
+    this._catalogService.get_boundaries(this.site, this.network).subscribe(boundsArray => {
       const bounds = boundsArray[0];
       this.bounds = bounds;
       this.timezone = bounds.timezone;

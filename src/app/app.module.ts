@@ -1,10 +1,12 @@
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
+import { MatIconRegistry, MatIconModule } from '@angular/material';
+import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentsModule } from './components/components.module';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialogModule } from '@angular/material';
 import { DemoMaterialModule} from './material-modules';
 import { AppComponent } from './app.component';
@@ -55,6 +57,7 @@ export function tokenGetter() {
     }),
     DemoMaterialModule,
     MatDialogModule,
+    MatIconModule,
     FlexLayoutModule,
     ReactiveFormsModule,
     NgxLoadingModule.forRoot({}),
@@ -70,6 +73,10 @@ export function tokenGetter() {
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+  constructor(matIconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
+    matIconRegistry.addSvgIconSet(domSanitizer.bypassSecurityTrustResourceUrl('./assets/mdi.svg')); // Or whatever path you placed mdi.svg at
+  }
+}
 
 // platformBrowserDynamic().bootstrapModule(AppModule);

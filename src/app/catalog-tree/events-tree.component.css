@@ -2,6 +2,11 @@
   background-color: lightblue;
 }
 
+.txtColor:hover{
+  color: orange;
+  cursor: pointer;
+}
+
 .accepted-manual {
   color: green;
 }
@@ -18,18 +23,26 @@
   color: purple;
 }
 
-.example-tree-invisible {
+.mat-tree-invisible {
   display: none;
 }
 
-.example-tree ul,
-.example-tree li {
+.mat-tree ul,
+.mat-tree li {
   margin-top: 0;
   margin-bottom: 0;
   list-style-type: none;
 }
 
-.mat-tree-node { min-height: 30px }
+.mat-tree ul {
+  padding-left: 40px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.mat-tree-node {
+  min-height: 10px;
+}
 
 .status-radio-group {
   display: flex;

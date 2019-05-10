@@ -69,3 +69,30 @@
     width: 70px;
 }
 
+button.mat-menu-item {
+  line-height: 24px !important;
+}
+a.mat-menu-item > mat-icon {
+  margin-bottom: 14px;
+}
+.mat-icon svg {
+  height: 24px;
+  width: 24px;
+}
+
+.mat-icon-scale {
+    transform: scale(1.5);
+}
+
+.table-extra-condensed > thead > tr > th,
+.table-extra-condensed > tbody > tr > th,
+.table-extra-condensed > tfoot > tr > th,
+.table-extra-condensed > thead > tr > td,
+.table-extra-condensed > tbody > tr > td,
+.table-extra-condensed > tfoot > tr > td {
+  padding: 2px;
+}
+
+.text-color {
+  color: blue !important;
+}
