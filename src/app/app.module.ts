@@ -1,8 +1,8 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
-import { MatIconRegistry, MatIconModule } from '@angular/material';
-import { DomSanitizer } from '@angular/platform-browser';
+// import { MatIconRegistry, MatIconModule } from '@angular/material';
+// import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentsModule } from './components/components.module';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
@@ -58,7 +58,7 @@ export function tokenGetter() {
     }),
     DemoMaterialModule,
     MatDialogModule,
-    MatIconModule,
+    // MatIconModule,
     FlexLayoutModule,
     ReactiveFormsModule,
     NgxLoadingModule.forRoot({}),
@@ -80,9 +80,8 @@ export function tokenGetter() {
   bootstrap: [AppComponent]
 })
 export class AppModule {
-  constructor(matIconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
-    matIconRegistry.addSvgIconSet(domSanitizer.bypassSecurityTrustResourceUrl('./assets/mdi.svg')); // Or whatever path you placed mdi.svg at
-  }
+  // constructor(matIconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
+  //  matIconRegistry.addSvgIconSet(domSanitizer.bypassSecurityTrustResourceUrl('../assets/mdi.svg'));
+  // }
 }
 
-// platformBrowserDynamic().bootstrapModule(AppModule);

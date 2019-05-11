@@ -135,8 +135,10 @@
           </div>
           <div class = 'ml-5'>
           <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
-            <mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
-            <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle>
+            <!--mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
+            <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle-->
+            <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
+            <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
             <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
