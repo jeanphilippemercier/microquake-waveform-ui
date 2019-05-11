@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { MatIconRegistry, MatIconModule } from '@angular/material';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentsModule } from './components/components.module';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { MatDialogModule } from '@angular/material';
@@ -24,6 +24,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
+import { TokenInterceptor } from './auth-token.interceptor';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 export function tokenGetter() {
@@ -69,7 +70,12 @@ export function tokenGetter() {
     CatalogApiService,
     // UserService,
     AuthService,
-    AuthGuard
+    AuthGuard,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TokenInterceptor,
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })

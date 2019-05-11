@@ -1,7 +1,7 @@
 <div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
     <mat-form-field appearance="fill">
       <mat-label>Event Type</mat-label>
-      <mat-select [(ngModel)]="selectedEventType" (selectionChange)='onSelectEventType()'>
+      <mat-select [(ngModel)]="selectedEventTypes" (selectionChange)="onOut()" multiple>
         <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
           {{type.viewValue}}
         </mat-option>
