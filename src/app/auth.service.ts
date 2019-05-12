@@ -9,8 +9,8 @@ export class AuthService {
   constructor(private http: HttpClient) { }
 
   login(username: string, password: string): Observable<boolean> {
-    // return this.http.post<{token: string}>(environment.url + 'token-auth/', {username: username, password: password})
-    return this.http.post<{token: string}>(environment.apiUrl2 + environment.apiAuth, {username: username, password: password})
+    return this.http.post<{token: string}>(environment.url + 'token-auth/', {username: username, password: password})
+    // return this.http.post<{token: string}>(environment.apiUrl2 + environment.apiAuth, {username: username, password: password})
       .pipe(
         map(result => {
           localStorage.setItem('access_token', result.token);
