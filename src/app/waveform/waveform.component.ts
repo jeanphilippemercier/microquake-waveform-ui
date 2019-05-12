@@ -316,7 +316,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                             self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
                             if (self.allStations.length > 0) {
                                 // get origins
-                                this._catalogService.get_origins_by_id(id).subscribe(origins => {
+                                this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
                                     let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                                     if (!origin) {
                                         window.alert('Event preferred origin from catalog not found');
@@ -327,11 +327,12 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                     if (origin) {
                                         self.waveformOrigin = origin;
                                         // get travel times for preferred origin
-                                        this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id).subscribe(traveltimes => {
+                                        this._catalogService.get_traveltimes_by_id(self.site, self.network, id, origin.origin_resource_id).subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
                                             this.addPredictedPicksData(self.allStations, self.timeOrigin);
                                             // get arrivals, picks for preferred origin
-                                            this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
+                                            this._catalogService.get_arrivals_by_id(self.site, self.network, id, origin.origin_resource_id)
+                                            .subscribe(picks => {
                                               self.allPicks = picks;
                                               this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
@@ -393,7 +394,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                 self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
                                 if (self.allStations.length > 0) {
                                     // get origins
-                                    this._catalogService.get_origins_by_id(id).subscribe(origins => {
+                                    this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
                                         let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                                         if (!origin) {
                                             window.alert('Warning: Event preferred origin from catalog not found');
@@ -402,12 +403,15 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                         if (origin) {
                                             self.waveformOrigin = origin;
                                             // get travel times for preferred origin
-                                            this._catalogService.get_traveltimes_by_id(id, origin.origin_resource_id)
+                                            this._catalogService.get_traveltimes_by_id
+                                                (self.site, self.network, id, origin.origin_resource_id)
                                                 .subscribe(traveltimes => {
                                                 self.originTravelTimes = traveltimes;
                                                 this.addPredictedPicksData(self.allStations, self.timeOrigin);
                                                 // get arrivals, picks for preferred origin
-                                                this._catalogService.get_arrivals_by_id(id, origin.origin_resource_id).subscribe(picks => {
+                                                this._catalogService.get_arrivals_by_id
+                                                (self.site, self.network, id, origin.origin_resource_id)
+                                                .subscribe(picks => {
                                                   self.allPicks = picks;
                                                   this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
@@ -1189,7 +1193,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         this.saveEventTypeStatus = () => {
             if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
                 // change event in tree view (may not be selected one)
-                self._catalogService.update_event_by_id(self.origin.event_resource_id, self.origin.status, self.origin.event_type)
+                self._catalogService.update_event_by_id
+                    (self.site, self. network, self.origin.event_resource_id, self.origin.status, self.origin.event_type)
                     .subscribe((response) => {
                     self.eventsDatabase.updateEventsTree(response, self.eventsTree);
                     self.bEventUnsaved = false;
@@ -1932,9 +1937,11 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         this.getEventPage = (event_id, page): any => {
             return new Promise(resolve => {
                 const mshr = new XMLHttpRequest();
-                const waveform_file = environment.apiUrl + environment.apiEvents + '/' + event_id +
-                        '/waveform?page_number=' + page.toString() +
-                        '&traces_per_page=' + (environment.chartsPerPage - 1).toString();
+                const waveform_file = environment.apiUrl +
+                    // 2 + 'site/' + self.site + '/network/' + self.network + '/' +
+                    environment.apiEvents + '/' + event_id +
+                    '/waveform?page_number=' + page.toString() +
+                    '&traces_per_page=' + (environment.chartsPerPage - 1).toString();
                 mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
                 self.loading = page === 1 ? true : false;

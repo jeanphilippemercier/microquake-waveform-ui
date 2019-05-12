@@ -40,18 +40,18 @@ export class SiteNetworkComponent implements OnInit {
             'name': ''
         };
 
+        this.site = this.options.hasOwnProperty('site') ? this.options.site : emptyElement;
+
+        this.network = this.options.hasOwnProperty('network') ? this.options.network : emptyElement;
+
         this.loadSites = () => {
-            this._catalogService.get_sites().subscribe(sites => {
+            this._catalogService.get_sites(this.site, this.network).subscribe(sites => {
               this.sites = sites;
               this.networks = this.options.hasOwnProperty('site') ? this.sites.find(v => v.code === this.site).networks : [];
             });
         };
 
         this.loadSites();
-
-        this.site = this.options.hasOwnProperty('site') ? this.options.site : emptyElement;
-
-        this.network = this.options.hasOwnProperty('network') ? this.options.network : emptyElement;
 
         this.clearSelections = () => {
             this.deleteOption('site');

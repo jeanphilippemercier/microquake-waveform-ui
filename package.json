@@ -24,7 +24,6 @@
     "@angular/platform-browser-dynamic": "^7.2.14",
     "@angular/router": "^7.2.14",
     "@auth0/angular-jwt": "^2.1.0",
-    "@mdi/angular-material": "^3.6.95",
     "@types/jquery": "^3.3.29",
     "angular-bootstrap-md": "^7.5.1",
     "angular-tree-component": "^8.3.0",

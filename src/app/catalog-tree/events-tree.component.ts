@@ -97,19 +97,19 @@ export class FileDatabase {
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
-           this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null, null, true);
+           this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
+             this.getEventsForDate(event.time_utc, null, '', 'accepted');
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null, null, true);
+            this.getEventsForDate(bounds.max_time, null, '', 'accepted');
         }
       }
 
     });
   }
 
-  getEventsForDate(date, tree, event_type, accepted) {
+  getEventsForDate(date, tree, event_types, status) {
     const day = moment(date).utc().utcOffset(this.timezone);
     day.hour(0);
     day.minute(0);
@@ -118,7 +118,7 @@ export class FileDatabase {
     const startTime = day.toISOString();
     const endTime = day.add(1, 'days').toISOString();
 
-    this._catalogService.get_events(startTime, endTime, event_type, accepted).subscribe(events => {
+    this._catalogService.get_events(this.site, this.network, startTime, endTime, event_types, status).subscribe(events => {
 
         if (Array.isArray(events)) {
 
@@ -349,7 +349,7 @@ export class EventsTreeComponent {
   dataSource: MatTreeNestedDataSource<FileNode>;
   init: boolean;
   public bRejectedEvents: boolean;
-  public selectedEventType: string;
+  public selectedEventTypes: any[];
   public eventTypes = [];
   public selectedNode;
 
@@ -390,7 +390,7 @@ export class EventsTreeComponent {
 
   private _getChildren = (node: FileNode) => node.children;
 
-  onSelectEventType() {
+  onOut() {
     this.filterEventsByTypeStatus();
   }
 
@@ -400,8 +400,9 @@ export class EventsTreeComponent {
 
   filterEventsByTypeStatus() {
     this.database.treeObject = this.database.createTree(this.database.bounds);
-    const accepted = this.bRejectedEvents ? null : true;
-    this.database.getEventsForDate(this.database.bounds.max_time, null, this.selectedEventType, accepted);
+    const status = this.bRejectedEvents ? 'accepted,rejected' : 'accepted';
+    const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
+    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, status);
   }
 
   selectEvent() {
@@ -459,8 +460,8 @@ export class EventsTreeComponent {
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          const accepted = this.bRejectedEvents ? null : true;
-          this.database.getEventsForDate(date, this.treeControl, this.selectedEventType, accepted);
+          const status = this.bRejectedEvents ? 'accepted,rejected' : 'accepted';
+          this.database.getEventsForDate(date, this.treeControl, this.selectedEventTypes, status);
         }
       }
 
