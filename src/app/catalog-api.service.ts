@@ -12,7 +12,7 @@ export class CatalogApiService {
     constructor(private http: HttpClient) {}
 
     get_events(site, network, startTime, endTime, event_types, status) {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiCatalog +
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiCatalog +
             '?start_time=' + startTime + '&end_time=' + endTime +
             (event_types ? '&type=' + event_types : '') +
             (status ? '&status=' + status : '');
@@ -32,7 +32,7 @@ export class CatalogApiService {
     }
 
     get_boundaries = (site, network): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiCatalogBoundaries;
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiCatalogBoundaries;
         return this.http.get(API_URL)
             .pipe(
                 /*
@@ -49,17 +49,17 @@ export class CatalogApiService {
     }
 
     get_microquake_event_types = (site, network): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiMicroquakeEventTypes;
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiMicroquakeEventTypes;
         return this.http.get(API_URL);
     }
 
     get_sites = (site, network): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiSites;
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiSites;
         return this.http.get(API_URL);
     }
 
     get_event_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
         return this.http.get(API_URL);
     }
 
@@ -69,7 +69,7 @@ export class CatalogApiService {
             'Content-Type':  'application/json'
           })
         };
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
         const data = JSON.stringify({
             'event_resource_id': eventId,
             'status': status,
@@ -80,7 +80,7 @@ export class CatalogApiService {
 
 
     get_origins_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' +
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
             environment.apiEvents + '/' + eventId +
             '/' + environment.apiOrigins;
         return this.http.get(API_URL)
@@ -100,7 +100,7 @@ export class CatalogApiService {
     }
 
     get_arrivals_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' +
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
             environment.apiEvents + '/' + eventId +
             '/' + (originId ? environment.apiOrigins + '/' + originId + '/' : '') +
             environment.apiArrivals;
@@ -120,7 +120,7 @@ export class CatalogApiService {
     }
 
     get_traveltimes_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl2 + 'site/' + site + '/network/' + network + '/' +
+        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
             environment.apiEvents + '/' + eventId +
             '/' + environment.apiOrigins + '/' + originId +
             '/' + environment.apiTravelTimes;
