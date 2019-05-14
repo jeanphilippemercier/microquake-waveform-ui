@@ -4,8 +4,6 @@ import { NgModule } from '@angular/core';
 // import { MatIconRegistry, MatIconModule } from '@angular/material';
 // import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentsModule } from './components/components.module';
-import { HttpClientModule } from '@angular/common/http';
-// import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { MatDialogModule } from '@angular/material';
@@ -13,8 +11,11 @@ import { DemoMaterialModule} from './material-modules';
 import { AppComponent } from './app.component';
 import {CatalogTreeModule} from './catalog-tree/catalog-tree.module';
 import { CatalogApiService } from './catalog-api.service';
-import { JwtModule } from '@auth0/angular-jwt';
-import { AuthService } from './auth.service';
+import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
+import { AuthorizationService } from './authorization.service';
+import { environment } from '../environments/environment';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { RefreshTokenInterceptor } from './refresh-token-interceptor';
 import { AuthGuard } from './auth.guard';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog/help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
@@ -25,11 +26,16 @@ import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
-// import { TokenInterceptor } from './auth-token.interceptor';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
-export function tokenGetter() {
-  return localStorage.getItem('access');
+function jwtOptionsFactory (authorizationService: AuthorizationService) {
+  return {
+    tokenGetter: () => {
+      return authorizationService.getAccessToken();
+    },
+    whitelistedDomains: ['api.microquake.org', 'localhost'],
+    blacklistedRoutes: [`${environment.apiUrl}/api/token`]
+  };
 }
 
 @NgModule({
@@ -52,9 +58,10 @@ export function tokenGetter() {
     FormsModule,
     HttpClientModule,
     JwtModule.forRoot({
-      config: {
-        tokenGetter: tokenGetter,
-        whitelistedDomains: ['api.microquake.org', 'localhost']
+      jwtOptionsProvider: {
+        provide: JWT_OPTIONS,
+        useFactory: jwtOptionsFactory,
+        deps: [AuthorizationService]
       }
     }),
     DemoMaterialModule,
@@ -68,17 +75,21 @@ export function tokenGetter() {
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [
+    AuthorizationService,
+    JwtInterceptor, // Providing JwtInterceptor allow to inject JwtInterceptor manually into RefreshTokenInterceptor
     CatalogApiService,
     // UserService,
-    AuthService,
     AuthGuard,
-    /*
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: TokenInterceptor,
+      useExisting: JwtInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: RefreshTokenInterceptor,
       multi: true
     }
-    */
   ],
   bootstrap: [AppComponent]
 })
