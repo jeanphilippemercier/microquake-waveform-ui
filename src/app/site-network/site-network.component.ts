@@ -45,7 +45,7 @@ export class SiteNetworkComponent implements OnInit {
         this.network = this.options.hasOwnProperty('network') ? this.options.network : emptyElement;
 
         this.loadSites = () => {
-            this._catalogService.get_sites(this.site, this.network).subscribe(sites => {
+            this._catalogService.get_sites().subscribe(sites => {
               this.sites = sites;
               this.networks = this.options.hasOwnProperty('site') ? this.sites.find(v => v.code === this.site).networks : [];
             });

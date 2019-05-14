@@ -53,8 +53,8 @@ export class CatalogApiService {
         return this.http.get(API_URL);
     }
 
-    get_sites = (site, network): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiSites;
+    get_sites = (): any => {
+        const API_URL = environment.apiUrl + environment.apiSites;
         return this.http.get(API_URL);
     }
 
