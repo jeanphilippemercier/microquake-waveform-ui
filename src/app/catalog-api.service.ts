@@ -32,7 +32,10 @@ export class CatalogApiService {
     }
 
     get_boundaries = (site, network): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiCatalogBoundaries;
+        const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
+        const params = new HttpParams()
+          .set('site_code', site)
+          .set('network_code', network)
         return this.http.get(API_URL)
             .pipe(
                 /*
