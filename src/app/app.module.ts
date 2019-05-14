@@ -12,7 +12,7 @@ import { AppComponent } from './app.component';
 import {CatalogTreeModule} from './catalog-tree/catalog-tree.module';
 import { CatalogApiService } from './catalog-api.service';
 import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
-import { AuthorizationService } from './authorization.service';
+import { AuthService } from './auth.service';
 import { environment } from '../environments/environment';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { RefreshTokenInterceptor } from './refresh-token-interceptor';
@@ -28,10 +28,10 @@ import { NotifierComponent } from './notifier/notifier.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
-function jwtOptionsFactory (authorizationService: AuthorizationService) {
+export function jwtOptionsFactory (authService: AuthService) {
   return {
     tokenGetter: () => {
-      return authorizationService.getAccessToken();
+      return authService.getAccessToken();
     },
     whitelistedDomains: ['api.microquake.org', 'localhost'],
     blacklistedRoutes: [`${environment.apiUrl}/api/token`]
@@ -61,7 +61,7 @@ function jwtOptionsFactory (authorizationService: AuthorizationService) {
       jwtOptionsProvider: {
         provide: JWT_OPTIONS,
         useFactory: jwtOptionsFactory,
-        deps: [AuthorizationService]
+        deps: [AuthService]
       }
     }),
     DemoMaterialModule,
@@ -75,7 +75,7 @@ function jwtOptionsFactory (authorizationService: AuthorizationService) {
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [
-    AuthorizationService,
+    AuthService,
     JwtInterceptor, // Providing JwtInterceptor allow to inject JwtInterceptor manually into RefreshTokenInterceptor
     CatalogApiService,
     // UserService,
@@ -98,4 +98,3 @@ export class AppModule {
   //  matIconRegistry.addSvgIconSet(domSanitizer.bypassSecurityTrustResourceUrl('../assets/mdi.svg'));
   // }
 }
-

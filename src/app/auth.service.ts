@@ -17,7 +17,7 @@ export interface LoginResponse {
 @Injectable({
   providedIn: 'root'
 })
-export class AuthorizationService {
+export class AuthService {
   constructor (private httpClient: HttpClient) {
   }
 

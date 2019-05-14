@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AuthorizationService } from '../authorization.service';
+import { AuthService } from '../auth.service';
 import { Router } from '@angular/router';
 import { first } from 'rxjs/operators';
 
@@ -12,7 +12,7 @@ export class LoginComponent {
   public password: string;
   public error: string;
 
-  constructor(private auth: AuthorizationService, private router: Router) { }
+  constructor(private auth: AuthService, private router: Router) { }
 
   public submit() {
     this.auth.login(this.username, this.password)
