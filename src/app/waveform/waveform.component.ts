@@ -1194,7 +1194,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
             if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
                 // change event in tree view (may not be selected one)
                 self._catalogService.update_event_by_id
-                    (self.site, self. network, self.origin.event_resource_id, self.origin.status, self.origin.event_type)
+                    (self.origin.event_resource_id, self.origin.status, self.origin.event_type)
                     .subscribe((response) => {
                     self.eventsDatabase.updateEventsTree(response, self.eventsTree);
                     self.bEventUnsaved = false;

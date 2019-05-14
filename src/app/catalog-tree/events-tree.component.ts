@@ -81,7 +81,7 @@ export class FileDatabase {
     this.site = this.options.hasOwnProperty('site') ? this.options.site : '';
     this.network = this.options.hasOwnProperty('network') ? this.options.network : '';
 
-    this._catalogService.get_microquake_event_types(this.site, this.network).subscribe(types => {
+    this._catalogService.get_microquake_event_types(this.network).subscribe(types => {
       for (const type of types) {
           const abbr = type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O';
           type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
@@ -97,7 +97,7 @@ export class FileDatabase {
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
-           this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
+           this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
              this.getEventsForDate(event.time_utc, null, '', 'accepted');
            });
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, pipe, throwError } from 'rxjs';
 import { timeout, catchError } from 'rxjs/operators';
 
@@ -48,9 +48,11 @@ export class CatalogApiService {
             );
     }
 
-    get_microquake_event_types = (site, network): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiMicroquakeEventTypes;
-        return this.http.get(API_URL);
+    get_microquake_event_types = (site): any => {
+        const API_URL = environment.apiUrl + environment.apiMicroquakeEventTypes;
+        const params = new HttpParams()
+          .set('site__code', site)
+        return this.http.get(API_URL, {params});
     }
 
     get_sites = (): any => {
@@ -58,18 +60,18 @@ export class CatalogApiService {
         return this.http.get(API_URL);
     }
 
-    get_event_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
+    get_event_by_id = (eventId): any => {
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         return this.http.get(API_URL);
     }
 
-    update_event_by_id = (site, network, eventId, status, event_type): any => {
+    update_event_by_id = (eventId, status, event_type): any => {
         const httpOptions = {
           headers: new HttpHeaders({
             'Content-Type':  'application/json'
           })
         };
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiEvents + '/' + eventId;
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         const data = JSON.stringify({
             'event_resource_id': eventId,
             'status': status,
