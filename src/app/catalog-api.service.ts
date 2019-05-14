@@ -12,11 +12,19 @@ export class CatalogApiService {
     constructor(private http: HttpClient) {}
 
     get_events(site, network, startTime, endTime, event_types, status) {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' + environment.apiCatalog +
-            '?start_time=' + startTime + '&end_time=' + endTime +
-            (event_types ? '&type=' + event_types : '') +
-            (status ? '&status=' + status : '');
-        return this.http.get(API_URL)
+        const API_URL = environment.apiUrl + environment.apiCatalog;
+        const params = new HttpParams()
+          .set('start_time', startTime)
+          .set('end_time', endTime)
+          .set('site_code', site)
+          .set('network_code', network)
+        if(event_types) {
+            params.append('type', event_types)
+        }
+        if(status) {
+            params.append('status', status)
+        }
+        return this.http.get(API_URL, {params})
             .pipe(
                 /*
                 timeout(60000), // 60 seconds
@@ -36,7 +44,7 @@ export class CatalogApiService {
         const params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network)
-        return this.http.get(API_URL)
+        return this.http.get(API_URL, {params})
             .pipe(
                 /*
                 timeout(60000),
