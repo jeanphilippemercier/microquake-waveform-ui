@@ -29,7 +29,7 @@ import { SiteNetworkComponent } from './site-network/site-network.component';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 export function tokenGetter() {
-  return localStorage.getItem('access_token');
+  return localStorage.getItem('access');
 }
 
 @NgModule({
