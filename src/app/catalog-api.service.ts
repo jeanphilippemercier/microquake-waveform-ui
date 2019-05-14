@@ -51,7 +51,7 @@ export class CatalogApiService {
     get_microquake_event_types = (site): any => {
         const API_URL = environment.apiUrl + environment.apiMicroquakeEventTypes;
         const params = new HttpParams()
-          .set('site__code', site)
+          .set('site_code', site)
         return this.http.get(API_URL, {params});
     }
 
