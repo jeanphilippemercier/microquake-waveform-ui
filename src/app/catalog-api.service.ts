@@ -93,10 +93,12 @@ export class CatalogApiService {
 
 
     get_origins_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
-            environment.apiEvents + '/' + eventId +
-            '/' + environment.apiOrigins;
-        return this.http.get(API_URL)
+        const API_URL = environment.apiUrl + environment.apiOrigins;
+        const params = new HttpParams()
+        .set('site_code', site)
+        .set('network_code', network)
+        .set('event_resource_id', eventId)
+        return this.http.get(API_URL, {params})
             .pipe(
                 /*
                 timeout(60000),
@@ -113,11 +115,15 @@ export class CatalogApiService {
     }
 
     get_arrivals_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
-            environment.apiEvents + '/' + eventId +
-            '/' + (originId ? environment.apiOrigins + '/' + originId + '/' : '') +
-            environment.apiArrivals;
-        return this.http.get(API_URL)
+        const API_URL = environment.apiUrl + environment.apiArrivals;
+        const params = new HttpParams()
+          .set('site_code', site)
+          .set('network_code', network)
+          .set('event_resource_id', eventId)
+        if(originId) {
+          params.append('origin_resource_id', originId)
+        }
+        return this.http.get(API_URL, {params})
             .pipe(
                 /*
                 timeout(60000),
