@@ -13,16 +13,16 @@ export class CatalogApiService {
 
     get_events(site, network, startTime, endTime, event_types, status) {
         const API_URL = environment.apiUrl + environment.apiCatalog;
-        const params = new HttpParams()
+        let params = new HttpParams()
           .set('start_time', startTime)
           .set('end_time', endTime)
           .set('site_code', site)
-          .set('network_code', network)
-        if(event_types) {
-            params.append('type', event_types)
+          .set('network_code', network);
+        if (event_types) {
+            params = params.append('type', event_types);
         }
-        if(status) {
-            params.append('status', status)
+        if (status) {
+            params = params.append('status', status);
         }
         return this.http.get(API_URL, {params})
             .pipe(
@@ -43,7 +43,7 @@ export class CatalogApiService {
         const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
         const params = new HttpParams()
           .set('site_code', site)
-          .set('network_code', network)
+          .set('network_code', network);
         return this.http.get(API_URL, {params})
             .pipe(
                 /*
@@ -62,7 +62,7 @@ export class CatalogApiService {
     get_microquake_event_types = (site): any => {
         const API_URL = environment.apiUrl + environment.apiMicroquakeEventTypes;
         const params = new HttpParams()
-          .set('site_code', site)
+          .set('site_code', site);
         return this.http.get(API_URL, {params});
     }
 
@@ -116,12 +116,12 @@ export class CatalogApiService {
 
     get_arrivals_by_id = (site, network, eventId, originId): any => {
         const API_URL = environment.apiUrl + environment.apiArrivals;
-        const params = new HttpParams()
+        let params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network)
-          .set('event_resource_id', eventId)
-        if(originId) {
-          params.append('origin_resource_id', originId)
+          .set('event_resource_id', eventId);
+        if (originId) {
+          params = params.append('origin_resource_id', originId);
         }
         return this.http.get(API_URL, {params})
             .pipe(

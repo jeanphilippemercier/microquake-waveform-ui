@@ -81,7 +81,7 @@ export class FileDatabase {
     this.site = this.options.hasOwnProperty('site') ? this.options.site : '';
     this.network = this.options.hasOwnProperty('network') ? this.options.network : '';
 
-    this._catalogService.get_microquake_event_types(this.network).subscribe(types => {
+    this._catalogService.get_microquake_event_types(this.site).subscribe(types => {
       for (const type of types) {
           const abbr = type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O';
           type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
@@ -348,9 +348,10 @@ export class EventsTreeComponent {
   treeControl: NestedTreeControl<FileNode>;
   dataSource: MatTreeNestedDataSource<FileNode>;
   init: boolean;
-  public bRejectedEvents: boolean;
   public selectedEventTypes: any[];
   public eventTypes = [];
+  public selectedStatusTypes: any[];
+  public statusTypes = [];
   public selectedNode;
 
   @Output() messageEvent = new EventEmitter();
@@ -360,7 +361,6 @@ export class EventsTreeComponent {
     this.dataSource = new MatTreeNestedDataSource();
 
     this.init = true;
-    this.bRejectedEvents = false;
 
     database.dataChange.subscribe(data => {
       this.dataSource.data = data;
@@ -373,6 +373,8 @@ export class EventsTreeComponent {
           this.messageEvent.emit(init_msg);   // send message to init data
           this.init = false;
           this.eventTypes = this.database.eventTypes;
+          this.statusTypes = ['accepted', 'rejected'];
+          this.selectedStatusTypes = ['accepted'];
         }
 
         const message = this.database.selectNode(this.treeControl, this.treeControl.dataNodes, database.eventId, 'expand');
@@ -390,19 +392,11 @@ export class EventsTreeComponent {
 
   private _getChildren = (node: FileNode) => node.children;
 
-  onOut() {
-    this.filterEventsByTypeStatus();
-  }
-
-  onSelectStatus() {
-    this.filterEventsByTypeStatus();
-  }
-
   filterEventsByTypeStatus() {
     this.database.treeObject = this.database.createTree(this.database.bounds);
-    const status = this.bRejectedEvents ? 'accepted,rejected' : 'accepted';
+    const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
     const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
-    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, status);
+    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, statusTypes);
   }
 
   selectEvent() {
@@ -460,8 +454,9 @@ export class EventsTreeComponent {
       if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          const status = this.bRejectedEvents ? 'accepted,rejected' : 'accepted';
-          this.database.getEventsForDate(date, this.treeControl, this.selectedEventTypes, status);
+          const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
+          const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
+          this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes);
         }
       }
 
