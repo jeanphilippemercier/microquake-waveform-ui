@@ -97,7 +97,7 @@ export class CatalogApiService {
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
-        .set('event_resource_id', eventId);
+        .set('event_resource_id', eventId)
         return this.http.get(API_URL, {params})
             .pipe(
                 /*
