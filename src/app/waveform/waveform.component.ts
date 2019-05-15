@@ -327,7 +327,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                                     if (origin) {
                                         self.waveformOrigin = origin;
                                         // get travel times for preferred origin
-                                        this._catalogService.get_traveltimes_by_id(self.site, self.network, id, origin.origin_resource_id).subscribe(traveltimes => {
+                                        this._catalogService.get_traveltimes_by_id(self.site, self.network, id, origin.origin_resource_id)
+                                        .subscribe(traveltimes => {
                                             self.originTravelTimes = traveltimes;
                                             this.addPredictedPicksData(self.allStations, self.timeOrigin);
                                             // get arrivals, picks for preferred origin

@@ -1,14 +1,27 @@
-<div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
-    <mat-form-field appearance="fill">
-      <mat-label>Event Type</mat-label>
-      <mat-select [(ngModel)]="selectedEventTypes" (selectionChange)="onOut()" multiple>
-        <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
-          {{type.viewValue}}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-checkbox [(ngModel)]="bRejectedEvents" (change)='onSelectStatus()'>Rejected</mat-checkbox>
-</div>
+<mat-expansion-panel>
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      Event Type and Status
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+  <mat-form-field appearance="fill">
+    <mat-label>Event Type</mat-label>
+    <mat-select [(ngModel)]="selectedEventTypes" multiple>
+      <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
+        {{type.viewValue}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Event Status</mat-label>
+    <mat-select [(ngModel)]="selectedStatusTypes" multiple>
+      <mat-option *ngFor="let type of statusTypes" [value]="type">
+        {{type}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-mini-fab matTooltip='Filter Catalog by Event Type and Status' class='btn-toolbar btn btn-primary' (click)='filterEventsByTypeStatus()'><mat-icon>redo</mat-icon></button>
+</mat-expansion-panel>
 <mat-tree #tree [dataSource]='dataSource' [treeControl]='treeControl' class="mat-tree">
   <!-- Leaf node-->
   <mat-tree-node *matTreeNodeDef='let node' matTreeNodeToggle (click)='activeNode = node; activeEvent()' (dblclick)='selectedNode = node; selectEvent()'>
