@@ -7,59 +7,103 @@
   </a>
 </div>
 <div class="sidebar-wrapper">
-  <div *ngIf="isMobileMenu()">
-    <form class="navbar-form">
-      <span class="bmd-form-group">
-        <div class="input-group no-border">
-          <input type="text" value="" class="form-control" placeholder="Search...">
-          <button mat-raised-button type="submit" class="btn btn-white btn-round btn-just-icon">
-            <i class="material-icons">search</i>
-            <div class="ripple-container"></div>
-          </button>
-        </div>
-      </span>
-    </form>
-    <ul class="nav navbar-nav nav-mobile-menu">
-      <li class="nav-item">
-        <a class="nav-link" href="#pablo">
-          <i class="material-icons">dashboard</i>
-          <p>
-            <span class="d-lg-none d-md-block">Stats</span>
-          </p>
-        </a>
-      </li>
-      <li class="nav-item dropdown">
-        <a class="nav-link" href="#pablo" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="material-icons">notifications</i>
-          <span class="notification">5</span>
-          <p>
-            <span class="d-lg-none d-md-block">Some Actions</span>
-          </p>
-        </a>
-        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
-          <a class="dropdown-item" href="#">Mike John responded to your email</a>
-          <a class="dropdown-item" href="#">You have 5 new tasks</a>
-          <a class="dropdown-item" href="#">You're now friend with Andrew</a>
-          <a class="dropdown-item" href="#">Another Notification</a>
-          <a class="dropdown-item" href="#">Another One</a>
-        </div>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#pablo">
-          <i class="material-icons">person</i>
-          <p>
-            <span class="d-lg-none d-md-block">Account</span>
-          </p>
-        </a>
-      </li>
-    </ul>
+  <!--div class="card border-primary" [style.height.px]="window_height*0.6"style="height: 60vh;" -->
+  <div class="card sidebar-tree">
+    <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
+    <div class='mat-app-background basic-container' style="overflow: auto">
+      <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
+    </div>
   </div>
-  <ul class="nav">
-    <li routerLinkActive="active" *ngFor="let menuItem of menuItems" class="{{menuItem.class}} nav-item">
-      <a class="nav-link" [routerLink]="[menuItem.path]">
-        <i class="material-icons">{{menuItem.icon}}</i>
-        <p>{{menuItem.title}}</p>
-      </a>
-    </li>
-  </ul>
+  <div class="card sidebar-event">
+    <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}
+    </div>
+    <div style="overflow: auto" id="eventInfoCard" class="mb-0">
+      <div class='card-body' style="padding:0px 20px;">
+        <table class="table table-extra-condensed">
+          <tbody>
+            <tr>
+              <th scope="row">Magnitude</th>
+              <td>{{origin.magnitude}}</td>
+            </tr>
+            <tr>
+              <th scope="row">Location</th>
+              <td>X {{origin.x}} m East</td>
+            </tr>
+            <tr>
+              <th scope="row"></th>
+              <td>Y {{origin.y}} m North</td>
+            </tr>
+            <tr>
+              <th scope="row"></th>
+              <td>Z {{origin.z}} m</td>
+            </tr>
+            <tr>
+              <th scope="row">Picks</th>
+              <td>{{origin.npick}}</td>
+            </tr>
+            <tr>
+              <th scope="row">Type
+                <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+              </th>
+              <td>
+                <mat-form-field>
+                  <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
+                    <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
+                      {{type.viewValue}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Status
+                <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+              </th>
+              <td>
+                <mat-form-field>
+                  <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
+                    <mat-option *ngFor="let etype of evalTypes" [value]="etype.status">
+                    {{etype.viewValue}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Mode</th>
+              <td>{{origin.mode}}</td>
+            </tr>
+            <tr *ngIf='origin.time_residual'>
+              <th scope="row">Time Residual</th>
+              <td>{{origin.time_residual}}</td>
+            </tr>
+            <tr *ngIf='origin.uncertainty'>
+              <th scope="row">Uncertainty</th>
+              <td>{{origin.uncertainty}}</td>
+            </tr>
+            <tr>
+              <td colspan="2" id='alertMsg' *ngIf='tracesInfo' class="alert alert-warning alert-dismissable">
+                <button type="button" class="close" (click)='tracesInfo = ""' aria-hidden="true">&times;</button>
+                {{tracesInfo}}
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
+                <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
+                {{picksWarning}}
+              </td>
+            </tr>
+            <tr *ngIf='origin.event_resource_id'>
+              <th scope="row">event_resource_id</th>
+              <td>{{origin.event_resource_id}}</td>
+            </tr>
+            <tr *ngIf='origin.preferred_origin_id'>
+              <th scope="row">preferred_origin_id</th>
+              <td>{{origin.preferred_origin_id}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>

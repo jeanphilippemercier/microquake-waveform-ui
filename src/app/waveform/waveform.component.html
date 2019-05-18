@@ -1,111 +1,8 @@
-<!--The content below is only a placeholder and can be replaced.-->
-<header></header>
-<div class='container-fluid content'> <!-- container centers content on large screens -->
+<div> <!-- class='container-fluid content'--> <!-- container centers content on large screens -->
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
   <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
-  <div class='row'>             <!-- responsive row has 12 columns by default -->
-    <div class='col-md-3'>      <!-- uses 6 columns on medium and larger screens... -->
-      <div class="card border-primary" [style.height.px]="window_height*0.6">
-        <div class='card-header'>Catalog</div>
-        <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
-        <div class='mat-app-background basic-container' style="overflow: auto">
-          <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
-        </div>
-      </div>
-      <div class="card border-primary" [style.height.px]="window_height*0.35">
-        <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}</div>
-        <div style="overflow: auto" id="eventInfoCard" class="mb-0">
-          <div class='card-body' style="padding:0px 20px;">
-            <table class="table table-extra-condensed">
-              <tbody>
-                <tr>
-                  <th scope="row">Magnitude</th>
-                  <td>{{origin.magnitude}}</td>
-                </tr>
-                <tr>
-                  <th scope="row">Location</th>
-                  <td>X {{origin.x}} m East</td>
-                </tr>
-                <tr>
-                  <th scope="row"></th>
-                  <td>Y {{origin.y}} m North</td>
-                </tr>
-                <tr>
-                  <th scope="row"></th>
-                  <td>Z {{origin.z}} m</td>
-                </tr>
-                <tr>
-                  <th scope="row">Picks</th>
-                  <td>{{origin.npick}}</td>
-                </tr>
-                <tr>
-                  <th scope="row">Type
-                    <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
-                  </th>
-                  <td>
-                    <mat-form-field>
-                      <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
-                        <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
-                          {{type.viewValue}}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">Status
-                    <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
-                  </th>
-                  <td>
-                    <mat-form-field>
-                      <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
-                        <mat-option *ngFor="let etype of evalTypes" [value]="etype.status">
-                        {{etype.viewValue}}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">Mode</th>
-                  <td>{{origin.mode}}</td>
-                </tr>
-                <tr *ngIf='origin.time_residual'>
-                  <th scope="row">Time Residual</th>
-                  <td>{{origin.time_residual}}</td>
-                </tr>
-                <tr *ngIf='origin.uncertainty'>
-                  <th scope="row">Uncertainty</th>
-                  <td>{{origin.uncertainty}}</td>
-                </tr>
-                <tr>
-                  <td colspan="2" id='alertMsg' *ngIf='tracesInfo' class="alert alert-warning alert-dismissable">
-                    <button type="button" class="close" (click)='tracesInfo = ""' aria-hidden="true">&times;</button>
-                    {{tracesInfo}}
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2" id='alertMessage' *ngIf='picksWarning' class="alert alert-warning alert-dismissable">
-                    <button type="button" class="close" (click)='picksWarning = ""' aria-hidden="true">&times;</button>
-                    {{picksWarning}}
-                  </td>
-                </tr>
-                <tr *ngIf='origin.event_resource_id'>
-                  <th scope="row">event_resource_id</th>
-                  <td>{{origin.event_resource_id}}</td>
-                </tr>
-                <tr *ngIf='origin.preferred_origin_id'>
-                  <th scope="row">preferred_origin_id</th>
-                  <td>{{origin.preferred_origin_id}}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id='right-panel' class='col-md-9'>      <!-- uses 12 columns on smaller than medium screens -->
       <div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
+      <!--div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' style='position:fixed; display:-webkit-box; margin-left: 200px'-->
           <button mat-mini-fab id='commonTime' matTooltip='Common Time Scale for All Channels' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>more_horiz</mat-icon></button>
           <button mat-mini-fab id='commonAmplitude' matTooltip='Common Amplitude Scale for All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>more_vert</mat-icon></button>
           <button mat-mini-fab id='zoomAll' matTooltip='Zoom or Pan All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>link</mat-icon></button>
@@ -145,12 +42,11 @@
           </div>
           <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
       </div>
-      <div id='waveform-panel' style='position: relative; top: 50px'>
+      <!--div id='waveform-panel' style='position: relative; top: 50px; left: 200px'-->
+      <div id='waveform-panel' style='position: relative; top: 50px;'>
         <div class='text-color' id='zeroTime' *ngIf="eventTimeOriginHeader">{{eventTimeOriginHeader}}</div>
         <mat-progress-bar mode="determinate" value="{{progressValue}}"></mat-progress-bar>
       </div>
-    </div>
-  </div>
 </div>
 <ul class='menu'>
   <li data-action='deleteP'>Delete P Pick</li>

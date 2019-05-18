@@ -84,7 +84,7 @@ export class CatalogApiService {
         };
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         const data = JSON.stringify({
-            'event_resource_id': eventId,
+            'event_id': eventId,
             'status': status,
             'event_type': event_type
         });
@@ -97,7 +97,7 @@ export class CatalogApiService {
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
-        .set('event_resource_id', eventId)
+        .set('event_id', eventId)
         return this.http.get(API_URL, {params})
             .pipe(
                 /*
@@ -119,9 +119,9 @@ export class CatalogApiService {
         let params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network)
-          .set('event_resource_id', eventId);
+          .set('event_id', eventId);
         if (originId) {
-          params = params.append('origin_resource_id', originId);
+          params = params.append('origin_id', originId);
         }
         return this.http.get(API_URL, {params})
             .pipe(

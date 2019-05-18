@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DemoMaterialModule} from '../material-modules';
 import {CatalogTreeModule} from '../catalog-tree/catalog-tree.module';
@@ -11,6 +12,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 @NgModule({
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule,
     DemoMaterialModule,
     CatalogTreeModule
