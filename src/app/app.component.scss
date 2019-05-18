@@ -1,0 +1,27 @@
+.wrapper {
+    /*display: flex;
+    width: 100%;
+    align-items: stretch;*/
+}
+
+.sidebar {
+	width: 450px !important;
+}
+
+.main-panel {
+	width: calc(100% - 450px) !important;
+	/* margin-left: 450px;
+    /* display: flex; */
+    /* width: 100%;*/
+    /* align-items: stretch; */
+}
+
+#sidebar.active {
+    /* margin-left: -350px;*/
+}
+
+md-sidenav, md-sidenav.md-locked-open, md-sidenav.md-closed.md-locked-open-add-active {
+ min-width: 400px !important;
+ width: 50vw !important;
+ max-width: 400px !important;
+}

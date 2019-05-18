@@ -27,7 +27,7 @@ export class SiteNetworkComponent implements OnInit {
     public submit() {
         this.saveOption('site');
         this.saveOption('network');
-        this.router.navigate(['dashboard']);
+        this.router.navigate(['dashboard/reload']);
     }
 
     ngOnInit() {

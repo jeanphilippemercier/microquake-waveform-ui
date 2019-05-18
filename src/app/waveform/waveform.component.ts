@@ -1,10 +1,13 @@
 /*jshint esversion: 6 */
-import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { EventsTreeComponent} from '../catalog-tree/events-tree.component';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
 import { CatalogApiService } from '../catalog-api.service';
+import { Subscription } from 'rxjs/Subscription';
+import { MessageService } from '../message.service';
+import { ActivatedRoute } from '@angular/router';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
@@ -18,6 +21,8 @@ import * as moment from 'moment';
 export class WaveformComponent implements OnInit, AfterViewInit {
     @ViewChild(EventsTreeComponent) eventsTreeReference;
 
+    public eventMessage: any;
+    subscription: Subscription;
     public eventsTree: any;
     public eventsDatabase: any;
     public site: any;
@@ -129,21 +134,19 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     private findValue: Function;
     private addTime: Function;
     private sortTraces: Function;
-    private saveEventTypeStatus: Function;
 
     private xViewPortMinStack: any[];
     private xViewportMaxStack: any[];
 
     private timezone: string;
     public eventTimeOriginHeader: string;
-    public eventHeader: string;
 
     public page_size = environment.chartsPerPage;
     public page_number: number;
     public num_pages: number;
     public loaded_pages: number;
     public progressValue: number;
-    public window_height = window.innerHeight;
+
     public chartHeight: number;
     public pageOffsetX: number;
     public pageOffsetY: number;
@@ -158,32 +161,25 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     public picksWarning: string;
     public tracesInfo: string;
 
-    public eventTypes = [];
-
-    public evalTypes = [
-        {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
-        {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
-        {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
-        {status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)'},
-        {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
-        {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
-    ];
-
     ngAfterViewInit() {
-        this.eventsTree = this.eventsTreeReference.treeControl;
-        this.eventsDatabase = this.eventsTreeReference.database;
+        // this.eventsTree = this.eventsTreeReference.treeControl;
+        // this.eventsDatabase = this.eventsTreeReference.database;
+    }
+
+    reload(params) {
+        if (params.hasOwnProperty('reload')) {
+            let url = location.href;
+            console.log(url);
+            if (url.endsWith('reload')) {
+                url = url.slice(0, -6);
+                window.location.replace(url);
+            }
+        }
     }
 
     async getNotification(message) {
-        // console.log(message);
-        if (message.hasOwnProperty('init')) {
-            this.eventTypes = message.init;
-            return;
-        }
+        console.log(message);
         if (!message.hasOwnProperty('event_resource_id')) {
-            for (const property of Object.keys(this.origin)) {
-                this.origin[property] = '';
-            }
             this.currentEventId = null;
             this.destroyCharts();
             return;
@@ -202,33 +198,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                 this.loadEvent(message);
             }
         }
-        if (message.hasOwnProperty('time_utc')) {
-            this.tracesInfo = '';
-            this.picksWarning = '';
-            this.origin.time_utc = message.time_utc;
-            this.origin.time_local = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
-            this.origin.magnitude = message.magnitude ?
-                parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
-            this.origin.x = message.x ? message.x : '';
-            this.origin.y = message.y ? message.y : '';
-            this.origin.z = message.z ? message.z : '';
-            this.origin.npick = message.npick ? message.npick : '';
-            this.origin.event_type = message.event_type;
-            this.origin.type = message.type;
-            this.origin.eval_status =  message.eval_status;
-            this.origin.mode = message.evaluation_mode ?
-                message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
-            this.origin.status = message.status;
-            this.origin.time_residual = message.time_residual ? message.time_residual : '';
-            this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
-            this.origin.event_resource_id = message.event_resource_id;
-            this.origin.preferred_origin_id = message.preferred_origin_id;
-            const fsec = message.time_utc.slice(-8, -1);
-            this.eventHeader = ' Event: ' + this.site + '/' + this.network + ' ' +
-                this.origin['time_local'] +
-                parseFloat(fsec).toFixed(3).slice(-4) +
-                moment().utc().utcOffset(this.timezone).format('Z');
-        }
     }
 
     delay(timer) {
@@ -240,7 +209,15 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         });
     }
 
-    constructor(private _catalogService: CatalogApiService) { }
+    constructor(private _catalogService: CatalogApiService, private messageService: MessageService, private route: ActivatedRoute) {
+        this.subscription = this.messageService.getMessage().subscribe(message => { this.getNotification(message); });
+        this.route.params.subscribe( params => { this.reload(params); } );
+    }
+
+    ngOnDestroy(){
+        // unsubscribe to ensure no memory leaks
+        this.subscription.unsubscribe();
+    }
 
     public ngOnInit() {
 
@@ -280,11 +257,10 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         self.bMenuVisible = false;
 
         self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
-        self.pageOffsetY = $('#waveform-panel').position().top + 20; // $('#zeroTime').height();
+        self.pageOffsetY = $('#waveform-panel').position().top + 60; // $('#zeroTime').height();
         self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY) / environment.chartsPerPage);
         self.page_number = 0;
 
-        self.origin = {};
         self.waveformOrigin = {};
 
         self.timezone = '+00:00';
@@ -1182,30 +1158,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
             self.changePredictedPicksByBias(self.bRemoveBias, true);
             $(this).toggleClass('active');
         });
-
-        $('#toggleSaveEventType').on('click', () => {
-            self.saveEventTypeStatus();
-        });
-
-        $('#toggleSaveEventStatus').on('click', () => {
-            self.saveEventTypeStatus();
-        });
-
-        this.saveEventTypeStatus = () => {
-            if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
-                // change event in tree view (may not be selected one)
-                self._catalogService.update_event_by_id
-                    (self.origin.event_resource_id, self.origin.status, self.origin.event_type)
-                    .subscribe((response) => {
-                    self.eventsDatabase.updateEventsTree(response, self.eventsTree);
-                    self.bEventUnsaved = false;
-                    $('#toggleSaveEvent').prop('disabled', true);
-                },
-                (error) => {
-                    window.alert('Error updating event: ' + error.error.message);
-                });
-            }
-        };
 
         // If the context menu element is clicked
         $('.menu li').on('click', function() {
