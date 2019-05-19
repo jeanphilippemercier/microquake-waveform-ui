@@ -139,11 +139,13 @@ export class CatalogApiService {
     }
 
     get_traveltimes_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl + 'site/' + site + '/network/' + network + '/' +
-            environment.apiEvents + '/' + eventId +
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
             '/' + environment.apiOrigins + '/' + originId +
             '/' + environment.apiTravelTimes;
-        return this.http.get(API_URL)
+        const params = new HttpParams()
+          .set('site_code', site)
+          .set('network_code', network);
+        return this.http.get(API_URL, {params})
             .pipe(
                 /*
                 timeout(60000),
