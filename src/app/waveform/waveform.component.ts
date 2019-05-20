@@ -1503,7 +1503,7 @@ export class WaveformComponent implements OnInit, AfterViewInit {
                 if (arrival.hasOwnProperty('pick')) {
                 const pick = arrival.pick;
                     if (moment(pick.time_utc).isValid()) {
-                        const station = self.findValue(stations, 'station_code', pick.station_code);
+                        const station = self.findValue(stations, 'station_code', pick.station.toString());
                         if (station) {
                             station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
                             const pickKey = arrival.phase === 'P' ? 'P' : arrival.phase === 'S' ? 'S' : '';

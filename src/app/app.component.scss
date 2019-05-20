@@ -5,11 +5,11 @@
 }
 
 .sidebar {
-	width: 450px !important;
+	width: 400px !important;
 }
 
 .main-panel {
-	width: calc(100% - 450px) !important;
+	width: calc(100% - 400px) !important;
 	/* margin-left: 450px;
     /* display: flex; */
     /* width: 100%;*/
@@ -17,7 +17,6 @@
 }
 
 #sidebar.active {
-    /* margin-left: -350px;*/
 }
 
 md-sidenav, md-sidenav.md-locked-open, md-sidenav.md-closed.md-locked-open-add-active {
