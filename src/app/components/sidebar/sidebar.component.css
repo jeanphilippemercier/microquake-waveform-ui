@@ -1,19 +1,19 @@
 .sidebar-wrapper {
-    width: 450px !important;
-    padding-bottom: 0px;
-    overflow: visible;
+  width: 400px !important;
+  padding-bottom: 0px;
+  overflow: visible;
 }
 
 .sidebar-tree {
-	height: calc(65vh - 25px);
-    margin-top:0px;
-    margin-bottom:20px;
+  height: calc(65vh - 25px);
+  margin-top:0px;
+  margin-bottom:20px;
 }
 
 .sidebar-event {
 	height: calc(30vh - 10px);
-    margin-top:20px;
-    margin-bottom:0px;
+  margin-top:20px;
+  margin-bottom:0px;
 }
 
 .table-extra-condensed > thead > tr > th,
@@ -27,4 +27,8 @@
 
 .text-color {
   color: blue !important;
+}
+
+.selector {
+  width: 200px !important;
 }

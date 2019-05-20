@@ -17,7 +17,7 @@
   <div class="card sidebar-event">
     <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}
     </div>
-    <div style="overflow: auto" id="eventInfoCard" class="mb-0">
+    <div style="overflow: auto" id="eventInfoCard">
       <div class='card-body' style="padding:0px 20px;">
         <table class="table table-extra-condensed">
           <tbody>
@@ -46,7 +46,7 @@
                 <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
               </th>
               <td>
-                <mat-form-field>
+                <mat-form-field class="selector">
                   <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
                     <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
                       {{type.viewValue}}
@@ -60,7 +60,7 @@
                 <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
               </th>
               <td>
-                <mat-form-field>
+                <mat-form-field class="selector">
                   <mat-select [(ngModel)]="origin.status" (selectionChange)='onChangeEvaluationStatus($event)'>
                     <mat-option *ngFor="let etype of evalTypes" [value]="etype.status">
                     {{etype.viewValue}}
