@@ -1,7 +1,4 @@
 .wrapper {
-    /*display: flex;
-    width: 100%;
-    align-items: stretch;*/
 }
 
 .sidebar {
@@ -10,17 +7,5 @@
 
 .main-panel {
 	width: calc(100% - 400px) !important;
-	/* margin-left: 450px;
-    /* display: flex; */
-    /* width: 100%;*/
-    /* align-items: stretch; */
 }
 
-#sidebar.active {
-}
-
-md-sidenav, md-sidenav.md-locked-open, md-sidenav.md-closed.md-locked-open-add-active {
- min-width: 400px !important;
- width: 50vw !important;
- max-width: 400px !important;
-}

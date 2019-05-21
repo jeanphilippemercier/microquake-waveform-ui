@@ -256,8 +256,8 @@ export class WaveformComponent implements OnInit, AfterViewInit {
         self.bMenuVisible = false;
 
         self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
-        self.pageOffsetY = $('#waveform-panel').position().top + 60; // $('#zeroTime').height();
-        self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY) / environment.chartsPerPage);
+        self.pageOffsetY = $('#waveform-panel').position().top + 30;
+        self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY - 20) / environment.chartsPerPage);
         self.page_number = 0;
 
         self.waveformOrigin = {};
