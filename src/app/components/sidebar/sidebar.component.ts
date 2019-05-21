@@ -50,7 +50,6 @@ export class SidebarComponent implements OnInit {
   ];
 
   async getNotification(message) {
-      console.log(message);
       this.sendMessage(message);
 
       if (message.hasOwnProperty('init')) {

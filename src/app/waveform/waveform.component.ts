@@ -178,7 +178,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
     }
 
     async getNotification(message) {
-        console.log(message);
         if (!message.hasOwnProperty('event_resource_id')) {
             this.currentEventId = null;
             this.destroyCharts();

@@ -7,7 +7,7 @@ import { SiteNetworkComponent } from './site-network/site-network.component';
 import { LoginComponent } from './login/login.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'dashboard/:reload', component: WaveformComponent, canActivate: [AuthGuard] },
   { path: 'dashboard#', component: WaveformComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
