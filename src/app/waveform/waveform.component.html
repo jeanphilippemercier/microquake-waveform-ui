@@ -1,4 +1,4 @@
-<div> <!-- class='container-fluid content'--> <!-- container centers content on large screens -->
+<div class='container-fluid content'>
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
   <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
       <div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
@@ -42,7 +42,6 @@
           </div>
           <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
       </div>
-      <!--div id='waveform-panel' style='position: relative; top: 50px; left: 200px'-->
       <div id='waveform-panel' style='position: relative; top: 50px;'>
         <div class='text-color' id='zeroTime' *ngIf="eventTimeOriginHeader">{{eventTimeOriginHeader}}</div>
         <mat-progress-bar mode="determinate" value="{{progressValue}}"></mat-progress-bar>
@@ -55,7 +54,6 @@
   <li data-action='newS'>New S Pick</li>
   <li data-action='showTooltip'>Toggle Tooltip</li>
 </ul>
-<footer></footer>
 
 
 
