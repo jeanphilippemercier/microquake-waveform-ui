@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventsTreeComponent} from '../../catalog-tree/events-tree.component';
 import { MessageService } from '../../message.service';
@@ -22,7 +22,9 @@ export const ROUTES: RouteInfo[] = [
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css']
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, AfterViewInit {
+  @ViewChild(EventsTreeComponent) eventsTreeReference;
+
   menuItems: any[];
   public options: any;
   public window_height = window.innerHeight;
@@ -48,6 +50,12 @@ export class SidebarComponent implements OnInit {
       {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
       {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
   ];
+
+    ngAfterViewInit() {
+        this.eventsTree = this.eventsTreeReference.treeControl;
+        this.eventsDatabase = this.eventsTreeReference.database;
+    }
+
 
   async getNotification(message) {
       this.sendMessage(message);
@@ -147,19 +155,20 @@ export class SidebarComponent implements OnInit {
     });
 
     this.saveEventTypeStatus = () => {
-        if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
+        // if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
             // change event in tree view (may not be selected one)
             self._catalogService.update_event_by_id
                 (self.origin.event_resource_id, self.origin.status, self.origin.event_type)
                 .subscribe((response) => {
                 self.eventsDatabase.updateEventsTree(response, self.eventsTree);
+                self.eventsTreeReference.activeEvent();
                 self.bEventUnsaved = false;
                 $('#toggleSaveEvent').prop('disabled', true);
             },
             (error) => {
                 window.alert('Error updating event: ' + error.error.message);
             });
-        }
+        // }
     };
   }
 }

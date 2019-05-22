@@ -1,6 +1,5 @@
 /*jshint esversion: 6 */
-import { Component, ViewChild, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
-import { EventsTreeComponent} from '../catalog-tree/events-tree.component';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
@@ -18,13 +17,10 @@ import * as moment from 'moment';
   styleUrls: ['./waveform.component.css']
 })
 
-export class WaveformComponent implements OnInit, AfterViewInit {
-    @ViewChild(EventsTreeComponent) eventsTreeReference;
+export class WaveformComponent implements OnInit {
 
     public eventMessage: any;
     subscription: Subscription;
-    public eventsTree: any;
-    public eventsDatabase: any;
     public site: any;
     public network: any;
     public allStations: any[];
@@ -160,11 +156,6 @@ export class WaveformComponent implements OnInit, AfterViewInit {
 
     public picksWarning: string;
     public tracesInfo: string;
-
-    ngAfterViewInit() {
-        // this.eventsTree = this.eventsTreeReference.treeControl;
-        // this.eventsDatabase = this.eventsTreeReference.database;
-    }
 
     reload(params) {
         if (params.hasOwnProperty('reload')) {
