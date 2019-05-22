@@ -148,6 +148,7 @@ export class WaveformComponent implements OnInit {
     public pageOffsetY: number;
 
     public loading = false;
+    public treeLoading = false;
     public bDataLoading = false;
     public monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
       '    Sep', 'Oct', 'Nov', 'Dec'];
@@ -170,8 +171,15 @@ export class WaveformComponent implements OnInit {
 
     async getNotification(message) {
         if (!message.hasOwnProperty('event_resource_id')) {
+            if (message.action === 'treeLoaded') {
+                this.loading = false;
+                return;
+            }
             this.currentEventId = null;
             this.destroyCharts();
+            if (message.action === 'treeLoading') {
+                this.loading = true;
+            }
             return;
         }
         if (message.hasOwnProperty('timezone')) {
