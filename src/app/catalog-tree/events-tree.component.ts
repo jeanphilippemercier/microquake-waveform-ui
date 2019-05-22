@@ -98,39 +98,49 @@ export class FileDatabase {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
            this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null, '', 'accepted');
+             this.getEventsForDate(event.time_utc, null, '', 'accepted', false);
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null, '', 'accepted');
+            this.getEventsForDate(bounds.max_time, null, '', 'accepted', true);
         }
       }
 
     });
   }
 
-  getEventsForDate(date, tree, event_types, status) {
+  getEventsForDate(date, tree, event_types, status, forceFindEvent) {
     const day = moment(date).utc().utcOffset(this.timezone);
     day.hour(0);
     day.minute(0);
     day.second(0);
     day.millisecond(0);
     const startTime = day.toISOString();
-    const endTime = day.add(1, 'days').toISOString();
+    const endTime = moment(day).add(1, 'days').toISOString();
 
     this._catalogService.get_events(this.site, this.network, startTime, endTime, event_types, status).subscribe(events => {
 
         if (Array.isArray(events)) {
 
+          if (events.length === 0 && forceFindEvent) {
+            if (moment(date).isBefore(moment(this.bounds.min_time))) {
+              this.dataChange.next([]);  // stop loading
+              return;
+            }
+            const newDate = moment(date).subtract(1, 'days').toISOString();
+            this.getEventsForDate(newDate, tree, event_types, status, forceFindEvent);
+            return;
+          }
+
           if (events.length > 0) {
 
             events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
 
-            if (!tree && this.bounds.max_time === date) { // select most recent event by default
+            if (forceFindEvent) { // select most recent event by default
               this.eventId = events[0].event_resource_id;
             }
 
-            this.treeObject = this.convertTree(events, this.treeObject, false);
+            this.treeObject = this.convertTree(events, this.treeObject, day.year(), day.month(), day.date());
 
           }
           // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
@@ -237,7 +247,13 @@ export class FileDatabase {
     return dataTree;
   }
 
-  convertTree(dataObject, dataTree, replaceNode) {
+  convertTree(dataObject, dataTree, thisYear, thisMonth, thisDay) {
+    // overwrite current node
+    if (dataTree.hasOwnProperty(thisYear)
+      && dataTree[thisYear].hasOwnProperty(thisMonth)
+      && dataTree[thisYear][thisMonth].hasOwnProperty(thisDay)) {
+      dataTree[thisYear][thisMonth][thisDay] = {};
+    }
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
           const value = dataObject[property];
@@ -257,7 +273,7 @@ export class FileDatabase {
               if (!dataTree[year][month].hasOwnProperty(day)) {
                 dataTree[year][month][day] = {};
               }
-              if (!dataTree[year][month][day].hasOwnProperty(event_time) || replaceNode) {
+              if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
                 dataTree[year][month][day][event_time] = value;
               } else { // if duplicate node, same origin time already exists, append new node
                 const event_time_duplicate = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(4).slice(-5);
@@ -366,6 +382,11 @@ export class EventsTreeComponent {
       this.dataSource.data = data;
       this.treeControl.dataNodes = data;
 
+      if (data && data.length === 0) {
+        this.messageEvent.emit({'action': 'treeLoaded'});
+        return;
+      }
+
       if (data && data.length > 0) {
 
         if (this.init) {
@@ -386,6 +407,7 @@ export class EventsTreeComponent {
       }
 
     });
+
   }
 
   hasNestedChild = (_: number, nodeData: FileNode) => !nodeData.type;
@@ -396,7 +418,8 @@ export class EventsTreeComponent {
     this.database.treeObject = this.database.createTree(this.database.bounds);
     const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
     const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
-    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, statusTypes);
+    this.messageEvent.emit({'action': 'treeLoading'});
+    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, statusTypes, true);
   }
 
   selectEvent() {
@@ -446,19 +469,21 @@ export class EventsTreeComponent {
   }
 
   activeDay() {
+
     if (this.hasOwnProperty('activeParent')) {
 
       const node = this['activeParent'];
       this.database.bInit = false;
 
-      if (node.level === 2 && this.treeControl.getDescendants(node).length === 0) {
+      if (node.level === 2 && this.treeControl.isExpanded(node)) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
           const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
           const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
-          this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes);
+          this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes, false);
         }
       }
+
 
     }
   }
