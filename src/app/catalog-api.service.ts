@@ -84,7 +84,7 @@ export class CatalogApiService {
         };
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
         const data = JSON.stringify({
-            'event_id': eventId,
+            'event_resource_id': eventId,
             'status': status,
             'event_type': event_type
         });
