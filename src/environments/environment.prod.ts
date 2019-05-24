@@ -22,6 +22,8 @@ export const environment = {
   apiArrivals: 'arrivals',
   // Microquake event types API endpoint
   apiMicroquakeEventTypes: 'inventory/microquake_event_types',
+  // Reprocess events API endpoint
+  apiReprocess: 'reprocess',
   // number of charts per page
   chartsPerPage: 7,
   // fixed duration to display, in seconds

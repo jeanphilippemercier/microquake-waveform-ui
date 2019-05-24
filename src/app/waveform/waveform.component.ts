@@ -17,7 +17,7 @@ import * as moment from 'moment';
   styleUrls: ['./waveform.component.css']
 })
 
-export class WaveformComponent implements OnInit {
+export class WaveformComponent implements OnInit, OnDestroy {
 
     public eventMessage: any;
     subscription: Subscription;
@@ -117,6 +117,7 @@ export class WaveformComponent implements OnInit {
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private calculateTimeOffset: Function;
+    private calculateTimeOffsetMicro: Function;
     private togglePredictedPicksVisibility: Function;
     private calcPicksBias: Function;
     private changePredictedPicksByBias: Function;
@@ -170,6 +171,7 @@ export class WaveformComponent implements OnInit {
     }
 
     async getNotification(message) {
+        console.log(message);
         if (!message.hasOwnProperty('event_resource_id')) {
             if (message.action === 'treeLoaded') {
                 this.loading = false;
@@ -208,11 +210,15 @@ export class WaveformComponent implements OnInit {
     }
 
     constructor(private _catalogService: CatalogApiService, private messageService: MessageService, private route: ActivatedRoute) {
-        this.subscription = this.messageService.getMessage().subscribe(message => { this.getNotification(message); });
+        this.subscription = this.messageService.getMessage().subscribe(message => {
+            if(message.sender !== 'notifier') {
+                this.getNotification(message);
+            }
+        });
         this.route.params.subscribe( params => { this.reload(params); } );
     }
 
-    ngOnDestroy(){
+    ngOnDestroy() {
         // unsubscribe to ensure no memory leaks
         this.subscription.unsubscribe();
     }
@@ -575,11 +581,19 @@ export class WaveformComponent implements OnInit {
             return ret;
         };
 
-        this.calculateTimeOffset = (time, origin) => {  // time offset in microseconds from the origin full second
+        this.calculateTimeOffset = (time, origin) => {  // microsec time offset from the origin full second with millisec precision
             const diff =
                 moment(time).millisecond(0)
                 .diff(moment(origin).millisecond(0), 'seconds') * 1000000
                 + moment(time).millisecond() * 1000;
+            return diff;
+        };
+
+        this.calculateTimeOffsetMicro = (time, origin) => {  // microsec time offset from the origin full second with microsec precision
+            const diff =
+                moment(time).millisecond(0)
+                .diff(moment(origin).millisecond(0), 'seconds') * 1000000
+                + parseInt(time.slice(-7, -1), 10);
             return diff;
         };
 
@@ -1508,7 +1522,7 @@ export class WaveformComponent implements OnInit {
                             if (pickKey !== '') {
                                 station[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                                 station.picks.push({
-                                    value: self.calculateTimeOffset(pick.time_utc, origin),   // rel timeOrigin full second
+                                    value: self.calculateTimeOffsetMicro(pick.time_utc, origin),   // rel timeOrigin full second
                                     thickness: environment.picksLineThickness,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                     label: pickKey,
@@ -1556,7 +1570,7 @@ export class WaveformComponent implements OnInit {
                                 }
                                 station[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
                                 station.picks.push({
-                                    value: self.calculateTimeOffset(picktime_utc, origin),  // value is relative to timeOrigin's full second
+                                    value: self.calculateTimeOffsetMicro(picktime_utc, origin),  // value is relative to timeOrigin's full second
                                     thickness: environment.predictedPicksLineThickness,
                                     lineDashType: 'dash',
                                     opacity: 0.5,

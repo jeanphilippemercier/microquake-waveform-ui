@@ -97,7 +97,7 @@ export class FileDatabase {
       if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
-           this._catalogService.get_event_by_id(this.eventId).subscribe(event => {
+           this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
              this.getEventsForDate(event.time_utc, null, '', 'accepted', false);
            });
 
@@ -394,6 +394,7 @@ export class EventsTreeComponent {
           this.messageEvent.emit(init_msg);   // send message to init data
           this.init = false;
           this.eventTypes = this.database.eventTypes;
+          this.selectedEventTypes = this.eventTypes.map(el => el.quakeml_type);
           this.statusTypes = ['accepted', 'rejected'];
           this.selectedStatusTypes = ['accepted'];
         }
