@@ -11,11 +11,12 @@
   <div class="card sidebar-tree">
     <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
     <div class='mat-app-background basic-container' style="overflow: auto">
-      <app-events-tree (messageEvent)='getNotification($event)'></app-events-tree>
+      <app-events-tree (messageEvent)='getTreeNotification($event)'></app-events-tree>
     </div>
   </div>
   <div class="card sidebar-event">
     <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}
+    <button mat-mini-fab matTooltip='Reprocess Event' class='btn-toolbar btn btn-primary' (click)='onReprocessEvent()'><mat-icon>input</mat-icon></button>
     </div>
     <div style="overflow: auto" id="eventInfoCard">
       <div class='card-body' style="padding:0px 20px;">
@@ -105,5 +106,6 @@
         </table>
       </div>
     </div>
+    <app-notifier></app-notifier>
   </div>
 </div>

@@ -1,7 +1,9 @@
-import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventsTreeComponent} from '../../catalog-tree/events-tree.component';
 import { MessageService } from '../../message.service';
+import { NotifierComponent } from '../../notifier/notifier.component';
+import { Subscription } from 'rxjs/Subscription';
 import { CatalogApiService } from '../../catalog-api.service';
 import * as moment from 'moment';
 
@@ -22,10 +24,11 @@ export const ROUTES: RouteInfo[] = [
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css']
 })
-export class SidebarComponent implements OnInit, AfterViewInit {
+export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(EventsTreeComponent) eventsTreeReference;
 
   menuItems: any[];
+  subscription: Subscription;
   public options: any;
   public window_height = window.innerHeight;
   public origin: any;
@@ -35,6 +38,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   public network: any;
   public onChangeEvaluationStatus: Function;
   public onChangeEventType: Function;
+  public onReprocessEvent: Function;
   public bEventUnsaved: Boolean;
   private saveEventTypeStatus: Function;
   private timezone: string;
@@ -51,14 +55,23 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
   ];
 
-    ngAfterViewInit() {
-        this.eventsTree = this.eventsTreeReference.treeControl;
-        this.eventsDatabase = this.eventsTreeReference.database;
-    }
+  ngAfterViewInit() {
+      this.eventsTree = this.eventsTreeReference.treeControl;
+      this.eventsDatabase = this.eventsTreeReference.database;
+  }
 
+  ngOnDestroy() {
+      // unsubscribe to ensure no memory leaks
+      this.subscription.unsubscribe();
+  }
 
-  async getNotification(message) {
-      this.sendMessage(message);
+  getNotification(message) {
+    console.log(message);
+  }
+
+  async getTreeNotification(message) {
+      message.sender = 'sidebar';
+      this.sendMessage(message);  // send message received from event tree to waveform component
 
       if (message.hasOwnProperty('init')) {
           this.eventTypes = message.init;
@@ -103,7 +116,12 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     }
 
 
-  constructor(private _catalogService: CatalogApiService, private messageService: MessageService) { }
+  constructor(private _catalogService: CatalogApiService, private messageService: MessageService) {
+      this.subscription = this.messageService.getMessage().subscribe(message => {
+        if (message.sender !== 'sidebar') {
+          this.getNotification(message); 
+        }});
+  }
 
   sendMessage(message): void {
       // send message to subscribers via observable subject
@@ -169,6 +187,19 @@ export class SidebarComponent implements OnInit, AfterViewInit {
                 window.alert('Error updating event: ' + error.error.message);
             });
         // }
+    };
+
+    this.onReprocessEvent = () => {
+        if (self.origin.hasOwnProperty('event_resource_id')) {
+          self._catalogService.get_reprocess_event_by_id
+              (self.site, self.network, self.origin.event_resource_id)
+              .subscribe((response) => {
+                // window.alert('Reprocess event request sent!');
+          },
+          (error) => {
+              window.alert('Error reprocessing event: ' + error.error.message);
+          });
+        }
     };
   }
 }

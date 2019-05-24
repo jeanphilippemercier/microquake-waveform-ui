@@ -71,9 +71,13 @@ export class CatalogApiService {
         return this.http.get(API_URL);
     }
 
-    get_event_by_id = (eventId): any => {
+    get_event_by_id = (site, network, eventId): any => {
         const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
-        return this.http.get(API_URL);
+        const params = new HttpParams()
+        .set('site_code', site)
+        .set('network_code', network)
+        .set('event_resource_id', eventId);
+        return this.http.get(API_URL, {params});
     }
 
     update_event_by_id = (eventId, status, event_type): any => {
@@ -97,7 +101,7 @@ export class CatalogApiService {
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
-        .set('event_id', eventId)
+        .set('event_id', eventId);
         return this.http.get(API_URL, {params})
             .pipe(
                 /*
@@ -158,6 +162,16 @@ export class CatalogApiService {
                     return of([]);
                 })
             );
+    }
+
+    get_reprocess_event_by_id = (site, network, eventId): any => {
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
+            '/' + environment.apiReprocess;
+        const params = new HttpParams()
+        .set('site_code', site)
+        .set('network_code', network)
+        .set('event_resource_id', eventId);
+        return this.http.get(API_URL, {params});
     }
 
 }

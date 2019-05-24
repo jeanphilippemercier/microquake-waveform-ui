@@ -24,7 +24,6 @@ import { FlexLayoutModule } from '@angular/flex-layout';
 import { LoginComponent } from './login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
-import { NotifierComponent } from './notifier/notifier.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
 import { MessageService } from './message.service';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
@@ -42,13 +41,11 @@ export function jwtOptionsFactory (authService: AuthService) {
 @NgModule({
   declarations: [
     AppComponent,
-    // EventsTreeComponent,
     HelpDialogComponent,
     HelpDialogSheetComponent,
     LoginComponent,
     WaveformComponent,
     // AdminLayoutComponent,
-    NotifierComponent,
     SiteNetworkComponent
   ],
   imports: [
