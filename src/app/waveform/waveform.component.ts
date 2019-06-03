@@ -522,7 +522,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         this.renderPage = () => {
             const pageNumber = self.page_number;
-            const pageSize = self.page_size - 1; // traces loaded from PAI
+            const pageSize = self.page_size - 1; // traces loaded from API
             const numPages = environment.enablePagingLoad ?
                 self.num_pages : Math.ceil(self.allStations.length / pageSize);
             if (pageNumber > 0 && pageNumber <= numPages) {
@@ -1570,7 +1570,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                 }
                                 station[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
                                 station.picks.push({
-                                    value: self.calculateTimeOffsetMicro(picktime_utc, origin),  // value is relative to timeOrigin's full second
+                                    value: self.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
                                     thickness: environment.predictedPicksLineThickness,
                                     lineDashType: 'dash',
                                     opacity: 0.5,
@@ -1685,7 +1685,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
-                if (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0)) { // this filters out zero channels
+                if (isContext || (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0))) { // this filters out zero channels
                     if (!zTime) {
                         zTime = moment(sg.start());  // starting time (use it up to tenth of second)
                         zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);

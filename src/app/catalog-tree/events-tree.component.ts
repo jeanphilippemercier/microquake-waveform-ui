@@ -61,6 +61,8 @@ export class FileDatabase {
   public timezone: string;
   public bInit: boolean;
   public eventTypes = [];
+  public statusTypes = ['accepted', 'rejected'];
+  public selectedStatusTypes = ['accepted'];
   public site: string;
   public network: string;
   public options: any;
@@ -74,7 +76,13 @@ export class FileDatabase {
     const url_string = window.location.href;
     const url = new URL(url_string);
     this.eventId = url.searchParams.get('id');
+    const eventStatus = url.searchParams.get('status');
     this.bInit = true;
+
+    if (eventStatus) {
+      this.selectedStatusTypes = eventStatus.split(',');
+    }
+    const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
 
     this.options = JSON.parse(window.localStorage.getItem('viewer-options'));
     this.options = this.options ? this.options : {};
@@ -98,11 +106,11 @@ export class FileDatabase {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
            this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null, '', 'accepted', false);
+             this.getEventsForDate(event.time_utc, null, '', statusTypes, false);
            });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null, '', 'accepted', true);
+            this.getEventsForDate(bounds.max_time, null, '', statusTypes, true);
         }
       }
 
@@ -395,8 +403,8 @@ export class EventsTreeComponent {
           this.init = false;
           this.eventTypes = this.database.eventTypes;
           this.selectedEventTypes = this.eventTypes.map(el => el.quakeml_type);
-          this.statusTypes = ['accepted', 'rejected'];
-          this.selectedStatusTypes = ['accepted'];
+          this.statusTypes = this.database.statusTypes;
+          this.selectedStatusTypes = this.database.selectedStatusTypes;
         }
 
         const message = this.database.selectNode(this.treeControl, this.treeControl.dataNodes, database.eventId, 'expand');
