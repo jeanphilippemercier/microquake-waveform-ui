@@ -103,7 +103,8 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.origin.mode = message.evaluation_mode ?
               message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
           this.origin.status = message.status;
-          this.origin.time_residual = message.time_residual ? message.time_residual : '';
+          this.origin.time_residual = message.time_residual ?
+            (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick)).toFixed(3) : '') : '';
           this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
           this.origin.event_resource_id = message.event_resource_id;
           this.origin.preferred_origin_id = message.preferred_origin_id;
@@ -119,7 +120,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(private _catalogService: CatalogApiService, private messageService: MessageService) {
       this.subscription = this.messageService.getMessage().subscribe(message => {
         if (message.sender !== 'sidebar') {
-          this.getNotification(message); 
+          this.getNotification(message);
         }});
   }
 
