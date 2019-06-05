@@ -91,7 +91,8 @@ export class FileDatabase {
 
     this._catalogService.get_microquake_event_types(this.site).subscribe(types => {
       for (const type of types) {
-          const abbr = type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O';
+          const abbr = type.identifier ? type.identifier :
+            (type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O');
           type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
           type['type'] =  abbr;
       }
