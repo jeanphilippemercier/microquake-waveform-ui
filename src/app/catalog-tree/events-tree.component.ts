@@ -66,6 +66,7 @@ export class FileDatabase {
   public site: string;
   public network: string;
   public options: any;
+  public expandedDays = [];
 
   constructor(private _catalogService: CatalogApiService) {
     this.initialize();
@@ -207,9 +208,11 @@ export class FileDatabase {
             for (const dayNode of monthNode.children) {
               if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
                 if (tree) {
-                  tree.expand(yearNode);
-                  tree.expand(monthNode);
-                  tree.expand(dayNode);
+                  if (this.expandedDays.includes(dayNode.date)) {
+                    tree.expand(yearNode);
+                    tree.expand(monthNode);
+                    tree.expand(dayNode);
+                  }
                 }
                 for (const event of dayNode.children) {
                   if (event.event_resource_id === eventId) {
@@ -229,6 +232,25 @@ export class FileDatabase {
     }
     return message;
   }
+
+  saveExpandedNodes(tree) {
+    const data = tree.dataNodes;
+    this.expandedDays = [];
+    for (const yearNode of data) {
+      if (yearNode.hasOwnProperty('children')) {
+        for (const monthNode of yearNode.children) {
+          if (monthNode.hasOwnProperty('children')) {
+            for (const dayNode of monthNode.children) {
+              if (tree.isExpanded(dayNode)) {
+                this.expandedDays.push(dayNode.date);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
 
   createTree(bounds) {
     const dataTree = {};
@@ -490,6 +512,7 @@ export class EventsTreeComponent {
         if (date.isValid()) {
           const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
           const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
+          this.database.saveExpandedNodes(this.treeControl);
           this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes, false);
         }
       }
