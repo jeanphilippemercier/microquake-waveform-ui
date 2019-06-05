@@ -171,7 +171,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     }
 
     async getNotification(message) {
-        console.log(message);
+        // console.log(message);
         if (!message.hasOwnProperty('event_resource_id')) {
             if (message.action === 'treeLoaded') {
                 this.loading = false;
