@@ -211,7 +211,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
     constructor(private _catalogService: CatalogApiService, private messageService: MessageService, private route: ActivatedRoute) {
         this.subscription = this.messageService.getMessage().subscribe(message => {
-            if(message.sender !== 'notifier') {
+            if (message.sender !== 'notifier') {
                 this.getNotification(message);
             }
         });
@@ -1318,7 +1318,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         this.getValueMaxAll = () => {
             let val;
-            for (let i = 0; i < self.activeStations.length; i++) {
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
                 for (let j = 0; j < self.activeStations[i].channels.length; j++) {
                     val = i === 0 && j === 0 ?
                         self.maxValue(self.activeStations[0].channels[0].data) :
@@ -1350,7 +1350,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         this.getAxisMaxAll = (isXaxis) => {
             let max;
-            for (let i = 0; i < self.activeStations.length; i++) {
+            for (let i = 0; i < self.activeStations.length - 1; i++) {
                 const chart = self.activeStations[i].chart;
                 const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
                 max = i === 0 ? axis.get('maximum') : Math.max(axis.get('maximum'), max);
