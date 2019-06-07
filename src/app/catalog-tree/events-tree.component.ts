@@ -20,7 +20,7 @@ export class FileNode {
   evaluation_mode: string;  // from api, "automatic" or "manual"
   event_file: string;
   event_type: string;       // from api, "earthquake" or "explosion"
-  magnitude: number;
+  magnitude: string;
   magnitude_type: string;   // from api, "preliminary" or "reviewed"
   status: string;           // from api, "preliminary" or "reviewed"
   time_utc: string;
@@ -208,7 +208,7 @@ export class FileDatabase {
             for (const dayNode of monthNode.children) {
               if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
                 if (tree) {
-                  if (this.expandedDays.includes(dayNode.date)) {
+                  if (this.expandedDays.length === 0 || this.expandedDays.includes(dayNode.date)) {
                     tree.expand(yearNode);
                     tree.expand(monthNode);
                     tree.expand(dayNode);
@@ -353,7 +353,7 @@ export class FileDatabase {
             node.eval_status = (value.status === 'rejected') ? 'R' : 'A';
             node.type = this.eventTypes.find(v => v.quakeml_type === value.event_type).type;
             node.evaluation_mode = value.evaluation_mode;
-            node.magnitude = value.magnitude.toFixed(1);
+            node.magnitude = value.magnitude === -999 ? '' : value.magnitude.toFixed(1).toString();
             node.magnitude_type = value.magnitude_type;
             node.event_file = value.event_file;
             node.event_type = value.event_type;
