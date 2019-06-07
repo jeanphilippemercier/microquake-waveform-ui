@@ -91,8 +91,8 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.picksWarning = '';
           this.origin.time_utc = message.time_utc;
           this.origin.time_local = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
-          this.origin.magnitude = message.magnitude ?
-              parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '';
+          this.origin.magnitude = message.magnitude && message.magnitude !== '-999.0' ?
+              parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '-';
           this.origin.x = message.x ? message.x : '';
           this.origin.y = message.y ? message.y : '';
           this.origin.z = message.z ? message.z : '';
@@ -104,7 +104,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
               message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
           this.origin.status = message.status;
           this.origin.time_residual = message.time_residual ?
-            (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick)).toFixed(3) : '') : '';
+            (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick, 10)).toFixed(3) : '') : '';
           this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
           this.origin.event_resource_id = message.event_resource_id;
           this.origin.preferred_origin_id = message.preferred_origin_id;
