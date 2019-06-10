@@ -933,6 +933,20 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         const relX = e.pageX - parentOffset.left;
                         const data = chart.options.data[0].dataPoints;
                         const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
+                        const pickType = chart.options.axisX.stripLines[self.selected].label;
+                        const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
+                        const otherPick = self.findValue(self.activeStations[i].picks, 'label', otherPickType);
+                        if (otherPick) {
+                            if (pickType === 'P') {
+                                if (position > otherPick.value) {
+                                    return;
+                                }
+                            } else if (pickType === 'S') {
+                                if (position < otherPick.value) {
+                                    return;
+                                }
+                            }
+                        }
                         if (position >= data[0].x && position <= data[data.length - 1].x) {
                             $(this)[0].style.cursor = 'pointer';
                             chart.options.axisX.stripLines[self.selected].value = position;
@@ -1405,6 +1419,21 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 return;
             }
             station.picks = ( typeof station.picks !== 'undefined' && station.picks instanceof Array ) ? station.picks : [];
+            const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
+            const otherPick = self.findValue(station.picks, 'label', otherPickType);
+            if (otherPick) {
+                if (pickType === 'P') {
+                    if (position > otherPick.value) {
+                        window.alert('P Pick cannot be moved past S Pick');
+                        return;
+                    }
+                } else if (pickType === 'S') {
+                    if (position < otherPick.value) {
+                        window.alert('S Pick cannot be moved before P Pick');
+                        return;
+                    }
+                }
+            }
             self.savePicksState(ind, station.station_code, station.picks);
             // remove any existing pick of this type
             station.picks = station.picks.filter( el => el.label !== pickType);
@@ -1450,6 +1479,21 @@ export class WaveformComponent implements OnInit, OnDestroy {
             if (position < data[0].x || position > data[data.length - 1].x) {
                 window.alert('Pick cannot be moved outside of the current trace view');
                 return;
+            }
+            const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
+            const otherPick = self.findValue(station.picks, 'label', otherPickType);
+            if (otherPick) {
+                if (pickType === 'P') {
+                    if (position > otherPick.value) {
+                        window.alert('P Pick cannot be moved past S Pick');
+                        return;
+                    }
+                } else if (pickType === 'S') {
+                    if (position < otherPick.value) {
+                        window.alert('S Pick cannot be moved before P Pick');
+                        return;
+                    }
+                }
             }
             self.savePicksState(ind, station.station_code, station.picks);
             // move pick
