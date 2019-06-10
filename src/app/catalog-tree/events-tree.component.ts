@@ -280,10 +280,11 @@ export class FileDatabase {
 
   convertTree(dataObject, dataTree, thisYear, thisMonth, thisDay) {
     // overwrite current node
+    const theDay =  ('0' + thisDay).slice(-2);
     if (dataTree.hasOwnProperty(thisYear)
       && dataTree[thisYear].hasOwnProperty(thisMonth)
-      && dataTree[thisYear][thisMonth].hasOwnProperty(thisDay)) {
-      dataTree[thisYear][thisMonth][thisDay] = {};
+      && dataTree[thisYear][thisMonth].hasOwnProperty(theDay)) {
+      dataTree[thisYear][thisMonth][theDay] = {};
     }
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
@@ -516,8 +517,6 @@ export class EventsTreeComponent {
           this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes, false);
         }
       }
-
-
     }
   }
 
