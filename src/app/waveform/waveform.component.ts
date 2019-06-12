@@ -426,7 +426,11 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                                             }
                                                         }
                                                         self.changePage(true);  // display data (first page)
-                                                        asyncLoadEventPages(id);  // load next pages
+                                                        if (self.loaded_pages === self.num_pages) {
+                                                            self.afterLoading(id);
+                                                        } else {
+                                                            asyncLoadEventPages(id);  // load next pages
+                                                        }
                                                     }
                                                   });
 
@@ -1730,46 +1734,56 @@ export class WaveformComponent implements OnInit, OnDestroy {
             channelsMap.forEach( function(this, value, key, map) {
                 const sg = miniseed.createSeismogram(channelsMap.get(key));
                 const header = channelsMap.get(key)[0].header;
-                if (isContext || (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0))) { // this filters out zero channels
-                    if (!zTime) {
-                        zTime = moment(sg.start());  // starting time (use it up to tenth of second)
-                        zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
-                    } else {
-                        if (!sg.start().isSame(zTime, 'second')) {
-                            zTime = moment(moment.min(zTime, sg.start()));
-                            changetimeOrigin = true;
-                        }
-                    }
-                    const seismogram = filter.rMean(sg);
-                    const channel = {};
-                    channel['code_id'] = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
-                    channel['station_code'] = sg.stationCode();
-                    channel['channel_id'] = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
-                    channel['sample_rate'] = sg.sampleRate();
-                    channel['start'] = sg.start();  // moment object (good up to milisecond)
-                    // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
-                    channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-                    channel['raw'] = seismogram;
-                    const data = [];
-                    for (let k = 0; k < seismogram.numPoints(); k++) {
-                        data.push({
-                            x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-                            y: seismogram.y()[k],  // trace after mean removal
-                        });
-                    }
-                    channel['data'] = data;
-                    channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
-                    let station = self.findValue(stations, 'station_code', sg.stationCode());
-                    if (!station) {
-                        station = { station_code: sg.stationCode(), channels: [] };
-                        stations.push(station);
-                    }
-                    station.channels.push(channel);
+                let valid = false;
+                if (isContext || (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0))) {
+                    valid = true;
                 } else {
-                    console.log('Skip zero data channel: ' + sg.codes());
+                    console.log('Warning - zero data channel: ' + sg.codes());
                     self.tracesInfo = self.tracesInfo ?
                         (self.tracesInfo.includes(sg.codes()) ? self.tracesInfo : self.tracesInfo + ', ' + sg.codes()) :
                             'Zero traces: ' + sg.codes();
+                }
+                if (!zTime) {
+                    zTime = moment(sg.start());  // starting time (use it up to tenth of second)
+                    zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
+                } else {
+                    if (!sg.start().isSame(zTime, 'second')) {
+                        zTime = moment(moment.min(zTime, sg.start()));
+                        changetimeOrigin = true;
+                    }
+                }
+                const seismogram = valid ? filter.rMean(sg) : sg;
+                const channel = {};
+                channel['code_id'] = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
+                channel['station_code'] = sg.stationCode();
+                channel['channel_id'] = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
+                channel['sample_rate'] = sg.sampleRate();
+                channel['start'] = sg.start();  // moment object (good up to milisecond)
+                // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
+                channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+                channel['raw'] = seismogram;
+                channel['valid'] = valid;
+                const data = [];
+                for (let k = 0; k < seismogram.numPoints(); k++) {
+                    data.push({
+                        x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
+                        y: seismogram.y()[k],  // trace after mean removal
+                    });
+                }
+                channel['data'] = data;
+                channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
+                let station = self.findValue(stations, 'station_code', sg.stationCode());
+                if (!station) {
+                    station = { station_code: sg.stationCode(), channels: [] };
+                    stations.push(station);
+                }
+                const invalid = (station.channels).findIndex((x) => !x.valid);
+                if (invalid >= 0) {
+                    station.channels[invalid] = channel;  // valid channel replaces invalid channel (placeholder)
+                } else {
+                    if (valid || (!valid && station.channels.length === 0)) {
+                        station.channels.push(channel);
+                    }
                 }
             });
             if (zTime && zTime.isValid()) {
@@ -1831,17 +1845,19 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 }
                 for (const channel of station.channels) {
                     if (channel.hasOwnProperty('raw')) {
-                        const sg = channel.raw.clone();
-                        let seis = null;
-                        const butterworth = self.createButterworthFilter(channel.sample_rate);
-                        if (butterworth) {
-                            seis = filter.taper.taper(sg);
-                            butterworth.filterInPlace(seis.y());
-                        } else {
-                            seis = sg;
-                        }
-                        for (let k = 0; k < seis.numPoints(); k++) {
-                            channel.data[k].y = seis.y()[k];
+                        if(channel.valid) {
+                            const sg = channel.raw.clone();
+                            let seis = null;
+                            const butterworth = self.createButterworthFilter(channel.sample_rate);
+                            if (butterworth) {
+                                seis = filter.taper.taper(sg);
+                                butterworth.filterInPlace(seis.y());
+                            } else {
+                                seis = sg;
+                            }
+                            for (let k = 0; k < seis.numPoints(); k++) {
+                                channel.data[k].y = seis.y()[k];
+                            }
                         }
                     } else {
                         console.log('Error applying filter cannot find raw data');
