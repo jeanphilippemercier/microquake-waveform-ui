@@ -975,7 +975,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 // Wheel events: zoomp/pan, move picks in picking mode
                 $(canvas_chart)[1].addEventListener('wheel', function(e) {
                     // in pick mode wheel up moves pick left, wheel down moves pick right
-                    if (self.pickingMode !== 'none') {
+                    if (self.pickingMode !== 'none'
+                            && !e.ctrlKey && !e.shiftKey && !e.altKey) {
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         const step = environment.pickTimeStep * 1000; // in microseconds
                         if (e.deltaY < 0) { // scrolling up
