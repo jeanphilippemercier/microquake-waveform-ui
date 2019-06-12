@@ -251,6 +251,10 @@ export class FileDatabase {
     }
   }
 
+  clearExpandedDays() {
+    this.expandedDays = [];
+  }
+
 
   createTree(bounds) {
     const dataTree = {};
@@ -452,7 +456,8 @@ export class EventsTreeComponent {
     const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
     const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
     this.messageEvent.emit({'action': 'treeLoading'});
-    this.database.getEventsForDate(this.database.bounds.max_time, null, eventTypes, statusTypes, true);
+    this.database.clearExpandedDays();
+    this.database.getEventsForDate(this.database.bounds.max_time, this.treeControl, eventTypes, statusTypes, true);
   }
 
   selectEvent() {
