@@ -206,12 +206,14 @@ export class FileDatabase {
         for (const monthNode of yearNode.children) {
           if (monthNode.hasOwnProperty('children')) {
             for (const dayNode of monthNode.children) {
-              if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
+              if (dayNode.hasOwnProperty('children')) {
                 if (tree) {
                   if (this.expandedDays.length === 0 || this.expandedDays.includes(dayNode.date)) {
                     tree.expand(yearNode);
                     tree.expand(monthNode);
-                    tree.expand(dayNode);
+                    if (dayNode.children.length > 0) {
+                      tree.expand(dayNode);
+                    }
                   }
                 }
                 for (const event of dayNode.children) {
