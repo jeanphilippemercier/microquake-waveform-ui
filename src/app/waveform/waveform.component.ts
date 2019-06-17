@@ -1300,9 +1300,12 @@ export class WaveformComponent implements OnInit, OnDestroy {
             const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            chart.options.axisY.maximum = self.bCommonAmplitude ? self.getYmax(channel) : null;
-            chart.options.axisY.minimum = self.bCommonAmplitude ? -chart.options.axisY.maximum : null;
-            chart.options.axisY.interval = self.bCommonAmplitude ? chart.options.axisY.maximum / 2 : null;
+            // chart.options.axisY.maximum = self.bCommonAmplitude ? self.getYmax(channel) : null;
+            // chart.options.axisY.minimum = self.bCommonAmplitude ? -chart.options.axisY.maximum : null;
+            // chart.options.axisY.interval = self.bCommonAmplitude ? chart.options.axisY.maximum / 2 : null;
+            chart.options.axisY.maximum = self.getYmax(channel);
+            chart.options.axisY.minimum = -chart.options.axisY.maximum;
+            chart.options.axisY.interval = chart.options.axisY.maximum / 2;
             chart.render();
         };
 
@@ -1354,7 +1357,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     self.maxValue(self.activeStations[station].channels[0].data) :
                     Math.max(self.maxValue(self.activeStations[station].channels[j].data), val);
             }
-            return self.bCommonAmplitude ?  self.getValueMaxAll() : val;
+            return (self.bCommonAmplitude || val === 0) ?  self.getValueMaxAll() : val;
         };
 
         this.getAxisMinAll = (isXaxis) => {

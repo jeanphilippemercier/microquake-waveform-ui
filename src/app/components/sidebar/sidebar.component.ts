@@ -103,8 +103,9 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.origin.mode = message.evaluation_mode ?
               message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
           this.origin.status = message.status;
-          this.origin.time_residual = message.time_residual ?
-            (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick, 10)).toFixed(3) : '') : '';
+          this.origin.time_residual = message.time_residual ?  message.time_residual.toFixed(3) : '';
+          // this.origin.time_residual = message.time_residual ?
+            // (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick, 10)).toFixed(3) : '') : '';
           this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
           this.origin.event_resource_id = message.event_resource_id;
           this.origin.preferred_origin_id = message.preferred_origin_id;
