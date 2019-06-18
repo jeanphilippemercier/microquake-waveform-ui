@@ -1661,10 +1661,10 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         }
 
                     } else {
-                        console.log('Invalid pick station for arrival id: ' + arrival.arrival_resopurce_id);
+                        console.log('Invalid pick station for arrival id: ' + arrival.arrival_resource_id);
                     }
                 } else {
-                    console.log('Picks not found for arrival id: ' + arrival.arrival_resopurce_id);
+                    console.log('Picks not found for arrival id: ' + arrival.arrival_resource_id);
                 }
             }
             if (missingStations.length > 0) {
