@@ -26,6 +26,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     public allStations: any[];
     public contextStation: any[];
     public allPicks: any[];
+    public allPicksChanged: any[];
     public originTravelTimes: any[];
     public activeStations: any[];
     public lastPicksState: any;
@@ -118,7 +119,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private deletePicks: Function;
     private savePicksState: Function;
     public undoLastPicking: Function;
-    private addPickData: Function;
+    private updateArrivalsPicksData: Function;
+    private updateStationArrivals: Function;
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private calculateTimeOffset: Function;
@@ -134,7 +136,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
     public changePage: Function;
     private sort_array_by: Function;
     private findValue: Function;
+    private findNestedValue: Function;
     private addTime: Function;
+    private addTimeOffsetMicro: Function;
     private sortTraces: Function;
 
     private xViewPortMinStack: any[];
@@ -468,7 +472,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         const eventData = self.parseMiniseed(eventFile, false);
                         if (eventData && eventData.hasOwnProperty('stations') && eventData.stations.length > 0) {
                             if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
-                                console.log('Warning: Different origin time on page: ', i, eventData.timeOrigin.toISOString());
+                                console.log('Warning: Different origin time on page: ', i);
                             }
                             // filter and recompute composite traces
                             const stations = self.addCompositeTrace(self.filterData(eventData.stations));
@@ -528,6 +532,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         this.findValue = (obj, key, value) => obj.find(v => v[key] === value);
 
+        this.findNestedValue = (obj, key, subkey, value, otherkey, othervalue) =>
+            obj.find(v => (v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
+
         this.renderPage = () => {
             const pageNumber = self.page_number;
             const pageSize = self.page_size - 1; // traces loaded from API
@@ -548,6 +555,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         };
 
         this.changePage = (reset) => {
+            this.updateArrivalsPicksData();
             if (self.bDataLoading && self.page_number > self.loaded_pages) {
                 window.alert('Please wait for requested page to load');
                 return;  // no page change til data is fully loaded
@@ -604,6 +612,15 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 + parseInt(time.slice(-7, -1), 10);
             return diff;
         };
+
+
+        this.addTimeOffsetMicro = (origin, micro) => {  // microsec time offset from the origin full second with microsec precision
+            const fullseconds = Math.trunc(micro / 1000000);
+            const seconds = micro / 1000000 - fullseconds;
+            const ts = moment(origin).millisecond(0).add(fullseconds, 'seconds');
+            return ts.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
+        };
+
 
         this.destroyCharts = () => {
             if (self.activeStations) {
@@ -1627,6 +1644,65 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     }
                 }
             }
+        };
+
+
+        this.updateArrivalsPicksData = (stations) => {
+            self.allPicksChanged = self.allPicksChanged ? self.allPicksChanged : JSON.parse(JSON.stringify(self.allPicks));
+            console.log(self.allPicks);
+            if (self.activeStations) {
+                for (let i = 0; i < self.activeStations.length - 1; i++) {
+                    const station = self.activeStations[i];
+                    this.updateStationArrivals(station, 'P');
+                    this.updateStationArrivals(station, 'S');
+                }
+            }
+            console.log(self.allPicksChanged);
+        };
+
+        this.updateStationArrivals = (station, picktype) => {
+            const pick = station.picks ? self.findValue(station.picks, 'label', picktype) : undefined;
+            const arrpick = self.findNestedValue
+                (self.allPicksChanged, 'pick', 'station', station.station_code, 'phase', picktype );
+            if (pick) {
+                const pick_time = self.addTimeOffsetMicro(self.timeOrigin, pick.value);
+                if (arrpick) {  // existing pick
+                    if (arrpick.pick.time_utc !== pick_time) {
+                        console.log(station.station_code, picktype);
+                        console.log('replace pick');
+                        console.log(arrpick.pick.time_utc);
+                        console.log(pick_time);
+                        arrpick.pick.evaluation_mode = 'manual';
+                        arrpick.pick.time_utc = pick_time;
+                    }
+                } else {  // add pick
+                    const newpick = {
+                        network: self.network,
+                        site: self.site,
+                        phase: picktype,
+                        pick: {
+                            evaluation_mode: 'manual',
+                            network: self.network,
+                            phase_hint: picktype,
+                            site: self.site,
+                            station: station.station_code,
+                            time_utc: pick_time
+                        }
+                    };
+                    console.log(station.station_code, picktype);
+                    console.log('add pick');
+                    console.log(newpick);
+                    self.allPicksChanged.push(newpick);
+                }
+            } else {
+                if (arrpick) {  // delete pick
+                    console.log(station.station_code, picktype);
+                    console.log('delete pick');
+                    console.log(arrpick);
+                    self.allPicksChanged = self.allPicksChanged.filter(item => item !== arrpick);
+                }
+            }
+
         };
 
         this.addArrivalsPickData = (stations, origin) => {
