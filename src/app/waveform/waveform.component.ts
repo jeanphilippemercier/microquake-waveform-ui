@@ -119,8 +119,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private deletePicks: Function;
     private savePicksState: Function;
     public undoLastPicking: Function;
-    private updateArrivalsPicksData: Function;
-    private updateStationArrivals: Function;
+    private updatePicksReprocessEvent: Function;
+    private updateArrivalWithPickData: Function;
+    private updateStationPicks: Function;
     private addArrivalsPickData: Function;
     private addPredictedPicksData: Function;
     private calculateTimeOffset: Function;
@@ -195,6 +196,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
         }
         if (message.hasOwnProperty('timezone')) {
             this.timezone = message.timezone;
+        }
+        if (message.action === 'reprocess' && message.event_resource_id === this.currentEventId) {
+            this.updatePicksReprocessEvent();
         }
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.currentEventId = message.event_resource_id;
@@ -555,7 +559,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         };
 
         this.changePage = (reset) => {
-            this.updateArrivalsPicksData();
+            this.updateArrivalWithPickData();
             if (self.bDataLoading && self.page_number > self.loaded_pages) {
                 window.alert('Please wait for requested page to load');
                 return;  // no page change til data is fully loaded
@@ -573,6 +577,18 @@ export class WaveformComponent implements OnInit, OnDestroy {
             }
             self.destroyCharts();
             self.renderPage();
+        };
+
+        this.updatePicksReprocessEvent = () => {
+            this.updateArrivalWithPickData();
+            self._catalogService.update_event_picks_by_id
+                (self.currentEventId, self.allPicksChanged)
+                .subscribe((response) => {
+                    console.log(response);
+            },
+            (error) => {
+                window.alert('Error updating event: ' + error.error.message);
+            });
         };
 
         this.toggleMenu = command => {
@@ -1647,20 +1663,20 @@ export class WaveformComponent implements OnInit, OnDestroy {
         };
 
 
-        this.updateArrivalsPicksData = (stations) => {
+        this.updateArrivalWithPickData = () => {
             self.allPicksChanged = self.allPicksChanged ? self.allPicksChanged : JSON.parse(JSON.stringify(self.allPicks));
             console.log(self.allPicks);
             if (self.activeStations) {
                 for (let i = 0; i < self.activeStations.length - 1; i++) {
                     const station = self.activeStations[i];
-                    this.updateStationArrivals(station, 'P');
-                    this.updateStationArrivals(station, 'S');
+                    this.updateStationPicks(station, 'P');
+                    this.updateStationPicks(station, 'S');
                 }
             }
             console.log(self.allPicksChanged);
         };
 
-        this.updateStationArrivals = (station, picktype) => {
+        this.updateStationPicks = (station, picktype) => {
             const pick = station.picks ? self.findValue(station.picks, 'label', picktype) : undefined;
             const arrpick = self.findNestedValue
                 (self.allPicksChanged, 'pick', 'station', station.station_code, 'phase', picktype );
@@ -1674,20 +1690,45 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         console.log(pick_time);
                         arrpick.pick.evaluation_mode = 'manual';
                         arrpick.pick.time_utc = pick_time;
+                        arrpick.azimuth = null;
+                        arrpick.distance = null;
+                        arrpick.earth_model = null;
+                        arrpick.time_correction = null;
+                        arrpick.time_residual = null;
+                        arrpick.takeoff_angle = null;
+                        arrpick.pick.evaluation_status = null;
+                        arrpick.pick.filter_id = null;
+                        arrpick.pick.method_id = null;
+                        arrpick.pick.onset = null;
+                        arrpick.pick.polarity = null;
+                        arrpick.pick.time_errors = null;
+                        delete arrpick.origin;
+                        delete arrpick.arrival_resource_id;
+                        delete arrpick.event;
+                        delete arrpick.pick.event;
+                        delete arrpick.pick.pick_resource_id;
                     }
                 } else {  // add pick
                     const newpick = {
-                        network: self.network,
-                        site: self.site,
+                        azimuth: null,
+                        distance: null,
+                        earth_model: null,
                         phase: picktype,
                         pick: {
                             evaluation_mode: 'manual',
-                            network: self.network,
                             phase_hint: picktype,
-                            site: self.site,
                             station: station.station_code,
-                            time_utc: pick_time
-                        }
+                            time_utc: pick_time,
+                            evaluation_status: null,
+                            time_errors: null,
+                            method_id: null,
+                            filter_id: null,
+                            onset: null,
+                            polarity: null
+                        },
+                        time_correction: null,
+                        time_residual: null,
+                        takeoff_angle: null,
                     };
                     console.log(station.station_code, picktype);
                     console.log('add pick');

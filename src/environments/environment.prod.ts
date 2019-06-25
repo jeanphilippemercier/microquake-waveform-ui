@@ -20,6 +20,8 @@ export const environment = {
   apiTravelTimes: 'traveltimes',
   // Arrivals API endpoint
   apiArrivals: 'arrivals',
+  // Picks interactive API endpoint relative to events API path
+  apiPicksInteractive: 'picks/interactive',
   // Microquake event types API endpoint
   apiMicroquakeEventTypes: 'inventory/microquake_event_types',
   // Reprocess events API endpoint
