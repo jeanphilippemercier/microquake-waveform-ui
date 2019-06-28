@@ -51,8 +51,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
     public pickingMode: any;
     public onPickingModeChange: Function;
-    public onChangeEvaluationStatus: Function;
-    public onChangeEventType: Function;
 
     private createButterworthFilter: Function;
     private passband: any;
@@ -60,7 +58,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
     public applyFilter: Function;
     private filterData: Function;
     public bFilterChanged: Boolean;
-    public bEventUnsaved: Boolean;
 
     private sample_rate: any;
     public picksBias: number;
@@ -281,8 +278,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         self.timezone = '+00:00';
         self.bFilterChanged = true;
-
-        self.bEventUnsaved = false;
 
         self.pickingMode = 'none';
         self.lastPicksState = null;
@@ -559,7 +554,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
         };
 
         this.changePage = (reset) => {
-            this.updateArrivalWithPickData();
+            if (!reset) {
+                this.updateArrivalWithPickData();
+            }
             if (self.bDataLoading && self.page_number > self.loaded_pages) {
                 window.alert('Please wait for requested page to load');
                 return;  // no page change til data is fully loaded
@@ -873,19 +870,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             self.pickingMode = value;
         };
 
-        this.onChangeEvaluationStatus = event => {
-            self.origin.status = event.value;
-            self.bEventUnsaved = true;
-            $('#toggleSaveEventType').prop('disabled', false);
-            $('#toggleSaveEventStatus').prop('disabled', false);
-        };
 
-        this.onChangeEventType = event => {
-            self.origin.type = event.value;
-            self.bEventUnsaved = true;
-            $('#toggleSaveEventType').prop('disabled', false);
-            $('#toggleSaveEventStatus').prop('disabled', false);
-        };
 
 
         this.setChartKeys = () => {

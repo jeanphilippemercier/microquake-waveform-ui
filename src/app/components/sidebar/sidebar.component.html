@@ -49,7 +49,13 @@
               <td>
                 <mat-form-field class="selector">
                   <mat-select [(ngModel)]="origin.event_type" (selectionChange)='onChangeEventType($event)'>
+                    <mat-select-trigger>
+                      {{origin.event_type}}
+                    </mat-select-trigger>
                     <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
+                      <mat-icon>
+                        {{ type.type === 'E' ? 'multiline_chart' : type.type === 'B' ? 'flare' : type.type === 'OB' ? 'filter_tilt_shift' : type.type === 'SE' ? 'person' : type.type === 'CN' ? 'hearing' : type.type === 'L' ? 'flash_on' : type.type === 'OP' ? 'all_out' : 'more' }}
+                      </mat-icon>
                       {{type.viewValue}}
                     </mat-option>
                   </mat-select>

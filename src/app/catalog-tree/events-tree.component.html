@@ -7,8 +7,17 @@
   <mat-form-field appearance="fill">
     <mat-label>Event Type</mat-label>
     <mat-select [(ngModel)]="selectedEventTypes" multiple>
+      <mat-select-trigger>
+        {{selectedEventTypes ? selectedEventTypes[0] : ''}}
+        <span *ngIf="selectedEventTypes?.length > 1" class="example-additional-selection">
+        (+{{selectedEventTypes.length - 1}} {{selectedEventTypes?.length === 2 ? 'other' : 'others'}})
+        </span>
+      </mat-select-trigger>
       <mat-option *ngFor="let type of eventTypes" [value]="type.quakeml_type" matTooltip="{{type.viewValue}}">
-        {{type.viewValue}}
+        <mat-icon>
+          {{ type.type === 'E' ? 'multiline_chart' : type.type === 'B' ? 'flare' : type.type === 'OB' ? 'filter_tilt_shift' : type.type === 'SE' ? 'person' : type.type === 'CN' ? 'hearing' : type.type === 'L' ? 'flash_on' : type.type === 'OP' ? 'all_out' : 'more' }}
+        </mat-icon>
+         {{type.viewValue}}
       </mat-option>
     </mat-select>
   </mat-form-field>
@@ -31,8 +40,12 @@
         <mat-icon>
           {{ node.select ? 'radio_button_checked' : 'radio_button_unchecked'}}
         </mat-icon></button>
-      <span class="txtColor">{{node.eval_status}}{{node.type}} {{node.name}} {{node.magnitude}}
-      </span>
+      <!--span class="txtColor">{{node.eval_status}}{{node.type}} {{node.name}} {{node.magnitude}}</span-->
+      <span class="txtColor">
+        <mat-icon>
+          {{ node.type === 'E' ? 'multiline_chart' : node.type === 'B' ? 'flare' : node.type === 'OB' ? 'filter_tilt_shift' : node.type === 'SE' ? 'person' : node.type === 'CN' ? 'hearing' : node.type === 'L' ? 'flash_on' : node.type === 'OP' ? 'all_out' : 'more' }}
+        </mat-icon>
+         {{node.name}} {{node.magnitude}}</span>
     </li>
   </mat-tree-node>
 
