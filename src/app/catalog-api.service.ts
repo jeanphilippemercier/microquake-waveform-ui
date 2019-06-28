@@ -80,7 +80,7 @@ export class CatalogApiService {
         return this.http.get(API_URL, {params});
     }
 
-    update_event_by_id = (eventId, status, event_type): any => {
+    update_event_by_id = (eventId, status, event_type, evaluation_mode): any => {
         const httpOptions = {
           headers: new HttpHeaders({
             'Content-Type':  'application/json'
@@ -90,7 +90,8 @@ export class CatalogApiService {
         const data = JSON.stringify({
             'event_resource_id': eventId,
             'status': status,
-            'event_type': event_type
+            'event_type': event_type,
+            'evaluation_mode': evaluation_mode,
         });
         return this.http.put(API_URL, data, httpOptions);
     }

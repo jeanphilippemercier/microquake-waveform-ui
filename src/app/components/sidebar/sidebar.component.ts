@@ -37,6 +37,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public site: any;
   public network: any;
   public onChangeEvaluationStatus: Function;
+  public onChangeEvaluationMode: Function;
   public onChangeEventType: Function;
   public onReprocessEvent: Function;
   public bEventUnsaved: Boolean;
@@ -53,6 +54,10 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
       {status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)'},
       {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
       {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
+  ];
+  public evalModes = [
+      {evaluation_mode: 'automatic', viewValue: 'Automatic'},
+      {evaluation_mode: 'manual', viewValue: 'Manual'}
   ];
 
   ngAfterViewInit() {
@@ -100,8 +105,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.origin.event_type = message.event_type;
           this.origin.type = message.type;
           this.origin.eval_status =  message.eval_status;
-          this.origin.mode = message.evaluation_mode ?
-              message.evaluation_mode[0].toUpperCase() + message.evaluation_mode.substr(1).toLowerCase() : '';
+          this.origin.evaluation_mode = message.evaluation_mode;
           this.origin.status = message.status;
           this.origin.time_residual = message.time_residual ?  message.time_residual.toFixed(3) : '';
           // this.origin.time_residual = message.time_residual ?
@@ -152,19 +156,38 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
         if (self.origin.hasOwnProperty('status')) {
           self.origin.status = event.value;
         }
+        if (self.origin.hasOwnProperty('evaluation_mode')) {
+          self.origin.evaluation_mode = 'manual';
+        }
         self.bEventUnsaved = true;
         $('#toggleSaveEventType').prop('disabled', false);
         $('#toggleSaveEventStatus').prop('disabled', false);
+        $('#toggleSaveEventEvalMode').prop('disabled', false);
     };
 
     this.onChangeEventType = event => {
         if (self.origin.hasOwnProperty('type')) {
           self.origin.type = event.value;
         }
+        if (self.origin.hasOwnProperty('evaluation_mode')) {
+          self.origin.evaluation_mode = 'manual';
+        }
         self.bEventUnsaved = true;
         $('#toggleSaveEventType').prop('disabled', false);
         $('#toggleSaveEventStatus').prop('disabled', false);
+        $('#toggleSaveEventEvalMode').prop('disabled', false);
     };
+
+    this.onChangeEvaluationMode = event => {
+        if (self.origin.hasOwnProperty('evaluation_mode')) {
+          self.origin.evaluation_mode = event.value;
+        }
+        self.bEventUnsaved = true;
+        $('#toggleSaveEventType').prop('disabled', false);
+        $('#toggleSaveEventStatus').prop('disabled', false);
+        $('#toggleSaveEventEvalMode').prop('disabled', false);
+    };
+
 
     $('#toggleSaveEventType').on('click', () => {
         self.saveEventTypeStatus();
@@ -174,11 +197,16 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
         self.saveEventTypeStatus();
     });
 
+    $('#toggleSaveEventEvalMode').on('click', () => {
+        self.saveEventTypeStatus();
+    });
+
+
     this.saveEventTypeStatus = () => {
         // if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
             // change event in tree view (may not be selected one)
             self._catalogService.update_event_by_id
-                (self.origin.event_resource_id, self.origin.status, self.origin.event_type)
+                (self.origin.event_resource_id, self.origin.status, self.origin.event_type, self.origin.evaluation_mode)
                 .subscribe((response) => {
                 self.eventsDatabase.updateEventsTree(response, self.eventsTree);
                 self.eventsTreeReference.activeEvent();
