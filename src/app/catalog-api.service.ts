@@ -95,6 +95,19 @@ export class CatalogApiService {
         return this.http.put(API_URL, data, httpOptions);
     }
 
+    update_event_picks_by_id = (eventId, dataObj): any => {
+        const httpOptions = {
+          headers: new HttpHeaders({
+            'Content-Type':  'application/json'
+          })
+        };
+        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId + '/' + environment.apiPicksInteractive;
+        const data = JSON.stringify({
+            'event_resource_id': eventId,
+            'data': dataObj
+        });
+        return this.http.post(API_URL, data, httpOptions);
+    }
 
     get_origins_by_id = (site, network, eventId): any => {
         const API_URL = environment.apiUrl + environment.apiOrigins;
