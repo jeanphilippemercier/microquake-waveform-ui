@@ -44,7 +44,7 @@
             </tr>
             <tr>
               <th scope="row">Type
-                <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+                <button mat-mini-fab id='toggleSaveEventType' matTooltip='Save Event Type, Status and Evaluation Mode' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
               </th>
               <td>
                 <mat-form-field class="selector">
@@ -58,7 +58,7 @@
             </tr>
             <tr>
               <th scope="row">Status
-                <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type and Status' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+                <button mat-mini-fab id='toggleSaveEventStatus' matTooltip='Save Event Type, Status and Evaluation Mode' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
               </th>
               <td>
                 <mat-form-field class="selector">
@@ -71,8 +71,18 @@
               </td>
             </tr>
             <tr>
-              <th scope="row">Mode</th>
-              <td>{{origin.mode}}</td>
+              <th scope="row">Mode
+                <button mat-mini-fab id='toggleSaveEventEvalMode' matTooltip='Save Event Type, Status and Evaluation Mode' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>save_alt</mat-icon></button>
+              </th>
+              <td>
+                <mat-form-field class="selector">
+                  <mat-select [(ngModel)]="origin.evaluation_mode" (selectionChange)='onChangeEvaluationMode($event)'>
+                    <mat-option *ngFor="let emode of evalModes" [value]="emode.evaluation_mode">
+                    {{emode.viewValue}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </td>
             </tr>
             <tr *ngIf='origin.time_residual'>
               <th scope="row">Time Residual</th>
