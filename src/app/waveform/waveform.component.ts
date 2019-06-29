@@ -322,6 +322,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                             this._catalogService.get_arrivals_by_id(self.site, self.network, id, origin.origin_resource_id)
                                             .subscribe(picks => {
                                               self.allPicks = picks;
+                                              self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
                                               this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
                                               self.activateRemoveBias(false);
@@ -401,6 +402,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                                 (self.site, self.network, id, origin.origin_resource_id)
                                                 .subscribe(picks => {
                                                   self.allPicks = picks;
+                                                  self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
                                                   this.addArrivalsPickData(self.allStations, self.timeOrigin);
 
                                                   self.picksBias = 0;
@@ -1649,7 +1651,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
 
         this.updateArrivalWithPickData = () => {
-            self.allPicksChanged = self.allPicksChanged ? self.allPicksChanged : JSON.parse(JSON.stringify(self.allPicks));
             console.log(self.allPicks);
             if (self.activeStations) {
                 for (let i = 0; i < self.activeStations.length - 1; i++) {
