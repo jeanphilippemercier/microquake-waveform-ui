@@ -40,6 +40,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public onChangeEvaluationMode: Function;
   public onChangeEventType: Function;
   public onReprocessEvent: Function;
+  public toggleEventStatus: Function;
   public bEventUnsaved: Boolean;
   private saveEventTypeStatus: Function;
   private timezone: string;
@@ -49,10 +50,10 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public eventTypes = [];
   public evalTypes = [
       {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
-      {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
-      {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
+      // {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
+      // {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
       {status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)'},
-      {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
+      // {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
       {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
   ];
   public evalModes = [
@@ -201,6 +202,21 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
         self.saveEventTypeStatus();
     });
 
+    this.toggleEventStatus = () => {
+      if (self.origin.eval_status === 'A') {
+        self.origin.eval_status = 'R';
+        self.origin.status = 'rejected';
+      } else if (self.origin.eval_status === 'R') {
+        self.origin.eval_status = 'A';
+        self.origin.status = 'final';
+      }
+    };
+
+    document.addEventListener('keydown', (e: any) => {
+      if (e.keyCode === 82) {   // r, toggle event type automatic/manual
+          self.toggleEventStatus();
+      }
+    });
 
     this.saveEventTypeStatus = () => {
         // if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
