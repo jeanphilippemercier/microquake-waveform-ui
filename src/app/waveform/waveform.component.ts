@@ -7,6 +7,7 @@ import { CatalogApiService } from '../catalog-api.service';
 import { Subscription } from 'rxjs/Subscription';
 import { MessageService } from '../message.service';
 import { ActivatedRoute } from '@angular/router';
+import { Validators, FormControl, ReactiveFormsModule} from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
@@ -59,7 +60,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private filterData: Function;
     public bFilterChanged: Boolean;
 
-    private sample_rate: any;
     public picksBias: number;
     private convYUnits: number;
 
@@ -165,6 +165,10 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
     public picksWarning: string;
     public tracesInfo: string;
+
+    public maxFreq = environment.highFreqCorner;
+    public rateControl = new FormControl('rateControl', [Validators.max(this.maxFreq)]);
+    public minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
 
     reload(params) {
         if (params.hasOwnProperty('reload')) {
@@ -1993,7 +1997,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         this.createButterworthFilter = (sample_rate): any => {
             let butterworth = null;
-            if (self.lowFreqCorner > 0 && self.highFreqCorner < sample_rate / 2 ) {
+            if (self.lowFreqCorner >= 0 && self.highFreqCorner <= sample_rate / 2 ) {
                 butterworth = filter.createButterworth(
                                      self.numPoles, // poles
                                      self.passband,
