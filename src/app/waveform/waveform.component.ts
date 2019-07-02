@@ -76,6 +76,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private renderContextChart: Function;
     private destroyCharts: Function;
     private setChartKeys: Function;
+    private addEventListeners: Function;
     private getEvent: Function;
     private getEventPage: Function;
     private getAttachmentFilename: Function;
@@ -173,7 +174,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
     reload(params) {
         if (params.hasOwnProperty('reload')) {
             let url = location.href;
-            console.log(url);
             if (url.endsWith('reload')) {
                 url = url.slice(0, -6);
                 window.location.replace(url);
@@ -708,6 +708,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         if (e.trigger === 'reset') {
                             self.resetChartViewX(e.chart);
                         }
+                        document.getElementById('toolbar').focus();
                     },
                     title: {
                         text: self.activeStations[i].station_code,
@@ -876,9 +877,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
             self.pickingMode = value;
         };
 
-
-
-
         this.setChartKeys = () => {
             for (let j = 0; j < self.activeStations.length; j++) {
                 const canvas_chart = '#' + self.activeStations[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
@@ -1007,6 +1005,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                             chart.options.axisX.stripLines = self.activeStations[i].picks ;
                             chart.options.zoomEnabled = true;   // turn zoom back on
                             chart.render();
+                            document.getElementById('toolbar').focus();
                         }
                     });
 
@@ -1094,6 +1093,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                     chart.render();
                                 }
                             }
+                            document.getElementById('toolbar').focus();
                         }
                     }
                 });
@@ -1110,8 +1110,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
                           return false;
                     });
                 }
-
             }
+            self.addEventListeners();
         };
 
         $('#commonAmplitude').on('click', () => {
@@ -1126,75 +1126,80 @@ export class WaveformComponent implements OnInit, OnDestroy {
             self.resetAllChartsViewX();
         });
 
-        document.addEventListener('keydown', (e: any) => {
-            const target = e.target || e.srcElement;
-            if ( !/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName) ) {
-                if (e.keyCode === 80) {  // p
-                    self.togglePredictedPicks();
-                }
-                if (e.keyCode === 90) {  // z
-                    self.toggleCommonTime();
-                }
-                if (e.keyCode === 88) {   // x
-                    self.toggleCommonAmplitude();
-                }
-                if (e.keyCode === 68) {   // d
-                    if (self.pickingMode === 'P') {
-                        self.pickingMode = 'none';
-                    } else {
-                        self.pickingMode = 'P';
+        this.addEventListeners = () => {
+
+            document.addEventListener('keydown', (e: any) => {
+                const target = e.target || e.srcElement;
+                if ( !/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName) ) {
+                    if (e.keyCode === 80) {  // p
+                        self.togglePredictedPicks();
                     }
-                }
-                if (e.keyCode === 70) {   // f
-                    if (self.pickingMode === 'S') {
-                        self.pickingMode = 'none';
-                    } else {
-                        self.pickingMode = 'S';
+                    if (e.keyCode === 90) {  // z
+                        self.toggleCommonTime();
                     }
-                }
-                if (e.keyCode === 83) {   // s, undo picking
-                    self.undoLastPicking();
-                }
-                if (e.keyCode === 72) {   // h, help
-                    document.getElementById('helpBtn').click();
-                }
-                if (e.keyCode === 39) {  // right arrow moves pick to right
-                    if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
-                        const step = environment.pickTimeStep * 1000; // in microseconds
-                        if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                            self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
-                        } else { // by step
-                            self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
+                    if (e.keyCode === 88) {   // x
+                        self.toggleCommonAmplitude();
+                    }
+                    if (e.keyCode === 68) {   // d
+                        if (self.pickingMode === 'P') {
+                            self.pickingMode = 'none';
+                        } else {
+                            self.pickingMode = 'P';
+                        }
+                    }
+                    if (e.keyCode === 70) {   // f
+                        if (self.pickingMode === 'S') {
+                            self.pickingMode = 'none';
+                        } else {
+                            self.pickingMode = 'S';
+                        }
+                    }
+                    if (e.keyCode === 83) {   // s, undo picking
+                        self.undoLastPicking();
+                    }
+                    if (e.keyCode === 72) {   // h, help
+                        document.getElementById('helpBtn').click();
+                    }
+                    if (e.keyCode === 39) {  // right arrow moves pick to right
+                        if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
+                            const step = environment.pickTimeStep * 1000; // in microseconds
+                            if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                                self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
+                            } else { // by step
+                                self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
+                            }
+                        }
+                    }
+                    if (e.keyCode === 37) {  // left arrow moves pick to left
+                        if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+                           const step = environment.pickTimeStep * 1000; // in microseconds
+                           if (e.shiftKey) { // shift key - fast mode - by 10 * step
+                               self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
+                           } else { // by step
+                               self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
+                           }
+                        }
+                    }
+                    if (e.keyCode === 49 || e.keyCode === 97) {
+                        if (self.page_number > 1) {
+                            self.page_number = self.page_number - 1;
+                            self.changePage(false);
+                        }
+                    }
+                    if (e.keyCode === 50 || e.keyCode === 98) {
+                        const numPages = environment.enablePagingLoad ?
+                            self.loaded_pages : Math.ceil(self.allStations.length / (self.page_size - 1));
+                        if (self.page_number < numPages) {
+                            self.page_number = self.page_number + 1;
+                            self.changePage(false);
                         }
                     }
                 }
-                if (e.keyCode === 37) {  // left arrow moves pick to left
-                    if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
-                       const step = environment.pickTimeStep * 1000; // in microseconds
-                       if (e.shiftKey) { // shift key - fast mode - by 10 * step
-                           self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
-                       } else { // by step
-                           self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
-                       }
-                    }
-                }
-                if (e.keyCode === 49 || e.keyCode === 97) {
-                    if (self.page_number > 1) {
-                        self.page_number = self.page_number - 1;
-                        self.changePage(false);
-                    }
-                }
-                if (e.keyCode === 50 || e.keyCode === 98) {
-                    const numPages = environment.enablePagingLoad ?
-                        self.loaded_pages : Math.ceil(self.allStations.length / (self.page_size - 1));
-                    if (self.page_number < numPages) {
-                        self.page_number = self.page_number + 1;
-                        self.changePage(false);
-                    }
-                }
-            }
-        },
-        false);
+            },
+            false);
+
+        };
+
 
         $('#zoomAll').on('click', () => {
             self.bZoomAll = !self.bZoomAll;
@@ -1354,9 +1359,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
             const channel = parseInt(chart.container.id.replace('Container', ''), 10);
             chart.options.axisY.viewportMinimum = null;
             chart.options.axisY.viewportMaximum = null;
-            // chart.options.axisY.maximum = self.bCommonAmplitude ? self.getYmax(channel) : null;
-            // chart.options.axisY.minimum = self.bCommonAmplitude ? -chart.options.axisY.maximum : null;
-            // chart.options.axisY.interval = self.bCommonAmplitude ? chart.options.axisY.maximum / 2 : null;
             chart.options.axisY.maximum = self.getYmax(channel);
             chart.options.axisY.minimum = -chart.options.axisY.maximum;
             chart.options.axisY.interval = chart.options.axisY.maximum / 2;
@@ -1546,6 +1548,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             });
             chart.options.axisX.stripLines = station.picks;
             chart.render();
+            document.getElementById('toolbar').focus();
         };
 
         this.deletePicks = (ind, pickType, value) => {
@@ -1560,6 +1563,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             }
             chart.options.axisX.stripLines = station.picks;
             chart.render();
+            document.getElementById('toolbar').focus();
         };
 
         this.movePick = (ind, pickType, value, fromCurrentPosition, issueWarning) => {
@@ -1602,6 +1606,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             station.picks.push(pick);
             chart.options.axisX.stripLines = station.picks;
             chart.render();
+            document.getElementById('toolbar').focus();
         };
 
 
@@ -1609,6 +1614,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             value = value ? value : !self.activeStations[ind].chart.options.toolTip.enabled;
             self.activeStations[ind].chart.options.toolTip.enabled = value;
             self.activeStations[ind].chart.render();
+            document.getElementById('toolbar').focus();
         };
 
         this.back = () => {
@@ -1651,11 +1657,11 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     }
                 }
             }
+            document.getElementById('toolbar').focus();
         };
 
 
         this.updateArrivalWithPickData = () => {
-            console.log(self.allPicks);
             if (self.activeStations) {
                 for (let i = 0; i < self.activeStations.length - 1; i++) {
                     const station = self.activeStations[i];
@@ -1663,7 +1669,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     this.updateStationPicks(station, 'S');
                 }
             }
-            console.log(self.allPicksChanged);
         };
 
         this.updateStationPicks = (station, picktype) => {

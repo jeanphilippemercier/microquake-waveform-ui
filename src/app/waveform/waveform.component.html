@@ -1,63 +1,62 @@
 <div class='container-fluid content'>
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
   <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
-      <div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
-      <!--div id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' style='position:fixed; display:-webkit-box; margin-left: 200px'-->
-          <button mat-mini-fab id='commonTime' matTooltip='Common Time Scale for All Channels' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>more_horiz</mat-icon></button>
-          <button mat-mini-fab id='commonAmplitude' matTooltip='Common Amplitude Scale for All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>more_vert</mat-icon></button>
-          <button mat-mini-fab id='zoomAll' matTooltip='Zoom or Pan All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>link</mat-icon></button>
-          <button mat-mini-fab matTooltip='Undo last Time Zoom or Pan' class='btn btn-primary' (click)='back()'><mat-icon>undo</mat-icon></button>
-          <button mat-mini-fab matTooltip='Reset View after Zoom or Pan' class='btn btn-primary' (click)='resetAllChartsViewXY()'><mat-icon>settings_backup_restore</mat-icon></button>
-          <button mat-mini-fab id='display3C' matTooltip='Display Composite or 3-Component Traces' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>filter_3</mat-icon></button>
-          <button mat-mini-fab id='sortTraces' matTooltip='Sort Traces by Distance to Origin' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>sort</mat-icon></button>
-          <button mat-mini-fab id='togglePredictedPicks' matTooltip='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
-          <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Remove Predicted Picks Bias' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
-          <div>
-            <app-help-dialog></app-help-dialog>
-          </div>
-          <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
-          <div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
-              <mat-form-field appearance="fill" class='input-form-width'>
-                <mat-label>Low Corner</mat-label>
-                <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" min="0" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="lowFreqCorner" [formControl]="minRateControl">
-                <div *ngIf="minRateControl.invalid && (minRateControl.dirty || minRateControl.touched)"
-                  class="alert alert-danger">
-                  <div *ngIf="minRateControl.errors.min">
-                    Min 0
-                  </div>
-                </div>
-              </mat-form-field>
-              <mat-form-field appearance="fill" class='input-form-width'>
-                <mat-label>High Corner</mat-label>
-                <input matInput matTooltip="Butterworth Filter High Corner Frequency" type="number" step="100" [max]="maxFreq" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="highFreqCorner" [formControl]="rateControl">
-                <div *ngIf="rateControl.invalid && (rateControl.dirty || rateControl.touched)"
-                  class="alert alert-danger">
-                  <div *ngIf="rateControl.errors.max">
-                    Max {{maxFreq}}
-                  </div>
-                </div>
-              </mat-form-field>
-              <mat-form-field appearance="fill" class='input-form-width-less'>
-                <mat-label>Poles</mat-label>
-                <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="numPoles" [ngModelOptions]="{standalone: true}">
-              </mat-form-field>
-          </div>
-          <div class = 'ml-5'>
-          <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
-            <!--mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
-            <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle-->
-            <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
-            <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
-            <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
-          </mat-button-toggle-group>
-          <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
-          </div>
-          <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
+  <div tabindex="0" id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
+      <button mat-mini-fab id='commonTime' matTooltip='Common Time Scale for All Channels' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>more_horiz</mat-icon></button>
+      <button mat-mini-fab id='commonAmplitude' matTooltip='Common Amplitude Scale for All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>more_vert</mat-icon></button>
+      <button mat-mini-fab id='zoomAll' matTooltip='Zoom or Pan All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>link</mat-icon></button>
+      <button mat-mini-fab matTooltip='Undo last Time Zoom or Pan' class='btn btn-primary' (click)='back()'><mat-icon>undo</mat-icon></button>
+      <button mat-mini-fab matTooltip='Reset View after Zoom or Pan' class='btn btn-primary' (click)='resetAllChartsViewXY()'><mat-icon>settings_backup_restore</mat-icon></button>
+      <button mat-mini-fab id='display3C' matTooltip='Display Composite or 3-Component Traces' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>filter_3</mat-icon></button>
+      <button mat-mini-fab id='sortTraces' matTooltip='Sort Traces by Distance to Origin' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>sort</mat-icon></button>
+      <button mat-mini-fab id='togglePredictedPicks' matTooltip='Toggle Predicted Picks' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>blur_linear</mat-icon></button>
+      <button mat-mini-fab id='togglePredictedPicksBias' matTooltip='Toggle Remove Predicted Picks Bias' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>compare_arrows</mat-icon></button>
+      <div>
+        <app-help-dialog></app-help-dialog>
       </div>
-      <div id='waveform-panel' style='position: relative; top: 50px;'>
-        <div class='text-color' id='zeroTime' *ngIf="eventTimeOriginHeader">{{eventTimeOriginHeader}}</div>
-        <mat-progress-bar mode="determinate" value="{{progressValue}}"></mat-progress-bar>
+      <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
+      <div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
+          <mat-form-field appearance="fill" class='input-form-width'>
+            <mat-label>Low Corner</mat-label>
+            <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" min="0" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="lowFreqCorner" [formControl]="minRateControl">
+            <div *ngIf="minRateControl.invalid && (minRateControl.dirty || minRateControl.touched)"
+              class="alert alert-danger">
+              <div *ngIf="minRateControl.errors.min">
+                Min 0
+              </div>
+            </div>
+          </mat-form-field>
+          <mat-form-field appearance="fill" class='input-form-width'>
+            <mat-label>High Corner</mat-label>
+            <input matInput matTooltip="Butterworth Filter High Corner Frequency" type="number" step="100" [max]="maxFreq" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="highFreqCorner" [formControl]="rateControl">
+            <div *ngIf="rateControl.invalid && (rateControl.dirty || rateControl.touched)"
+              class="alert alert-danger">
+              <div *ngIf="rateControl.errors.max">
+                Max {{maxFreq}}
+              </div>
+            </div>
+          </mat-form-field>
+          <mat-form-field appearance="fill" class='input-form-width-less'>
+            <mat-label>Poles</mat-label>
+            <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="numPoles" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
       </div>
+      <div class = 'ml-5'>
+      <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
+        <!--mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
+        <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle-->
+        <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
+        <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
+        <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
+      </div>
+      <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
+  </div>
+  <div id='waveform-panel' style='position: relative; top: 50px;'>
+    <div class='text-color' id='zeroTime' *ngIf="eventTimeOriginHeader">{{eventTimeOriginHeader}}</div>
+    <mat-progress-bar mode="determinate" value="{{progressValue}}"></mat-progress-bar>
+  </div>
 </div>
 <ul class='menu'>
   <li data-action='deleteP'>Delete P Pick</li>

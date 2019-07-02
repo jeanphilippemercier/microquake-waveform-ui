@@ -51,7 +51,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public evalTypes = [
       {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
       // {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
-      // {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
+      {status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)'},
       {status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)'},
       // {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
       {status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)'}
