@@ -227,6 +227,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
         this.subscription = this.messageService.getMessage().subscribe(message => {
             if (message.sender !== 'notifier') {
                 this.getNotification(message);
+            } else {
+                console.log(message);
             }
         });
         this.route.params.subscribe( params => { this.reload(params); } );
@@ -634,10 +636,11 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
 
         this.addTimeOffsetMicro = (origin, micro) => {  // microsec time offset from the origin full second with microsec precision
-            const fullseconds = Math.trunc(micro / 1000000);
-            const seconds = micro / 1000000 - fullseconds;
+            const fullseconds = Math.floor(micro / 1000000);
+            const microsec = micro - fullseconds * 1000000;
+            const str = '000000' + microsec;
             const ts = moment(origin).millisecond(0).add(fullseconds, 'seconds');
-            return ts.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
+            return ts.toISOString().slice(0, -4) + str.substring(str.length - 6) + 'Z';
         };
 
 
@@ -1111,7 +1114,6 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     });
                 }
             }
-            self.addEventListeners();
         };
 
         $('#commonAmplitude').on('click', () => {
@@ -1200,6 +1202,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         };
 
+        self.addEventListeners();
 
         $('#zoomAll').on('click', () => {
             self.bZoomAll = !self.bZoomAll;
@@ -1662,6 +1665,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
 
         this.updateArrivalWithPickData = () => {
+            console.log(self.allPicksChanged);
             if (self.activeStations) {
                 for (let i = 0; i < self.activeStations.length - 1; i++) {
                     const station = self.activeStations[i];
@@ -1669,6 +1673,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     this.updateStationPicks(station, 'S');
                 }
             }
+            console.log(self.allPicksChanged);
         };
 
         this.updateStationPicks = (station, picktype) => {
