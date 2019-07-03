@@ -39,7 +39,9 @@
               <td>Z {{origin.z}} m</td>
             </tr>
             <tr>
-              <th scope="row">Picks</th>
+              <th scope="row">Picks
+              <button mat-mini-fab matTooltip='Interactive Process' class='btn-toolbar btn btn-primary' (click)='onInteractiveProcess()'><mat-icon>launch</mat-icon></button>
+              </th>
               <td>{{origin.npick}}</td>
             </tr>
             <tr>

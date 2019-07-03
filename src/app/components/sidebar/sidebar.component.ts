@@ -40,6 +40,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public onChangeEvaluationMode: Function;
   public onChangeEventType: Function;
   public onReprocessEvent: Function;
+  public onInteractiveProcess: Function;
   public toggleEventStatus: Function;
   public bEventUnsaved: Boolean;
   private saveEventTypeStatus: Function;
@@ -237,13 +238,6 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.onReprocessEvent = () => {
         if (self.origin.hasOwnProperty('event_resource_id')) {
-          const message = {
-            sender: 'sidebar',
-            action: 'reprocess',
-            event_resource_id: self.origin.event_resource_id
-          };
-          self.sendMessage(message);  // send message received from event tree to waveform component
-          /*
           self._catalogService.get_reprocess_event_by_id
               (self.site, self.network, self.origin.event_resource_id)
               .subscribe((response) => {
@@ -252,8 +246,19 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           (error) => {
               window.alert('Error reprocessing event: ' + error.error.message);
           });
-          */
         }
     };
+
+    this.onInteractiveProcess = () => {
+        if (self.origin.hasOwnProperty('event_resource_id')) {
+          const message = {
+            sender: 'sidebar',
+            action: 'reprocess',
+            event_resource_id: self.origin.event_resource_id
+          };
+          self.sendMessage(message);  // send message received from event tree to waveform component
+        }
+    };
+
   }
 }
