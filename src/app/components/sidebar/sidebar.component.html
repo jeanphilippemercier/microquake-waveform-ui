@@ -24,24 +24,24 @@
           <tbody>
             <tr>
               <th scope="row">Magnitude</th>
-              <td>{{origin.magnitude}}</td>
+              <td>{{origin.magnitude}} <font color="red">{{interactiveOrigin.magnitude}}</font></td>
             </tr>
             <tr>
               <th scope="row">Location</th>
-              <td>X {{origin.x}} m East</td>
+              <td>X {{origin.x}} m East <font color="red">{{interactiveOrigin.x}}</font></td>
             </tr>
             <tr>
-              <th scope="row"></th>
-              <td>Y {{origin.y}} m North</td>
-            </tr>
-            <tr>
-              <th scope="row"></th>
-              <td>Z {{origin.z}} m</td>
-            </tr>
-            <tr>
-              <th scope="row">Picks
-              <button mat-mini-fab matTooltip='Interactive Process' class='btn-toolbar btn btn-primary' (click)='onInteractiveProcess()'><mat-icon>launch</mat-icon></button>
+              <th scope="row">
+                <button *ngIf='interactiveOrigin.y' mat-mini-fab matTooltip='3D View' class='btn-toolbar btn btn-primary' (click)='onViewLocations()'><mat-icon>3d_rotation</mat-icon></button>
               </th>
+              <td>Y {{origin.y}} m North <font color="red">{{interactiveOrigin.y}}</font></td>
+            </tr>
+            <tr>
+              <th scope="row"></th>
+              <td>Z {{origin.z}} m <font color="red">{{interactiveOrigin.z}}</font></td>
+            </tr>
+            <tr>
+              <th scope="row">Picks</th>
               <td>{{origin.npick}}</td>
             </tr>
             <tr>

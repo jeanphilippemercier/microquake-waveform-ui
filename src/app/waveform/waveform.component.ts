@@ -86,6 +86,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private asyncLoadEventPages: Function;
     private afterLoading: Function;
     private addCompositeTrace: Function;
+    private confirmEvent: Function;
 
     private toggleMenu: Function;
     private setPosition: Function;
@@ -117,7 +118,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private deletePicks: Function;
     private savePicksState: Function;
     public undoLastPicking: Function;
-    private updatePicksReprocessEvent: Function;
+    private onInteractiveProcess: Function;
     private updateArrivalWithPickData: Function;
     private updateStationPicks: Function;
     private addArrivalsPickData: Function;
@@ -198,9 +199,11 @@ export class WaveformComponent implements OnInit, OnDestroy {
         if (message.hasOwnProperty('timezone')) {
             this.timezone = message.timezone;
         }
-        if (message.action === 'reprocess' && message.event_resource_id === this.currentEventId) {
-            this.updatePicksReprocessEvent();
+        /*
+        if (message.action === 'interactive-process' && message.event_resource_id === this.currentEventId) {
+            this.onInteractiveProcess();
         }
+        */
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.currentEventId = message.event_resource_id;
             if (environment.enablePagingLoad) {
@@ -228,7 +231,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             if (message.sender !== 'notifier') {
                 this.getNotification(message);
             } else {
-                console.log(message);
+                this.confirmEvent(message);
             }
         });
         this.route.params.subscribe( params => { this.reload(params); } );
@@ -523,6 +526,16 @@ export class WaveformComponent implements OnInit, OnDestroy {
             // self.activateRemoveBias(true);
         };
 
+        this.confirmEvent = (event) => {
+            console.log(event);
+            if (event.hasOwnProperty('reprocess')) {
+                const event_id = event.reprocess.event_resource_id;
+                // const new_origin_id = event.reprocess.origin_resource_id;
+                console.log(event_id);
+            }
+
+        };
+
         this.sort_array_by = (field, reverse, primer) => {
 
            const key = primer ?
@@ -584,7 +597,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             self.renderPage();
         };
 
-        this.updatePicksReprocessEvent = () => {
+        this.onInteractiveProcess = () => {
             this.updateArrivalWithPickData();
             self._catalogService.update_event_picks_by_id
                 (self.currentEventId, self.allPicksChanged)
