@@ -118,7 +118,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private deletePicks: Function;
     private savePicksState: Function;
     public undoLastPicking: Function;
-    private onInteractiveProcess: Function;
+    public onInteractiveProcess: Function;
     private updateArrivalWithPickData: Function;
     private updateStationPicks: Function;
     private addArrivalsPickData: Function;
