@@ -5,6 +5,7 @@ import { MessageService } from '../../message.service';
 import { NotifierComponent } from '../../notifier/notifier.component';
 import { Subscription } from 'rxjs/Subscription';
 import { CatalogApiService } from '../../catalog-api.service';
+import { environment } from '../../../environments/environment';
 import * as moment from 'moment';
 
 declare const $: any;
@@ -32,6 +33,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public options: any;
   public window_height = window.innerHeight;
   public origin: any;
+  public interactiveOrigin: any;
   public eventsTree: any;
   public eventsDatabase: any;
   public site: any;
@@ -40,7 +42,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public onChangeEvaluationMode: Function;
   public onChangeEventType: Function;
   public onReprocessEvent: Function;
-  public onInteractiveProcess: Function;
+  public onViewLocations: Function;
   public toggleEventStatus: Function;
   public bEventUnsaved: Boolean;
   private saveEventTypeStatus: Function;
@@ -73,6 +75,20 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getNotification(message) {
+    if (message.sender === 'notifier' && message.hasOwnProperty('reprocess')) {
+        // const new_origin_id = message.reprocess.origin_resource_id;
+        this.interactiveOrigin.event_resource_id = message.reprocess.event_resource_id;
+        console.log(message);
+        message = {};
+        message.x = this.origin.x + 100;
+        message.y = this.origin.y + 100;
+        message.z = this.origin.z + 100;
+        this.interactiveOrigin.x = message.x ? message.x : '';
+        this.interactiveOrigin.y = message.y ? message.y : '';
+        this.interactiveOrigin.z = message.z ? message.z : '';
+        this.interactiveOrigin.time_local = this.origin.time_local;
+        this.interactiveOrigin.magnitude = -0.9;
+    }
     console.log(message);
   }
 
@@ -87,6 +103,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!message.hasOwnProperty('event_resource_id')) {
           for (const property of Object.keys(this.origin)) {
               this.origin[property] = '';
+              this.interactiveOrigin[property] = '';
           }
           return;
       }
@@ -94,6 +111,10 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.timezone = message.timezone;
       }
       if (message.hasOwnProperty('time_utc')) {
+          console.log(message);
+          if (this.interactiveOrigin.event_resource_id !== message.event_resource_id) {
+            this.interactiveOrigin = {};
+          }
           this.tracesInfo = '';
           this.picksWarning = '';
           this.origin.time_utc = message.time_utc;
@@ -117,7 +138,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           this.origin.preferred_origin_id = message.preferred_origin_id;
           const fsec = message.time_utc.slice(-8, -1);
           this.eventHeader = ' Event: ' + this.site + '/' + this.network + ' ' +
-              this.origin['time_local'] +
+              this.origin.time_local +
               parseFloat(fsec).toFixed(3).slice(-4) +
               moment().utc().utcOffset(this.timezone).format('Z');
       }
@@ -150,6 +171,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
     self.site = self.options.hasOwnProperty('site') ? self.options.site : '';
     self.network = self.options.hasOwnProperty('network') ? self.options.network : '';
     self.origin = {};
+    self.interactiveOrigin = {};
     self.timezone = '+00:00';
 
     this.menuItems = ROUTES.filter(menuItem => menuItem);
@@ -249,15 +271,24 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     };
 
+    /*
     this.onInteractiveProcess = () => {
         if (self.origin.hasOwnProperty('event_resource_id')) {
           const message = {
             sender: 'sidebar',
-            action: 'reprocess',
+            action: 'interactive-process',
             event_resource_id: self.origin.event_resource_id
           };
           self.sendMessage(message);  // send message received from event tree to waveform component
         }
+    };*/
+
+    this.onViewLocations = () => {
+      const arr = [this.origin.x, this.origin.y, this.origin.z,
+        this.interactiveOrigin.x, this.interactiveOrigin.y, this.interactiveOrigin.z];
+      const url = environment.url3dUi + '?locations=[' + arr.toString() + ']';
+      const win = window.open(url, '_blank');
+      win.focus();
     };
 
   }

@@ -1,7 +1,7 @@
 <div class='container-fluid content'>
   <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
   <div *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"></div>
-  <div tabindex="0" id='toolbar' class='btn-toolbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
+  <div tabindex="0" id='toolbar' class='btn-tbar' role='toolbar' aria-label='Toolbar' layout='row' style='position:fixed; display:-webkit-box;'>
       <button mat-mini-fab id='commonTime' matTooltip='Common Time Scale for All Channels' class='btn btn-primary active' data-toggle='button' aria-pressed='true' autocomplete='off'><mat-icon>more_horiz</mat-icon></button>
       <button mat-mini-fab id='commonAmplitude' matTooltip='Common Amplitude Scale for All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>more_vert</mat-icon></button>
       <button mat-mini-fab id='zoomAll' matTooltip='Zoom or Pan All Channels' class='btn btn-primary' data-toggle='button' aria-pressed='false' autocomplete='off'><mat-icon>link</mat-icon></button>
@@ -14,8 +14,7 @@
       <div>
         <app-help-dialog></app-help-dialog>
       </div>
-      <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn-toolbar btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
-      <div class = 'ml-5' fxLayout="row" fxLayoutGap="5px" fxLayoutAlign="start">
+      <div fxLayout="row" fxLayoutAlign="start">
           <mat-form-field appearance="fill" class='input-form-width'>
             <mat-label>Low Corner</mat-label>
             <input matInput matTooltip="Butterworth Filter Low Corner Frequency" type="number" step="10" min="0" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="lowFreqCorner" [formControl]="minRateControl">
@@ -41,16 +40,14 @@
             <input matInput matTooltip="Number of Poles for Butterworth Filter" type="number" (change)='bFilterChanged = true' (keydown.numbers)='bFilterChanged = true' (keydown.enter)='bFilterChanged = true; applyFilter()' [(ngModel)]="numPoles" [ngModelOptions]="{standalone: true}">
           </mat-form-field>
       </div>
-      <div class = 'ml-5'>
+      <button mat-mini-fab id='applyFilter' matTooltip='Apply Filter' class='btn btn-primary' (click)='applyFilter()'><mat-icon>redo</mat-icon></button>
       <mat-button-toggle-group name="pickingMode" aria-label="Picking Mode" matTooltip='Select Picking Mode P, S or None' #group='matButtonToggleGroup' [value]='pickingMode' (change)='onPickingModeChange(group.value)'>
-        <!--mat-button-toggle value='P'><mat-icon class="mat-icon-scale" svgIcon="alpha-p"></mat-icon></mat-button-toggle>
-        <mat-button-toggle value='S'><mat-icon class="mat-icon-scale" svgIcon="alpha-s"></mat-icon></mat-button-toggle-->
         <mat-button-toggle value='P'><mat-icon>local_parking</mat-icon></mat-button-toggle>
         <mat-button-toggle value='S'><mat-icon>strikethrough_s</mat-icon></mat-button-toggle>
         <mat-button-toggle value='none'><mat-icon>trip_origin</mat-icon></mat-button-toggle>
       </mat-button-toggle-group>
-      <button mat-icon-button matTooltip='Undo Last Picking Operation' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
-      </div>
+      <button mat-mini-fab matTooltip='Undo Last Picking Operation' class='btn btn-primary' (click)='undoLastPicking()'><mat-icon>cached</mat-icon></button>
+      <button mat-mini-fab matTooltip='Interactive Process' class='btn btn-primary' (click)='onInteractiveProcess()'><mat-icon>launch</mat-icon></button>
       <pagination-controls class="pagination" (pageChange)="page_number = $event; changePage()"></pagination-controls>
   </div>
   <div id='waveform-panel' style='position: relative; top: 50px;'>

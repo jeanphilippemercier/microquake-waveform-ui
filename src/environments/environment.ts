@@ -10,6 +10,8 @@ export const environment = {
   apiUrl: 'https://api.microquake.org/api/v1/',
   // Auth API endpoint
   apiAuth: 'api-token-auth',
+  // 3D UI url:
+  url3dUi: 'https://3d.microquake.org/',
   // Sites API endpoint
   apiSites: 'sites',
   // Catalog API endpoint
