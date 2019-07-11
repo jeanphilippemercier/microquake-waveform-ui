@@ -3,7 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
-import { globals } from 'globals';
+import { globals } from '../../globals';
 import { CatalogApiService } from '../catalog-api.service';
 import { Subscription } from 'rxjs/Subscription';
 import { MessageService } from '../message.service';
