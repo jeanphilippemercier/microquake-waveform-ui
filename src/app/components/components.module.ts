@@ -1,21 +1,15 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { DemoMaterialModule} from '../material-modules';
 import {CatalogTreeModule} from '../catalog-tree/catalog-tree.module';
 
 import { FooterComponent } from './footer/footer.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { NotifierComponent } from '../notifier/notifier.component';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    DemoMaterialModule,
+    SharedModule,
     CatalogTreeModule
   ],
   declarations: [

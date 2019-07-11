@@ -5,7 +5,7 @@ import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree'
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatIconModule} from '@angular/material/icon';
 import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
-import { CatalogApiService } from '../catalog-api.service';
+import { CatalogApiService } from '../core/services/catalog-api.service';
 import * as moment from 'moment';
 
 /**

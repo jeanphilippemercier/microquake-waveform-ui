@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AuthGuard } from './auth.guard';
+import { AuthGuard } from './core/guards/auth.guard';
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
