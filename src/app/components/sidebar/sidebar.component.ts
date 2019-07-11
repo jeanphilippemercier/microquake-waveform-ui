@@ -80,11 +80,11 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getNotification(message) {
     // to do: adapt for real messages from processing pipeline, this is for test only
+    console.log(message);
     if (message.sender === 'notifier' && message.hasOwnProperty('reprocess')) {
         this.interactiveOrigin.event_resource_id = message.reprocess.event_resource_id;
         // this.interactiveOrigin.origin_resource_id = message.reprocess.origin_resource_id;
         this.interactiveOrigin.preferred_origin_id = this.origin.preferred_origin_id;
-        console.log(message);
         // remove next lines
         message = {};
         message.x = this.origin.x + 100;
@@ -95,14 +95,13 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.interactiveOrigin.x = message.x;
         this.interactiveOrigin.y = message.y;
         this.interactiveOrigin.z = message.z;
-        this.interactiveOrigin.time_local = message.origin.time_local;
+        this.interactiveOrigin.time_local = message.time_local;
         this.interactiveEventHeader = ' Interactive Event: ' + this.interactiveOrigin.time_local;
         this.interactiveOrigin.data = message; // make sure this will store the new origin data
     } else if (message.sender === 'notifier' && message.hasOwnProperty('magnitude-reprocess')) {
         this.interactiveOrigin.magnitude = -0.99;
         // how to update magnitude?
     }
-    console.log(message);
   }
 
   async getTreeNotification(message) {
