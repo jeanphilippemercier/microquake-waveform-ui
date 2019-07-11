@@ -13,7 +13,7 @@ import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
 import { AuthService } from './core/services/auth.service';
 import { environment } from '../environments/environment';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
-import { RefreshTokenInterceptor } from './refresh-token-interceptor';
+import { RefreshTokenInterceptor } from './core/interceptors/refresh-token-interceptor';
 import { AuthGuard } from './auth.guard';
 import { HelpDialogComponent, HelpDialogSheetComponent} from './help-dialog/help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
