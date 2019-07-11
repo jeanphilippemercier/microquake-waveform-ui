@@ -132,6 +132,20 @@ export class CatalogApiService {
 
     }
 
+    update_partial_origin_by_id = (originId, dataObj): any => {
+        const httpOptions = {
+          headers: new HttpHeaders({
+            'Content-Type':  'application/json'
+          })
+        };
+        const API_URL = environment.apiUrl + environment.apiOrigins;
+        const data = JSON.stringify({
+            'origin_resource_id': originId,
+            'data': dataObj
+        });
+        return this.http.patch(API_URL, data, httpOptions);
+    }
+
     get_arrivals_by_id = (site, network, eventId, originId): any => {
         const API_URL = environment.apiUrl + environment.apiArrivals;
         let params = new HttpParams()
