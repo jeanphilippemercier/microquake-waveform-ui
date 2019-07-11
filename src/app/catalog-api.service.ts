@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
+import { globals } from 'globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, pipe, throwError } from 'rxjs';
 import { timeout, catchError } from 'rxjs/operators';
@@ -12,7 +13,7 @@ export class CatalogApiService {
     constructor(private http: HttpClient) {}
 
     get_events(site, network, startTime, endTime, event_types, status) {
-        const API_URL = environment.apiUrl + environment.apiCatalog;
+        const API_URL = environment.apiUrl + globals.apiCatalog;
         let params = new HttpParams()
           .set('start_time', startTime)
           .set('end_time', endTime)
@@ -40,7 +41,7 @@ export class CatalogApiService {
     }
 
     get_boundaries = (site, network): any => {
-        const API_URL = environment.apiUrl + environment.apiCatalogBoundaries;
+        const API_URL = environment.apiUrl + globals.apiCatalogBoundaries;
         const params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network);
@@ -60,19 +61,19 @@ export class CatalogApiService {
     }
 
     get_microquake_event_types = (site): any => {
-        const API_URL = environment.apiUrl + environment.apiMicroquakeEventTypes;
+        const API_URL = environment.apiUrl + globals.apiMicroquakeEventTypes;
         const params = new HttpParams()
           .set('site_code', site);
         return this.http.get(API_URL, {params});
     }
 
     get_sites = (): any => {
-        const API_URL = environment.apiUrl + environment.apiSites;
+        const API_URL = environment.apiUrl + globals.apiSites;
         return this.http.get(API_URL);
     }
 
     get_event_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
+        const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId;
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
@@ -86,7 +87,7 @@ export class CatalogApiService {
             'Content-Type':  'application/json'
           })
         };
-        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId;
+        const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId;
         const data = JSON.stringify({
             'event_resource_id': eventId,
             'status': status,
@@ -102,7 +103,7 @@ export class CatalogApiService {
             'Content-Type':  'application/json'
           })
         };
-        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId + '/' + environment.apiPicksInteractive;
+        const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
         const data = JSON.stringify({
             'event_resource_id': eventId,
             'data': dataObj
@@ -111,7 +112,7 @@ export class CatalogApiService {
     }
 
     get_origins_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl + environment.apiOrigins;
+        const API_URL = environment.apiUrl + globals.apiOrigins;
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
@@ -138,7 +139,7 @@ export class CatalogApiService {
             'Content-Type':  'application/json'
           })
         };
-        const API_URL = environment.apiUrl + environment.apiOrigins;
+        const API_URL = environment.apiUrl + globals.apiOrigins;
         const data = JSON.stringify({
             'origin_resource_id': originId,
             'data': dataObj
@@ -147,7 +148,7 @@ export class CatalogApiService {
     }
 
     get_arrivals_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl + environment.apiArrivals;
+        const API_URL = environment.apiUrl + globals.apiArrivals;
         let params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network)
@@ -171,9 +172,9 @@ export class CatalogApiService {
     }
 
     get_traveltimes_by_id = (site, network, eventId, originId): any => {
-        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
-            '/' + environment.apiOrigins + '/' + originId +
-            '/' + environment.apiTravelTimes;
+        const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId +
+            '/' + globals.apiOrigins + '/' + originId +
+            '/' + globals.apiTravelTimes;
         const params = new HttpParams()
           .set('site_code', site)
           .set('network_code', network);
@@ -193,8 +194,8 @@ export class CatalogApiService {
     }
 
     get_reprocess_event_by_id = (site, network, eventId): any => {
-        const API_URL = environment.apiUrl + environment.apiEvents + '/' + eventId +
-            '/' + environment.apiReprocess;
+        const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId +
+            '/' + globals.apiReprocess;
         const params = new HttpParams()
         .set('site_code', site)
         .set('network_code', network)
