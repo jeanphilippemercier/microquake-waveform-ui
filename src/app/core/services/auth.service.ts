@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { environment } from '../environments/environment';
+import { environment } from '../../../environments/environment';
 import { Observable, ReplaySubject } from 'rxjs';
 
 export interface LoginResponse {
@@ -53,7 +53,7 @@ export class AuthService {
     const refreshSubject = new ReplaySubject<LoginResponse>(1);
     refreshSubject.subscribe((r: LoginResponse) => {
       this.setAccessToken(r.access);
-      this.setRefreshToken(r.refresh)
+      this.setRefreshToken(r.refresh);
     }, (err) => {
       this.handleAuthenticationError(err);
     });

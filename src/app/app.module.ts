@@ -5,14 +5,12 @@ import { NgModule } from '@angular/core';
 // import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentsModule } from './components/components.module';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
-import { platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import { MatDialogModule } from '@angular/material';
 import { DemoMaterialModule} from './material-modules';
 import { AppComponent } from './app.component';
 import {CatalogTreeModule} from './catalog-tree/catalog-tree.module';
-import { CatalogApiService } from './catalog-api.service';
 import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
-import { AuthService } from './auth.service';
+import { AuthService } from './core/services/auth.service';
 import { environment } from '../environments/environment';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { RefreshTokenInterceptor } from './refresh-token-interceptor';
@@ -25,7 +23,6 @@ import { LoginComponent } from './login/login.component';
 import { AppRoutingModule } from './app-routing.module';
 import { WaveformComponent } from './waveform/waveform.component';
 import { SiteNetworkComponent } from './site-network/site-network.component';
-import { MessageService } from './message.service';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 export function jwtOptionsFactory (authService: AuthService) {
@@ -73,12 +70,8 @@ export function jwtOptionsFactory (authService: AuthService) {
   ],
   entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   providers: [
-    AuthService,
     JwtInterceptor, // Providing JwtInterceptor allow to inject JwtInterceptor manually into RefreshTokenInterceptor
-    CatalogApiService,
-    // UserService,
     AuthGuard,
-    MessageService,
     {
       provide: HTTP_INTERCEPTORS,
       useExisting: JwtInterceptor,

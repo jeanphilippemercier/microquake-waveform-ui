@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, mergeMap } from 'rxjs/operators';
-import { AuthService } from './auth.service';
+import { AuthService } from './core/services/auth.service';
 import { JwtInterceptor } from '@auth0/angular-jwt';
 
 @Injectable()
