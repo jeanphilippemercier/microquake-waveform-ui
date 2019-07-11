@@ -1,15 +1,11 @@
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { DemoMaterialModule} from '../material-modules';
 import { EventsTreeComponent } from './events-tree.component';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   declarations: [EventsTreeComponent],
   imports: [
-    CommonModule,
-    DemoMaterialModule,
-    FormsModule
+    SharedModule
   ],
   exports: [EventsTreeComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
