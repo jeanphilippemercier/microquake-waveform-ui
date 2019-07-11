@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../assets/js/canvasjs.min.js';
 import { environment } from '../../environments/environment';
+import { globals } from 'globals';
 import { CatalogApiService } from '../catalog-api.service';
 import { Subscription } from 'rxjs/Subscription';
 import { MessageService } from '../message.service';
@@ -147,7 +148,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     private timezone: string;
     public eventTimeOriginHeader: string;
 
-    public page_size = environment.chartsPerPage;
+    public page_size = globals.chartsPerPage;
     public page_number: number;
     public num_pages: number;
     public loaded_pages: number;
@@ -168,7 +169,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
     public picksWarning: string;
     public tracesInfo: string;
 
-    public maxFreq = environment.highFreqCorner;
+    public maxFreq = globals.highFreqCorner;
     public rateControl = new FormControl('rateControl', [Validators.max(this.maxFreq)]);
     public minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
 
@@ -206,7 +207,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         */
         if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
             this.currentEventId = message.event_resource_id;
-            if (environment.enablePagingLoad) {
+            if (globals.enablePagingLoad) {
                 if (this.bDataLoading) {
                     this.loading = true;
                 }
@@ -261,9 +262,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
         self.loaded_pages = 0;
         self.progressValue = 0;
 
-        self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : environment.numPoles;
-        self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : environment.lowFreqCorner;
-        self.highFreqCorner = self.options.hasOwnProperty('highFreqCorner') ? self.options.highFreqCorner : environment.highFreqCorner;
+        self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : globals.numPoles;
+        self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : globals.lowFreqCorner;
+        self.highFreqCorner = self.options.hasOwnProperty('highFreqCorner') ? self.options.highFreqCorner : globals.highFreqCorner;
         self.site = self.options.hasOwnProperty('site') ? self.options.site : '';
         self.network = self.options.hasOwnProperty('network') ? self.options.network : '';
 
@@ -280,7 +281,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
         self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
         self.pageOffsetY = $('#waveform-panel').position().top + 30;
-        self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY - 20) / environment.chartsPerPage);
+        self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY - 20) / globals.chartsPerPage);
         self.page_number = 0;
 
         self.waveformOrigin = {};
@@ -309,7 +310,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                             // filter and recompute composite traces
                             self.allStations = self.addCompositeTrace(self.filterData(eventData.stations));
                             self.timeOrigin = eventData.timeOrigin;
-                            self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
+                            self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
                             if (self.allStations.length > 0) {
                                 // get origins
                                 this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
@@ -389,7 +390,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                     self.allStations[i] = { 'channels': []};
                                 }
                                 self.timeOrigin = eventData.timeOrigin;
-                                self.timeEnd = moment(self.timeOrigin).add(environment.fixedDuration, 'seconds');
+                                self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
                                 if (self.allStations.length > 0) {
                                     // get origins
                                     this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
@@ -558,7 +559,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         this.renderPage = () => {
             const pageNumber = self.page_number;
             const pageSize = self.page_size - 1; // traces loaded from API
-            const numPages = environment.enablePagingLoad ?
+            const numPages = globals.enablePagingLoad ?
                 self.num_pages : Math.ceil(self.allStations.length / pageSize);
             if (pageNumber > 0 && pageNumber <= numPages) {
                 self.activeStations = self.allStations.slice
@@ -685,15 +686,15 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
                 const data = [];
                 for (const channel of self.activeStations[i].channels) {
-                    if ( (!self.bDisplayComposite && channel.channel_id !== environment.compositeChannelCode)
-                        || (self.bDisplayComposite && channel.channel_id === environment.compositeChannelCode)
+                    if ( (!self.bDisplayComposite && channel.channel_id !== globals.compositeChannelCode)
+                        || (self.bDisplayComposite && channel.channel_id === globals.compositeChannelCode)
                         || (self.bDisplayComposite && self.activeStations[i].channels.length === 1)) {
                         data.push(
                             {
                                 name: channel.code_id,
                                 type: 'line',
-                                color: environment.linecolor[channel.channel_id.toUpperCase()],
-                                lineThickness: environment.lineThickness,
+                                color: globals.linecolor[channel.channel_id.toUpperCase()],
+                                lineThickness: globals.lineThickness,
                                 showInLegend: true,
                                 // highlightEnabled: true,
                                 dataPoints: channel.data
@@ -810,8 +811,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     {
                         name: channel.code_id,
                         type: 'line',
-                        color: environment.context.linecolor,
-                        lineThickness: environment.lineThickness,
+                        color: globals.context.linecolor,
+                        lineThickness: globals.lineThickness,
                         showInLegend: true,
                         // highlightEnabled: true,
                         dataPoints: channel.data
@@ -863,8 +864,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     },
                     stripLines: [{
                         startValue: timeOriginValue,
-                        endValue: timeOriginValue + environment.fixedDuration * 1000000,
-                        color: environment.context.highlightColor
+                        endValue: timeOriginValue + globals.fixedDuration * 1000000,
+                        color: globals.context.highlightColor
                     }]
                 },
                 axisY: {
@@ -948,8 +949,8 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                 const label = pickLines[i].label;
                                 if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
                                     if (pickLines[i].get('bounds') &&
-                                        relX > pickLines[i].get('bounds').x1 - environment.snapDistance &&
-                                        relX < pickLines[i].get('bounds').x2 + environment.snapDistance &&
+                                        relX > pickLines[i].get('bounds').x1 - globals.snapDistance &&
+                                        relX < pickLines[i].get('bounds').x2 + globals.snapDistance &&
                                         relY > pickLines[i].get('bounds').y1 &&
                                         relY < pickLines[i].get('bounds').y2) {  // move pick
                                             self.savePicksState(ind, self.activeStations[ind].station_code, self.activeStations[ind].picks);
@@ -1034,7 +1035,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                             && !e.ctrlKey && !e.shiftKey && !e.altKey) {
                         const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
                         if (i < self.activeStations.length - 1) {
-                            const step = environment.pickTimeStep * 1000; // in microseconds
+                            const step = globals.pickTimeStep * 1000; // in microseconds
                             if (e.deltaY < 0) { // scrolling up
                                 self.movePick(i, self.pickingMode, -step, true, false);
                             } else if (e.deltaY > 0) { // scrolling down
@@ -1064,7 +1065,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
                         const viewportMin = axis.get('viewportMinimum'),
                             viewportMax = axis.get('viewportMaximum'),
-                            interval = (viewportMax - viewportMin) / environment.zoomSteps;  // control zoom step
+                            interval = (viewportMax - viewportMin) / globals.zoomSteps;  // control zoom step
                             // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
 
                         let newViewportMin, newViewportMax;
@@ -1177,7 +1178,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     }
                     if (e.keyCode === 39) {  // right arrow moves pick to right
                         if (self.pickingMode !== 'none' && self.lastDownTarget !== null &&  self.lastDownTarget > -1) {
-                            const step = environment.pickTimeStep * 1000; // in microseconds
+                            const step = globals.pickTimeStep * 1000; // in microseconds
                             if (e.shiftKey) { // shift key - fast mode - by 10 * step
                                 self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
                             } else { // by step
@@ -1187,7 +1188,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                     }
                     if (e.keyCode === 37) {  // left arrow moves pick to left
                         if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
-                           const step = environment.pickTimeStep * 1000; // in microseconds
+                           const step = globals.pickTimeStep * 1000; // in microseconds
                            if (e.shiftKey) { // shift key - fast mode - by 10 * step
                                self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
                            } else { // by step
@@ -1202,7 +1203,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         }
                     }
                     if (e.keyCode === 50 || e.keyCode === 98) {
-                        const numPages = environment.enablePagingLoad ?
+                        const numPages = globals.enablePagingLoad ?
                             self.loaded_pages : Math.ceil(self.allStations.length / (self.page_size - 1));
                         if (self.page_number < numPages) {
                             self.page_number = self.page_number + 1;
@@ -1423,7 +1424,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         this.getXmax = (pos) => {
             const endMicrosec = self.activeStations[pos].channels[0].microsec + self.activeStations[pos].channels[0].duration;
             return self.bCommonTime ?
-                Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + environment.fixedDuration * 1000000) :  endMicrosec;
+                Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000) :  endMicrosec;
         };
 
         this.getXmaxContext = () => {
@@ -1434,7 +1435,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
 
 
         this.getXvpMax = () => {
-            return self.bCommonTime ? self.timeOrigin.millisecond() * 1000 + environment.fixedDuration * 1000000 : null;
+            return self.bCommonTime ? self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000 : null;
         };
 
         this.getXvpMin = () => {
@@ -1557,7 +1558,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
             station.picks = station.picks.filter( el => el.label !== pickType);
             station.picks.push({
                 value: position,
-                thickness: environment.picksLineThickness,
+                thickness: globals.picksLineThickness,
                 color: pickType === 'P' ? 'blue' : pickType === 'S' ? 'red' : 'black',
                 label: pickType,
                 labelAlign: 'far'
@@ -1775,14 +1776,14 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                     station[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                                     station.picks.push({
                                         value: self.calculateTimeOffsetMicro(pick.time_utc, origin),   // rel timeOrigin full second
-                                        thickness: environment.picksLineThickness,
+                                        thickness: globals.picksLineThickness,
                                         color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                                         label: pickKey,
                                         labelAlign: 'far',
                                     });
                                 }
                             } else  {
-                                if (!environment.enablePagingLoad && !missingStations.includes(pick.station_code)) {
+                                if (!globals.enablePagingLoad && !missingStations.includes(pick.station_code)) {
                                     missingStations.push(pick.station_code);
                                 }
                             }
@@ -1827,7 +1828,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                 station[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
                                 station.picks.push({
                                     value: self.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
-                                    thickness: environment.predictedPicksLineThickness,
+                                    thickness: globals.predictedPicksLineThickness,
                                     lineDashType: 'dash',
                                     opacity: 0.5,
                                     color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
@@ -2046,7 +2047,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
         this.filterData = (stations): any[] => {
             for (const station of stations) {
                 // remove composite traces if existing
-                const pos = station.channels.findIndex(v => v.channel_id === environment.compositeChannelCode);
+                const pos = station.channels.findIndex(v => v.channel_id === globals.compositeChannelCode);
                 if (pos >= 0) {
                     station.channels.splice(pos, 1);
                 }
@@ -2089,9 +2090,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
                             if (station.channels[0].data.length === station.channels[1].data.length &&
                                 station.channels[0].data.length === station.channels[2].data.length) {
                                 const compositeTrace = {};
-                                compositeTrace['code_id'] = station.channels[0].code_id.slice(0, -1) + environment.compositeChannelCode;
+                                compositeTrace['code_id'] = station.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
                                 compositeTrace['station_code'] = station.station_code;
-                                compositeTrace['channel_id'] = environment.compositeChannelCode;
+                                compositeTrace['channel_id'] = globals.compositeChannelCode;
                                 compositeTrace['sample_rate'] = station.channels[0].sample_rate;
                                 compositeTrace['start'] = station.channels[0].start;  // moment object (good up to milisecond)
                                 compositeTrace['microsec'] = station.channels[0].microsec;
@@ -2101,7 +2102,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                                     let compositeValue = 0, sign = 1;
                                     for (let j = 0; j < 3; j++) {
                                         const value = station.channels[j].data[k]['y'];
-                                        sign = station.channels[j].channel_id.toLowerCase() === environment.signComponent.toLowerCase() ?
+                                        sign = station.channels[j].channel_id.toLowerCase() === globals.signComponent.toLowerCase() ?
                                             Math.sign(value) : sign;
                                         compositeValue += Math.pow(value, 2);
                                     }
@@ -2172,9 +2173,9 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 const mshr = new XMLHttpRequest();
                 const waveform_file = environment.apiUrl +
                     // 2 + 'site/' + self.site + '/network/' + self.network + '/' +
-                    environment.apiEvents + '/' + event_id +
+                    globals.apiEvents + '/' + event_id +
                     '/waveform?page_number=' + page.toString() +
-                    '&traces_per_page=' + (environment.chartsPerPage - 1).toString();
+                    '&traces_per_page=' + (globals.chartsPerPage - 1).toString();
                 mshr.open('GET', waveform_file, true);
                 mshr.responseType = 'arraybuffer';
                 self.loading = page === 1 ? true : false;
@@ -2183,7 +2184,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                         if (mshr.status === 200)  {
                             self.loading = false;
                             if (page === 1) {
-                                self.num_pages = environment.max_num_pages;
+                                self.num_pages = globals.max_num_pages;
                                 const filename = self.getAttachmentFilename(mshr);
                                 if (filename.indexOf('of_') && filename.lastIndexOf('.') ) {
                                    self.num_pages = parseInt(

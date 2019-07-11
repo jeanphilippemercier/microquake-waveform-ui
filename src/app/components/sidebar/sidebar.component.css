@@ -29,6 +29,10 @@
   color: blue !important;
 }
 
+.interactive-color {
+  color: red !important;
+}
+
 .selector {
   width: 200px !important;
 }

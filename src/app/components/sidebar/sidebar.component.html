@@ -18,6 +18,12 @@
     <div class='card-header text-color' id='infoTime' *ngIf="eventHeader">{{eventHeader}}
     <button mat-mini-fab matTooltip='Reprocess Event' class='btn-toolbar btn btn-primary' (click)='onReprocessEvent()'><mat-icon>input</mat-icon></button>
     </div>
+    <div fxLayout="row" fxLayoutAlign="start" class='card-header interactive-color' *ngIf="interactiveEventHeader">{{interactiveEventHeader}}
+      <mat-button-toggle-group *ngIf='interactiveEventHeader' name="acceptRejectInteractive" aria-label="Interactive Event" matTooltip='Select Accept or Reject Interactive Event Location' value='none' #group='matButtonToggleGroup' (change)='onAcceptRejectEvent(group.value)'>
+        <mat-button-toggle value='accept'><mat-icon>check_circle</mat-icon></mat-button-toggle>
+        <mat-button-toggle value='reject'><mat-icon>clear</mat-icon></mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
     <div style="overflow: auto" id="eventInfoCard">
       <div class='card-body' style="padding:0px 20px;">
         <table class="table table-extra-condensed">
@@ -27,13 +33,13 @@
               <td>{{origin.magnitude}} <font color="red">{{interactiveOrigin.magnitude}}</font></td>
             </tr>
             <tr>
-              <th scope="row">Location</th>
+              <th scope="row">Location
+                <button *ngIf='interactiveOrigin.y' mat-mini-fab matTooltip='3D View' class='btn-toolbar btn btn-primary' (click)='onViewLocations()'><mat-icon>3d_rotation</mat-icon></button>
+              </th>
               <td>X {{origin.x}} m East <font color="red">{{interactiveOrigin.x}}</font></td>
             </tr>
             <tr>
-              <th scope="row">
-                <button *ngIf='interactiveOrigin.y' mat-mini-fab matTooltip='3D View' class='btn-toolbar btn btn-primary' (click)='onViewLocations()'><mat-icon>3d_rotation</mat-icon></button>
-              </th>
+              <th scope="row"></th>
               <td>Y {{origin.y}} m North <font color="red">{{interactiveOrigin.y}}</font></td>
             </tr>
             <tr>

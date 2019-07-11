@@ -40,16 +40,20 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public network: any;
   public onChangeEvaluationStatus: Function;
   public onChangeEvaluationMode: Function;
+  public onAcceptRejectEvent: Function;
   public onChangeEventType: Function;
   public onReprocessEvent: Function;
   public onViewLocations: Function;
   public toggleEventStatus: Function;
   public bEventUnsaved: Boolean;
   private saveEventTypeStatus: Function;
+  private clearInteractiveResults: Function;
+  private clearOrigin: Function;
   private timezone: string;
   public picksWarning: string;
   public tracesInfo: string;
   public eventHeader: string;
+  public interactiveEventHeader: string;
   public eventTypes = [];
   public evalTypes = [
       {status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)'},
@@ -75,19 +79,28 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getNotification(message) {
+    // to do: adapt for real messages from processing pipeline, this is for test only
     if (message.sender === 'notifier' && message.hasOwnProperty('reprocess')) {
-        // const new_origin_id = message.reprocess.origin_resource_id;
         this.interactiveOrigin.event_resource_id = message.reprocess.event_resource_id;
+        // this.interactiveOrigin.origin_resource_id = message.reprocess.origin_resource_id;
+        this.interactiveOrigin.preferred_origin_id = this.origin.preferred_origin_id;
         console.log(message);
+        // remove next lines
         message = {};
         message.x = this.origin.x + 100;
         message.y = this.origin.y + 100;
         message.z = this.origin.z + 100;
-        this.interactiveOrigin.x = message.x ? message.x : '';
-        this.interactiveOrigin.y = message.y ? message.y : '';
-        this.interactiveOrigin.z = message.z ? message.z : '';
-        this.interactiveOrigin.time_local = this.origin.time_local;
-        this.interactiveOrigin.magnitude = -0.9;
+        message.time_local = this.origin.time_local + '.100';
+        // remove previous lines
+        this.interactiveOrigin.x = message.x;
+        this.interactiveOrigin.y = message.y;
+        this.interactiveOrigin.z = message.z;
+        this.interactiveOrigin.time_local = message.origin.time_local;
+        this.interactiveEventHeader = ' Interactive Event: ' + this.interactiveOrigin.time_local;
+        this.interactiveOrigin.data = message; // make sure this will store the new origin data
+    } else if (message.sender === 'notifier' && message.hasOwnProperty('magnitude-reprocess')) {
+        this.interactiveOrigin.magnitude = -0.99;
+        // how to update magnitude?
     }
     console.log(message);
   }
@@ -101,49 +114,45 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
       }
       if (!message.hasOwnProperty('event_resource_id')) {
-          for (const property of Object.keys(this.origin)) {
-              this.origin[property] = '';
-              this.interactiveOrigin[property] = '';
-          }
-          return;
+        this.clearInteractiveResults();
+        this.clearOrigin();
+        return;
       }
       if (message.hasOwnProperty('timezone')) {
-          this.timezone = message.timezone;
+        this.timezone = message.timezone;
       }
       if (message.hasOwnProperty('time_utc')) {
-          console.log(message);
-          if (this.interactiveOrigin.event_resource_id !== message.event_resource_id) {
-            this.interactiveOrigin = {};
-          }
-          this.tracesInfo = '';
-          this.picksWarning = '';
-          this.origin.time_utc = message.time_utc;
-          this.origin.time_local = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
-          this.origin.magnitude = message.magnitude && message.magnitude !== '-999.0' ?
-              parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '-';
-          this.origin.x = message.x ? message.x : '';
-          this.origin.y = message.y ? message.y : '';
-          this.origin.z = message.z ? message.z : '';
-          this.origin.npick = message.npick ? message.npick : '';
-          this.origin.event_type = message.event_type;
-          this.origin.type = message.type;
-          this.origin.eval_status =  message.eval_status;
-          this.origin.evaluation_mode = message.evaluation_mode;
-          this.origin.status = message.status;
-          this.origin.time_residual = message.time_residual ?  message.time_residual.toFixed(3) : '';
-          // this.origin.time_residual = message.time_residual ?
-            // (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick, 10)).toFixed(3) : '') : '';
-          this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
-          this.origin.event_resource_id = message.event_resource_id;
-          this.origin.preferred_origin_id = message.preferred_origin_id;
-          const fsec = message.time_utc.slice(-8, -1);
-          this.eventHeader = ' Event: ' + this.site + '/' + this.network + ' ' +
-              this.origin.time_local +
-              parseFloat(fsec).toFixed(3).slice(-4) +
-              moment().utc().utcOffset(this.timezone).format('Z');
+        console.log(message);
+        this.clearInteractiveResults();
+        this.tracesInfo = '';
+        this.picksWarning = '';
+        this.origin.data = message;
+        this.origin.time_utc = message.time_utc;
+        this.origin.time_local = moment(message.time_utc).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
+        this.origin.magnitude = message.magnitude && message.magnitude !== '-999.0' ?
+            parseFloat(message.magnitude).toFixed(2) + ' (' + message.magnitude_type + ')' : '-';
+        this.origin.x = message.x ? message.x : '';
+        this.origin.y = message.y ? message.y : '';
+        this.origin.z = message.z ? message.z : '';
+        this.origin.npick = message.npick ? message.npick : '';
+        this.origin.event_type = message.event_type;
+        this.origin.type = message.type;
+        this.origin.eval_status =  message.eval_status;
+        this.origin.evaluation_mode = message.evaluation_mode;
+        this.origin.status = message.status;
+        this.origin.time_residual = message.time_residual ?  message.time_residual.toFixed(3) : '';
+        // this.origin.time_residual = message.time_residual ?
+          // (message.npick ? (parseFloat(message.time_residual) / parseInt(message.npick, 10)).toFixed(3) : '') : '';
+        this.origin.uncertainty = message.uncertainty ? message.uncertainty : '';
+        this.origin.event_resource_id = message.event_resource_id;
+        this.origin.preferred_origin_id = message.preferred_origin_id;
+        const fsec = message.time_utc.slice(-8, -1);
+        this.eventHeader = ' Event: ' + this.site + '/' + this.network + ' ' +
+            this.origin.time_local +
+            parseFloat(fsec).toFixed(3).slice(-4) +
+            moment().utc().utcOffset(this.timezone).format('Z');
       }
     }
-
 
   constructor(private _catalogService: CatalogApiService, private messageService: MessageService) {
       this.subscription = this.messageService.getMessage().subscribe(message => {
@@ -232,6 +241,39 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
       } else if (self.origin.eval_status === 'R') {
         self.origin.eval_status = 'A';
         self.origin.status = 'final';
+      }
+    };
+
+    this.onAcceptRejectEvent = value => {
+      if (value === 'accept') {
+        console.log(self.interactiveOrigin.preferred_origin_id);
+        console.log(self.interactiveOrigin.data);
+        // to be confirmed
+        /*
+        self._catalogService.update_partial_origin_by_id
+            (self.interactiveOrigin.preferred_origin_id, self.interactiveOrigin.data)
+            .subscribe((response) => {
+                console.log(response);
+        },
+        (error) => {
+            window.alert('Error updating event: ' + error.error.message);
+        });
+        */
+      } else if (value === 'reject') {
+        this.clearInteractiveResults();
+      }
+    };
+
+    this.clearInteractiveResults = () => {
+          for (const property of Object.keys(self.interactiveOrigin)) {
+              this.interactiveOrigin[property] = '';
+          }
+          this.interactiveEventHeader = '';
+    };
+
+    this.clearOrigin = () => {
+      for (const property of Object.keys(this.origin)) {
+          this.origin[property] = '';
       }
     };
 
