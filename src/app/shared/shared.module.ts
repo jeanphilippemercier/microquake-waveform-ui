@@ -15,6 +15,9 @@ import {
   MatSortModule, MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule,
 } from '@angular/material';
 
+import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
+import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
+
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
   MatBadgeModule,
@@ -61,9 +64,30 @@ const CDK_MODULES = [
   CdkTreeModule
 ];
 
+const COMPONTENTS = [
+];
+
+const DIALOGS = [
+  HelpDialogComponent,
+  HelpDialogSheetComponent
+];
+
 @NgModule({
-  declarations: [],
+  declarations: [
+    ...COMPONTENTS,
+    ...DIALOGS
+  ],
   imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    ...MATERIAL_MODULES,
+    ...CDK_MODULES,
+  ],
+  exports: [
+    ...COMPONTENTS,
+    ...DIALOGS,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -71,13 +95,8 @@ const CDK_MODULES = [
     ...MATERIAL_MODULES,
     ...CDK_MODULES
   ],
-  exports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    RouterModule,
-    ...MATERIAL_MODULES,
-    ...CDK_MODULES
+  entryComponents: [
+    ...DIALOGS
   ]
 })
 export class SharedModule { }

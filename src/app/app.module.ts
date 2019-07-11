@@ -9,7 +9,6 @@ import { HttpClientModule } from '@angular/common/http';
 import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
 import { CatalogTreeModule } from './catalog-tree/catalog-tree.module';
-import { HelpDialogComponent, HelpDialogSheetComponent } from './help-dialog/help-dialog.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { LoginComponent } from './login/login.component';
@@ -24,8 +23,6 @@ import { SharedModule } from './shared/shared.module';
 @NgModule({
   declarations: [
     AppComponent,
-    HelpDialogComponent,
-    HelpDialogSheetComponent,
     LoginComponent,
     WaveformComponent,
     // AdminLayoutComponent,
@@ -44,7 +41,6 @@ import { SharedModule } from './shared/shared.module';
     NgxPaginationModule,
     AppRoutingModule
   ],
-  entryComponents: [HelpDialogComponent, HelpDialogSheetComponent],
   bootstrap: [AppComponent]
 })
 export class AppModule {
