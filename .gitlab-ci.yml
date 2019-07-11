@@ -105,4 +105,4 @@ kube:
   - wget https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
   - chmod +x kubectl
   - echo "$KUBE" > admin.conf
-  - ./kubectl --kubeconfig admin.conf set image deployment.v1.apps/waveform-ui-staging waveform-ui-staging=registry.microquake.org/rio-tinto/microquake-waveform-ui/ui:$(echo $CI_COMMIT_SHA | cut -c1-8) --record
+  - ./kubectl --kubeconfig admin.conf set image --namespace spp deployment.v1.apps/waveform-ui-staging waveform-ui-staging=registry.microquake.org/rio-tinto/microquake-waveform-ui/ui:$(echo $CI_COMMIT_SHA | cut -c1-8) --record
