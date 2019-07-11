@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
-import { globals } from 'globals';
+import { globals } from '../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, pipe, throwError } from 'rxjs';
 import { timeout, catchError } from 'rxjs/operators';
