@@ -1,6 +1,6 @@
-<footer class="footer ">
-  <div class="container-fluid">
-    <nav class="pull-left">
+<footer class="footer">
+  <div class="d-flex justify-content-between">
+    <nav class="pl-3">
       <ul>
         <li>
           <a href="https://api.microquake.org">
@@ -19,10 +19,13 @@
         </li>
       </ul>
     </nav>
-    <div class="copyright pull-right">
+    <div class="pr-3 copyright">
       &copy;
-      {{test | date: 'yyyy'}},
-      <a href="https://www.microquake.org" target="_blank">Microquake</a>.
+      {{today | date: 'yyyy'}},
+      <a
+        href="https://www.microquake.org"
+        target="_blank"
+      >Microquake</a>.
     </div>
   </div>
 </footer>
