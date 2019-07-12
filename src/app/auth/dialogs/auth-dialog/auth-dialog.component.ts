@@ -1,10 +1,11 @@
 import { Component, ViewChild } from '@angular/core';
-import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { first } from 'rxjs/operators';
-import { AuthLoginInput } from '@app/core/interfaces/auth.interface';
 import { NgForm } from '@angular/forms';
 import { MatDialogRef } from '@angular/material';
+
+import { AuthService } from '@services/auth.service';
+import { AuthLoginInput } from '@app/core/interfaces/auth.interface';
 
 enum DialogMode {
   LOGIN = 'login',
@@ -35,7 +36,26 @@ export class AuthDialogComponent {
     private _matDialogRef: MatDialogRef<AuthDialogComponent>
   ) { }
 
+  // TODO: handle cs/ss errors
   submitAuthForm() {
+    this.submited = true;
+    if (this.authForm.invalid) {
+      return;
+    }
+    this.loading = true;
 
+    this._auth.login(this.authLoginInput)
+      .pipe(first())
+      .subscribe(
+        result => {
+          this._matDialogRef.close();
+          this.loading = false;
+          this._router.navigate(['access']);
+        },
+        err => {
+          this.loading = false;
+          this.error = 'Could not authenticate';
+        }
+      );
   }
 }
