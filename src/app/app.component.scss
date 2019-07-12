@@ -1,11 +1,12 @@
-.wrapper {
-}
-
-.sidebar {
-	width: 400px !important;
+.sidenav-container {
+  height: 100%;
 }
 
 .main-panel {
-	width: calc(100% - 400px) !important;
+  width: 100%;
 }
 
+.sidebar,
+.sidenav {
+  width: 400px;
+}

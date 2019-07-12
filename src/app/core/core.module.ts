@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
-import { environment } from '../../environments/environment';
-import { AuthService } from './services/auth.service';
-import { RefreshTokenInterceptor } from './interceptors/refresh-token-interceptor';
+import { environment } from '@env/environment';
+import { AuthService } from '@services/auth.service';
+import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
 
 export function jwtOptionsFactory(authService: AuthService) {
   return {
@@ -13,7 +13,7 @@ export function jwtOptionsFactory(authService: AuthService) {
       return authService.getAccessToken();
     },
     whitelistedDomains: ['api.microquake.org', 'localhost'],
-    blacklistedRoutes: [`${environment.apiUrl}/api/token`]
+    blacklistedRoutes: [`${environment.url}api/token/refresh/`]
   };
 }
 
@@ -38,9 +38,9 @@ export function jwtOptionsFactory(authService: AuthService) {
     },
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: RefreshTokenInterceptor,
+      useClass: HttpErrorInterceptor,
       multi: true
-    }
+    },
   ],
 })
 export class CoreModule { }

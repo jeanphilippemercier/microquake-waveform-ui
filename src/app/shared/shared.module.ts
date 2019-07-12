@@ -17,6 +17,7 @@ import {
 
 import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
 import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
+import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -65,6 +66,7 @@ const CDK_MODULES = [
 ];
 
 const COMPONTENTS = [
+  FooterLayoutComponent
 ];
 
 const DIALOGS = [

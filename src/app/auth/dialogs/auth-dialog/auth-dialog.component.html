@@ -1,0 +1,125 @@
+<form
+  (ngSubmit)="submitAuthForm()"
+  #authForm="ngForm"
+>
+  <div mat-dialog-title>
+    <div class="row">
+      <div class="col-12">
+        <h1>{{mode === DialogMode.LOGIN ? 'Login' : 'Registration'}}</h1>
+      </div>
+    </div>
+  </div>
+
+  <mat-dialog-content class="pt-1">
+    <div
+      class="row"
+      *ngIf="mode === DialogMode.REGISTRATION"
+    >
+      <!-- TODO: place for additional field in registration -->
+    </div>
+
+    <div class="row">
+      <div class="col-12 col-sm-6">
+        <mat-form-field class="w-100">
+          <input
+            matInput
+            name="username"
+            placeholder="Username"
+            [disabled]="loading"
+            [required]="true"
+            [(ngModel)]="authLoginInput.username"
+            #usernameFormControl="ngModel"
+            autocomplete="off"
+          >
+          <mat-error *ngIf="usernameFormControl.hasError('required')">
+            Username is <strong>required</strong>
+          </mat-error>
+        </mat-form-field>
+      </div>
+      <div class="col-12 col-sm-6">
+        <mat-form-field class="w-100">
+          <input
+            matInput
+            name="password"
+            placeholder="Password"
+            type="password"
+            [disabled]="loading"
+            [required]="true"
+            [minlength]="3"
+            [maxlength]="50"
+            [(ngModel)]="authLoginInput.password"
+            #passwordFormControl="ngModel"
+            autocomplete="off"
+          >
+          <mat-error *ngIf="passwordFormControl.hasError('required')">
+            Password is <strong>required</strong>
+          </mat-error>
+          <!-- TODO: SET PROPER LIMITATIONS !!! -->
+          <mat-error *ngIf="!passwordFormControl.hasError('required') && passwordFormControl.hasError('minlength')">
+            Password must have at least <strong>3 characters</strong>
+          </mat-error>
+          <mat-error *ngIf="!passwordFormControl.hasError('required') && passwordFormControl.hasError('maxlength')">
+            Password can have maximum <strong>50 characters</strong>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+    </div>
+
+    <div class="row mt-5">
+      <div class="col-8">
+        {{error}}
+      </div>
+      <div class="col-4">
+        <div class="d-flex">
+          <button
+            class="ml-auto"
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="loading"
+          >
+            {{mode === DialogMode.LOGIN ? 'Login' : 'Register'}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TODO: remove *ngIf="" when registration's complete -->
+    <div
+      class="row mt-5"
+      *ngIf=""
+    >
+      <div class="col-12">
+        <p
+          class="text-center mb-0"
+          *ngIf="mode === DialogMode.LOGIN"
+        >
+          <small>
+            Don't have a account yet?<br>
+            <a
+              mat-button
+              color="accent"
+              (click)="mode = DialogMode.REGISTRATION;"
+            >Use registration</a>
+          </small>
+        </p>
+        <p
+          class="text-center mb-0"
+          *ngIf="mode === DialogMode.REGISTRATION"
+        >
+          <small>
+            Already have an account?<br>
+            <a
+              mat-button
+              color="accent"
+              (click)="mode = DialogMode.LOGIN;"
+            >Use login</a>
+          </small>
+        </p>
+      </div>
+    </div>
+
+
+  </mat-dialog-content>
+</form>
