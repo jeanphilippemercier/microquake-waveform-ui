@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, ReplaySubject, BehaviorSubject } from 'rxjs';
 
 import { environment } from '@env/environment';
-import { AuthLoginInput, LoginResponseContext } from '@interfaces/auth.interface';
+import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefreshInput } from '@interfaces/auth.interface';
 import { User } from '@interfaces/user.interface';
 
 @Injectable({
@@ -83,8 +83,7 @@ export class AuthService {
 
   login(authLoginInput: AuthLoginInput): Observable<LoginResponseContext> {
     const body = authLoginInput;
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    const postObservable = this._httpClient.post<LoginResponseContext>(this._loginCheckUrl, body, { headers });
+    const postObservable = this._httpClient.post<LoginResponseContext>(this._loginCheckUrl, body);
 
     const subject = new ReplaySubject<LoginResponseContext>(1);
     subject.subscribe((r: LoginResponseContext) => {
@@ -99,15 +98,15 @@ export class AuthService {
     return subject;
   }
 
-  refresh(): Observable<LoginResponseContext> {
-    const body = new HttpParams().set('refresh_token', this.getRefreshToken());
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    const refreshObservable = this._httpClient.post<LoginResponseContext>(this._refreshTokenUrl, body.toString(), { headers });
+  refresh(): Observable<RefreshResponseContext> {
+    const body: AuthRefreshInput = {
+      refresh: this.getRefreshToken()
+    };
+    const refreshObservable = this._httpClient.post<RefreshResponseContext>(this._refreshTokenUrl, body);
 
-    const refreshSubject = new ReplaySubject<LoginResponseContext>(1);
-    refreshSubject.subscribe((r: LoginResponseContext) => {
+    const refreshSubject = new ReplaySubject<RefreshResponseContext>(1);
+    refreshSubject.subscribe((r: RefreshResponseContext) => {
       this._setAccessToken(r.access);
-      this._setRefreshToken(r.refresh);
       this._setUser(this._dummyUser);
     }, (err) => {
       this._handleAuthenticationError(err);

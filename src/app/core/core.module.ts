@@ -5,7 +5,6 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { environment } from '@env/environment';
 import { AuthService } from '@services/auth.service';
-import { RefreshTokenInterceptor } from './interceptors/refresh-token-interceptor';
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
 
 export function jwtOptionsFactory(authService: AuthService) {
@@ -14,7 +13,7 @@ export function jwtOptionsFactory(authService: AuthService) {
       return authService.getAccessToken();
     },
     whitelistedDomains: ['api.microquake.org', 'localhost'],
-    blacklistedRoutes: [`${environment.apiUrl}/api/token`]
+    blacklistedRoutes: [`${environment.url}api/token/refresh/`]
   };
 }
 
@@ -35,11 +34,6 @@ export function jwtOptionsFactory(authService: AuthService) {
     {
       provide: HTTP_INTERCEPTORS,
       useExisting: JwtInterceptor,
-      multi: true
-    },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: RefreshTokenInterceptor,
       multi: true
     },
     {

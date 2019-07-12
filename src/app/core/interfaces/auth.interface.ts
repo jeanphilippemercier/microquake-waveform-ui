@@ -3,9 +3,15 @@ export interface AuthLoginInput {
   password: string;
 }
 
-export interface LoginResponseContext {
-  // access token string
+export interface AuthRefreshInput {
+  refresh: string;
+}
+
+export interface RefreshResponseContext {
   access: string;
-  // access token string
+}
+
+export interface LoginResponseContext {
+  access: string;
   refresh: string;
 }
