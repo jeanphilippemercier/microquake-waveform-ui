@@ -19,6 +19,7 @@ import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 // import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
+import { AuthModule } from './auth/auth.module';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { SharedModule } from './shared/shared.module';
   imports: [
     CoreModule,
     SharedModule,
+    AuthModule,
     BrowserModule,
     BrowserAnimationsModule,
     ComponentsModule,
