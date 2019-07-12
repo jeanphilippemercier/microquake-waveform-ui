@@ -25,7 +25,8 @@
       "@env/*": ["src/environments/*"],
       "@core/*": ["src/app/core/*"],
       "@guards/*": ["src/app/core/guards/*"],
-      "@services/*": ["src/app/core/services/*"]
+      "@services/*": ["src/app/core/services/*"],
+      "@interfaces/*": ["src/app/core/interfaces/*"]
     }
   }
 }
