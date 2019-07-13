@@ -135,4 +135,21 @@ export class AuthService {
   isAuthenticated(): boolean {
     return this._loggedUser.getValue() !== null;
   }
+
+  // TODO: tmp solution until app initializer
+  async waitForInitialization(): Promise<boolean> {
+    if (this.initialized.getValue()) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise<boolean>(resolve => {
+      const sub = this.initialized.subscribe(data => {
+        if (data === true) {
+          sub.unsubscribe();
+
+          resolve(true);
+        }
+      });
+    });
+  }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot, CanActivate, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { AuthService } from '@services/auth.service';
@@ -7,26 +7,26 @@ import { AuthService } from '@services/auth.service';
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuard implements CanActivate {
+export class UnauthGuard implements CanActivateChild, CanActivate {
 
   constructor(
+    private _authService: AuthService,
     private _router: Router,
-    private _authService: AuthService
   ) { }
 
   canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
     return this.canActivate(route, state);
   }
 
-  async canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
+  async canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
 
     await this._authService.waitForInitialization();
 
-    if (this._authService.isAuthenticated()) {
+    if (!this._authService.isAuthenticated()) {
       return true;
     }
 
-    this._router.navigate(['..']);
+    this._router.navigate(['access']);
     return false;
   }
 }
