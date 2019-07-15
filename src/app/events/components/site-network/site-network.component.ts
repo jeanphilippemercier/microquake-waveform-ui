@@ -1,8 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { CatalogApiService } from '../../../core/services/catalog-api.service';
 import { Router } from '@angular/router';
+import { MatSelectChange } from '@angular/material';
 
-
+import { CatalogApiService } from '@services/catalog-api.service';
+import { Site, Network } from '@interfaces/site.interface';
+interface ViewerOptions {
+  site?: string;
+  network?: string;
+}
+// TODO: refactor to presentation component and move to shared module
 @Component({
   selector: 'app-site-network',
   templateUrl: './site-network.component.html',
@@ -10,80 +16,61 @@ import { Router } from '@angular/router';
 })
 export class SiteNetworkComponent implements OnInit {
 
-  public options: any;
-  public site: any;
-  public sites: any[];
-  public network: any;
-  public networks: any[];
-  private loadSites: Function;
-  public onChangeSite: Function;
-  public onChangeNetwork: Function;
-  private saveOption: Function;
-  private deleteOption: Function;
-  private clearSelections: Function;
+  public sites: Site[];
+  public selectedSite: Site;
+  public selectedNetwork: Network;
 
-  constructor(private _catalogService: CatalogApiService, private router: Router) { }
+  constructor(
+    private _router: Router,
+    private _catalogService: CatalogApiService
+  ) { }
 
-  public submit() {
-    this.saveOption('site');
-    this.saveOption('network');
-    this.router.navigate(['dashboard/reload']);
-  }
+  async ngOnInit() {
+    await this._loadSites();
 
-  ngOnInit() {
+    const options: ViewerOptions = JSON.parse(localStorage.getItem('viewer-options'));
 
-    this.options = JSON.parse(window.localStorage.getItem('viewer-options'));
-    this.options = this.options ? this.options : {};
-
-    const emptyElement = {
-      'code': '',
-      'name': ''
-    };
-
-    this.site = this.options.hasOwnProperty('site') ? this.options.site : emptyElement;
-
-    this.network = this.options.hasOwnProperty('network') ? this.options.network : emptyElement;
-
-    this.loadSites = () => {
-      this._catalogService.get_sites().subscribe(sites => {
-        this.sites = sites;
-        this.networks = this.options.hasOwnProperty('site') ? this.sites.find(v => v.code === this.site).networks : [];
-      });
-    };
-
-    this.loadSites();
-
-    this.clearSelections = () => {
-      this.deleteOption('site');
-      this.deleteOption('network');
-      this.networks = [];
-      this.site = emptyElement;
-      this.network = emptyElement;
-    };
-
-    this.onChangeSite = event => {
-      if (event.value) {
-        this.site = event.value;
-        this.networks = this.sites.find(v => v.code === event.value).networks;
+    if (options) {
+      if (options.site) {
+        this.selectedSite = this.sites.find(site => site.code === options.site);
       }
-    };
-
-    this.onChangeNetwork = event => {
-      this.network = event.value;
-    };
-
-    this.saveOption = option => {
-      this.options[option] = this[option];
-      window.localStorage.setItem('viewer-options', JSON.stringify(this.options));
-    };
-
-    this.deleteOption = option => {
-      delete this.options[option];
-      window.localStorage.setItem('viewer-options', JSON.stringify(this.options));
-    };
-
-
+      if (options.network && this.selectedSite && this.selectedSite.networks) {
+        this.selectedNetwork = this.selectedSite.networks.find(network => network.code === options.network);
+      }
+    }
   }
 
+  private async _loadSites() {
+    this.sites = await this._catalogService.get_sites().toPromise();
+  }
 
+  private _saveOptions() {
+    const options: ViewerOptions = {};
+
+    if (this.selectedSite) {
+      options.site = this.selectedSite.code;
+    }
+    if (this.selectedNetwork) {
+      options.network = this.selectedNetwork.code;
+    }
+    localStorage.setItem('viewer-options', JSON.stringify({ ...options }));
+  }
+
+  onChangeSite(event: MatSelectChange) { }
+
+  onChangeNetwork(event: MatSelectChange) { }
+
+  clearSelections(event?: MouseEvent) {
+    if (event) {
+      event.preventDefault();
+    }
+    this.selectedSite = null;
+    this.selectedNetwork = null;
+    this._saveOptions();
+  }
+
+  submit() {
+    this._saveOptions();
+    this._router.navigate(['dashboard/reload']);
+  }
 }

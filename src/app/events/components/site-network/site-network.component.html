@@ -1,42 +1,59 @@
-<div class="card border-primary">
-<div class='card-header'>Site and Network</div>
-<div style="overflow: auto" id="siteInfoCard" class="mb-0">
-  <div class='card-body' style="padding:0px 20px;">
-    <table class="table table-sm">
-      <tbody>
-        <tr>
-          <th scope="row">Site</th>
-          <td>
-            <mat-form-field class='input-form-width'>
-              <mat-select [(ngModel)]="site" [ngModelOptions]="{standalone: true}" (selectionChange)='onChangeSite($event)'>
-                <mat-option *ngFor="let element of sites" [value]="element.code">
-                {{element.name}}
-                </mat-option>
-              </mat-select>
-			  <button mat-button *ngIf="site" matSuffix mat-icon-button
-			    aria-label="Clear" (click)='clearSelections(); $event.preventDefault()'>
-			  	<mat-icon>clear</mat-icon>
-			  </button>
-            </mat-form-field>
-          </td>
-        </tr>
-        <tr>
-          <th scope="row">Network</th>
-          <td>
-            <mat-form-field class='input-form-width'>
-              <mat-select [(ngModel)]="network" [ngModelOptions]="{standalone: true}" (selectionChange)='onChangeNetwork($event)'>
-                <mat-option *ngFor="let element of networks" [value]="element.code">
-                {{element.name}}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-	<div class="form-group col-3">
-	  <button class="btn btn-primary" type="submit" (click)='submit()'>Submit</button>
-	</div>
+<div class="container p-5">
+  <h1>Events</h1>
+  <div class="row pt-3">
+    <div class="col-5">
+
+      <mat-form-field class='w-100'>
+        <mat-label>Site</mat-label>
+        <mat-select
+          [(ngModel)]="selectedSite"
+          (selectionChange)='onChangeSite($event)'
+        >
+          <mat-option
+            *ngFor="let site of sites"
+            [value]="site"
+          >
+            {{site.name}}
+          </mat-option>
+        </mat-select>
+        <button
+          mat-button
+          *ngIf="selectedSite"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)='clearSelections($event)'
+        >
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+
+    </div>
+    <div class="col-5">
+      <mat-form-field class='w-100'>
+        <mat-label>Network</mat-label>
+        <mat-select
+          [(ngModel)]="selectedNetwork"
+          (selectionChange)='onChangeNetwork($event)'
+          [disabled]="!selectedSite"
+        >
+          <mat-option
+            *ngFor="let network of selectedSite?.networks"
+            [value]="network"
+          >
+            {{network.name}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="col-2">
+      <button
+        mat-raised-button
+        [disabled]="!selectedSite || !selectedNetwork"
+        color="accent"
+        type="submit"
+        (click)='submit()'
+      >Submit</button>
+    </div>
   </div>
 </div>
-

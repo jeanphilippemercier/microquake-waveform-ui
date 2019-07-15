@@ -10,7 +10,7 @@ import { SiteNetworkComponent } from './components/site-network/site-network.com
     SiteNetworkComponent
   ],
   imports: [
-    SharedModule,
+    SharedModule
   ]
 })
 export class EventsModule { }
