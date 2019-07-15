@@ -15,3 +15,10 @@ export interface LoginResponseContext {
   access: string;
   refresh: string;
 }
+
+export interface Token {
+  token_type: string;
+  exp: Date;
+  jti: string;
+  user_id: number;
+}

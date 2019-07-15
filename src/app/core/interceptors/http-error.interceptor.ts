@@ -32,12 +32,13 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 
                 // TODO: when obtaining new access token through refresh token, wait for all other requests until new access token received.
                 // Now it sends multiple token refresh requests at the same time
-                return this._authService.refresh().pipe(
-                  mergeMap(() => this._jwtInterceptor.intercept(request, next)),
-                  catchError((error2: HttpErrorResponse) => {
-                    this._authService.logout();
-                    return throwError(error2);
-                  }));
+                return this._authService.refresh()
+                  .pipe(
+                    mergeMap(() => this._jwtInterceptor.intercept(request, next)),
+                    catchError((error2: HttpErrorResponse) => {
+                      this._authService.logout();
+                      return throwError(error2);
+                    }));
               }
             }
           }

@@ -1,29 +1,37 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, ReplaySubject, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
+import { map, mergeMap, catchError } from 'rxjs/operators';
 
 import { environment } from '@env/environment';
-import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefreshInput } from '@interfaces/auth.interface';
+import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefreshInput, Token } from '@interfaces/auth.interface';
 import { User } from '@interfaces/user.interface';
+import { UserService } from '@services/user.service';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // TODO: remove after getting user from api
-  private _dummyUser: User = {
-    username: `Jon Doe`
-  };
-  private _loginCheckUrl = `${environment.url}api/token/`;
-  private _refreshTokenUrl = `${environment.url}api/token/refresh/`;
   private _loggedUser: BehaviorSubject<User> = new BehaviorSubject(undefined);
 
   public readonly loggedUser: Observable<User> = this._loggedUser.asObservable();
   public readonly initialized: BehaviorSubject<boolean> = new BehaviorSubject(false); // TODO: implement APP_INITIALIZER
+  public readonly decodedToken: BehaviorSubject<Token> = new BehaviorSubject(undefined);
 
   constructor(
     private _httpClient: HttpClient,
+    private _userService: UserService,
+    private _jwtHelperService: JwtHelperService
   ) { }
+
+  public static getAccessToken(): string {
+    return localStorage.getItem('access_token');
+  }
+
+  public static getRefreshToken(): string {
+    return localStorage.getItem('refresh_token');
+  }
 
   private _setUser(user: User): void {
     this._loggedUser.next(user);
@@ -32,6 +40,7 @@ export class AuthService {
   private _clearTokens(): void {
     this._setAccessToken(null);
     this._setRefreshToken(null);
+    this._setDecodedToken(null);
   }
 
   private _handleAuthenticationError(err: any): void {
@@ -55,20 +64,28 @@ export class AuthService {
     }
   }
 
-  init(): Promise<void> {
+  private _decodeToken(encodedToken: string): Token {
+    return this._jwtHelperService.decodeToken(encodedToken);
+  }
 
+  private _setDecodedToken(decodedToken: Token): void {
+    this.decodedToken.next(decodedToken);
+  }
+
+  async init(): Promise<void> {
     if (this.initialized.getValue()) {
       return Promise.resolve();
     }
 
-    const tokenId = this.getAccessToken();
+    const encodedToken = AuthService.getAccessToken();
 
-    if (tokenId !== null) {
+    if (encodedToken !== null) {
+      const decodedToken = this._decodeToken(encodedToken);
+      this._setDecodedToken(decodedToken);
+
       try {
-        // TODO: get real user from api
-        // const user = await this._userService.get();
-        this._setUser(this._dummyUser);
-
+        const user = await this._userService.get(decodedToken.user_id).toPromise();
+        this._setUser(user);
       } catch (err) {
         this.logout();
       }
@@ -81,47 +98,52 @@ export class AuthService {
   }
 
 
-  login(authLoginInput: AuthLoginInput): Observable<LoginResponseContext> {
-    const body = authLoginInput;
-    const postObservable = this._httpClient.post<LoginResponseContext>(this._loginCheckUrl, body);
+  login(data: AuthLoginInput): Observable<User> {
+    const queryUrl = `${environment.url}api/token/`;
 
-    const subject = new ReplaySubject<LoginResponseContext>(1);
-    subject.subscribe((r: LoginResponseContext) => {
-      this._setAccessToken(r.access);
-      this._setRefreshToken(r.refresh);
-      this._setUser(this._dummyUser);
-    }, (err) => {
-      this._handleAuthenticationError(err);
-    });
+    return this._httpClient.post<LoginResponseContext>(queryUrl, data)
+      .pipe(
+        mergeMap((r: LoginResponseContext) => {
+          this._setAccessToken(r.access);
+          this._setRefreshToken(r.refresh);
+          const decodedToken = this._decodeToken(r.access);
+          this._setDecodedToken(decodedToken);
 
-    postObservable.subscribe(subject);
-    return subject;
+          return this._userService.get(decodedToken.user_id);
+        }),
+        mergeMap((user: User) => {
+          this._setUser(user);
+          return of(user);
+        }),
+        catchError((err) => {
+          this._handleAuthenticationError(err);
+          return throwError(err);
+        }));
   }
 
-  refresh(): Observable<RefreshResponseContext> {
-    const body: AuthRefreshInput = {
-      refresh: this.getRefreshToken()
+  refresh(): Observable<User> {
+    const queryUrl = `${environment.url}api/token/refresh/`;
+    const data: AuthRefreshInput = {
+      refresh: AuthService.getRefreshToken()
     };
-    const refreshObservable = this._httpClient.post<RefreshResponseContext>(this._refreshTokenUrl, body);
 
-    const refreshSubject = new ReplaySubject<RefreshResponseContext>(1);
-    refreshSubject.subscribe((r: RefreshResponseContext) => {
-      this._setAccessToken(r.access);
-      this._setUser(this._dummyUser);
-    }, (err) => {
-      this._handleAuthenticationError(err);
-    });
-
-    refreshObservable.subscribe(refreshSubject);
-    return refreshSubject;
-  }
-
-  getAccessToken(): string {
-    return localStorage.getItem('access_token');
-  }
-
-  getRefreshToken(): string {
-    return localStorage.getItem('refresh_token');
+    return this._httpClient.post<RefreshResponseContext>(queryUrl, data)
+      .pipe(
+        mergeMap((res: RefreshResponseContext) => {
+          this._setAccessToken(res.access);
+          const decodedToken = this._decodeToken(res.access);
+          this._setDecodedToken(decodedToken);
+          return this._userService.get(decodedToken.user_id);
+        }),
+        mergeMap((user: User) => {
+          this._setUser(user);
+          return of(user);
+        }),
+        catchError((err) => {
+          this._handleAuthenticationError(err);
+          return throwError(err);
+        })
+      );
   }
 
   logout(): void {
@@ -146,10 +168,10 @@ export class AuthService {
       const sub = this.initialized.subscribe(data => {
         if (data === true) {
           sub.unsubscribe();
-
           resolve(true);
         }
       });
     });
   }
+
 }

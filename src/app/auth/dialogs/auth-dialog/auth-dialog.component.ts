@@ -42,6 +42,7 @@ export class AuthDialogComponent {
     if (this.authForm.invalid) {
       return;
     }
+
     this.loading = true;
 
     this._auth.login(this.authLoginInput)
@@ -49,13 +50,13 @@ export class AuthDialogComponent {
       .subscribe(
         result => {
           this._matDialogRef.close();
-          this.loading = false;
           this._router.navigate(['access']);
         },
         err => {
-          this.loading = false;
+          console.error(err);
           this.error = 'Could not authenticate';
         }
-      );
+      ).add(() => this.loading = false);
+
   }
 }
