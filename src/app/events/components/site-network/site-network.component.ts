@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CatalogApiService } from '../core/services/catalog-api.service';
+import { CatalogApiService } from '../../../core/services/catalog-api.service';
 import { Router } from '@angular/router';
 
 

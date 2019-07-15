@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
-import { SiteNetworkComponent } from './site-network/site-network.component';
+import { SiteNetworkComponent } from './events/components/site-network/site-network.component';
 
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
