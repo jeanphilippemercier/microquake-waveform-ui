@@ -17,6 +17,7 @@ import { SiteNetworkComponent } from './site-network/site-network.component';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './auth/auth.module';
+import { EventsModule } from './events/events.module';
 
 @NgModule({
   declarations: [
@@ -28,6 +29,7 @@ import { AuthModule } from './auth/auth.module';
     CoreModule,
     SharedModule,
     AuthModule,
+    EventsModule,
     BrowserModule,
     BrowserAnimationsModule,
     ComponentsModule,
