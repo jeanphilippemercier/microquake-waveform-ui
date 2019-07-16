@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { MessageService } from '../core/services/message.service';
-import { environment } from '../../environments/environment';
-import {MatSnackBar} from '@angular/material';
+import { MatSnackBar } from '@angular/material';
 
+import { MessageService } from '@services/message.service';
+import { environment } from '@env/environment';
+
+// TODO: move to service
 @Component({
   selector: 'app-notifier',
   templateUrl: './notifier.component.html',
@@ -11,17 +13,19 @@ import {MatSnackBar} from '@angular/material';
 
 export class NotifierComponent implements OnInit {
 
-  constructor(private snackBar: MatSnackBar, private messageService: MessageService) {
-  }
+  constructor(
+    private _snackBar: MatSnackBar,
+    private _messageService: MessageService
+  ) { }
 
   sendMessage(message): void {
-      // send message to subscribers via observable subject
-      this.messageService.sendMessage(message);
+    // send message to subscribers via observable subject
+    this._messageService.sendMessage(message);
   }
 
   clearMessage(): void {
-      // clear message
-      this.messageService.clearMessage();
+    // clear message
+    this._messageService.clearMessage();
   }
 
   ngOnInit() {
@@ -29,7 +33,7 @@ export class NotifierComponent implements OnInit {
   }
 
   openSnackBar(message: string, action: string) {
-    this.snackBar.open(message, action, {
+    this._snackBar.open(message, action, {
       duration: 2000,
     });
   }
@@ -41,7 +45,7 @@ export class NotifierComponent implements OnInit {
       const msg = JSON.parse(message['data']);
       msg.sender = 'notifier';
       this.openSnackBar('message received: ' + message['data'], 'OK');
-      this.messageService.sendMessage(msg);
+      this._messageService.sendMessage(msg);
     });
   }
 
