@@ -1,24 +1,34 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { WaveformComponent } from './waveform/waveform.component';
-import { NotifierComponent } from '@app/events/components/notifier/notifier.component';
+import { WaveformComponent } from '@app/waveform/waveform.component';
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
-import { EventListComponent } from './events/pages/event-list/event-list.component';
+import { EventListComponent } from '@app/events/pages/event-list/event-list.component';
 
 const routes: Routes = [
   {
     path: '',
     canActivate: [UnauthGuard],
     redirectTo: '',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
-  { path: 'dashboard/:reload', component: WaveformComponent, canActivate: [AuthGuard] },
-  { path: 'dashboard#', component: WaveformComponent, canActivate: [AuthGuard] },
-  { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
-  { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
-  { path: 'notifier', component: NotifierComponent },
+  {
+    path: '',
+    canActivate: [],
+    canActivateChild: [AuthGuard],
+    children: [
+      { path: 'dashboard/:reload', component: WaveformComponent, canActivate: [AuthGuard] },
+      { path: 'dashboard#', component: WaveformComponent, canActivate: [AuthGuard] },
+      { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
+      { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
+    ]
+  },
+  {
+    path: '**',
+    redirectTo: '',
+    canActivate: [],
+  },
 ];
 
 @NgModule({
