@@ -3,10 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { WaveformComponent } from './waveform/waveform.component';
 import { NotifierComponent } from './notifier/notifier.component';
-import { SiteNetworkComponent } from './site-network/site-network.component';
-
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
+import { EventListComponent } from './events/pages/event-list/event-list.component';
 
 const routes: Routes = [
   {
@@ -18,7 +17,7 @@ const routes: Routes = [
   { path: 'dashboard/:reload', component: WaveformComponent, canActivate: [AuthGuard] },
   { path: 'dashboard#', component: WaveformComponent, canActivate: [AuthGuard] },
   { path: 'dashboard', component: WaveformComponent, canActivate: [AuthGuard] },
-  { path: 'access', component: SiteNetworkComponent, canActivate: [AuthGuard] },
+  { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
   { path: 'notifier', component: NotifierComponent },
 ];
 
