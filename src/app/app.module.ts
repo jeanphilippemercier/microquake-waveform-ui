@@ -6,7 +6,6 @@ import { HttpClientModule } from '@angular/common/http';
 // import { MatIconRegistry, MatIconModule } from '@angular/material';
 // import { DomSanitizer } from '@angular/platform-browser';
 
-import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
@@ -29,7 +28,6 @@ import { EventsModule } from './events/events.module';
     EventsModule,
     BrowserModule,
     BrowserAnimationsModule,
-    ComponentsModule,
     HttpClientModule,
     FlexLayoutModule,
     NgxLoadingModule.forRoot({}),
