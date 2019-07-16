@@ -1,12 +1,10 @@
-/*jshint esversion: 6 */
-import {NestedTreeControl} from '@angular/cdk/tree';
-import {Component, Injectable, Output, EventEmitter} from '@angular/core';
-import {MatTreeNestedDataSource, MatTreeFlattener} from '@angular/material/tree';
-import {MatTooltipModule} from '@angular/material/tooltip';
-import {MatIconModule} from '@angular/material/icon';
-import {BehaviorSubject, Observable, of as observableOf} from 'rxjs';
-import { CatalogApiService } from '../core/services/catalog-api.service';
+import { NestedTreeControl } from '@angular/cdk/tree';
+import { Component, Injectable, Output, EventEmitter } from '@angular/core';
+import { MatTreeNestedDataSource } from '@angular/material/tree';
+import { BehaviorSubject } from 'rxjs';
 import * as moment from 'moment';
+
+import { CatalogApiService } from '@services/catalog-api.service';
 
 /**
  * File node data with nested structure.
@@ -83,7 +81,7 @@ export class FileDatabase {
     if (eventStatus) {
       this.selectedStatusTypes = eventStatus.split(',');
     }
-    const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
+    const statusTypes = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
 
     this.options = JSON.parse(window.localStorage.getItem('viewer-options'));
     this.options = this.options ? this.options : {};
@@ -92,10 +90,10 @@ export class FileDatabase {
 
     this._catalogService.get_microquake_event_types(this.site).subscribe(types => {
       for (const type of types) {
-          const abbr = type.identifier ? type.identifier :
-            (type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O');
-          type['viewValue'] =  abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
-          type['type'] =  abbr;
+        const abbr = type.identifier ? type.identifier :
+          (type.microquake_type === 'seismic event' ? 'E' : type.microquake_type === 'blast' ? 'B' : 'O');
+        type['viewValue'] = abbr + ' - ' + type.microquake_type + ' (' + type.quakeml_type + ')';
+        type['type'] = abbr;
       }
       this.eventTypes = types;
     });
@@ -104,15 +102,15 @@ export class FileDatabase {
       const bounds = boundsArray[0];
       this.bounds = bounds;
       this.timezone = bounds.timezone;
-      if (typeof bounds === 'object'  && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
+      if (typeof bounds === 'object' && bounds.hasOwnProperty('min_time') && bounds.hasOwnProperty('max_time')) {
         this.treeObject = this.createTree(bounds);
         if (this.eventId) {
-           this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
-             this.getEventsForDate(event.time_utc, null, '', statusTypes, false);
-           });
+          this._catalogService.get_event_by_id(this.site, this.network, this.eventId).subscribe(event => {
+            this.getEventsForDate(event.time_utc, null, '', statusTypes, false);
+          });
 
         } else {
-            this.getEventsForDate(bounds.max_time, null, '', statusTypes, true);
+          this.getEventsForDate(bounds.max_time, null, '', statusTypes, true);
         }
       }
 
@@ -130,40 +128,40 @@ export class FileDatabase {
 
     this._catalogService.get_events(this.site, this.network, startTime, endTime, event_types, status).subscribe(events => {
 
-        if (Array.isArray(events)) {
+      if (Array.isArray(events)) {
 
-          if (events.length === 0 && forceFindEvent) {
-            if (moment(date).isBefore(moment(this.bounds.min_time))) {
-              this.dataChange.next([]);  // stop loading
-              return;
-            }
-            const newDate = moment(date).subtract(1, 'days').toISOString();
-            this.getEventsForDate(newDate, tree, event_types, status, forceFindEvent);
+        if (events.length === 0 && forceFindEvent) {
+          if (moment(date).isBefore(moment(this.bounds.min_time))) {
+            this.dataChange.next([]);  // stop loading
             return;
           }
-
-          if (events.length > 0) {
-
-            events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-
-            if (forceFindEvent) { // select most recent event by default
-              this.eventId = events[0].event_resource_id;
-            }
-
-            this.treeObject = this.convertTree(events, this.treeObject, day.year(), day.month(), day.date());
-
-          }
-          // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
-          const data = this.buildFileTree(this.treeObject, 0);
-
-          if (this.eventId) {
-            this.selectNode(tree, data, this.eventId, 'select');
-          }
-
-          // Notify the change.
-          this.dataChange.next(data);
+          const newDate = moment(date).subtract(1, 'days').toISOString();
+          this.getEventsForDate(newDate, tree, event_types, status, forceFindEvent);
+          return;
         }
-      },
+
+        if (events.length > 0) {
+
+          events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+
+          if (forceFindEvent) { // select most recent event by default
+            this.eventId = events[0].event_resource_id;
+          }
+
+          this.treeObject = this.convertTree(events, this.treeObject, day.year(), day.month(), day.date());
+
+        }
+        // Build the tree nodes from Json object. The result is a list of `FileNode` with nested file node as children.
+        const data = this.buildFileTree(this.treeObject, 0);
+
+        if (this.eventId) {
+          this.selectNode(tree, data, this.eventId, 'select');
+        }
+
+        // Notify the change.
+        this.dataChange.next(data);
+      }
+    },
       err => console.error(err)
       // , () => console.log('done loading')
     );
@@ -181,11 +179,11 @@ export class FileDatabase {
               if (dayNode.hasOwnProperty('children') && dayNode.children.length > 0) {
                 for (const event of dayNode.children) {
                   if (event.event_resource_id === node.event_resource_id) {
-                      event.event_type = node.event_type;
-                      event.type = this.eventTypes.find(v => v.quakeml_type === node.event_type).type;
-                      event.status = node.status;
-                      event.eval_status = (node.status === 'rejected') ? 'R' : 'A';
-                      break;
+                    event.event_type = node.event_type;
+                    event.type = this.eventTypes.find(v => v.quakeml_type === node.event_type).type;
+                    event.status = node.status;
+                    event.eval_status = (node.status === 'rejected') ? 'R' : 'A';
+                    break;
                   }
                 }
               }
@@ -260,8 +258,8 @@ export class FileDatabase {
 
   createTree(bounds) {
     const dataTree = {};
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+      'September', 'October', 'November', 'December'];
     if (moment(bounds.min_time).isValid() && moment(bounds.max_time).isValid()) {
       const date = moment(bounds.max_time).utc().utcOffset(this.timezone);
       const dateMin = moment(bounds.min_time).utc().utcOffset(this.timezone);
@@ -286,7 +284,7 @@ export class FileDatabase {
 
   convertTree(dataObject, dataTree, thisYear, thisMonth, thisDay) {
     // overwrite current node
-    const theDay =  ('0' + thisDay).slice(-2);
+    const theDay = ('0' + thisDay).slice(-2);
     if (dataTree.hasOwnProperty(thisYear)
       && dataTree[thisYear].hasOwnProperty(thisMonth)
       && dataTree[thisYear][thisMonth].hasOwnProperty(theDay)) {
@@ -294,34 +292,34 @@ export class FileDatabase {
     }
     if (typeof dataObject === 'object') {
       for (const property of Object.keys(dataObject)) {
-          const value = dataObject[property];
-          if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
-            const d = moment(value.time_utc).utc().utcOffset(this.timezone);
-            const fsec = value.time_utc.slice(-8, -1);
-            const year = d.year();
-            const month = d.month();
-            const day =  ('0' + d.date()).slice(-2);
-            const event_time = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(3).slice(-4);
-              if (!dataTree.hasOwnProperty(year)) {
-                dataTree[year] = {};
-              }
-              if (!dataTree[year].hasOwnProperty(month)) {
-                dataTree[year][month] = {};
-              }
-              if (!dataTree[year][month].hasOwnProperty(day)) {
-                dataTree[year][month][day] = {};
-              }
-              if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
-                dataTree[year][month][day][event_time] = value;
-              } else { // if duplicate node, same origin time already exists, append new node
-                const event_time_duplicate = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(4).slice(-5);
-                if (!dataTree[year][month][day].hasOwnProperty(event_time_duplicate)) {
-                  dataTree[year][month][day][event_time_duplicate] = value;
-                } else {
-                  console.log('More than 2 events with same origin time found, skipped');
-                }
-              }
+        const value = dataObject[property];
+        if (typeof value === 'object' && value.hasOwnProperty('time_utc')) {
+          const d = moment(value.time_utc).utc().utcOffset(this.timezone);
+          const fsec = value.time_utc.slice(-8, -1);
+          const year = d.year();
+          const month = d.month();
+          const day = ('0' + d.date()).slice(-2);
+          const event_time = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(3).slice(-4);
+          if (!dataTree.hasOwnProperty(year)) {
+            dataTree[year] = {};
           }
+          if (!dataTree[year].hasOwnProperty(month)) {
+            dataTree[year][month] = {};
+          }
+          if (!dataTree[year][month].hasOwnProperty(day)) {
+            dataTree[year][month][day] = {};
+          }
+          if (!dataTree[year][month][day].hasOwnProperty(event_time)) {
+            dataTree[year][month][day][event_time] = value;
+          } else { // if duplicate node, same origin time already exists, append new node
+            const event_time_duplicate = d.format('HH:mm:ss') + parseFloat(fsec).toFixed(4).slice(-5);
+            if (!dataTree[year][month][day].hasOwnProperty(event_time_duplicate)) {
+              dataTree[year][month][day][event_time_duplicate] = value;
+            } else {
+              console.log('More than 2 events with same origin time found, skipped');
+            }
+          }
+        }
       }
     }
     return dataTree;
@@ -331,22 +329,22 @@ export class FileDatabase {
    * Build the file structure tree. The `value` is the Json object, or a sub-tree of a Json object.
    * The return value is the list of `FileNode`.
    */
-  buildFileTree(obj: {[key: string]: any}, level: number): FileNode[] {
+  buildFileTree(obj: { [key: string]: any }, level: number): FileNode[] {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
       'September', 'October', 'November', 'December'];
-    const numKeys = Object.keys(obj).map(function(item) {
+    const numKeys = Object.keys(obj).map(function (item) {
       return parseInt(item, 10);
     });
     let sortedEntries = Object.keys(obj).sort().reverse();
     if (level < 2) {
-      sortedEntries = numKeys.sort(function(a, b) { return b - a; }).map(String);
+      sortedEntries = numKeys.sort(function (a, b) { return b - a; }).map(String);
     }
     return sortedEntries.reduce<FileNode[]>((accumulator, key) => {
       const value = obj[key];
       const node = new FileNode();
       node.name = level === 1 ? monthNames[key] : key;
       this.date = level === 0 ? key : level === 1 ? this.date.substring(0, 4) + '-' + ('0' + (1 + parseInt(key, 10)).toString()).slice(-2) :
-                  level === 2 ? this.date.substring(0, 7) + '-' + key : this.date;
+        level === 2 ? this.date.substring(0, 7) + '-' + key : this.date;
       node.date = level === 2 ? this.date : null;
       node.level = level;
 
@@ -395,7 +393,7 @@ export class FileDatabase {
 @Component({
   selector: 'app-events-tree',
   templateUrl: 'events-tree.component.html',
-  styleUrls: ['events-tree.component.css'],
+  styleUrls: ['events-tree.component.scss'],
   providers: [FileDatabase]
 })
 export class EventsTreeComponent {
@@ -421,14 +419,14 @@ export class EventsTreeComponent {
       this.treeControl.dataNodes = data;
 
       if (data && data.length === 0) {
-        this.messageEvent.emit({'action': 'treeLoaded'});
+        this.messageEvent.emit({ 'action': 'treeLoaded' });
         return;
       }
 
       if (data && data.length > 0) {
 
         if (this.init) {
-          const init_msg = {'init': this.database.eventTypes};
+          const init_msg = { 'init': this.database.eventTypes };
           this.messageEvent.emit(init_msg);   // send message to init data
           this.init = false;
           this.eventTypes = this.database.eventTypes;
@@ -455,9 +453,9 @@ export class EventsTreeComponent {
 
   filterEventsByTypeStatus() {
     this.database.treeObject = this.database.createTree(this.database.bounds);
-    const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
-    const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
-    this.messageEvent.emit({'action': 'treeLoading'});
+    const statusTypes = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
+    const eventTypes = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
+    this.messageEvent.emit({ 'action': 'treeLoading' });
     this.database.clearExpandedDays();
     this.database.getEventsForDate(this.database.bounds.max_time, this.treeControl, eventTypes, statusTypes, true);
   }
@@ -518,8 +516,8 @@ export class EventsTreeComponent {
       if (node.level === 2 && this.treeControl.isExpanded(node)) {
         const date = moment.parseZone(node.date + ' ' + this.database.timezone, 'YYYY-MM-DD ZZ', true);  // date on timezone
         if (date.isValid()) {
-          const statusTypes  = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
-          const eventTypes  = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
+          const statusTypes = this.selectedStatusTypes ? this.selectedStatusTypes.toString() : '';
+          const eventTypes = this.selectedEventTypes ? this.selectedEventTypes.toString() : '';
           this.database.saveExpandedNodes(this.treeControl);
           this.database.getEventsForDate(date, this.treeControl, eventTypes, statusTypes, false);
         }

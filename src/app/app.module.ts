@@ -8,7 +8,6 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
-import { CatalogTreeModule } from './catalog-tree/catalog-tree.module';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { AppRoutingModule } from './app-routing.module';
@@ -31,7 +30,6 @@ import { EventsModule } from './events/events.module';
     BrowserModule,
     BrowserAnimationsModule,
     ComponentsModule,
-    CatalogTreeModule,
     HttpClientModule,
     FlexLayoutModule,
     NgxLoadingModule.forRoot({}),

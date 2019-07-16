@@ -1,5 +1,6 @@
 import { Component, ViewChild, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
-import { EventsTreeComponent} from '../../catalog-tree/events-tree.component';
+
+import { EventsTreeComponent} from '@app/events/components/catalog-tree/events-tree.component';
 import { MessageService } from '../../core/services/message.service';
 import { Subscription } from 'rxjs/Subscription';
 import { CatalogApiService } from '../../core/services/catalog-api.service';
