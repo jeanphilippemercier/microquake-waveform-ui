@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { JWT_OPTIONS, JwtInterceptor, JwtModule } from '@auth0/angular-jwt';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -6,6 +6,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { AuthService } from '@services/auth.service';
+import { ConfigurationService } from '@services/configuration.service';
 
 export function jwtOptionsFactory() {
   return {
@@ -23,6 +24,11 @@ export function jwtOptionsFactory() {
   };
 }
 
+export function configInit(configurationService: ConfigurationService) {
+  // return () => configurationService.init();
+  return () => configurationService.initAssetsConfig();
+}
+
 @NgModule({
   declarations: [],
   imports: [
@@ -37,6 +43,12 @@ export function jwtOptionsFactory() {
   providers: [
     JwtInterceptor, // Providing JwtInterceptor allow to inject JwtInterceptor manually into HttpErrorInterceptor
     {
+      provide: APP_INITIALIZER,
+      useFactory: configInit,
+      deps: [ConfigurationService],
+      multi: true
+    },
+    {
       provide: HTTP_INTERCEPTORS,
       useExisting: JwtInterceptor,
       multi: true
@@ -45,7 +57,7 @@ export function jwtOptionsFactory() {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpErrorInterceptor,
       multi: true
-    },
+    }
   ],
 })
 export class CoreModule { }

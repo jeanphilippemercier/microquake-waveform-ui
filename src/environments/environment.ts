@@ -1,16 +1,25 @@
+import { DynamicEnvironment } from './dynamic-environment';
+
 // This file can be replaced during build by using the `fileReplacements` array.
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-export const environment = {
+// overwrite injected values
+const CONFIG = {
   production: false,
-
-  url: 'https://api.microquake.org/',
-  // URL of the API
-  apiUrl: 'https://api.microquake.org/api/v1/',
-  // 3D UI url:
-  url3dUi: 'https://3d.microquake.org/',
+  // url: 'http://localhost:8000/',
+  // apiUrl: 'http://localhost:8000/api/v1/',
+  // url3dUi: 'https://3d.microquake.org/'
 };
+
+class Environment extends DynamicEnvironment {
+  constructor() {
+    super();
+    this.setDefaultConfig(CONFIG);
+  }
+}
+
+export const environment = new Environment();
 
 /*
  * For easier debugging in development mode, you can import the following file
