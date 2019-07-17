@@ -4,7 +4,7 @@ import { MatTreeNestedDataSource } from '@angular/material/tree';
 import * as moment from 'moment';
 
 import { FileNode } from './file-node.class';
-import { FileDatabase } from './file-node.service';
+import { FileDatabase } from './file-databse.service';
 
 
 /**
