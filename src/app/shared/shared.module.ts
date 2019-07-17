@@ -20,6 +20,7 @@ import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
 import { EventStatusFieldComponent } from './forms/fields/event-status-field/event-status-field.component';
+import { EventDateFieldComponent } from './forms/fields/event-date-field/event-date-field.component';
 import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
 
@@ -73,6 +74,7 @@ const COMPONTENTS = [
   FooterLayoutComponent,
   EventTypeFieldComponent,
   EventStatusFieldComponent,
+  EventDateFieldComponent,
   SiteSelectFieldComponent,
   SiteNetworkFieldComponent,
 ];
