@@ -18,8 +18,10 @@ import {
 import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
 import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
-import { EventTypeFieldComponent } from './fields/event-type-field/event-type-field.component';
-import { EventStatusFieldComponent } from './fields/event-status-field/event-status-field.component';
+import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
+import { EventStatusFieldComponent } from './forms/fields/event-status-field/event-status-field.component';
+import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
+import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -70,7 +72,9 @@ const CDK_MODULES = [
 const COMPONTENTS = [
   FooterLayoutComponent,
   EventTypeFieldComponent,
-  EventStatusFieldComponent
+  EventStatusFieldComponent,
+  SiteSelectFieldComponent,
+  SiteNetworkFieldComponent,
 ];
 
 const DIALOGS = [

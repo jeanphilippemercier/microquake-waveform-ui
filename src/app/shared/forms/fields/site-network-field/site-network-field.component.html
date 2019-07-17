@@ -1,0 +1,15 @@
+<mat-form-field class='w-100'>
+  <mat-label>Network</mat-label>
+  <mat-select
+    [(ngModel)]="network"
+    (selectionChange)='onChangeNetwork($event)'
+    [disabled]="!site"
+  >
+    <mat-option
+      *ngFor="let networkEl of site?.networks"
+      [value]="networkEl"
+    >
+      {{networkEl.name}}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
