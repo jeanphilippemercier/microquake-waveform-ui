@@ -18,6 +18,8 @@ import {
 import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
 import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
+import { EventTypeFieldComponent } from './fields/event-type-field/event-type-field.component';
+import { EventStatusFieldComponent } from './fields/event-status-field/event-status-field.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -66,7 +68,9 @@ const CDK_MODULES = [
 ];
 
 const COMPONTENTS = [
-  FooterLayoutComponent
+  FooterLayoutComponent,
+  EventTypeFieldComponent,
+  EventStatusFieldComponent
 ];
 
 const DIALOGS = [

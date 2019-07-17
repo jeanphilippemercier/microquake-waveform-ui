@@ -1,0 +1,53 @@
+<mat-form-field>
+  <mat-label>Event Type</mat-label>
+  <mat-select
+    [(ngModel)]="selectedEventTypes"
+    (selectionChange)="onChangeEventTypes($event)"
+    multiple
+  >
+    <mat-select-trigger>
+      {{selectedEventTypes ? selectedEventTypes[0]?.quakeml_type : ''}}
+      <span
+        *ngIf="selectedEventTypes?.length > 1"
+        class="example-additional-selection"
+      >
+        (+{{selectedEventTypes.length - 1}} {{selectedEventTypes?.length === 2 ? 'other' : 'others'}})
+      </span>
+    </mat-select-trigger>
+    <mat-option
+      *ngFor="let eventTypeEL of eventTypes"
+      [value]="eventTypeEL"
+      matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})"
+    >
+      <ng-container [ngSwitch]="eventTypeEL.identifier">
+        <mat-icon *ngSwitchCase="'E'">
+          multiline_chart
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'B'">
+          flare
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'OB'">
+          filter_tilt_shift
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'SE'">
+          person
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'CN'">
+          hearing
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'L'">
+          flash_on
+        </mat-icon>
+        <mat-icon *ngSwitchCase="'OP'">
+          all_out
+        </mat-icon>
+        <mat-icon *ngSwitchDefault>
+          more
+        </mat-icon>
+      </ng-container>
+      <span>
+        {{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})
+      </span>
+    </mat-option>
+  </mat-select>
+</mat-form-field>
