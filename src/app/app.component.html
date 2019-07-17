@@ -9,21 +9,49 @@
     >
       <div class="sidebar">
         <mat-toolbar
-          color="primary"
+          color=""
           class="mat-elevation-z6"
         >
-          <div class="mr-auto"></div>
+          <div class="w-100 d-flex justify-content-between">
+            <div>
+              <div class="logo">
+                <a
+                  href="https://api.microquake.org"
+                  class="simple-text"
+                >
+                  <div class="logo-img">
+                    <img src="/assets/img/pulse.png" />
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div>
+              <div class="logo">
+                <a
+                  href="https://api.microquake.org"
+                  class="simple-text"
+                >
+                  Microquake
+                </a>
+              </div>
+            </div>
+            <div>
+              <div class="my-3">
 
-          <button
-            mat-icon-button
-            color="secondary"
-          >
-            <mat-icon
-              aria-hidden="false"
-              aria-label="Log out"
-              (click)="logoutClick()"
-            >exit_to_app</mat-icon>
-          </button>
+                <button
+                  mat-mini-fab
+                  color="primary"
+                >
+                  <mat-icon
+                    aria-hidden="false"
+                    aria-label="Log out"
+                    (click)="logoutClick()"
+                  >exit_to_app</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </mat-toolbar>
         <app-sidebar></app-sidebar>
       </div>

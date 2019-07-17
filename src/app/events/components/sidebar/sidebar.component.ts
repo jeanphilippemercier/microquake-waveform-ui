@@ -39,17 +39,7 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
   public eventsDatabase: any;
   public site: any;
   public network: any;
-  public onChangeEvaluationStatus: Function;
-  public onChangeEvaluationMode: Function;
-  public onAcceptRejectEvent: Function;
-  public onChangeEventType: Function;
-  public onReprocessEvent: Function;
-  public onViewLocations: Function;
-  public toggleEventStatus: Function;
-  public bEventUnsaved: Boolean;
-  private saveEventTypeStatus: Function;
-  private clearInteractiveResults: Function;
-  private clearOrigin: Function;
+  public bEventUnsaved: boolean;
   private timezone: string;
   public picksWarning: string;
   public tracesInfo: string;
@@ -154,8 +144,11 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  constructor(private _catalogService: CatalogApiService, private messageService: MessageService) {
-    this.subscription = this.messageService.getMessage().subscribe(message => {
+  constructor(
+    private _catalogService: CatalogApiService,
+    private _messageService: MessageService
+  ) {
+    this.subscription = this._messageService.getMessage().subscribe(message => {
       if (message.sender !== 'sidebar') {
         this.getNotification(message);
       }
@@ -164,175 +157,165 @@ export class SidebarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   sendMessage(message): void {
     // send message to subscribers via observable subject
-    this.messageService.sendMessage(message);
+    this._messageService.sendMessage(message);
   }
 
   clearMessage(): void {
     // clear message
-    this.messageService.clearMessage();
+    this._messageService.clearMessage();
   }
 
   ngOnInit() {
 
-    const self = this;
-    self.options = JSON.parse(window.localStorage.getItem('viewer-options'));
-    self.options = self.options ? self.options : {};
+    this.options = JSON.parse(window.localStorage.getItem('viewer-options'));
+    this.options = this.options ? this.options : {};
 
-    self.site = self.options.hasOwnProperty('site') ? self.options.site : '';
-    self.network = self.options.hasOwnProperty('network') ? self.options.network : '';
-    self.origin = {};
-    self.interactiveOrigin = {};
-    self.timezone = '+00:00';
+    this.site = this.options.hasOwnProperty('site') ? this.options.site : '';
+    this.network = this.options.hasOwnProperty('network') ? this.options.network : '';
+    this.origin = {};
+    this.interactiveOrigin = {};
+    this.timezone = '+00:00';
 
     this.menuItems = ROUTES.filter(menuItem => menuItem);
 
-    this.onChangeEvaluationStatus = event => {
-      if (self.origin.hasOwnProperty('status')) {
-        self.origin.status = event.value;
-      }
-      if (self.origin.hasOwnProperty('evaluation_mode')) {
-        self.origin.evaluation_mode = 'manual';
-      }
-      self.bEventUnsaved = true;
-      $('#toggleSaveEventType').prop('disabled', false);
-      $('#toggleSaveEventStatus').prop('disabled', false);
-      $('#toggleSaveEventEvalMode').prop('disabled', false);
-    };
-
-    this.onChangeEventType = event => {
-      if (self.origin.hasOwnProperty('type')) {
-        self.origin.type = event.value;
-      }
-      if (self.origin.hasOwnProperty('evaluation_mode')) {
-        self.origin.evaluation_mode = 'manual';
-      }
-      self.bEventUnsaved = true;
-      $('#toggleSaveEventType').prop('disabled', false);
-      $('#toggleSaveEventStatus').prop('disabled', false);
-      $('#toggleSaveEventEvalMode').prop('disabled', false);
-    };
-
-    this.onChangeEvaluationMode = event => {
-      if (self.origin.hasOwnProperty('evaluation_mode')) {
-        self.origin.evaluation_mode = event.value;
-      }
-      self.bEventUnsaved = true;
-      $('#toggleSaveEventType').prop('disabled', false);
-      $('#toggleSaveEventStatus').prop('disabled', false);
-      $('#toggleSaveEventEvalMode').prop('disabled', false);
-    };
-
-
-    $('#toggleSaveEventType').on('click', () => {
-      self.saveEventTypeStatus();
-    });
-
-    $('#toggleSaveEventStatus').on('click', () => {
-      self.saveEventTypeStatus();
-    });
-
-    $('#toggleSaveEventEvalMode').on('click', () => {
-      self.saveEventTypeStatus();
-    });
-
-    this.toggleEventStatus = () => {
-      if (self.origin.eval_status === 'A') {
-        self.origin.eval_status = 'R';
-        self.origin.status = 'rejected';
-      } else if (self.origin.eval_status === 'R') {
-        self.origin.eval_status = 'A';
-        self.origin.status = 'final';
-      }
-    };
-
-    this.onAcceptRejectEvent = value => {
-      if (value === 'accept') {
-        console.log(self.interactiveOrigin.preferred_origin_id);
-        console.log(self.interactiveOrigin.data);
-        // to be confirmed
-        /*
-        self._catalogService.update_partial_origin_by_id
-            (self.interactiveOrigin.preferred_origin_id, self.interactiveOrigin.data)
-            .subscribe((response) => {
-                console.log(response);
-        },
-        (error) => {
-            window.alert('Error updating event: ' + error.error.message);
-        });
-        */
-      } else if (value === 'reject') {
-        this.clearInteractiveResults();
-      }
-    };
-
-    this.clearInteractiveResults = () => {
-      for (const property of Object.keys(self.interactiveOrigin)) {
-        this.interactiveOrigin[property] = '';
-      }
-      this.interactiveEventHeader = '';
-    };
-
-    this.clearOrigin = () => {
-      for (const property of Object.keys(this.origin)) {
-        this.origin[property] = '';
-      }
-    };
-
     document.addEventListener('keydown', (e: any) => {
       if (e.keyCode === 82) {   // r, toggle event type automatic/manual
-        self.toggleEventStatus();
+        this.toggleEventStatus();
       }
     });
 
-    this.saveEventTypeStatus = () => {
-      // if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
-      // change event in tree view (may not be selected one)
-      self._catalogService.update_event_by_id
-        (self.origin.event_resource_id, self.origin.status, self.origin.event_type, self.origin.evaluation_mode)
+  }
+
+
+  onChangeEvaluationStatus(event) {
+    if (this.origin.hasOwnProperty('status')) {
+      this.origin.status = event.value;
+    }
+    if (this.origin.hasOwnProperty('evaluation_mode')) {
+      this.origin.evaluation_mode = 'manual';
+    }
+    this.bEventUnsaved = true;
+    $('#toggleSaveEventType').prop('disabled', false);
+    $('#toggleSaveEventStatus').prop('disabled', false);
+    $('#toggleSaveEventEvalMode').prop('disabled', false);
+  }
+
+  onChangeEventType(event) {
+    if (this.origin.hasOwnProperty('type')) {
+      this.origin.type = event.value;
+    }
+    if (this.origin.hasOwnProperty('evaluation_mode')) {
+      this.origin.evaluation_mode = 'manual';
+    }
+    this.bEventUnsaved = true;
+    $('#toggleSaveEventType').prop('disabled', false);
+    $('#toggleSaveEventStatus').prop('disabled', false);
+    $('#toggleSaveEventEvalMode').prop('disabled', false);
+  }
+
+  onChangeEvaluationMode(event) {
+    if (this.origin.hasOwnProperty('evaluation_mode')) {
+      this.origin.evaluation_mode = event.value;
+    }
+    this.bEventUnsaved = true;
+    $('#toggleSaveEventType').prop('disabled', false);
+    $('#toggleSaveEventStatus').prop('disabled', false);
+    $('#toggleSaveEventEvalMode').prop('disabled', false);
+  }
+
+
+  toggleEventStatus() {
+    if (this.origin.eval_status === 'A') {
+      this.origin.eval_status = 'R';
+      this.origin.status = 'rejected';
+    } else if (this.origin.eval_status === 'R') {
+      this.origin.eval_status = 'A';
+      this.origin.status = 'final';
+    }
+  }
+
+
+  onAcceptRejectEvent(value) {
+    if (value === 'accept') {
+      console.log(this.interactiveOrigin.preferred_origin_id);
+      console.log(this.interactiveOrigin.data);
+      // to be confirmed
+      /*
+      this._catalogService.update_partial_origin_by_id
+          (this.interactiveOrigin.preferred_origin_id, this.interactiveOrigin.data)
+          .subscribe((response) => {
+              console.log(response);
+      },
+      (error) => {
+          window.alert('Error updating event: ' + error.error.message);
+      });
+      */
+    } else if (value === 'reject') {
+      this.clearInteractiveResults();
+    }
+  }
+
+  clearInteractiveResults() {
+    for (const property of Object.keys(this.interactiveOrigin)) {
+      this.interactiveOrigin[property] = '';
+    }
+    this.interactiveEventHeader = '';
+  }
+
+  clearOrigin() {
+    for (const property of Object.keys(this.origin)) {
+      this.origin[property] = '';
+    }
+  }
+
+  saveEventTypeStatus() {
+    // if (window.confirm('Are you sure you want to update selected event ' + this.origin['time_local'] + '?')) {
+    // change event in tree view (may not be selected one)
+    this._catalogService.update_event_by_id
+      (this.origin.event_resource_id, this.origin.status, this.origin.event_type, this.origin.evaluation_mode)
+      .subscribe((response) => {
+        this.eventsDatabase.updateEventsTree(response, this.eventsTree);
+        this.eventsTreeReference.activeEvent();
+        this.bEventUnsaved = false;
+        $('#toggleSaveEvent').prop('disabled', true);
+      },
+        (error) => {
+          window.alert('Error updating event: ' + error.error.message);
+        });
+    // }
+  }
+
+  onReprocessEvent() {
+    if (this.origin.hasOwnProperty('event_resource_id')) {
+      this._catalogService.get_reprocess_event_by_id
+        (this.site, this.network, this.origin.event_resource_id)
         .subscribe((response) => {
-          self.eventsDatabase.updateEventsTree(response, self.eventsTree);
-          self.eventsTreeReference.activeEvent();
-          self.bEventUnsaved = false;
-          $('#toggleSaveEvent').prop('disabled', true);
+          // window.alert('Reprocess event request sent!');
         },
           (error) => {
-            window.alert('Error updating event: ' + error.error.message);
+            window.alert('Error reprocessing event: ' + error.error.message);
           });
-      // }
-    };
+    }
+  }
 
-    this.onReprocessEvent = () => {
-      if (self.origin.hasOwnProperty('event_resource_id')) {
-        self._catalogService.get_reprocess_event_by_id
-          (self.site, self.network, self.origin.event_resource_id)
-          .subscribe((response) => {
-            // window.alert('Reprocess event request sent!');
-          },
-            (error) => {
-              window.alert('Error reprocessing event: ' + error.error.message);
-            });
+  /*
+  onInteractiveProcess() {
+      if (this.origin.hasOwnProperty('event_resource_id')) {
+        const message = {
+          sender: 'sidebar',
+          action: 'interactive-process',
+          event_resource_id: this.origin.event_resource_id
+        };
+        this.sendMessage(message);  // send message received from event tree to waveform component
       }
-    };
+  }
+  */
 
-    /*
-    this.onInteractiveProcess = () => {
-        if (self.origin.hasOwnProperty('event_resource_id')) {
-          const message = {
-            sender: 'sidebar',
-            action: 'interactive-process',
-            event_resource_id: self.origin.event_resource_id
-          };
-          self.sendMessage(message);  // send message received from event tree to waveform component
-        }
-    };*/
-
-    this.onViewLocations = () => {
-      const arr = [this.origin.x, this.origin.y, this.origin.z,
-      this.interactiveOrigin.x, this.interactiveOrigin.y, this.interactiveOrigin.z];
-      const url = environment.url3dUi + '?locations=[' + arr.toString() + ']';
-      const win = window.open(url, '_blank');
-      win.focus();
-    };
-
+  onViewLocations() {
+    const arr = [this.origin.x, this.origin.y, this.origin.z,
+    this.interactiveOrigin.x, this.interactiveOrigin.y, this.interactiveOrigin.z];
+    const url = environment.url3dUi + '?locations=[' + arr.toString() + ']';
+    const win = window.open(url, '_blank');
+    win.focus();
   }
 }
