@@ -1,12 +1,12 @@
 /*jshint esversion: 6 */
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import * as $ from 'jquery';
-import * as CanvasJS from '../../assets/js/canvasjs.min.js';
-import { environment } from '../../environments/environment';
-import { globals } from '../../globals';
-import { CatalogApiService } from '../core/services/catalog-api.service';
+import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
+import { environment } from '../../../../environments/environment';
+import { globals } from '../../../../globals';
+import { CatalogApiService } from '../../../core/services/catalog-api.service';
 import { Subscription } from 'rxjs/Subscription';
-import { MessageService } from '../core/services/message.service';
+import { MessageService } from '../../../core/services/message.service';
 import { ActivatedRoute } from '@angular/router';
 import { Validators, FormControl, ReactiveFormsModule} from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';

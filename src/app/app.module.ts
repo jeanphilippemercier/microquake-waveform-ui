@@ -10,7 +10,6 @@ import { AppComponent } from './app.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { AppRoutingModule } from './app-routing.module';
-import { WaveformComponent } from './waveform/waveform.component';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './auth/auth.module';
@@ -18,8 +17,7 @@ import { EventsModule } from './events/events.module';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    WaveformComponent
+    AppComponent
   ],
   imports: [
     CoreModule,

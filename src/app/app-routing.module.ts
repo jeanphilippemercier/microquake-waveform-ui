@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { WaveformComponent } from '@app/waveform/waveform.component';
+import { WaveformComponent } from '@app/events/pages/waveform/waveform.component';
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
 import { EventListComponent } from '@app/events/pages/event-list/event-list.component';

@@ -6,6 +6,11 @@ import { EventListComponent } from './pages/event-list/event-list.component';
 import { NotifierComponent } from './components/notifier/notifier.component';
 import { EventsTreeComponent } from './components/catalog-tree/events-tree.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { WaveformComponent } from './pages/waveform/waveform.component';
+
+import { NgxLoadingModule } from 'ngx-loading';
+import { NgxPaginationModule } from 'ngx-pagination';
+import { FlexLayoutModule } from '@angular/flex-layout';
 
 @NgModule({
   declarations: [
@@ -13,10 +18,14 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
     EventListComponent,
     NotifierComponent,
     SidebarComponent,
-    EventsTreeComponent
+    EventsTreeComponent,
+    WaveformComponent
   ],
   imports: [
-    SharedModule
+    SharedModule,
+    FlexLayoutModule,
+    NgxLoadingModule,
+    NgxPaginationModule
   ],
   exports: [
     SidebarComponent
