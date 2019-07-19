@@ -12,6 +12,7 @@ import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { EventListOldComponent } from './pages/event-list-old/event-list-old.component';
+import { EventShellComponent } from './pages/event-shell/event-shell.component';
 import { EventShellOldComponent } from './pages/event-shell-old/event-shell-old.component';
 
 @NgModule({
@@ -23,6 +24,7 @@ import { EventShellOldComponent } from './pages/event-shell-old/event-shell-old.
     SidebarComponent,
     EventsTreeComponent,
     WaveformComponent,
+    EventShellComponent,
     EventShellOldComponent
   ],
   imports: [
