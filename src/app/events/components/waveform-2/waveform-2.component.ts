@@ -1836,7 +1836,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             const key = 'travel_time_' + pickKey.toLowerCase();
             if (stationOrigin.hasOwnProperty(key)) {
               const picktime_utc = this.addTime(this.waveformOrigin.time_utc, stationOrigin[key]);
-              const pickTime = moment(picktime_utc);  // UTC
+              const pickTime = moment(picktime_utc.toString());  // UTC
               if (!self.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
                 self.picksWarning += 'Predicted picks outside the display time window\n';
               }
