@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Event, EventType } from '@interfaces/event.interface';
+import { IEvent, EventType } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-info',
@@ -8,7 +8,7 @@ import { Event, EventType } from '@interfaces/event.interface';
 })
 export class EventInfoComponent implements OnInit {
 
-  @Input() event: Event;
+  @Input() event: IEvent;
   @Input() eventTypes: EventType[];
 
 
