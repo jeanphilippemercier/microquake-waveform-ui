@@ -1,0 +1,109 @@
+.menu {
+  display: none;
+  z-index: 1000;
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid #CCC;
+  white-space: nowrap;
+  font-family: sans-serif;
+  background: #FFF;
+  color: #333;
+  border-radius: 5px;
+  padding: 0;
+  font-family: Lato;
+}
+
+
+.menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style-type: none;
+  transition: all .3s ease;
+  user-select: none;
+}
+
+.menu li:hover {
+  background-color: #DEF;
+}
+
+.btn-primary {
+  background: #69F;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: lighten(#69f, 20%) !important;
+  }
+
+  &.active {
+    background-color: darken(#69f, 20%) !important;
+    // @extend .z-depth-1-half;
+  }
+}
+
+.btn-tbar {
+  margin: 0px 0px 0px 0px;
+}
+
+.table>tbody>tr:first-child>td {
+  border: none;
+}
+
+.table>tbody>tr:first-child>th {
+  border: none;
+}
+
+.mat-form-field {
+  width: 100%;
+  font-size: 16px;
+}
+
+.pagination /deep/ .ngx-pagination .current {
+  background: #69F;
+  padding: 0px;
+  margin: 10px 0px 0px 0px;
+}
+
+.input-form-width {
+  width: 80px;
+  padding: 0px;
+  margin: 0px;
+}
+
+.input-form-width-less {
+  width: 60px;
+  padding: 0px;
+  margin: 0px;
+}
+
+button.mat-menu-item {
+  line-height: 24px !important;
+}
+
+a.mat-menu-item>mat-icon {
+  margin-bottom: 14px;
+}
+
+.mat-icon-scale {
+  transform: scale(1.5);
+}
+
+.text-color {
+  color: blue !important;
+}
+
+
+#toolbar {
+
+  button {
+    float: left;
+  }
+
+  .pagination {
+    float: left;
+  }
+
+  mat-button-toggle-group {
+    float: left;
+  }
+}

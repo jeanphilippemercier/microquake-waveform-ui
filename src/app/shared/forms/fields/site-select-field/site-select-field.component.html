@@ -1,0 +1,24 @@
+<mat-form-field class='w-100'>
+  <mat-label>Site</mat-label>
+  <mat-select
+    [(ngModel)]="site"
+    (selectionChange)='onChangeSite($event)'
+  >
+    <mat-option
+      *ngFor="let siteEl of sites"
+      [value]="siteEl"
+    >
+      {{siteEl.name}}
+    </mat-option>
+  </mat-select>
+  <button
+    mat-button
+    *ngIf="site"
+    matSuffix
+    mat-icon-button
+    aria-label="Clear"
+    (click)='onClearSelection($event)'
+  >
+    <mat-icon>clear</mat-icon>
+  </button>
+</mat-form-field>
