@@ -19,32 +19,9 @@
       [value]="eventTypeEL"
       matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})"
     >
-      <ng-container [ngSwitch]="eventTypeEL.identifier">
-        <mat-icon *ngSwitchCase="'E'">
-          multiline_chart
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'B'">
-          flare
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'OB'">
-          filter_tilt_shift
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'SE'">
-          person
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'CN'">
-          hearing
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'L'">
-          flash_on
-        </mat-icon>
-        <mat-icon *ngSwitchCase="'OP'">
-          all_out
-        </mat-icon>
-        <mat-icon *ngSwitchDefault>
-          more
-        </mat-icon>
-      </ng-container>
+      <mat-icon>
+        {{eventTypeEL?.identifier | eventTypeIcon}}
+      </mat-icon>
       <span>
         {{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})
       </span>
