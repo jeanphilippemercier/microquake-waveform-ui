@@ -23,6 +23,7 @@ import { EventStatusFieldComponent } from './forms/fields/event-status-field/eve
 import { EventDateFieldComponent } from './forms/fields/event-date-field/event-date-field.component';
 import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
+import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -84,10 +85,15 @@ const DIALOGS = [
   HelpDialogSheetComponent
 ];
 
+const PIPES = [
+  EventTypeIconPipe
+];
+
 @NgModule({
   declarations: [
     ...COMPONTENTS,
-    ...DIALOGS
+    ...DIALOGS,
+    ...PIPES,
   ],
   imports: [
     CommonModule,
@@ -100,6 +106,7 @@ const DIALOGS = [
   exports: [
     ...COMPONTENTS,
     ...DIALOGS,
+    ...PIPES,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
