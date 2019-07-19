@@ -24,6 +24,7 @@ import { EventDateFieldComponent } from './forms/fields/event-date-field/event-d
 import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
 import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
+import { EventInfoComponent } from './components/event-info/event-info.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -76,6 +77,7 @@ const COMPONTENTS = [
   EventTypeFieldComponent,
   EventStatusFieldComponent,
   EventDateFieldComponent,
+  EventInfoComponent,
   SiteSelectFieldComponent,
   SiteNetworkFieldComponent,
 ];
