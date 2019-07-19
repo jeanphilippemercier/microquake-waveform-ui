@@ -11,11 +11,13 @@ import { WaveformComponent } from './pages/waveform/waveform.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { FlexLayoutModule } from '@angular/flex-layout';
+import { EventListOldComponent } from './pages/event-list-old/event-list-old.component';
 
 @NgModule({
   declarations: [
     EventDetailComponent,
     EventListComponent,
+    EventListOldComponent,
     NotifierComponent,
     SidebarComponent,
     EventsTreeComponent,
