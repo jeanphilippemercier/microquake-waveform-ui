@@ -1,0 +1,114 @@
+<ng-container *ngIf="user">
+  <mat-sidenav-container class="sidenav-container">
+
+    <mat-sidenav
+      #drawer
+      fixedInViewport="false"
+      [mode]="'over'"
+      [opened]="false"
+      class="sidenav"
+    >
+      <div class="sidebar">
+        <mat-toolbar color="">
+          <div class="w-100 d-flex justify-content-between">
+            <div>
+              <div class="logo">
+                <a
+                  href="https://api.microquake.org"
+                  class="simple-text"
+                >
+                  <div class="logo-img">
+                    <img src="/assets/img/pulse.png" />
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div>
+              <div class="logo">
+                <a
+                  href="https://api.microquake.org"
+                  class="simple-text"
+                >
+                  Microquake
+                </a>
+              </div>
+            </div>
+            <div>
+
+            </div>
+          </div>
+        </mat-toolbar>
+        <mat-nav-list>
+          <a
+            mat-list-item
+            [routerLink]="['/v2/events']"
+          >
+            <mat-icon mat-list-icon>view_comfy</mat-icon>
+            <h4 matLine>Events</h4>
+          </a>
+          <a
+            mat-list-item
+            [routerLink]="['/v1/events']"
+          >
+            <mat-icon mat-list-icon>web_asset</mat-icon>
+            <h4 matLine>UI v1</h4>
+          </a>
+          <a
+            mat-list-item
+            (click)="logoutClick()"
+          >
+            <mat-icon mat-list-icon>exit_to_app</mat-icon>
+            <h4 matLine>Log out</h4>
+          </a>
+        </mat-nav-list>
+      </div>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <mat-toolbar color="primary">
+        <button
+          type="button"
+          aria-label="Toggle sidenav"
+          mat-icon-button
+          (click)="drawer.toggle()"
+        >
+          <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+        </button>
+
+        <div class="mr-auto"></div>
+        <div class="">
+
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="menu"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button
+              mat-menu-item
+              [routerLink]="['/v1/events']"
+            >
+              <mat-icon aria-label="UI v1">web_asset</mat-icon>
+              UI v1
+            </button>
+            <button
+              mat-menu-item
+              (click)="logoutClick()"
+            >
+              <mat-icon aria-label="Logout">exit_to_app</mat-icon>
+              Log out
+            </button>
+          </mat-menu>
+        </div>
+      </mat-toolbar>
+      <div class="wrapper">
+        <div class="main-panel">
+          <router-outlet></router-outlet>
+          <app-footer-layout></app-footer-layout>
+        </div>
+      </div>
+    </mat-sidenav-content>
+
+  </mat-sidenav-container>
+</ng-container>

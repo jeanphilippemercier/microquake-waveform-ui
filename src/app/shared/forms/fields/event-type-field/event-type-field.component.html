@@ -1,0 +1,30 @@
+<mat-form-field>
+  <mat-label>Event Type</mat-label>
+  <mat-select
+    [(ngModel)]="selectedEventTypes"
+    (selectionChange)="onChangeEventTypes($event)"
+    multiple
+  >
+    <mat-select-trigger>
+      {{selectedEventTypes ? selectedEventTypes[0]?.quakeml_type : ''}}
+      <span
+        *ngIf="selectedEventTypes?.length > 1"
+        class="example-additional-selection"
+      >
+        (+{{selectedEventTypes.length - 1}} {{selectedEventTypes?.length === 2 ? 'other' : 'others'}})
+      </span>
+    </mat-select-trigger>
+    <mat-option
+      *ngFor="let eventTypeEL of eventTypes"
+      [value]="eventTypeEL"
+      matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})"
+    >
+      <mat-icon>
+        {{eventTypeEL?.identifier | eventTypeIcon}}
+      </mat-icon>
+      <span>
+        {{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})
+      </span>
+    </mat-option>
+  </mat-select>
+</mat-form-field>
