@@ -25,6 +25,7 @@ import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
 import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventInfoComponent } from './components/event-info/event-info.component';
+import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -88,7 +89,8 @@ const DIALOGS = [
 ];
 
 const PIPES = [
-  EventTypeIconPipe
+  EventTypeIconPipe,
+  EventMagnitudePipe
 ];
 
 @NgModule({
