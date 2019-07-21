@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, of, pipe, throwError } from 'rxjs';
-import { timeout, catchError } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery, EventWaveformQuery } from '../interfaces/event.interface';
+import ApiUtil from '../utils/api-util';
+import { Site } from '../interfaces/site.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -14,69 +17,43 @@ export class EventApiService {
     private _http: HttpClient
   ) { }
 
-  getEvents(site, network, startTime, endTime, event_types, status) {
-    const API_URL = environment.apiUrl + globals.apiCatalog;
-    let params = new HttpParams()
-      .set('start_time', startTime)
-      .set('end_time', endTime)
-      .set('site_code', site)
-      .set('network_code', network);
-    if (event_types) {
-      params = params.append('type', event_types);
-    }
-    if (status) {
-      params = params.append('status', status);
-    }
-    return this._http.get(API_URL, { params })
-      .pipe(
-        /*
-        timeout(60000), // 60 seconds
-        catchError(err => {
-            // console.log('caught mapping error and rethrowing', err);
-            return throwError(err);
-        }),*/
-        catchError(err => {
-          console.log('caught rethrown error, providing fallback value');
-          return of([]);
-        })
-      );
+  getEventWaveform(eventId: string, query: EventWaveformQuery) {
+    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
+    const params = ApiUtil.getHttpParams(query);
+    const responseType = `arraybuffer`;
+    const observe = 'response';
+
+    return this._http.get(url, { params, responseType, observe });
   }
 
-  getBoundaries(site, network): any {
-    const API_URL = environment.apiUrl + globals.apiCatalogBoundaries;
-    const params = new HttpParams()
-      .set('site_code', site)
-      .set('network_code', network);
-    return this._http.get(API_URL, { params })
-      .pipe(
-        /*
-        timeout(60000),
-        catchError(err => {
-            // console.log('caught mapping error and rethrowing', err);
-            return throwError(err);
-        }),*/
-        catchError(err => {
-          console.log('caught rethrown error, providing fallback value');
-          return of([]);
-        })
-      );
+  getEvents(query: EventQuery): Observable<IEvent[]> {
+    const url = `${environment.apiUrl}${globals.apiCatalog}`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<IEvent[]>(url, { params });
   }
 
-  getMicroquakeEventTypes(site): any {
-    const API_URL = environment.apiUrl + globals.apiMicroquakeEventTypes;
-    const params = new HttpParams()
-      .set('site_code', site);
-    return this._http.get(API_URL, { params });
+  getBoundaries(query: BoundariesQuery): Observable<any> {
+    const url = `${environment.apiUrl}${globals.apiCatalogBoundaries}`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get(url, { params });
   }
 
-  getSites() {
-    const API_URL = environment.apiUrl + globals.apiSites;
-    return this._http.get(API_URL);
+  getMicroquakeEventTypes(query: MicroquakeEventTypesQuery): Observable<any> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get(url, { params });
   }
 
-  getEventById(eventId): any {
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId;
-    return this._http.get(API_URL);
+  getSites(): Observable<Site[]> {
+    const url = `${environment.apiUrl}${globals.apiSites}`;
+    return this._http.get<Site[]>(url);
+  }
+
+  getEventById(eventId: string): Observable<IEvent> {
+    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
+    return this._http.get<IEvent>(url);
   }
 
 

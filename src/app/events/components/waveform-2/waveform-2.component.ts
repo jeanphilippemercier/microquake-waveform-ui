@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import { environment } from '@env/environment';
@@ -13,6 +13,10 @@ import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { EventApiService } from '@app/core/services/event-api.service.js';
+import { EventWaveformQuery, IEvent } from '@app/core/interfaces/event.interface.js';
+import { HttpResponse } from '@angular/common/http';
+import ApiUtil from '@app/core/utils/api-util.js';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-waveform-2',
@@ -21,6 +25,20 @@ import { EventApiService } from '@app/core/services/event-api.service.js';
 })
 
 export class Waveform2Component implements OnInit, OnDestroy {
+
+  private _event: IEvent;
+
+  @Input()
+  set event(event: IEvent) {
+    if (event !== this._event) {
+      this._event = event;
+      this._handleEvent(this._event);
+    }
+  }
+
+  get event(): IEvent {
+    return this._event;
+  }
 
   private passband: any;
   private convYUnits: number;
@@ -97,42 +115,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
   minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
 
   constructor(
-    private _activatedRoute: ActivatedRoute,
     private _eventApiService: EventApiService,
-    private _catalogService: CatalogApiService,
-    private messageService: MessageService,
-  ) {
+    private _catalogService: CatalogApiService
+  ) { }
 
-    // this.subscription = this.messageService.getMessage().subscribe(message => {
-    //   if (message.sender !== 'notifier') {
-    //     this.getNotification(message);
-    //   } else {
-    //     this.confirmEvent(message);
-    //   }
-    // });
-    // this._activatedRoute.params.subscribe(params => { this.reload(params); });
-
-
-    const eventId = this._activatedRoute.snapshot.params['eventId'];
-    this._eventApiService.getEventById(eventId).toPromise().then(event => {
-
-      this.currentEventId = event.event_resource_id;
-      if (globals.enablePagingLoad) {
-        if (this.bDataLoading) {
-          this.loading = true;
-        }
-        this.loadEventFirstPage(event);
-      } else {
-        this.loadEvent(event);
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-  }
+  ngOnDestroy() { }
 
   async ngOnInit() {
 
@@ -256,6 +243,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
     self.addEventListeners();
   }
 
+  private _handleEvent(event) {
+    this.currentEventId = event.event_resource_id;
+    if (globals.enablePagingLoad) {
+      if (this.bDataLoading) {
+        this.loading = true;
+      }
+      this.loadEventFirstPage(event);
+    } else {
+      this.loadEvent(event);
+    }
+  }
+
 
   reload(params) {
     if (params.hasOwnProperty('reload')) {
@@ -268,6 +267,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   async getNotification(message) {
+    console.log(`getNotification`);
+    console.log(message);
+
     // console.log(message);
     if (!message.hasOwnProperty('event_resource_id')) {
       if (message.action === 'treeLoaded') {
@@ -2178,6 +2180,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   getEvent(event, bContext): any {
     const self = this;
+
     return new Promise(resolve => {
       const mshr = new XMLHttpRequest();
       const waveform_file = bContext ? event.waveform_context_file :
@@ -2202,56 +2205,27 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
 
-  getEventPage(event_id, page) {
+  async getEventPage(event_id, page) {
     const self = this;
-    return new Promise(resolve => {
-      const mshr = new XMLHttpRequest();
-      const waveform_file = environment.apiUrl +
-        // 2 + 'site/' + self.site + '/network/' + self.network + '/' +
-        globals.apiEvents + '/' + event_id +
-        '/waveform?page_number=' + page.toString() +
-        '&traces_per_page=' + (globals.chartsPerPage - 1).toString();
-      mshr.open('GET', waveform_file, true);
-      mshr.responseType = 'arraybuffer';
-      self.loading = page === 1 ? true : false;
-      mshr.onreadystatechange = () => {
-        if (mshr.readyState === mshr.DONE) {
-          if (mshr.status === 200) {
-            self.loading = false;
-            if (page === 1) {
-              self.num_pages = globals.max_num_pages;
-              const filename = self.getAttachmentFilename(mshr);
-              if (filename.indexOf('of_') && filename.lastIndexOf('.')) {
-                self.num_pages = parseInt(
-                  filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
-              }
-            }
-            resolve(mshr.response);
-          } else {
-            self.loading = false;
-            console.log('Error getting miniseed', mshr.statusText);
-            resolve(null);
-          }
-        }
-      };
-      mshr.send();
-    });
+    const query: EventWaveformQuery = {
+      page_number: page,
+      traces_per_page: globals.chartsPerPage - 1
+    };
+    self.loading = page === 1 ? true : false;
+    const response = await this._eventApiService.getEventWaveform(event_id, query).toPromise();
+    self.loading = false;
+
+    if (page === 1) {
+      self.num_pages = globals.max_num_pages;
+      const filename = ApiUtil.getAttachmentFilenameFromArrayBufferHttpResponse(response);
+
+      if (filename.indexOf('of_') && filename.lastIndexOf('.')) {
+        self.num_pages = parseInt(
+          filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
+      }
+    }
+
+    return response.body;
   }
 
-  getAttachmentFilename(xhr) {
-    let filename = '';
-    try {
-      const disposition = xhr.getResponseHeader('Content-Disposition');
-      if (disposition && disposition.indexOf('attachment') !== -1) {
-        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-        const matches = filenameRegex.exec(disposition);
-        if (matches != null && matches[1]) {
-          filename = matches[1].replace(/['"]/g, '');
-        }
-      }
-    } catch (err) {
-      console.log('Error getting Content-Disposition Headers');
-    }
-    return filename;
-  }
 }
