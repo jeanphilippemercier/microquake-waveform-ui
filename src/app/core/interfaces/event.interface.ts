@@ -13,12 +13,26 @@ export enum EventStatus {
 }
 
 export interface EventQuery {
-  start_time: Date;
-  end_time: Date;
+  start_time: string;
+  end_time: string;
   site_code: string;
   network_code: string;
-  type: string[]; // TODO: string / EventType inconsitancy
-  status: EventStatus[];
+  type?: string[]; // TODO: string / EventType inconsitancy
+  status?: EventStatus[];
+}
+
+export interface BoundariesQuery {
+  site_code: string;
+  network_code: string;
+}
+
+export interface MicroquakeEventTypesQuery {
+  site_code: string;
+}
+
+export interface EventWaveformQuery {
+  page_number: number;
+  traces_per_page: number;
 }
 
 export interface IEvent {
