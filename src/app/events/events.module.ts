@@ -15,6 +15,7 @@ import { EventListOldComponent } from './pages/event-list-old/event-list-old.com
 import { EventShellComponent } from './pages/event-shell/event-shell.component';
 import { EventShellOldComponent } from './pages/event-shell-old/event-shell-old.component';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
+import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +28,8 @@ import { Waveform2Component } from './components/waveform-2/waveform-2.component
     WaveformComponent,
     Waveform2Component,
     EventShellComponent,
-    EventShellOldComponent
+    EventShellOldComponent,
+    EventUpdateDialogComponent
   ],
   imports: [
     SharedModule,
@@ -37,6 +39,9 @@ import { Waveform2Component } from './components/waveform-2/waveform-2.component
   ],
   exports: [
     SidebarComponent
+  ],
+  entryComponents: [
+    EventUpdateDialogComponent
   ]
 })
 export class EventsModule { }
