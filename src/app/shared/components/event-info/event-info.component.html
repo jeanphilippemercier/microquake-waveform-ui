@@ -1,36 +1,29 @@
-<div class="card sidebar-event">
+<div>
 
-  <div
-    style="overflow: auto"
-    id="eventInfoCard"
-  >
-    <div
-      class='card-body'
-      style="padding:0px 20px;"
-    >
+  <div>
+    <div>
       <table class="table table-extra-condensed">
         <tbody>
           <tr>
             <th scope="row">Magnitude</th>
             <td>
-              {{event.magnitude}}
+              <ng-container *ngIf="event.magnitude !== -999">
+                {{event.magnitude | eventMagnitude}}
+              </ng-container>
+
+              <ng-container *ngIf="event.magnitude === -999">
+                -
+              </ng-container>
             </td>
           </tr>
           <tr>
             <th scope="row">
               Location
             </th>
-            <td>X {{event.x}} m East
-            </td>
-          </tr>
-          <tr>
-            <th scope="row"></th>
-            <td>Y {{event.y}} m North
-            </td>
-          </tr>
-          <tr>
-            <th scope="row"></th>
-            <td>Z {{event.z}} m
+            <td>
+              X {{event.x}} m East<br>
+              Y {{event.y}} m North<br>
+              Z {{event.z}} m
             </td>
           </tr>
           <tr>
@@ -41,22 +34,8 @@
             <th scope="row">Type
             </th>
             <td>
-              <mat-form-field class="selector">
-                <mat-select [(ngModel)]="event.event_type">
-                  <mat-select-trigger>
-                    {{event.event_type}}
-                  </mat-select-trigger>
-                  <mat-option
-                    *ngFor="let eventType of eventTypes"
-                    [value]="eventType.quakeml_type"
-                  >
-                    <mat-icon>
-                      {{eventType.identifier | eventTypeIcon}}
-                    </mat-icon>
-                    {{eventType.identifier}} - {{eventType.microquake_type}} ({{eventType.quakeml_type}})
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+
+              {{event.event_type}}
             </td>
           </tr>
           <tr>
@@ -64,16 +43,7 @@
               Status
             </th>
             <td>
-              <mat-form-field class="selector">
-                <mat-select [(ngModel)]="event.status">
-                  <mat-option
-                    *ngFor="let etype of evalTypes"
-                    [value]="etype.status"
-                  >
-                    {{etype.viewValue}}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+              {{event.status}}
             </td>
           </tr>
           <tr>
@@ -81,31 +51,22 @@
               Mode
             </th>
             <td>
-              <mat-form-field class="selector">
-                <mat-select [(ngModel)]="event.evaluation_mode">
-                  <mat-option
-                    *ngFor="let emode of evalModes"
-                    [value]="emode.evaluation_mode"
-                  >
-                    {{emode.viewValue}}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+              {{event.evaluation_mode}}
             </td>
           </tr>
-          <tr *ngIf='event.time_residual'>
+          <tr *ngIf='false && event.time_residual'>
             <th scope="row">Time Residual</th>
             <td>{{event.time_residual}}</td>
           </tr>
-          <tr *ngIf='event.uncertainty'>
+          <tr *ngIf='false && event.uncertainty'>
             <th scope="row">Uncertainty</th>
             <td>{{event.uncertainty}}</td>
           </tr>
-          <tr *ngIf='event.event_resource_id'>
+          <tr *ngIf='false && event.event_resource_id'>
             <th scope="row">event_resource_id</th>
             <td>{{event.event_resource_id}}</td>
           </tr>
-          <tr *ngIf='event.preferred_origin_id'>
+          <tr *ngIf='false && event.preferred_origin_id'>
             <th scope="row">preferred_origin_id</th>
             <td>{{event.preferred_origin_id}}</td>
           </tr>

@@ -1,0 +1,12 @@
+.table-extra-condensed {
+
+  &>thead,
+  &>tbody,
+  &>tfoot {
+    &>tr {
+      &>td {
+        padding: 2px;
+      }
+    }
+  }
+}
