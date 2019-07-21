@@ -17,6 +17,7 @@ import {
 
 import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
 import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
+import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
 import { EventStatusFieldComponent } from './forms/fields/event-status-field/event-status-field.component';
@@ -74,6 +75,7 @@ const CDK_MODULES = [
 ];
 
 const COMPONTENTS = [
+  HeaderLayoutComponent,
   FooterLayoutComponent,
   EventTypeFieldComponent,
   EventStatusFieldComponent,
