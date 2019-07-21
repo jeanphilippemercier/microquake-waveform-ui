@@ -1,4 +1,9 @@
-<div class="container-fluid content">
+<div class="container-fluid content p-0">
+  <mat-progress-bar
+    *ngIf="progressValue !== 100"
+    mode="determinate"
+    value="{{progressValue}}"
+  ></mat-progress-bar>
   <ngx-loading
     [show]="loading"
     [config]="{ backdropBorderRadius: '3px' }"
@@ -6,10 +11,13 @@
   <div
     *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"
   ></div>
-  <mat-toolbar id="toolbar">
+  <mat-toolbar
+    color="primary"
+    id="toolbar"
+  >
     <!-- style="position:fixed; display:-webkit-box;" -->
     <button
-      mat-mini-fab
+      mat-icon-button
       id="commonTime"
       matTooltip="Common Time Scale for All Channels"
       class=" active"
@@ -17,21 +25,21 @@
       <mat-icon>more_horiz</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="commonAmplitude"
       matTooltip="Common Amplitude Scale for All Channels"
     >
       <mat-icon>more_vert</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="zoomAll"
       matTooltip="Zoom or Pan All Channels"
     >
       <mat-icon>link</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       matTooltip="Undo last Time Zoom or Pan"
       class=""
       (click)="back()"
@@ -39,7 +47,7 @@
       <mat-icon>undo</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       matTooltip="Reset View after Zoom or Pan"
       class=""
       (click)="resetAllChartsViewXY()"
@@ -47,7 +55,7 @@
       <mat-icon>settings_backup_restore</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="display3C"
       matTooltip="Display Composite or 3-Component Traces"
       class=""
@@ -55,14 +63,14 @@
       <mat-icon>filter_3</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="sortTraces"
       matTooltip="Sort Traces by Distance to Origin"
     >
       <mat-icon>sort</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="togglePredictedPicks"
       matTooltip="Toggle Predicted Picks"
       class=" active"
@@ -70,14 +78,14 @@
       <mat-icon>blur_linear</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="togglePredictedPicksBias"
       matTooltip="Toggle Remove Predicted Picks Bias"
     >
       <mat-icon>compare_arrows</mat-icon>
     </button>
     <app-help-dialog class="float-left"></app-help-dialog>
-    <div class="float-left">
+    <div class="float-left filters">
       <mat-form-field class="input-form-width float-left">
         <mat-label>Low Corner</mat-label>
         <input
@@ -139,7 +147,7 @@
       </mat-form-field>
     </div>
     <button
-      mat-mini-fab
+      mat-icon-button
       id="applyFilter"
       matTooltip="Apply Filter"
       class=""
@@ -166,7 +174,7 @@
       </mat-button-toggle>
     </mat-button-toggle-group>
     <button
-      mat-mini-fab
+      mat-icon-button
       matTooltip="Undo Last Picking Operation"
       class=""
       (click)="undoLastPicking()"
@@ -174,7 +182,7 @@
       <mat-icon>cached</mat-icon>
     </button>
     <button
-      mat-mini-fab
+      mat-icon-button
       matTooltip="Interactive Process"
       class=""
       (click)="onInteractiveProcess()"
@@ -183,22 +191,18 @@
     </button>
     <pagination-controls
       class="pagination"
+      [maxSize]="5"
+      [previousLabel]="''"
+      [nextLabel]="''"
       (pageChange)="page_number = $event; changePage(false)"
     ></pagination-controls>
   </mat-toolbar>
-  <div
-    id="waveform-panel"
-    style="position: relative; top: 50px;"
-  >
+  <div id="waveform-panel">
     <div
       class="text-color"
       id="zeroTime"
-      *ngIf="eventTimeOriginHeader"
+      *ngIf="false  && eventTimeOriginHeader"
     >{{eventTimeOriginHeader}}</div>
-    <mat-progress-bar
-      mode="determinate"
-      value="{{progressValue}}"
-    ></mat-progress-bar>
   </div>
 </div>
 <ul class="menu">

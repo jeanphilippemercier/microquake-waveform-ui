@@ -3,6 +3,7 @@
 }
 
 .main-panel {
+  height: 100%;
   width: 100%;
 }
 
@@ -11,10 +12,6 @@
   width: 200px;
 }
 
-.mat-drawer-content {
-  overflow: hidden;
-}
-
-.sidebar{
+.sidebar {
   box-shadow: none;
 }
