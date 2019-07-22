@@ -3,16 +3,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { HttpClientModule } from '@angular/common/http';
+import { MomentModule } from 'ngx-moment';
+
 // import { MatIconRegistry, MatIconModule } from '@angular/material';
 // import { DomSanitizer } from '@angular/platform-browser';
 
-import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
-import { CatalogTreeModule } from './catalog-tree/catalog-tree.module';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { AppRoutingModule } from './app-routing.module';
-import { WaveformComponent } from './waveform/waveform.component';
 import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './auth/auth.module';
@@ -20,8 +19,7 @@ import { EventsModule } from './events/events.module';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    WaveformComponent
+    AppComponent
   ],
   imports: [
     CoreModule,
@@ -30,13 +28,12 @@ import { EventsModule } from './events/events.module';
     EventsModule,
     BrowserModule,
     BrowserAnimationsModule,
-    ComponentsModule,
-    CatalogTreeModule,
     HttpClientModule,
     FlexLayoutModule,
     NgxLoadingModule.forRoot({}),
     NgxPaginationModule,
-    AppRoutingModule
+    AppRoutingModule,
+    MomentModule
   ],
   bootstrap: [AppComponent]
 })

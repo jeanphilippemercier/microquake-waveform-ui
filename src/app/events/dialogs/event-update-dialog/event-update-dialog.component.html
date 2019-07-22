@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>Event update</h1>
+<div mat-dialog-content>
+  <app-event-info [event]="dialogData?.event"></app-event-info>
+</div>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Cancel</button>
+  <button
+    color="primary"
+    mat-raised-button
+    [mat-dialog-close]="true"
+    [disabled]="true"
+  >Save</button>
+</mat-dialog-actions>

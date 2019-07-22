@@ -1,1 +1,221 @@
-<app-site-network></app-site-network>
+<app-header-layout></app-header-layout>
+<div class="container-fluid px-4 py-3">
+  <h1>Events</h1>
+
+  <div class="filter-area mat-elevation-z mb-5">
+    <div class="row">
+
+      <div class="col-4">
+        <div class="row">
+          <div class="col-12">
+            <app-site-select-field
+              [sites]="sites"
+              [(site)]="site"
+              (clearSelection)="clearSelectionClicked($event)"
+            ></app-site-select-field>
+          </div>
+          <div class="col-12">
+            <app-site-network-field
+              [(site)]="site"
+              [(network)]="network"
+              (networkChange)="siteNetworkChanged($event)"
+            ></app-site-network-field>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="row">
+          <div class="col-12">
+            <app-event-type-field
+              [eventTypes]="eventTypes"
+              [(selectedEventTypes)]="selectedEventTypes"
+            ></app-event-type-field>
+          </div>
+          <div class="col-12">
+            <app-event-status-field
+              [eventStatuses]="eventStatuses"
+              [(selectedEventStatuses)]="selectedEventStatuses"
+            ></app-event-status-field>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="row">
+          <div class="col-12">
+            <app-event-date-field
+              [label]="'Start date'"
+              [(date)]="eventStartDate"
+              [maxDate]="eventEndDate"
+            >
+            </app-event-date-field>
+          </div>
+          <div class="col-12">
+            <app-event-date-field
+              [label]="'End date'"
+              [(date)]="eventEndDate"
+              [minDate]="eventStartDate"
+            >
+            </app-event-date-field>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <button
+          class="float-right"
+          mat-raised-button
+          [disabled]="!site || !network"
+          color="accent"
+          (click)='filter()'
+        >filter</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="row">
+    <div class="col-12">
+
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        class="mat-elevation-z8 w-100"
+      >
+
+        <ng-container matColumnDef="date">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Date </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            {{element.time_utc | date:'MMM dd':element.timezone}}
+            <small>{{element.time_utc | date:'yyyy':element.timezone}}</small>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="time">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Time </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            {{element.time_utc | date:'HH:mm:ss':element.timezone}}
+            <small>{{element.time_utc | date:'.SSS'}}</small>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="magnitude">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Magnitude </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            <ng-container *ngIf="element?.magnitude !== -999">
+              {{element?.magnitude?.toFixed(1)}}
+              <small>({{element?.magnitude_type}})</small>
+            </ng-container>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Type </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            <mat-icon>
+              {{element.event_type | eventTypeIcon}}
+            </mat-icon>
+            {{element.event_type}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Status </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            {{element.status}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="mode">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Mode </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            {{element.evaluation_mode}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="location">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Location </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+            <small>X {{element.x}} m East</small><br>
+            <small>Y {{element.y}} m North</small><br>
+            <small>Z {{element.z}} m </small>
+          </td>
+        </ng-container>
+
+
+        <ng-container matColumnDef="actions">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+          > Actions </th>
+          <td
+            mat-cell
+            *matCellDef="let element"
+          >
+
+            <button
+              mat-icon-button
+              matTooltip="Show detail"
+              color="primary"
+              [routerLink]="['/v2/events',element.event_resource_id]"
+            >
+              <mat-icon>insert_chart_outlined</mat-icon>
+            </button>
+
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns;"
+        ></tr>
+      </table>
+    </div>
+  </div>
+
+</div>

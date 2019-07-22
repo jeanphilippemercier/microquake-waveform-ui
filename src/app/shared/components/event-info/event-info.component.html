@@ -1,0 +1,77 @@
+<div>
+
+  <div>
+    <div>
+      <table class="table table-extra-condensed">
+        <tbody>
+          <tr>
+            <th scope="row">Magnitude</th>
+            <td>
+              <ng-container *ngIf="event?.magnitude !== -999">
+                {{event?.magnitude | eventMagnitude}}
+              </ng-container>
+
+              <ng-container *ngIf="event?.magnitude === -999">
+                -
+              </ng-container>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              Location
+            </th>
+            <td>
+              X {{event?.x}} m East<br>
+              Y {{event?.y}} m North<br>
+              Z {{event?.z}} m
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Picks</th>
+            <td>{{event?.npick}}</td>
+          </tr>
+          <tr>
+            <th scope="row">Type
+            </th>
+            <td>
+
+              {{event?.event_type}}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              Status
+            </th>
+            <td>
+              {{event?.status}}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              Mode
+            </th>
+            <td>
+              {{event?.evaluation_mode}}
+            </td>
+          </tr>
+          <tr *ngIf='false && event?.time_residual'>
+            <th scope="row">Time Residual</th>
+            <td>{{event?.time_residual}}</td>
+          </tr>
+          <tr *ngIf='false && event?.uncertainty'>
+            <th scope="row">Uncertainty</th>
+            <td>{{event?.uncertainty}}</td>
+          </tr>
+          <tr *ngIf='false && event?.event_resource_id'>
+            <th scope="row">event_resource_id</th>
+            <td>{{event?.event_resource_id}}</td>
+          </tr>
+          <tr *ngIf='false && event?.preferred_origin_id'>
+            <th scope="row">preferred_origin_id</th>
+            <td>{{event?.preferred_origin_id}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

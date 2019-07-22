@@ -1,6 +1,6 @@
 .wrapper{
     position: relative;
-    top: 0;
+    // top: 0;
     height: 100vh;
 }
 
@@ -245,16 +245,6 @@
         position: relative;
         z-index: 4;
 
-        &:after{
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: 15px;
-            height: 1px;
-            width: calc(100% - 30px);
-            background-color: rgba(180,180,180, .3);
-
-        }
 
         p{
             float: left;

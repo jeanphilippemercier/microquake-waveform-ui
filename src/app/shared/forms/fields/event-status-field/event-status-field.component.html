@@ -1,0 +1,15 @@
+<mat-form-field>
+  <mat-label>Event Status</mat-label>
+  <mat-select
+    [(ngModel)]="selectedEventStatuses"
+    (selectionChange)="onChangeEventStatuses($event)"
+    multiple
+  >
+    <mat-option
+      *ngFor="let statusTypeEl of eventStatuses"
+      [value]="statusTypeEl"
+    >
+      {{statusTypeEl}}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
