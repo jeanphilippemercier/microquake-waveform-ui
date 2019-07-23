@@ -9,6 +9,7 @@ stages:
 variables:
   CLI_VERSION: 7.2.3
   DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://docker:2375/
   UI_IMAGE: ${CI_REGISTRY_IMAGE}/ui
   CI_APPLICATION_TAG: $(echo ${CI_COMMIT_SHA} | cut -c1-8)
 
