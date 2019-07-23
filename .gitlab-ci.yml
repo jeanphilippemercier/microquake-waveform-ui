@@ -9,7 +9,8 @@ stages:
 variables:
   CLI_VERSION: 7.2.3
   DOCKER_DRIVER: overlay2
-  DOCKER_HOST: tcp://docker:2375/
+  # DOCKER_HOST: tcp://docker:2375/
+  DOCKER_HOST: /var/run/docker.sock
   UI_IMAGE: ${CI_REGISTRY_IMAGE}/ui
   CI_APPLICATION_TAG: $(echo ${CI_COMMIT_SHA} | cut -c1-8)
 
@@ -69,22 +70,10 @@ docker:
   image: docker:stable
   stage: docker
   services:
-  - name: docker:stable-dind
-    entrypoint:
-    - dockerd-entrypoint.sh
+  - docker:dind
   before_script:
-  - apk add --update openssh-client make ca-certificates openssl python git bash
+  - docker info
   script:
-  - eval $(ssh-agent -s)
-  - bash -c 'ssh-add <(echo "$SSH_PRIVATE_KEY")'
-
-  - mkdir -p ~/.ssh
-  - chmod -R 700 ~/.ssh
-  - ssh-keyscan -H git.microquake.org >> ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
-  - git submodule update --init --recursive
-  - update-ca-certificates
-
   - docker login -u deploy -p $CI_JOB_TOKEN $CI_REGISTRY
   - docker build . -t $UI_IMAGE:latest -t $UI_IMAGE:$(echo $CI_COMMIT_SHA | cut -c1-8) --build-arg SSH_PRIVATE_KEY
   - docker push $UI_IMAGE:latest
@@ -96,12 +85,6 @@ kube:
   only:
     refs:
     - master
-  services:
-  - name: docker:stable-dind
-    entrypoint:
-    - dockerd-entrypoint.sh
-  before_script:
-  - apk add --update openssh-client make ca-certificates openssl python git bash
   script:
   - wget https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
   - chmod +x kubectl
