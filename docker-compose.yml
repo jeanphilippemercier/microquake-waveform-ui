@@ -1,0 +1,13 @@
+version: "3.5"
+
+networks:
+  spp-network:
+    external: true
+
+services:
+  angular:
+    build: .
+    ports:
+      - "80:8091"
+
+
