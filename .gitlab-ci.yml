@@ -69,7 +69,9 @@ docker:
   image: docker:stable
   stage: docker
   services:
-  - docker:dind
+  - name: docker:18-dind
+    entrypoint:
+    - dockerd-entrypoint.sh
   before_script:
   - docker info
   script:
