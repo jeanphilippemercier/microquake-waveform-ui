@@ -43,6 +43,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
 
+  loadingCurrentEvent = false;
+  loadingEventList = false;
+
   constructor(
     private _eventApiService: EventApiService,
     private _activatedRoute: ActivatedRoute,
@@ -59,15 +62,19 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.params$ = this._activatedRoute.params.subscribe(async params => {
       const eventId = params['eventId'];
       if (eventId) {
-        const clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
-        this.currentEvent = clickedEvent;
+        try {
+          this.loadingCurrentEvent = true;
+          const clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+          this.currentEvent = clickedEvent;
 
-        if (this.initialized.getValue() === false) {
-
-          this.currentEventChart = clickedEvent;
-          this.initialized.next(true);
-        } else {
-
+          if (this.initialized.getValue() === false) {
+            this.currentEventChart = clickedEvent;
+            this.initialized.next(true);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          this.loadingCurrentEvent = false;
         }
       }
     });
@@ -80,19 +87,27 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private async _loadEvents() {
-    const startTime = moment(this.eventStartDate).toISOString();
-    const endTime = moment(this.eventEndDate).toISOString();
 
-    this.events = await this._eventApiService.getEvents({
-      site_code: this.site ? this.site.code : '',
-      network_code: this.network ? this.network.code : '',
-      start_time: startTime.toString(),
-      end_time: endTime.toString()
-    }).toPromise();
+    try {
+      this.loadingEventList = true;
+      const startTime = moment(this.eventStartDate).toISOString();
+      const endTime = moment(this.eventEndDate).toISOString();
 
-    // TODO: API problem - no order by time_utc on api?
-    this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-    this.mapEventsToDays();
+      this.events = await this._eventApiService.getEvents({
+        site_code: this.site ? this.site.code : '',
+        network_code: this.network ? this.network.code : '',
+        start_time: startTime.toString(),
+        end_time: endTime.toString()
+      }).toPromise();
+
+      // TODO: API problem - no order by time_utc on api?
+      this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+      this.mapEventsToDays();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.loadingEventList = false;
+    }
   }
 
 
@@ -128,6 +143,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
     this.eventUpdateDialogOpened = true;
+    this.loadingCurrentEvent = true;
+    this.loadingEventList = true;
+
     await this._loadEventTypesAndStatuses();
 
     this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
@@ -158,6 +176,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       delete this.eventUpdateDialogRef;
       this.eventUpdateDialogOpened = false;
     });
+
+    this.loadingCurrentEvent = false;
+    this.loadingEventList = false;
   }
 
   mapEventsToDays() {

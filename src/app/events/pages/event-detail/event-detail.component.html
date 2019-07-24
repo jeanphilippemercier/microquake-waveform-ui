@@ -6,11 +6,12 @@
   >
     <app-header-layout></app-header-layout>
     <mat-accordion
-      class=""
+      class="d-flex flex-column"
       [multi]="true"
     >
       <mat-expansion-panel
-        class="mat-elevation-z event-list"
+        class="mat-elevation-z event-list flex-fill"
+        [disabled]="true"
         [expanded]="true"
       >
         <mat-expansion-panel-header
@@ -92,13 +93,13 @@
 
         </ng-template>
 
-
-
+        <ngx-loading [show]="loadingEventList"></ngx-loading>
       </mat-expansion-panel>
 
       <mat-expansion-panel
         [expanded]="true"
-        class="mat-elevation-z event-detail"
+        [disabled]="true"
+        class="mat-elevation-z event-detail flex-fill"
       >
         <mat-expansion-panel-header
           class="main-header"
@@ -106,20 +107,28 @@
           [expandedHeight]="'50px'"
         >
           <mat-panel-title>
-            <strong class="text-uppercase">Event detail</strong>
+            <strong class="text-uppercase align-self-center">Event detail</strong>
+            <div class="mr-auto"></div>
+            <button
+              *ngIf="days.length > 0 && days[0].length > 0"
+              color="primary"
+              mat-button
+              (click)="openEventUpdateDialog();$event.stopPropagation()"
+            >
+              <mat-icon class="mat-18">edit</mat-icon>
+              <small class="align-self-center">
+                Edit
+              </small>
+            </button>
+
           </mat-panel-title>
         </mat-expansion-panel-header>
         <app-event-info [event]=currentEvent></app-event-info>
-
-        <button
-          [disabled]="!!eventUpdateDialogRef || eventUpdateDialogOpened"
-          mat-raised-button
-          (click)="openEventUpdateDialog()"
-        >Edit event</button>
+        <ngx-loading [show]="loadingCurrentEvent"></ngx-loading>
       </mat-expansion-panel>
     </mat-accordion>
 
-
+ƒ
   </mat-sidenav>
   <mat-sidenav-content>
     <app-waveform-2
