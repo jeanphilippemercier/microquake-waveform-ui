@@ -1,0 +1,15 @@
+<mat-form-field>
+  <mat-label>{{label}}</mat-label>
+  <mat-select
+    [(ngModel)]="multiple ? selectedEventEvaluationModes : selectedEventEvaluationMode"
+    (selectionChange)="multiple ? onChangeEventEvaluationModes($event) : onChangeEventEvaluationMode($event)"
+    [multiple]="multiple"
+  >
+    <mat-option
+      *ngFor="let modeEl of eventEvaluationModes"
+      [value]="modeEl"
+    >
+      {{modeEl}}
+    </mat-option>
+  </mat-select>
+</mat-form-field>

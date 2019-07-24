@@ -21,6 +21,7 @@ import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.com
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
 import { EventStatusFieldComponent } from './forms/fields/event-status-field/event-status-field.component';
+import { EventModeFieldComponent } from './forms/fields/event-mode-field/event-mode-field.component';
 import { EventDateFieldComponent } from './forms/fields/event-date-field/event-date-field.component';
 import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
@@ -78,6 +79,7 @@ const COMPONTENTS = [
   HeaderLayoutComponent,
   FooterLayoutComponent,
   EventTypeFieldComponent,
+  EventModeFieldComponent,
   EventStatusFieldComponent,
   EventDateFieldComponent,
   EventInfoComponent,
