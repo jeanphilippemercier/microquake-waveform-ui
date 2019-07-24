@@ -64,8 +64,7 @@ export class EventApiService {
   updateEventById(eventId: string, body: EventUpdateInput): Observable<any> {
 
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
-    // TODO: API problem - put works as patch is supposed to work. And patch gives cors error at the moment
-    return this._http.put(url, body);
+    return this._http.patch(url, body);
   }
 
   updateEventPicksById(eventId, dataObj): any {
