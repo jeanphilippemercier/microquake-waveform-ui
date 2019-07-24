@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import * as moment from 'moment';
 
-import { IEvent } from '@app/core/interfaces/event.interface';
+import { IEvent, EvaluationStatus, EventType, EventUpdateInput, EventEvaluationMode } from '@app/core/interfaces/event.interface';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, Observable, BehaviorSubject } from 'rxjs';
 
@@ -9,6 +9,8 @@ import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/site.interface';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
+import { EventUpdateDialog } from '@app/core/interfaces/dialogs.interface';
+import { first } from 'rxjs/operators';
 
 @Component({
   selector: 'app-event-detail',
@@ -23,11 +25,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   sites: Site[];
   site: Site;
   network: Network;
-  selectedEventStatuses;
   days: Array<Array<IEvent>> = [];
   daysMap: any = {};
   today = moment().startOf('day');
-  updateDialogRef: MatDialogRef<EventUpdateDialogComponent>;
+  eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
 
   eventStartDate: Date = moment().startOf('day').subtract(7, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
@@ -35,7 +36,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   currentEvent: IEvent;
   currentEventChart: IEvent;
 
+  eventTypes: EventType[];
+  evaluationStatuses: EvaluationStatus[];
+  eventEvaluationModes: EventEvaluationMode[];
+
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  eventUpdateDialogOpened = false;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -48,16 +54,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this._loadSites();
     this._loadEvents();
   }
-  private async _loadCurrentEvent() {
 
+  private async _loadCurrentEvent() {
     this.params$ = this._activatedRoute.params.subscribe(async params => {
       const eventId = params['eventId'];
       if (eventId) {
-        this.currentEvent = await this._eventApiService.getEventById(eventId).toPromise();
+        const clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+        this.currentEvent = clickedEvent;
 
         if (this.initialized.getValue() === false) {
 
-          this.currentEventChart = { ...this.currentEvent };
+          this.currentEventChart = clickedEvent;
           this.initialized.next(true);
         } else {
 
@@ -83,23 +90,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       end_time: endTime.toString()
     }).toPromise();
 
-    // TODO: no order_by time_utc on api?
+    // TODO: API problem - no order by time_utc on api?
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-
-    this.events.forEach(event => {
-      const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
-      if (typeof this.daysMap[day] === 'undefined') {
-        this.days.push([]);
-        this.daysMap[day] = this.days.length - 1;
-      }
-      console.log(this.daysMap[day]);
-      this.days[this.daysMap[day]].push(event);
+    this.mapEventsToDays();
+  }
 
 
-    });
-
-    console.log(this.days);
-
+  private async _loadEventTypesAndStatuses() {
+    this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
+    this.evaluationStatuses = Object.values(EvaluationStatus);
+    this.eventEvaluationModes = Object.values(EventEvaluationMode);
   }
 
 
@@ -119,20 +119,69 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openChart(event: IEvent) {
-    this.currentEventChart = { ...event };
+    this.currentEventChart = event;
   }
 
 
-  async openDialog() {
-    if (this.updateDialogRef) {
+  async openEventUpdateDialog() {
+    if (this.eventUpdateDialogRef || this.eventUpdateDialogOpened) {
       return;
     }
-    const updateDialogRef = this._matDialog.open(EventUpdateDialogComponent, {
+    this.eventUpdateDialogOpened = true;
+    await this._loadEventTypesAndStatuses();
+
+    this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
       hasBackdrop: true,
-      width: '400px',
+      width: '500px',
       data: {
-        event: this.currentEvent
+        event: this.currentEvent,
+        evaluationStatuses: this.evaluationStatuses,
+        eventTypes: this.eventTypes,
+        eventEvaluationModes: this.eventEvaluationModes
       }
     });
+
+    this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
+      try {
+        this.eventUpdateDialogRef.componentInstance.loading = true;
+        const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
+        this.updateEventWherePossible(result);
+        this.eventUpdateDialogRef.close();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventUpdateDialogRef.componentInstance.loading = false;
+      }
+    });
+
+    this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.eventUpdateDialogRef;
+      this.eventUpdateDialogOpened = false;
+    });
+  }
+
+  mapEventsToDays() {
+    this.events.forEach(event => {
+      const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
+      if (typeof this.daysMap[day] === 'undefined') {
+        this.days.push([]);
+        this.daysMap[day] = this.days.length - 1;
+      }
+      this.days[this.daysMap[day]].push(event);
+    });
+  }
+
+  async updateEventWherePossible(event: IEvent) {
+    if (!event || !this.days) {
+      return;
+    }
+
+    this.events = this.events.map(ev => (ev.event_resource_id === event.event_resource_id) ? event : ev);
+    this.days = this.days.map(day => []);
+    this.mapEventsToDays();
+
+    if (event.event_resource_id === this.currentEvent.event_resource_id) {
+      this.currentEvent = event;
+    }
   }
 }

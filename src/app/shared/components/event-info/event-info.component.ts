@@ -1,5 +1,5 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { IEvent, EventType } from '@interfaces/event.interface';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { IEvent, EventType, EvaluationStatus, EventEvaluationMode } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-info',
@@ -9,25 +9,53 @@ import { IEvent, EventType } from '@interfaces/event.interface';
 export class EventInfoComponent implements OnInit {
 
   @Input() event: IEvent;
+  @Output() eventChange: EventEmitter<IEvent> = new EventEmitter();
+  @Input() editEnabled = false;
   @Input() eventTypes: EventType[];
+  @Input() evaluationStatuses: EvaluationStatus[];
+  @Input() eventEvaluationModes: EventEvaluationMode[];
 
-
-  public evalTypes = [
-    { status: 'preliminary', eval_status: 'A', viewValue: 'Preliminary (Accepted)' },
-    // {status: 'confirmed', eval_status: 'A', viewValue: 'Confirmed (Accepted)'},
-    { status: 'reviewed', eval_status: 'A', viewValue: 'Reviewed (Accepted)' },
-    { status: 'final', eval_status: 'A', viewValue: 'Final (Accepted)' },
-    // {status: 'reported', eval_status: 'A', viewValue: 'Reported (Accepted)'},
-    { status: 'rejected', eval_status: 'R', viewValue: 'Rejected (R)' }
-  ];
-  public evalModes = [
-    { evaluation_mode: 'automatic', viewValue: 'Automatic' },
-    { evaluation_mode: 'manual', viewValue: 'Manual' }
-  ];
-
-  constructor() { }
+  selectedEventType: EventType;
+  selectedEvenStatus: EvaluationStatus;
+  selectedEventEvaluationMode: EventEvaluationMode;
 
   ngOnInit() {
+    if (this.event && this.eventTypes && this.eventTypes.length > 0) {
+      this.selectedEventType = this.eventTypes.find(eventType => eventType.quakeml_type === this.event.event_type);
+    }
+
+    if (this.event && this.evaluationStatuses && this.evaluationStatuses.length > 0) {
+      this.selectedEvenStatus = this.evaluationStatuses.find(evaluationStatus => evaluationStatus === this.event.status);
+    }
+
+    if (this.event && this.eventEvaluationModes && this.eventEvaluationModes.length > 0) {
+      this.selectedEventEvaluationMode = this.eventEvaluationModes.find(
+        eventEvaluationMode => eventEvaluationMode === this.event.evaluation_mode
+      );
+    }
   }
 
+  onEventTypeChange(eventType: EventType) {
+    if (eventType && eventType.quakeml_type !== this.event.event_type) {
+      this.event.event_type = eventType.quakeml_type;
+    }
+
+    this.eventChange.emit(this.event);
+  }
+
+  onEvaluationStatusChange(evaluationStatus: EvaluationStatus) {
+    if (evaluationStatus && evaluationStatus !== this.event.status) {
+      this.event.status = evaluationStatus;
+    }
+
+    this.eventChange.emit(this.event);
+  }
+
+  onEventEvaluationModeChange(eventEvaluationMode: EventEvaluationMode) {
+    if (eventEvaluationMode && eventEvaluationMode !== this.event.evaluation_mode) {
+      this.event.evaluation_mode = eventEvaluationMode;
+    }
+
+    this.eventChange.emit(this.event);
+  }
 }

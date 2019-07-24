@@ -1,12 +1,12 @@
 <mat-form-field>
-  <mat-label>Event Status</mat-label>
+  <mat-label>{{label}}</mat-label>
   <mat-select
-    [(ngModel)]="selectedEventStatuses"
-    (selectionChange)="onChangeEventStatuses($event)"
-    multiple
+    [(ngModel)]="multiple ? selectedEvaluationStatuses : selectedEvaluationStatus"
+    (selectionChange)="multiple ? onChangeEvaluationStatuses($event) : onChangeEvaluationStatus($event)"
+    [multiple]="multiple"
   >
     <mat-option
-      *ngFor="let statusTypeEl of eventStatuses"
+      *ngFor="let statusTypeEl of evaluationStatuses"
       [value]="statusTypeEl"
     >
       {{statusTypeEl}}

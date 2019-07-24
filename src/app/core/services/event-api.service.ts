@@ -1,12 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Observer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery, EventWaveformQuery } from '../interfaces/event.interface';
+import {
+  IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
+  EventWaveformQuery, EventUpdateInput
+} from '@interfaces/event.interface';
+import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
-import { Site } from '../interfaces/site.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +17,8 @@ import { Site } from '../interfaces/site.interface';
 export class EventApiService {
 
   constructor(
-    private _http: HttpClient
+    private _http: HttpClient,
+    private _ngZone: NgZone
   ) { }
 
   getEventWaveform(eventId: string, query: EventWaveformQuery) {
@@ -57,20 +61,11 @@ export class EventApiService {
   }
 
 
-  updateEventById(eventId, status, event_type, evaluation_mode): any {
-    const _httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId;
-    const data = JSON.stringify({
-      'event_resource_id': eventId,
-      'status': status,
-      'event_type': event_type,
-      'evaluation_mode': evaluation_mode,
-    });
-    return this._http.put(API_URL, data, _httpOptions);
+  updateEventById(eventId: string, body: EventUpdateInput): Observable<any> {
+
+    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
+    // TODO: API problem - put works as patch is supposed to work. And patch gives cors error at the moment
+    return this._http.put(url, body);
   }
 
   updateEventPicksById(eventId, dataObj): any {
@@ -177,6 +172,34 @@ export class EventApiService {
       .set('network_code', network)
       .set('event_resource_id', eventId);
     return this._http.get(API_URL, { params });
+  }
+
+
+  getServerUpdatedEvent(): Observable<any> {
+    const url = `${environment.url}eventstream/`;
+    const eventSource = new EventSource(url);
+    const source = new EventSource(environment.url + 'eventstream/');
+    source.addEventListener('message', message => {
+      console.log('eventstream message');
+      console.log(message);
+    });
+
+    return Observable.create((observer: Observer<any>) => {
+
+      eventSource.onmessage = event => {
+        this._ngZone.run(() => {
+
+          observer.next(event);
+        });
+      };
+
+      eventSource.onerror = error => {
+        this._ngZone.run(() => {
+          observer.error(error);
+        });
+      };
+
+    });
   }
 
 }

@@ -10,11 +10,23 @@ import { MatSelectChange } from '@angular/material';
 })
 export class EventTypeFieldComponent {
 
+  @Input() label = `Event Type`;
+  @Input() multiple = true;
   @Input() eventTypes: EventType[];
+
+  // for multiple === false
+  @Input() selectedEventType: EventType;
+  @Output() selectedEventTypeChange: EventEmitter<EventType> = new EventEmitter();
+
+  // for multiple === true
   @Input() selectedEventTypes: EventType[];
   @Output() selectedEventTypesChange: EventEmitter<EventType[]> = new EventEmitter();
 
   onChangeEventTypes(event: MatSelectChange) {
     this.selectedEventTypesChange.emit(event.value);
+  }
+
+  onChangeEventType(event: MatSelectChange) {
+    this.selectedEventTypeChange.emit(event.value);
   }
 }

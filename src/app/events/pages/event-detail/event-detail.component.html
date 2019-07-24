@@ -54,9 +54,9 @@
                 <ng-container *ngFor="let event of day; let j = index;">
                   <a
                     mat-list-item
-                    [routerLink]="['/v2/events', event.event_resource_id]"
+                    [routerLink]="['/v2/events', event?.event_resource_id]"
                     [ngClass]="{
-                      'active': event?.event_resource_id === currentEvent.event_resource_id,
+                      'active': event.event_resource_id === currentEvent?.event_resource_id,
                       'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
                       'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
                       'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
@@ -112,8 +112,9 @@
         <app-event-info [event]=currentEvent></app-event-info>
 
         <button
+          [disabled]="!!eventUpdateDialogRef || eventUpdateDialogOpened"
           mat-raised-button
-          (click)="openDialog()"
+          (click)="openEventUpdateDialog()"
         >Edit event</button>
       </mat-expansion-panel>
     </mat-accordion>

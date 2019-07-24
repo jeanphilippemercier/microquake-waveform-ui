@@ -1,5 +1,4 @@
 <div>
-
   <div>
     <div>
       <table class="table table-extra-condensed">
@@ -31,27 +30,70 @@
             <td>{{event?.npick}}</td>
           </tr>
           <tr>
-            <th scope="row">Type
+            <th scope="row">
+              Type
             </th>
             <td>
-
-              {{event?.event_type}}
+              <ng-container *ngIf="!editEnabled">
+                {{event?.event_type}}
+              </ng-container>
+              <ng-container *ngIf="editEnabled">
+                <div class="mt-3">
+                  <app-event-type-field
+                    [label]="''"
+                    [multiple]="false"
+                    [eventTypes]="eventTypes"
+                    [selectedEventType]="selectedEventType"
+                    (selectedEventTypeChange)="onEventTypeChange($event)"
+                  ></app-event-type-field>
+                </div>
+              </ng-container>
             </td>
           </tr>
           <tr>
             <th scope="row">
+              Evaluation<br>
               Status
             </th>
             <td>
-              {{event?.status}}
+              <ng-container *ngIf="!editEnabled">
+                {{event?.status}}
+              </ng-container>
+              <ng-container *ngIf="editEnabled">
+                <div class="mt-3">
+                  <app-event-status-field
+                    [label]="''"
+                    [multiple]="false"
+                    [evaluationStatuses]="evaluationStatuses"
+                    [selectedEvaluationStatus]="selectedEvenStatus"
+                    (selectedEvaluationStatusChange)="onEvaluationStatusChange($event)"
+                  >
+                  </app-event-status-field>
+                </div>
+              </ng-container>
             </td>
           </tr>
           <tr>
             <th scope="row">
+              Evaluation<br>
               Mode
             </th>
             <td>
-              {{event?.evaluation_mode}}
+              <ng-container *ngIf="!editEnabled">
+                {{event?.evaluation_mode}}
+              </ng-container>
+              <ng-container *ngIf="editEnabled">
+                <div class="mt-3">
+                  <app-event-mode-field
+                    [label]="''"
+                    [multiple]="false"
+                    [eventEvaluationModes]="eventEvaluationModes"
+                    [selectedEventEvaluationMode]="selectedEventEvaluationMode"
+                    (selectedEventEvaluationModeChange)="onEventEvaluationModeChange($event)"
+                  >
+                  </app-event-mode-field>
+                </div>
+              </ng-container>
             </td>
           </tr>
           <tr *ngIf='false && event?.time_residual'>

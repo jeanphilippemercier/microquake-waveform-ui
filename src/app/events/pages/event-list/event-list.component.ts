@@ -3,7 +3,7 @@ import { CatalogApiService } from '@app/core/services/catalog-api.service';
 import { Site, Network } from '@app/core/interfaces/site.interface';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { EventType, EventStatus } from '@app/core/interfaces/event.interface';
+import { EventType, EvaluationStatus } from '@app/core/interfaces/event.interface';
 import * as moment from 'moment';
 import { MatTableDataSource } from '@angular/material';
 
@@ -26,8 +26,8 @@ export class EventListComponent implements OnInit {
   eventTypes: EventType[];
   selectedEventTypes: EventType[];
 
-  eventStatuses: EventStatus[];
-  selectedEventStatuses: EventStatus[];
+  evaluationStatuses: EvaluationStatus[];
+  selectedEvaluationStatuses: EvaluationStatus[];
 
   eventStartDate: Date = moment().startOf('day').subtract(5, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
@@ -48,14 +48,14 @@ export class EventListComponent implements OnInit {
 
     // default values
     this.selectedEventTypes = this.eventTypes;
-    this.selectedEventStatuses = [EventStatus.ACCEPTED];
+    this.selectedEvaluationStatuses = [EvaluationStatus.REVIEWED];
 
     await this._loadEvents();
   }
 
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._catalogApiService.get_microquake_event_types(this.site).toPromise();
-    this.eventStatuses = Object.values(EventStatus);
+    this.evaluationStatuses = Object.values(EvaluationStatus);
   }
 
   private async _loadEvents() {
@@ -69,7 +69,7 @@ export class EventListComponent implements OnInit {
       endTime,
       null,
       // this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.id).toString() : '',
-      this.selectedEventStatuses ? this.selectedEventStatuses.toString() : ''
+      this.selectedEvaluationStatuses ? this.selectedEvaluationStatuses.toString() : ''
     ).toPromise();
 
     // TODO: no order_by time_utc on api?
