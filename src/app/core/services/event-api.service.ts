@@ -184,7 +184,7 @@ export class EventApiService {
       console.log(message);
     });
 
-    return Observable.create((observer: Observer<any>) => {
+    return new Observable((observer: Observer<any>) => {
 
       eventSource.onmessage = event => {
         this._ngZone.run(() => {
