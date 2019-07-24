@@ -1,6 +1,17 @@
 <h1 mat-dialog-title>Event update</h1>
 <div mat-dialog-content>
-  <app-event-info [event]="dialogData?.event"></app-event-info>
+  <app-event-info
+    [event]="editedEvent"
+    (eventChange)="onEventChange($event)"
+    [editEnabled]="true"
+    [evaluationStatuses]="evaluationStatuses"
+    [eventTypes]="eventTypes"
+    [eventEvaluationModes]="eventEvaluationModes"
+    [showEventResourceId]="true"
+    [showPreferredOriginId]="false"
+    [showTimeResidual]="false"
+    [showUncertainty]="false"
+  ></app-event-info>
 </div>
 
 <mat-dialog-actions align="end">
@@ -9,9 +20,10 @@
     mat-dialog-close
   >Cancel</button>
   <button
+    [disabled]="loading || !editedValues"
     color="primary"
     mat-raised-button
-    [mat-dialog-close]="true"
-    [disabled]="true"
+    (click)="onSaveClick(editedValues)"
   >Save</button>
 </mat-dialog-actions>
+<ngx-loading [show]="loading"></ngx-loading>

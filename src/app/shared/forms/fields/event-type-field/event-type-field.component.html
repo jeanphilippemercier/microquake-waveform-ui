@@ -1,18 +1,23 @@
 <mat-form-field>
-  <mat-label>Event Type</mat-label>
+  <mat-label>{{label}}</mat-label>
   <mat-select
-    [(ngModel)]="selectedEventTypes"
-    (selectionChange)="onChangeEventTypes($event)"
-    multiple
+    [(ngModel)]="multiple ? selectedEventTypes : selectedEventType"
+    (selectionChange)="multiple ? onChangeEventTypes($event) : onChangeEventType($event)"
+    [multiple]="multiple"
   >
     <mat-select-trigger>
-      {{selectedEventTypes ? selectedEventTypes[0]?.quakeml_type : ''}}
-      <span
-        *ngIf="selectedEventTypes?.length > 1"
-        class="example-additional-selection"
-      >
-        (+{{selectedEventTypes.length - 1}} {{selectedEventTypes?.length === 2 ? 'other' : 'others'}})
-      </span>
+      <ng-container *ngIf="multiple">
+        {{selectedEventTypes ? selectedEventTypes[0]?.quakeml_type : ''}}
+        <span
+          *ngIf="selectedEventTypes?.length > 1"
+          class="example-additional-selection"
+        >
+          (+{{selectedEventTypes.length - 1}} {{selectedEventTypes?.length === 2 ? 'other' : 'others'}})
+        </span>
+      </ng-container>
+      <ng-container *ngIf="!multiple">
+        {{selectedEventType?.quakeml_type}}
+      </ng-container>
     </mat-select-trigger>
     <mat-option
       *ngFor="let eventTypeEL of eventTypes"

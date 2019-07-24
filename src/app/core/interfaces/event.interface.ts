@@ -7,9 +7,23 @@ export interface EventType {
   site_code: string;
 }
 
-export enum EventStatus {
+export enum EvaluationStatus {
+  PRELIMINARY = 'preliminary',
+  CONFIRMED = 'confirmed',
+  REVIEWED = 'reviewed',
+  FINAL = 'final',
+  REJECTED = 'rejected',
+  REPORTED = 'reported'
+}
+
+export enum EvaluationStatusGroup {
   ACCEPTED = 'accepted',
   REJECTED = 'rejected'
+}
+
+export enum EventEvaluationMode {
+  MANUAL = 'manual',
+  AUTOMATIC = 'automatic'
 }
 
 export interface EventQuery {
@@ -18,7 +32,7 @@ export interface EventQuery {
   site_code: string;
   network_code: string;
   type?: string[]; // TODO: string / EventType inconsitancy
-  status?: EventStatus[];
+  status?: EvaluationStatus[];
 }
 
 export interface BoundariesQuery {
@@ -70,4 +84,8 @@ export interface IEvent {
   x: number;
   y: number;
   z: number;
+}
+
+export interface EventUpdateInput extends Partial<IEvent> {
+  event_resource_id: string;
 }

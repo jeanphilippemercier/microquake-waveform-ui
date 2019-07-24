@@ -13,6 +13,9 @@ mat-sidenav.mat-drawer-side {
   border-right: 0;
 }
 
+mat-accordion {
+  height: calc(100% - 64px);
+}
 
 
 .mat-expansion-panel-spacing {
@@ -23,6 +26,10 @@ mat-expansion-panel-header {
   border-radius: 0;
 
   &.main-header {
+
+    mat-panel-title {
+      margin-right: 0;
+    }
 
     &,
     &.mat-expanded:focus,
@@ -56,12 +63,15 @@ mat-expansion-panel-header {
 
 
 mat-expansion-panel.event-list {
+  position: relative;
+  height: 50%;
+
   &.mat-expansion-panel-spacing {
     margin: 0;
   }
 
   &>.mat-expansion-panel-content {
-    max-height: 35vh;
+    height: calc( 100% - 50px);
     overflow: auto;
 
     &>.mat-expansion-panel-body {
@@ -73,6 +83,8 @@ mat-expansion-panel.event-list {
 }
 
 mat-expansion-panel.event-detail {
+  position: relative;
+
   &.mat-expansion-panel-spacing {
     margin: 0;
   }

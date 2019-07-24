@@ -6,11 +6,12 @@
   >
     <app-header-layout></app-header-layout>
     <mat-accordion
-      class=""
+      class="d-flex flex-column"
       [multi]="true"
     >
       <mat-expansion-panel
-        class="mat-elevation-z event-list"
+        class="mat-elevation-z event-list flex-fill"
+        [disabled]="true"
         [expanded]="true"
       >
         <mat-expansion-panel-header
@@ -54,9 +55,9 @@
                 <ng-container *ngFor="let event of day; let j = index;">
                   <a
                     mat-list-item
-                    [routerLink]="['/v2/events', event.event_resource_id]"
+                    [routerLink]="['/v2/events', event?.event_resource_id]"
                     [ngClass]="{
-                      'active': event?.event_resource_id === currentEvent.event_resource_id,
+                      'active': event.event_resource_id === currentEvent?.event_resource_id,
                       'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
                       'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
                       'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
@@ -92,13 +93,13 @@
 
         </ng-template>
 
-
-
+        <ngx-loading [show]="loadingEventList"></ngx-loading>
       </mat-expansion-panel>
 
       <mat-expansion-panel
         [expanded]="true"
-        class="mat-elevation-z event-detail"
+        [disabled]="true"
+        class="mat-elevation-z event-detail flex-fill"
       >
         <mat-expansion-panel-header
           class="main-header"
@@ -106,19 +107,27 @@
           [expandedHeight]="'50px'"
         >
           <mat-panel-title>
-            <strong class="text-uppercase">Event detail</strong>
+            <strong class="text-uppercase align-self-center">Event detail</strong>
+            <div class="mr-auto"></div>
+            <button
+              *ngIf="days.length > 0 && days[0].length > 0"
+              color="primary"
+              mat-button
+              (click)="openEventUpdateDialog();$event.stopPropagation()"
+            >
+              <mat-icon class="mat-18">edit</mat-icon>
+              <small class="align-self-center">
+                Edit
+              </small>
+            </button>
+
           </mat-panel-title>
         </mat-expansion-panel-header>
         <app-event-info [event]=currentEvent></app-event-info>
-
-        <button
-          mat-raised-button
-          (click)="openDialog()"
-        >Edit event</button>
+        <ngx-loading [show]="loadingCurrentEvent"></ngx-loading>
       </mat-expansion-panel>
+      <ngx-loading [show]="loadingCurrentEventAndList"></ngx-loading>
     </mat-accordion>
-
-
   </mat-sidenav>
   <mat-sidenav-content>
     <app-waveform-2

@@ -2053,7 +2053,7 @@ export class WaveformComponent implements OnInit, OnDestroy {
                 }
                 for (const channel of station.channels) {
                     if (channel.hasOwnProperty('raw')) {
-                        if(channel.valid) {
+                        if (channel.valid) {
                             const sg = channel.raw.clone();
                             let seis = null;
                             const butterworth = self.createButterworthFilter(channel.sample_rate);
