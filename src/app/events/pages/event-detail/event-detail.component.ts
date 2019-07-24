@@ -45,6 +45,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   loadingCurrentEvent = false;
   loadingEventList = false;
+  loadingCurrentEventAndList = false;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -143,14 +144,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
     this.eventUpdateDialogOpened = true;
-    this.loadingCurrentEvent = true;
-    this.loadingEventList = true;
+    this.loadingCurrentEventAndList = true;
 
     await this._loadEventTypesAndStatuses();
 
     this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
       hasBackdrop: true,
-      width: '500px',
+      width: '600px',
       data: {
         event: this.currentEvent,
         evaluationStatuses: this.evaluationStatuses,
@@ -177,8 +177,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       this.eventUpdateDialogOpened = false;
     });
 
-    this.loadingCurrentEvent = false;
-    this.loadingEventList = false;
+    this.loadingCurrentEventAndList = false;
   }
 
   mapEventsToDays() {

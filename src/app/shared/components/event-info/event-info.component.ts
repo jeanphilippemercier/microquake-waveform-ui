@@ -14,6 +14,10 @@ export class EventInfoComponent implements OnInit {
   @Input() eventTypes: EventType[];
   @Input() evaluationStatuses: EvaluationStatus[];
   @Input() eventEvaluationModes: EventEvaluationMode[];
+  @Input() showEventResourceId = false;
+  @Input() showTimeResidual = false;
+  @Input() showUncertainty = false;
+  @Input() showPreferredOriginId = false;
 
   selectedEventType: EventType;
   selectedEvenStatus: EvaluationStatus;

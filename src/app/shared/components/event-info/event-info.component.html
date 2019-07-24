@@ -3,6 +3,10 @@
     <div>
       <table class="table table-extra-condensed">
         <tbody>
+          <tr *ngIf='showEventResourceId'>
+            <th scope="row">Event Id</th>
+            <td>{{event?.event_resource_id}}</td>
+          </tr>
           <tr>
             <th scope="row">Magnitude</th>
             <td>
@@ -96,20 +100,16 @@
               </ng-container>
             </td>
           </tr>
-          <tr *ngIf='false && event?.time_residual'>
+          <tr *ngIf='showTimeResidual'>
             <th scope="row">Time Residual</th>
             <td>{{event?.time_residual}}</td>
           </tr>
-          <tr *ngIf='false && event?.uncertainty'>
+          <tr *ngIf='showUncertainty'>
             <th scope="row">Uncertainty</th>
             <td>{{event?.uncertainty}}</td>
           </tr>
-          <tr *ngIf='false && event?.event_resource_id'>
-            <th scope="row">event_resource_id</th>
-            <td>{{event?.event_resource_id}}</td>
-          </tr>
-          <tr *ngIf='false && event?.preferred_origin_id'>
-            <th scope="row">preferred_origin_id</th>
+          <tr *ngIf='showPreferredOriginId'>
+            <th scope="row">Preferred<br>Origin Id</th>
             <td>{{event?.preferred_origin_id}}</td>
           </tr>
         </tbody>
