@@ -28,6 +28,7 @@ import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/sit
 import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventInfoComponent } from './components/event-info/event-info.component';
 import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
+import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -93,6 +94,7 @@ const DIALOGS = [
 ];
 
 const PIPES = [
+  EventQuakemlToMicroquakeTypePipe,
   EventTypeIconPipe,
   EventMagnitudePipe
 ];
