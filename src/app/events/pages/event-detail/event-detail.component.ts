@@ -53,9 +53,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     private _matDialog: MatDialog
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this._loadSites();
+    await this._loadEventTypesAndStatuses();
     this._loadCurrentEvent();
-    this._loadSites();
     this._loadEvents();
   }
 
@@ -119,7 +120,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
 
-
   private async _loadSites() {
     this.sites = await this._eventApiService.getSites().toPromise();
     const options = JSON.parse(localStorage.getItem('viewer-options'));
@@ -130,6 +130,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       }
       if (options.network && this.site && this.site.networks) {
         this.network = this.site.networks.find(network => network.code === options.network);
+      }
+    } else if (this.sites) {
+      this.site = this.sites[0];
+
+      if (this.site) {
+        this.network = this.site.networks[0];
       }
     }
   }
@@ -145,8 +151,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     this.eventUpdateDialogOpened = true;
     this.loadingCurrentEventAndList = true;
-
-    await this._loadEventTypesAndStatuses();
 
     this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
       hasBackdrop: true,

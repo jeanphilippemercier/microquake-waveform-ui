@@ -123,7 +123,10 @@
 
           </mat-panel-title>
         </mat-expansion-panel-header>
-        <app-event-info [event]=currentEvent></app-event-info>
+        <app-event-info
+          [event]=currentEvent
+          [eventTypes]="eventTypes"
+        ></app-event-info>
         <ngx-loading [show]="loadingCurrentEvent"></ngx-loading>
       </mat-expansion-panel>
       <ngx-loading [show]="loadingCurrentEventAndList"></ngx-loading>
