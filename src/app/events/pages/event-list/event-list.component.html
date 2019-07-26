@@ -138,7 +138,7 @@
             <mat-icon>
               {{element.event_type | eventTypeIcon}}
             </mat-icon>
-            {{element.event_type}}
+            {{element.event_type | eventQuakemlToMicroquakeType : eventTypes}}
           </td>
         </ng-container>
 
