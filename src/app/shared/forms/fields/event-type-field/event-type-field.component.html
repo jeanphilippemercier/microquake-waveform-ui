@@ -7,7 +7,7 @@
   >
     <mat-select-trigger>
       <ng-container *ngIf="multiple">
-        {{selectedEventTypes ? selectedEventTypes[0]?.quakeml_type : ''}}
+        {{selectedEventTypes ? selectedEventTypes[0]?.microquake_type : ''}}
         <span
           *ngIf="selectedEventTypes?.length > 1"
           class="example-additional-selection"
@@ -16,7 +16,7 @@
         </span>
       </ng-container>
       <ng-container *ngIf="!multiple">
-        {{selectedEventType?.quakeml_type}}
+        {{selectedEventType?.microquake_type}}
       </ng-container>
     </mat-select-trigger>
     <mat-option

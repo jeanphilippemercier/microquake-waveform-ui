@@ -39,7 +39,7 @@
             </th>
             <td>
               <ng-container *ngIf="!editEnabled">
-                {{event?.event_type}}
+                {{event?.event_type | eventQuakemlToMicroquakeType : eventTypes}}
               </ng-container>
               <ng-container *ngIf="editEnabled">
                 <div class="mt-3">
