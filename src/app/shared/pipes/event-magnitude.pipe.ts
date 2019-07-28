@@ -8,7 +8,7 @@ export class EventMagnitudePipe implements PipeTransform {
 
   transform(value: any): string {
 
-    return value !== -999 ? parseFloat(value).toFixed(2) : '';
+    return value !== -999 ? parseFloat(value).toFixed(1) : '';
   }
 
 }
