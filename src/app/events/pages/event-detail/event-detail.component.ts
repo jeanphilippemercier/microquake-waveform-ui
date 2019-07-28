@@ -14,6 +14,11 @@ import {
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 
+interface EventDay {
+  dayDate: Date;
+  dayDateStr: string;
+  dayEvents: { event: IEvent, eventId: string; timestamp: number }[];
+}
 @Component({
   selector: 'app-event-detail',
   templateUrl: './event-detail.component.html',
@@ -27,7 +32,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   sites: Site[];
   site: Site;
   network: Network;
-  days: Array<Array<IEvent>> = [];
+  days: EventDay[] = [];
   daysMap: any = {};
   today = moment().startOf('day');
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
@@ -125,6 +130,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       // TODO: API problem - no order by time_utc on api?
       this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
       [this.days, this.daysMap] = this.mapEventsToDays(this.events);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -244,20 +250,25 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.loadingCurrentEventAndList = false;
   }
 
-  mapEventsToDays(events: IEvent[]): [Array<Array<IEvent>>, {}] {
-    const days: Array<Array<IEvent>> = [];
+  mapEventsToDays(events: IEvent[]): [EventDay[], {}] {
+    const eventDays: EventDay[] = [];
     const daysMap = {};
+    const timestamp = new Date().getTime();
 
-    this.events.forEach(event => {
+    events.forEach((event, idx) => {
       const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
       if (typeof daysMap[day] === 'undefined') {
-        days.push([]);
-        daysMap[day] = days.length - 1;
+        eventDays.push({
+          dayDate: new Date(event.time_utc),
+          dayDateStr: day,
+          dayEvents: []
+        });
+        daysMap[day] = eventDays.length - 1;
       }
-      days[daysMap[day]].push(event);
+      eventDays[daysMap[day]].dayEvents.push({ event, eventId: event.event_resource_id, timestamp });
     });
 
-    return [days, daysMap];
+    return [eventDays, daysMap];
   }
 
   async updateEventWherePossible(event: IEvent) {
@@ -265,11 +276,33 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.events = this.events.map(ev => (ev.event_resource_id === event.event_resource_id) ? event : ev);
-    [this.days, this.daysMap] = this.mapEventsToDays(this.events);
+    this.events.some((ev, idx) => {
+      if (ev.event_resource_id === event.event_resource_id) {
+        this.events[idx] = Object.assign(ev, event);
+
+        return true;
+      }
+    });
+
+    const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
+    this.days[this.daysMap[day]].dayEvents.forEach((dayEvent, idx) => {
+      if (dayEvent.eventId === event.event_resource_id) {
+        this.days[this.daysMap[day]].dayEvents[idx].timestamp = new Date().getTime();
+
+        return true;
+      }
+    });
 
     if (event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = event;
     }
+  }
+
+  trackDay(index: number, item: EventDay) {
+    return item.dayDateStr;
+  }
+
+  trackEvent(index: number, item: { event: IEvent, eventId: string, timestamp: number }) {
+    return item.eventId + item.timestamp;
   }
 }
