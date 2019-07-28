@@ -37,6 +37,11 @@ export class EventFilterDialogComponent {
     this.eventEvaluationModes = this._dialogData.eventEvaluationModes;
     this.todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
     this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
+
+    if (this.editedQuery.time_range === 0) {
+      this.editedQuery.start_time = moment(this.editedQuery.start_time).startOf('day').toISOString();
+      this.editedQuery.end_time = moment(this.editedQuery.end_time).endOf('day').toISOString();
+    }
   }
 
   async onFilterChange() {
@@ -54,7 +59,7 @@ export class EventFilterDialogComponent {
     this.editedQuery.start_time = moment()
       .utcOffset(this.timezone)
       .startOf('day')
-      .subtract(this.editedQuery.time_range, 'days')
+      .subtract(this.editedQuery.time_range - 1, 'days')
       .toISOString();
     this.editedQuery.end_time = this.todayEnd.toISOString();
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
@@ -64,6 +69,9 @@ export class EventFilterDialogComponent {
   onTimeRangeChange($event: MatRadioChange) {
     if ($event.value !== 0) {
       this.editedQuery.start_time = moment().utcOffset(this.timezone).startOf('day').subtract($event.value - 1, 'days').toISOString();
+      this.editedQuery.end_time = this.todayEnd.toISOString();
+    } else {
+      this.editedQuery.start_time = moment().utcOffset(this.timezone).startOf('day').toISOString();
       this.editedQuery.end_time = this.todayEnd.toISOString();
     }
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
@@ -83,4 +91,11 @@ export class EventFilterDialogComponent {
     return count;
   }
 
+  onCustomDateStartChange($event: Date) {
+    this.editedQuery.start_time = moment($event).utcOffset(this.timezone).startOf('day').toISOString();
+  }
+
+  onCustomDateEndChange($event: Date) {
+    this.editedQuery.end_time = moment($event).utcOffset(this.timezone).endOf('day').toISOString();
+  }
 }

@@ -64,18 +64,18 @@
             <div class="col-6">
               <app-event-date-field
                 [label]="'Start date'"
-                [(date)]="editedQuery.start_time"
+                [date]="editedQuery.start_time"
                 [maxDate]="editedQuery.end_time"
-                (dateChange)="onFilterChange()"
+                (dateChange)="onCustomDateStartChange($event)"
               >
               </app-event-date-field>
             </div>
             <div class="col-6">
               <app-event-date-field
                 [label]="'End date'"
-                [(date)]="editedQuery.end_time"
+                [date]="editedQuery.end_time"
                 [minDate]="editedQuery.start_time"
-                (dateChange)="onFilterChange()"
+                (dateChange)="onCustomDateEndChange($event)"
               >
               </app-event-date-field>
             </div>
