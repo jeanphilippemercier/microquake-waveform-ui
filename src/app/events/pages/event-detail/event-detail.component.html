@@ -44,8 +44,33 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
-
-          <mat-accordion class="days">
+          <ng-container *ngIf="(initialized | async ) && days?.length === 0 && !loadingEventList">
+            <h5 class="text-center pt-4 pb-2">No events found</h5>
+            <p class="text-center">Try to change filter: <button
+                class="filter-button"
+                *ngIf="eventListQuery"
+                color="primary"
+                mat-button
+                (click)="openEventFilterDialog();$event.stopPropagation()"
+              >
+                <mat-icon
+                  class="mat-18"
+                  [matBadge]="numberOfChangesInFilter"
+                  [matBadgeHidden]="numberOfChangesInFilter === 0"
+                  matBadgePosition="after"
+                  matBadgeColor="warn"
+                >filter_list</mat-icon>
+                <small>
+                  ({{eventListQuery.start_time | date:' MMM dd': boundaries?.timezone}} -
+                  {{eventListQuery.end_time | date:' dd yyyy': boundaries?.timezone}})
+                </small>
+              </button>
+            </p>
+          </ng-container>
+          <mat-accordion
+            class="days"
+            *ngIf="days"
+          >
             <mat-expansion-panel
               *ngFor="let day of days; let i = index"
               class="mat-elevation-z day"
