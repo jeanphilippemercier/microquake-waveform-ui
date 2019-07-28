@@ -20,14 +20,28 @@
           [expandedHeight]="'50px'"
         >
           <mat-panel-title>
-            <strong class="text-uppercase">Event list</strong>
+            <strong class="text-uppercase align-self-center">Event list</strong>
+            <div class="mr-auto"></div>
+            <button
+              class="filter-button"
+              *ngIf="eventListQuery"
+              color="primary"
+              mat-button
+              (click)="openEventFilterDialog();$event.stopPropagation()"
+            >
+              <mat-icon
+                class="mat-18"
+                [matBadge]="numberOfChangesInFilter"
+                [matBadgeHidden]="numberOfChangesInFilter === 0"
+                matBadgePosition="after"
+                matBadgeColor="warn"
+              >filter_list</mat-icon>
+              <small>
+                ({{eventListQuery.start_time | date:' MMM dd': boundaries?.timezone}} -
+                {{eventListQuery.end_time | date:' dd yyyy': boundaries?.timezone}})
+              </small>
+            </button>
           </mat-panel-title>
-          <mat-panel-description>
-            <small *ngIf="days.length > 0 && days[0].length > 0">
-              ({{days[days?.length-1][0]?.time_utc | date:' MMM dd':days[days?.length-1][0]?.timezone}} -
-              {{(days[0])[0]?.time_utc | date:' dd yyyy':days[0][0]?.timezone}})
-            </small>
-          </mat-panel-description>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
 
@@ -134,9 +148,8 @@
   </mat-sidenav>
   <mat-sidenav-content>
     <app-waveform-2
-      *ngIf="true"
+      *ngIf="false"
       [event]="currentEventChart"
     ></app-waveform-2>
   </mat-sidenav-content>
-
 </mat-sidenav-container>

@@ -1,16 +1,18 @@
-import { Component, OnInit, ViewEncapsulation, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
 import * as moment from 'moment';
-
-import { IEvent, EvaluationStatus, EventType, EventUpdateInput, EventEvaluationMode } from '@app/core/interfaces/event.interface';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription, Observable, BehaviorSubject } from 'rxjs';
+import { Subscription, BehaviorSubject } from 'rxjs';
+import { first } from 'rxjs/operators';
+import { MatDialog, MatDialogRef } from '@angular/material';
 
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/site.interface';
-import { MatDialog, MatDialogRef } from '@angular/material';
+import { EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
+import {
+  IEvent, EvaluationStatus, EventType, EventUpdateInput, EventEvaluationMode, EventQuery, Boundaries
+} from '@interfaces/event.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
-import { EventUpdateDialog } from '@app/core/interfaces/dialogs.interface';
-import { first } from 'rxjs/operators';
+import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 
 @Component({
   selector: 'app-event-detail',
@@ -29,9 +31,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   daysMap: any = {};
   today = moment().startOf('day');
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
+  eventFilterDialogRef: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
 
-  eventStartDate: Date = moment().startOf('day').subtract(7, 'days').toDate();
-  eventEndDate: Date = moment().endOf('day').toDate();
+  eventStartDate: Date;
+  eventEndDate: Date;
 
   currentEvent: IEvent;
   currentEventChart: IEvent;
@@ -42,10 +45,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
+  eventFilterDialogOpened = false;
 
   loadingCurrentEvent = false;
   loadingEventList = false;
   loadingCurrentEventAndList = false;
+
+  eventListQuery: EventQuery;
+
+  numberOfChangesInFilter = 0;
+
+  boundaries: Boundaries;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -54,10 +64,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+    await this._loadBoundaries();
     await this._loadSites();
     await this._loadEventTypesAndStatuses();
     this._loadCurrentEvent();
     this._loadEvents();
+    // TODO: eventstream
+    // this._eventApiService.getServerUpdatedEvent().subscribe(data => console.log(data));
   }
 
   private async _loadCurrentEvent() {
@@ -88,23 +101,30 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async _loadBoundaries() {
+    [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
+  }
+
   private async _loadEvents() {
 
     try {
       this.loadingEventList = true;
-      const startTime = moment(this.eventStartDate).toISOString();
-      const endTime = moment(this.eventEndDate).toISOString();
 
-      this.events = await this._eventApiService.getEvents({
-        site_code: this.site ? this.site.code : '',
-        network_code: this.network ? this.network.code : '',
-        start_time: startTime.toString(),
-        end_time: endTime.toString()
-      }).toPromise();
+      if (!this.eventListQuery) {
+        this.eventListQuery = {
+          start_time: moment().utc().utcOffset(this.boundaries.timezone).startOf('day').subtract(2, 'days').toISOString(),
+          end_time: moment().utc().utcOffset(this.boundaries.timezone).endOf('day').toISOString(),
+          site_code: this.site.code ? this.site.code : '',
+          network_code: this.network.code ? this.network.code : '',
+          time_range: 3
+        };
+      }
+
+      this.events = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
 
       // TODO: API problem - no order by time_utc on api?
       this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-      this.mapEventsToDays();
+      [this.days, this.daysMap] = this.mapEventsToDays(this.events);
     } catch (err) {
       console.error(err);
     } finally {
@@ -112,13 +132,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
     this.eventEvaluationModes = Object.values(EventEvaluationMode);
   }
-
 
   private async _loadSites() {
     this.sites = await this._eventApiService.getSites().toPromise();
@@ -144,6 +162,48 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.currentEventChart = event;
   }
 
+  async openEventFilterDialog() {
+
+    if (this.eventFilterDialogRef || this.eventFilterDialogOpened) {
+      return;
+    }
+    this.eventFilterDialogOpened = true;
+    this.loadingCurrentEventAndList = true;
+
+    this.eventFilterDialogRef = this._matDialog.open<EventFilterDialogComponent, EventFilterDialogData>(EventFilterDialogComponent, {
+      hasBackdrop: true,
+      width: '750px',
+      data: {
+        timezone: this.boundaries.timezone,
+        sites: this.sites,
+        eventQuery: this.eventListQuery,
+        evaluationStatuses: this.evaluationStatuses,
+        eventTypes: this.eventTypes,
+        eventEvaluationModes: this.eventEvaluationModes
+      }
+    });
+
+    this.eventFilterDialogRef.componentInstance.onFilter.subscribe(async (data: EventQuery) => {
+      try {
+        this.eventListQuery = data;
+        this.eventFilterDialogRef.componentInstance.loading = true;
+        await this._loadEvents();
+        this.numberOfChangesInFilter = this.eventFilterDialogRef.componentInstance.getNumberOfChanges(this.eventListQuery);
+        this.eventFilterDialogRef.close();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventFilterDialogRef.componentInstance.loading = false;
+      }
+    });
+
+    this.eventFilterDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.eventFilterDialogRef;
+      this.eventFilterDialogOpened = false;
+    });
+
+    this.loadingCurrentEventAndList = false;
+  }
 
   async openEventUpdateDialog() {
     if (this.eventUpdateDialogRef || this.eventUpdateDialogOpened) {
@@ -184,15 +244,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.loadingCurrentEventAndList = false;
   }
 
-  mapEventsToDays() {
+  mapEventsToDays(events: IEvent[]): [Array<Array<IEvent>>, {}] {
+    const days: Array<Array<IEvent>> = [];
+    const daysMap = {};
+
     this.events.forEach(event => {
       const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
-      if (typeof this.daysMap[day] === 'undefined') {
-        this.days.push([]);
-        this.daysMap[day] = this.days.length - 1;
+      if (typeof daysMap[day] === 'undefined') {
+        days.push([]);
+        daysMap[day] = days.length - 1;
       }
-      this.days[this.daysMap[day]].push(event);
+      days[daysMap[day]].push(event);
     });
+
+    return [days, daysMap];
   }
 
   async updateEventWherePossible(event: IEvent) {
@@ -201,8 +266,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
 
     this.events = this.events.map(ev => (ev.event_resource_id === event.event_resource_id) ? event : ev);
-    this.days = this.days.map(day => []);
-    this.mapEventsToDays();
+    [this.days, this.daysMap] = this.mapEventsToDays(this.events);
 
     if (event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = event;
