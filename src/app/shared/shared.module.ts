@@ -29,6 +29,7 @@ import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventInfoComponent } from './components/event-info/event-info.component';
 import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
+import { MomentModule } from 'ngx-moment';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -110,6 +111,7 @@ const PIPES = [
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
+    MomentModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES,
   ],
@@ -121,6 +123,7 @@ const PIPES = [
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
+    MomentModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES
   ],
