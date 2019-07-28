@@ -14,7 +14,7 @@ const routes: Routes = [
   {
     path: '',
     canActivate: [UnauthGuard],
-    redirectTo: 'v1',
+    redirectTo: 'v2',
     pathMatch: 'full',
   },
   {
