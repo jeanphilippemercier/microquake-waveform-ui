@@ -36,7 +36,7 @@ export class EventFilterDialogComponent {
     this.evaluationStatuses = this._dialogData.evaluationStatuses;
     this.eventEvaluationModes = this._dialogData.eventEvaluationModes;
     this.todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
-
+    this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
   }
 
   async onFilterChange() {
