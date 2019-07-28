@@ -1,119 +1,115 @@
 <div>
-  <div>
-    <div>
-      <table class="table table-extra-condensed">
-        <tbody>
-          <tr *ngIf='showEventResourceId'>
-            <th scope="row">Event Id</th>
-            <td>{{event?.event_resource_id}}</td>
-          </tr>
-          <tr>
-            <th scope="row">Magnitude</th>
-            <td>
-              <ng-container *ngIf="event?.magnitude !== -999">
-                {{event?.magnitude | eventMagnitude}}
-              </ng-container>
+  <table class="table table-extra-condensed">
+    <tbody>
+      <tr *ngIf='showEventResourceId'>
+        <th scope="row">Event Id</th>
+        <td>{{event?.event_resource_id}}</td>
+      </tr>
+      <tr>
+        <th scope="row">Magnitude</th>
+        <td *ngIf="event?.magnitude">
+          <ng-container *ngIf="event?.magnitude !== -999">
+            {{event?.magnitude | eventMagnitude}}
+          </ng-container>
 
-              <ng-container *ngIf="event?.magnitude === -999">
-                -
-              </ng-container>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              Location
-            </th>
-            <td>
-              X {{event?.x}} m East<br>
-              Y {{event?.y}} m North<br>
-              Z {{event?.z}} m
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Picks</th>
-            <td>{{event?.npick}}</td>
-          </tr>
-          <tr>
-            <th scope="row">
-              Type
-            </th>
-            <td>
-              <ng-container *ngIf="!editEnabled">
-                {{event?.event_type | eventQuakemlToMicroquakeType : eventTypes}}
-              </ng-container>
-              <ng-container *ngIf="editEnabled">
-                <div class="mt-3">
-                  <app-event-type-field
-                    [label]="''"
-                    [multiple]="false"
-                    [eventTypes]="eventTypes"
-                    [selectedEventType]="selectedEventType"
-                    (selectedEventTypeChange)="onEventTypeChange($event)"
-                  ></app-event-type-field>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              Evaluation<br>
-              Status
-            </th>
-            <td>
-              <ng-container *ngIf="!editEnabled">
-                {{event?.status}}
-              </ng-container>
-              <ng-container *ngIf="editEnabled">
-                <div class="mt-3">
-                  <app-event-status-field
-                    [label]="''"
-                    [multiple]="false"
-                    [evaluationStatuses]="evaluationStatuses"
-                    [selectedEvaluationStatus]="selectedEvenStatus"
-                    (selectedEvaluationStatusChange)="onEvaluationStatusChange($event)"
-                  >
-                  </app-event-status-field>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              Evaluation<br>
-              Mode
-            </th>
-            <td>
-              <ng-container *ngIf="!editEnabled">
-                {{event?.evaluation_mode}}
-              </ng-container>
-              <ng-container *ngIf="editEnabled">
-                <div class="mt-3">
-                  <app-event-mode-field
-                    [label]="''"
-                    [multiple]="false"
-                    [eventEvaluationModes]="eventEvaluationModes"
-                    [selectedEventEvaluationMode]="selectedEventEvaluationMode"
-                    (selectedEventEvaluationModeChange)="onEventEvaluationModeChange($event)"
-                  >
-                  </app-event-mode-field>
-                </div>
-              </ng-container>
-            </td>
-          </tr>
-          <tr *ngIf='showTimeResidual'>
-            <th scope="row">Time Residual</th>
-            <td>{{event?.time_residual}}</td>
-          </tr>
-          <tr *ngIf='showUncertainty'>
-            <th scope="row">Uncertainty</th>
-            <td>{{event?.uncertainty}}</td>
-          </tr>
-          <tr *ngIf='showPreferredOriginId'>
-            <th scope="row">Preferred<br>Origin Id</th>
-            <td>{{event?.preferred_origin_id}}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+          <ng-container *ngIf="event?.magnitude === -999">
+            -
+          </ng-container>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Location
+        </th>
+        <td *ngIf="event?.x">
+          X {{event?.x}} m East<br>
+          Y {{event?.y}} m North<br>
+          Z {{event?.z}} m
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Picks</th>
+        <td>{{event?.npick}}</td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Type
+        </th>
+        <td>
+          <ng-container *ngIf="!editEnabled">
+            {{event?.event_type | eventQuakemlToMicroquakeType : eventTypes}}
+          </ng-container>
+          <ng-container *ngIf="editEnabled">
+            <div class="mt-3">
+              <app-event-type-field
+                [label]="''"
+                [multiple]="false"
+                [eventTypes]="eventTypes"
+                [selectedEventType]="selectedEventType"
+                (selectedEventTypeChange)="onEventTypeChange($event)"
+              ></app-event-type-field>
+            </div>
+          </ng-container>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Evaluation<br>
+          Status
+        </th>
+        <td>
+          <ng-container *ngIf="!editEnabled">
+            {{event?.status}}
+          </ng-container>
+          <ng-container *ngIf="editEnabled">
+            <div class="mt-3">
+              <app-event-status-field
+                [label]="''"
+                [multiple]="false"
+                [evaluationStatuses]="evaluationStatuses"
+                [selectedEvaluationStatus]="selectedEvenStatus"
+                (selectedEvaluationStatusChange)="onEvaluationStatusChange($event)"
+              >
+              </app-event-status-field>
+            </div>
+          </ng-container>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Evaluation<br>
+          Mode
+        </th>
+        <td>
+          <ng-container *ngIf="!editEnabled">
+            {{event?.evaluation_mode}}
+          </ng-container>
+          <ng-container *ngIf="editEnabled">
+            <div class="mt-3">
+              <app-event-mode-field
+                [label]="''"
+                [multiple]="false"
+                [eventEvaluationModes]="eventEvaluationModes"
+                [selectedEventEvaluationMode]="selectedEventEvaluationMode"
+                (selectedEventEvaluationModeChange)="onEventEvaluationModeChange($event)"
+              >
+              </app-event-mode-field>
+            </div>
+          </ng-container>
+        </td>
+      </tr>
+      <tr *ngIf='showTimeResidual'>
+        <th scope="row">Time Residual</th>
+        <td>{{event?.time_residual}}</td>
+      </tr>
+      <tr *ngIf='showUncertainty'>
+        <th scope="row">Uncertainty</th>
+        <td>{{event?.uncertainty}}</td>
+      </tr>
+      <tr *ngIf='showPreferredOriginId'>
+        <th scope="row">Preferred<br>Origin Id</th>
+        <td>{{event?.preferred_origin_id}}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
