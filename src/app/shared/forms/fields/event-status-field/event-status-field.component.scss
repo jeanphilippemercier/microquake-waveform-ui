@@ -1,0 +1,11 @@
+mat-chip {
+  transition: opacity 0.5s;
+}
+
+.faded {
+  opacity: 0.4;
+}
+
+.no-underline ::ng-deep .mat-form-field-underline {
+  display: none;
+}
