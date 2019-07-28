@@ -26,7 +26,7 @@ export class UnauthGuard implements CanActivateChild, CanActivate {
       return true;
     }
 
-    this._router.navigate(['v1/events']);
+    this._router.navigate(['v2/events']);
     return false;
   }
 }

@@ -50,7 +50,7 @@ export class AuthDialogComponent {
       .subscribe(
         result => {
           this._matDialogRef.close();
-          this._router.navigate(['v1/events']);
+          this._router.navigate(['v2/events']);
         },
         err => {
           console.error(err);
