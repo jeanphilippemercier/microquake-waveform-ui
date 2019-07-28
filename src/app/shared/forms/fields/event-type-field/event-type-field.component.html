@@ -22,13 +22,13 @@
     <mat-option
       *ngFor="let eventTypeEL of eventTypes"
       [value]="eventTypeEL"
-      matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})"
+      matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}}"
     >
       <mat-icon>
         {{eventTypeEL?.identifier | eventTypeIcon}}
       </mat-icon>
       <span>
-        {{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}} ({{eventTypeEL.quakeml_type}})
+        {{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}}
       </span>
     </mat-option>
   </mat-select>
