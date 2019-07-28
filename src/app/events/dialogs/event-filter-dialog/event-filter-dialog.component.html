@@ -1,0 +1,144 @@
+<h1 mat-dialog-title>Event filter</h1>
+<div mat-dialog-content>
+
+  <div class="row">
+
+
+    <div class="col-12 mb-3">
+      <div class="row">
+        <div class="col-3">
+          <h4>Time range</h4>
+        </div>
+        <div class="col-9">
+          <mat-radio-group
+            [(ngModel)]="editedQuery.time_range"
+            (change)="onTimeRangeChange($event)"
+            class="d-flex align-content-stretch"
+          >
+            <mat-radio-button
+              color="primary"
+              [value]="3"
+              class="d-flex "
+            >
+              <strong>Last 3 days</strong><br>
+              <small>{{todayEnd | amSubtract : 2 : 'days' | amDateFormat : 'MMM	D'}} -
+                {{todayEnd | amDateFormat:'MMM D'}} </small>
+            </mat-radio-button>
+            <div class="mr-auto"></div>
+
+            <mat-radio-button
+              color="warn"
+              [value]="7"
+              class="d-flex"
+            >
+              <strong>Last 7 days</strong><br>
+              <small>{{todayEnd | amSubtract : 6 : 'days' | amDateFormat : 'MMM	D'}} -
+                {{todayEnd | amDateFormat:'MMM D'}} </small>
+            </mat-radio-button>
+            <div class="mr-auto"></div>
+
+            <mat-radio-button
+              color="warn"
+              [value]="31"
+              class="d-flex"
+            >
+              <strong>Last 31 days</strong><br>
+              <small>{{todayEnd | amSubtract : 30 : 'days' | amDateFormat : 'MMM	D'}} -
+                {{todayEnd | amDateFormat:'MMM D'}} </small>
+            </mat-radio-button>
+            <div class="mr-auto"></div>
+
+            <mat-radio-button
+              color="warn"
+              [value]="0"
+              class="d-flex"
+            >
+              <strong>Custom</strong><br>
+              <small></small>
+            </mat-radio-button>
+          </mat-radio-group>
+          <div
+            class="row mt-3"
+            *ngIf="editedQuery.time_range === 0"
+          >
+            <div class="col-6">
+              <app-event-date-field
+                [label]="'Start date'"
+                [date]="editedQuery.start_time"
+                [maxDate]="editedQuery.end_time"
+                (dateChange)="onCustomDateStartChange($event)"
+              >
+              </app-event-date-field>
+            </div>
+            <div class="col-6">
+              <app-event-date-field
+                [label]="'End date'"
+                [date]="editedQuery.end_time"
+                [minDate]="editedQuery.start_time"
+                (dateChange)="onCustomDateEndChange($event)"
+              >
+              </app-event-date-field>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
+          <h4>Event type</h4>
+        </div>
+        <div class="col-9">
+          <app-event-type-field
+            [label]="''"
+            [type]="'chip'"
+            [eventTypes]="eventTypes"
+            [(selectedEventTypes)]="editedQuery.type"
+            (selectedEventTypesChange)="onFilterChange()"
+          ></app-event-type-field>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
+          <h4>Evaluation status</h4>
+        </div>
+        <div class="col-9">
+          <app-event-status-field
+            [label]="''"
+            [type]="'chip'"
+            [evaluationStatuses]="evaluationStatuses"
+            [(selectedEvaluationStatuses)]="editedQuery.status"
+            (selectedEvaluationStatusesChange)="onFilterChange()"
+          ></app-event-status-field>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-raised-button
+    (click)="resetFilter()"
+  >Reset</button>
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Cancel</button>
+  <button
+    color="primary"
+    mat-raised-button
+    [disabled]="loading"
+    (click)="onFilterClick(editedQuery)"
+    [matBadge]="numberOfChanges"
+    [matBadgeHidden]="numberOfChanges === 0"
+    matBadgePosition="after"
+    matBadgeColor="warn"
+  >Filter</button>
+</mat-dialog-actions>
+<ngx-loading [show]="loading"></ngx-loading>

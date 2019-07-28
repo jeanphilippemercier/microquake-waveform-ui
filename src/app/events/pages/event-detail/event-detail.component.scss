@@ -71,7 +71,7 @@ mat-expansion-panel.event-list {
   }
 
   &>.mat-expansion-panel-content {
-    height: calc( 100% - 50px);
+    height: calc(100% - 50px);
     overflow: auto;
 
     &>.mat-expansion-panel-body {
@@ -123,4 +123,8 @@ mat-expansion-panel.event-detail {
 
 .sidebar-container {
   height: 100%;
+}
+
+.filter-button .mat-badge-medium.mat-badge-above .mat-badge-content {
+  top: -8px;
 }

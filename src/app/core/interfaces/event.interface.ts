@@ -7,6 +7,53 @@ export interface EventType {
   site_code: string;
 }
 
+export enum QuakemlType {
+  NOT_EXISTING = 'not existing',
+  NOT_REPORTED = 'not reported',
+  EARTHQUAKE = 'earthquake',
+  ANTHROPOGENIC_EVENT = 'anthropogenic event',
+  COLLAPSE = 'collapse',
+  CAVITY_COLLAPSE = 'cavity collapse',
+  MINE_COLLAPSE = 'mine collapse',
+  BUILDING_COLLAPSE = 'building collapse',
+  EXPLOSION = 'explosion',
+  ACCIDENTAL_EXPLOSION = 'accidental explosion',
+  CHEMICAL_EXPLOSION = 'chemical explosion',
+  CONTROLLED_EXPLOSION = 'controlled explosion',
+  EXPERIMENTAL_EXPLOSION = 'experimental explosion',
+  INDUSTRIAL_EXPLOSION = 'industrial explosion',
+  MINING_EXPLOSION = 'mining explosion',
+  QUARRY_BLACT = 'quarry blast',
+  ROAD_CUT = 'road cut',
+  BLASTING_LEVEE = 'blasting levee',
+  NUCLEAR_EXPLOSION = 'nuclear explosion',
+  INDUCED_OR_TRIGGERED_EVENT = 'induced or triggered event',
+  ROCK_BURST = 'rock burst',
+  RESERVOIR_LOADING = 'reservoir loading',
+  FLUID_INJECTION = 'fluid injection',
+  FLUID_EXTRACTION = 'fluid extraction',
+  CRASH = 'crash',
+  PLANE_CRASH = 'plane crash',
+  TRAIN_CRASH = 'train crash',
+  BOAT_CRASH = 'boat crash',
+  OTHER_EVENT = 'other event',
+  ATMOSPHERIC_EVENT = 'atmospheric event',
+  SONIC_BOOM = 'sonic boom',
+  SONIC_BLAST = 'sonic blast',
+  ACOUSTIC_NOIST = 'acoustic noise',
+  THUNDER = 'thunder',
+  AVALANCHE = 'avalanche',
+  SNOW_AVALANCHE = 'snow avalanche',
+  DEBRIS_AVALANCHE = 'debris avalanche',
+  HYDROACOUSTIC_EVENT = 'hydroacoustic event',
+  ICE_QUAKE = 'ice quake',
+  SLIDE = 'slide',
+  LANDSLIDE = 'landslide',
+  ROCKSLIDE = 'rockslide',
+  METEORITE = 'meteorite',
+  VOLCANIC_ERUPTION = 'volcanic eruption',
+}
+
 export enum EvaluationStatus {
   PRELIMINARY = 'preliminary',
   CONFIRMED = 'confirmed',
@@ -31,13 +78,14 @@ export interface EventQuery {
   end_time: string;
   site_code: string;
   network_code: string;
-  type?: string[]; // TODO: string / EventType inconsitancy
+  time_range?: number; // TODO: add to API ?
+  type?: QuakemlType[];
   status?: EvaluationStatus[];
 }
 
 export interface BoundariesQuery {
-  site_code: string;
-  network_code: string;
+  site_code?: string;
+  network_code?: string;
 }
 
 export interface MicroquakeEventTypesQuery {
@@ -88,4 +136,11 @@ export interface IEvent {
 
 export interface EventUpdateInput extends Partial<IEvent> {
   event_resource_id: string;
+}
+
+
+export interface Boundaries {
+  timezone: string;
+  min_time: string;
+  max_time: string;
 }

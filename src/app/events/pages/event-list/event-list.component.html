@@ -16,8 +16,7 @@
           </div>
           <div class="col-12">
             <app-site-network-field
-              [(site)]="site"
-              [(network)]="network"
+              [(networks)]="site.networks"
               (networkChange)="siteNetworkChanged($event)"
             ></app-site-network-field>
           </div>

@@ -3,7 +3,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { HttpClientModule } from '@angular/common/http';
-import { MomentModule } from 'ngx-moment';
 
 // import { MatIconRegistry, MatIconModule } from '@angular/material';
 // import { DomSanitizer } from '@angular/platform-browser';
@@ -32,8 +31,7 @@ import { EventsModule } from './events/events.module';
     FlexLayoutModule,
     NgxLoadingModule.forRoot({}),
     NgxPaginationModule,
-    AppRoutingModule,
-    MomentModule
+    AppRoutingModule
   ],
   bootstrap: [AppComponent]
 })

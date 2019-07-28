@@ -13,10 +13,19 @@ export class SiteSelectFieldComponent {
   @Input() sites: Site[];
   @Input() site: Site;
   @Output() siteChange: EventEmitter<Site> = new EventEmitter();
+
+  @Input() site_code: string;
+  @Output() site_codeChange: EventEmitter<string> = new EventEmitter();
+
   @Output() clearSelection: EventEmitter<boolean> = new EventEmitter();
 
   onChangeSite(event: MatSelectChange) {
+
     this.siteChange.emit(event.value);
+
+    if (event.value && event.value.site_code) {
+      this.site_codeChange.emit(event.value.code);
+    }
   }
 
   onClearSelection(event?: MouseEvent) {

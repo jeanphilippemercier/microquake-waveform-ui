@@ -16,6 +16,7 @@ import { EventShellComponent } from './pages/event-shell/event-shell.component';
 import { EventShellOldComponent } from './pages/event-shell-old/event-shell-old.component';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
+import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-
     Waveform2Component,
     EventShellComponent,
     EventShellOldComponent,
+    EventFilterDialogComponent,
     EventUpdateDialogComponent
   ],
   imports: [
@@ -41,6 +43,7 @@ import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-
     SidebarComponent
   ],
   entryComponents: [
+    EventFilterDialogComponent,
     EventUpdateDialogComponent
   ]
 })

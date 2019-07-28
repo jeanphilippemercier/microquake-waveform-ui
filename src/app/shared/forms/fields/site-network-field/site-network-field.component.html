@@ -3,10 +3,10 @@
   <mat-select
     [(ngModel)]="network"
     (selectionChange)='onChangeNetwork($event)'
-    [disabled]="!site"
+    [disabled]="!networks"
   >
     <mat-option
-      *ngFor="let networkEl of site?.networks"
+      *ngFor="let networkEl of networks"
       [value]="networkEl"
     >
       {{networkEl.name}}

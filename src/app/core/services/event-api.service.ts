@@ -6,7 +6,7 @@ import { Observable, of, Observer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
-  EventWaveformQuery, EventUpdateInput
+  EventWaveformQuery, EventUpdateInput, Boundaries
 } from '@interfaces/event.interface';
 import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
@@ -37,11 +37,11 @@ export class EventApiService {
     return this._http.get<IEvent[]>(url, { params });
   }
 
-  getBoundaries(query: BoundariesQuery): Observable<any> {
+  getBoundaries(query?: BoundariesQuery): Observable<Boundaries[]> {
     const url = `${environment.apiUrl}${globals.apiCatalogBoundaries}`;
     const params = ApiUtil.getHttpParams(query);
 
-    return this._http.get(url, { params });
+    return this._http.get<Boundaries[]>(url, { params });
   }
 
   getMicroquakeEventTypes(query: MicroquakeEventTypesQuery): Observable<any> {
@@ -187,7 +187,6 @@ export class EventApiService {
 
       eventSource.onmessage = event => {
         this._ngZone.run(() => {
-
           observer.next(event);
         });
       };

@@ -1,4 +1,4 @@
-<mat-form-field>
+<mat-form-field *ngIf="type === 'select'">
   <mat-label>{{label}}</mat-label>
   <mat-select
     [(ngModel)]="multiple ? selectedEvaluationStatuses : selectedEvaluationStatus"
@@ -12,4 +12,36 @@
       {{statusTypeEl}}
     </mat-option>
   </mat-select>
+
+</mat-form-field>
+
+<mat-form-field
+  *ngIf="type === 'chip'"
+  class="no-underline"
+>
+  <mat-chip-list
+    #chipList
+    [multiple]="true"
+  >
+    <mat-chip
+      color="primary"
+      (click)="onNoFilterChipClick()"
+      [selected]="!selectedEvaluationStatuses || selectedEvaluationStatuses?.length  === 0"
+      [ngClass]="{'faded': selectedEvaluationStatuses?.length  > 0}"
+      [selectable]="true"
+    >
+      No filter
+    </mat-chip>
+    <mat-chip
+      color="warn"
+      [ngClass]="{'faded': !selectedEvaluationStatuses || selectedEvaluationStatuses?.length  === 0}"
+      *ngFor="let evalStatus of evaluationStatuses"
+      [selected]="selectedEvaluationStatuses && selectedEvaluationStatuses?.indexOf(evalStatus) > -1"
+      [selectable]="true"
+      (click)="onChipClick(evalStatus)"
+      class="text-capitalize"
+    >
+      {{evalStatus}}
+    </mat-chip>
+  </mat-chip-list>
 </mat-form-field>
