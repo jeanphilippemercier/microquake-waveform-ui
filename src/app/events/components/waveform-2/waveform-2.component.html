@@ -9,7 +9,7 @@
     [config]="{ backdropBorderRadius: '3px' }"
   ></ngx-loading>
   <div
-    *ngFor="let item of allStations | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"
+    *ngFor="let item of allSensors | paginate: { itemsPerPage: page_size, currentPage: page_number, totalItems: loaded_pages*page_size }"
   ></div>
   <mat-toolbar
     color="primary"
