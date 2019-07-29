@@ -11,6 +11,19 @@ import { EventShellComponent } from './pages/event-shell/event-shell.component';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
+import { RouterModule, Routes } from '@angular/router';
+
+const ROUTES: Routes = [
+  {
+    path: '',
+    pathMatch: 'full',
+    component: EventListComponent,
+  },
+  {
+    path: ':eventId',
+    component: EventDetailComponent
+  },
+];
 
 @NgModule({
   declarations: [
@@ -22,12 +35,14 @@ import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-
     EventUpdateDialogComponent
   ],
   imports: [
+    RouterModule.forChild(ROUTES),
     SharedModule,
     FlexLayoutModule,
     NgxLoadingModule,
     NgxPaginationModule
   ],
   exports: [
+    RouterModule
   ],
   entryComponents: [
     EventFilterDialogComponent,

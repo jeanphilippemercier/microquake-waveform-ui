@@ -3,9 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
-import { EventListComponent } from '@app/events/pages/event-list/event-list.component';
-import { EventDetailComponent } from './events/pages/event-detail/event-detail.component';
 import { EventShellComponent } from './events/pages/event-shell/event-shell.component';
+import { EventsModule } from './events/events.module';
 
 const routes: Routes = [
   {
@@ -20,8 +19,10 @@ const routes: Routes = [
     canActivate: [],
     canActivateChild: [AuthGuard],
     children: [
-      { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
-      { path: 'events/:eventId', component: EventDetailComponent, canActivate: [AuthGuard] },
+      {
+        path: 'events',
+        loadChildren: () => EventsModule,
+      }
     ]
   },
   {
