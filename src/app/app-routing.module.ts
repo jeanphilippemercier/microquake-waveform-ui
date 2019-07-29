@@ -3,24 +3,22 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
-import { EventShellComponent } from './events/pages/event-shell/event-shell.component';
 import { EventsModule } from './events/events.module';
 
 const routes: Routes = [
   {
     path: '',
-    component: EventShellComponent,
+    redirectTo: '',
     canActivate: [UnauthGuard],
     pathMatch: 'full',
   },
   {
     path: '',
-    component: EventShellComponent,
     canActivate: [],
     canActivateChild: [AuthGuard],
     children: [
       {
-        path: 'events',
+        path: '',
         loadChildren: () => EventsModule,
       }
     ]

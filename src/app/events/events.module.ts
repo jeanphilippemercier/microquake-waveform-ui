@@ -7,7 +7,6 @@ import { EventListComponent } from './pages/event-list/event-list.component';
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { FlexLayoutModule } from '@angular/flex-layout';
-import { EventShellComponent } from './pages/event-shell/event-shell.component';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
@@ -15,12 +14,12 @@ import { RouterModule, Routes } from '@angular/router';
 
 const ROUTES: Routes = [
   {
-    path: '',
-    pathMatch: 'full',
+    path: 'events',
     component: EventListComponent,
+    pathMatch: 'full'
   },
   {
-    path: ':eventId',
+    path: 'events/:eventId',
     component: EventDetailComponent
   },
 ];
@@ -30,7 +29,6 @@ const ROUTES: Routes = [
     EventDetailComponent,
     EventListComponent,
     Waveform2Component,
-    EventShellComponent,
     EventFilterDialogComponent,
     EventUpdateDialogComponent
   ],
