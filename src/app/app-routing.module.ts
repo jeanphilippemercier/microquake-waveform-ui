@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AuthGuard } from '@guards/auth.guard';
 import { UnauthGuard } from '@guards/unauth.guard';
-import { EventsModule } from './events/events.module';
 
 const routes: Routes = [
   {
@@ -19,7 +18,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        loadChildren: () => EventsModule,
+        loadChildren: './events/events.module#EventsModule',
       }
     ]
   },

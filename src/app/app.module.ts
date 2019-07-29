@@ -24,7 +24,6 @@ import { EventsModule } from './events/events.module';
     CoreModule,
     SharedModule,
     AuthModule,
-    EventsModule,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
