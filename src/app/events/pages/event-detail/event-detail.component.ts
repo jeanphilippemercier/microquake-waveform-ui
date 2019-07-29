@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
 import * as moment from 'moment';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { MatDialog, MatDialogRef } from '@angular/material';
@@ -14,11 +14,6 @@ import {
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 
-interface EventDay {
-  dayDate: Date;
-  dayDateStr: string;
-  dayEvents: { event: IEvent, eventId: string; timestamp: number }[];
-}
 @Component({
   selector: 'app-event-detail',
   templateUrl: './event-detail.component.html',
@@ -32,8 +27,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   sites: Site[];
   site: Site;
   network: Network;
-  days: EventDay[] = [];
-  daysMap: any = {};
   today = moment().startOf('day');
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
   eventFilterDialogRef: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
@@ -65,7 +58,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   constructor(
     private _eventApiService: EventApiService,
     private _activatedRoute: ActivatedRoute,
-    private _matDialog: MatDialog
+    private _matDialog: MatDialog,
+    private _router: Router
   ) { }
 
   async ngOnInit() {
@@ -76,6 +70,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this._loadEvents();
     // TODO: eventstream
     // this._eventApiService.getServerUpdatedEvent().subscribe(data => console.log(data));
+  }
+
+  ngOnDestroy() {
+    if (this.params$) {
+      this.params$.unsubscribe();
+    }
   }
 
   private async _loadCurrentEvent() {
@@ -100,12 +100,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
-    }
-  }
-
   private async _loadBoundaries() {
     [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
   }
@@ -126,10 +120,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       }
 
       this.events = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
-
-      // TODO: API problem - no order by time_utc on api?
-      this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-      [this.days, this.daysMap] = this.mapEventsToDays(this.events);
 
     } catch (err) {
       console.error(err);
@@ -164,8 +154,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async _updateEvent(event: IEvent) {
+    if (!event) {
+      return;
+    }
+
+    this.events.some((ev, idx) => {
+      if (ev.event_resource_id === event.event_resource_id) {
+        this.events[idx] = Object.assign(ev, event);
+        return true;
+      }
+    });
+
+    if (event.event_resource_id === this.currentEvent.event_resource_id) {
+      this.currentEvent = event;
+    }
+  }
+
   async openChart(event: IEvent) {
     this.currentEventChart = event;
+  }
+
+  async openEvent(event: IEvent) {
+    this._router.navigate(['/v2/events', event.event_resource_id]);
   }
 
   async openEventFilterDialog() {
@@ -233,7 +244,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
-        this.updateEventWherePossible(result);
+        this._updateEvent(result);
         this.eventUpdateDialogRef.close();
       } catch (err) {
         console.error(err);
@@ -248,61 +259,5 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
 
     this.loadingCurrentEventAndList = false;
-  }
-
-  mapEventsToDays(events: IEvent[]): [EventDay[], {}] {
-    const eventDays: EventDay[] = [];
-    const daysMap = {};
-    const timestamp = new Date().getTime();
-
-    events.forEach((event, idx) => {
-      const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
-      if (typeof daysMap[day] === 'undefined') {
-        eventDays.push({
-          dayDate: new Date(event.time_utc),
-          dayDateStr: day,
-          dayEvents: []
-        });
-        daysMap[day] = eventDays.length - 1;
-      }
-      eventDays[daysMap[day]].dayEvents.push({ event, eventId: event.event_resource_id, timestamp });
-    });
-
-    return [eventDays, daysMap];
-  }
-
-  async updateEventWherePossible(event: IEvent) {
-    if (!event || !this.days) {
-      return;
-    }
-
-    this.events.some((ev, idx) => {
-      if (ev.event_resource_id === event.event_resource_id) {
-        this.events[idx] = Object.assign(ev, event);
-
-        return true;
-      }
-    });
-
-    const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
-    this.days[this.daysMap[day]].dayEvents.forEach((dayEvent, idx) => {
-      if (dayEvent.eventId === event.event_resource_id) {
-        this.days[this.daysMap[day]].dayEvents[idx].timestamp = new Date().getTime();
-
-        return true;
-      }
-    });
-
-    if (event.event_resource_id === this.currentEvent.event_resource_id) {
-      this.currentEvent = event;
-    }
-  }
-
-  trackDay(index: number, item: EventDay) {
-    return item.dayDateStr;
-  }
-
-  trackEvent(index: number, item: { event: IEvent, eventId: string, timestamp: number }) {
-    return item.eventId + item.timestamp;
   }
 }

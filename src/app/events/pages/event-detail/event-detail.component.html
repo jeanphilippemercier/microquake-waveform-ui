@@ -37,14 +37,14 @@
                 matBadgeColor="warn"
               >filter_list</mat-icon>
               <small>
-                ({{eventListQuery.start_time | date:' MMM dd': boundaries?.timezone}} -
-                {{eventListQuery.end_time | date:' dd yyyy': boundaries?.timezone}})
+                {{eventListQuery.start_time | date:' MMM dd': boundaries?.timezone}} -
+                {{eventListQuery.end_time | date:' dd yyyy': boundaries?.timezone}}
               </small>
             </button>
           </mat-panel-title>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
-          <ng-container *ngIf="(initialized | async ) && days?.length === 0 && !loadingEventList">
+          <ng-container *ngIf="(initialized | async ) && events?.length === 0 && !loadingEventList">
             <h5 class="text-center pt-4 pb-2">No events found</h5>
             <p class="text-center">Try to change filter: <button
                 class="filter-button"
@@ -67,71 +67,14 @@
               </button>
             </p>
           </ng-container>
-          <mat-accordion
-            class="days"
-            *ngIf="days"
-          >
-            <mat-expansion-panel
-              *ngFor="let day of days; let i = index; trackBy: trackDay"
-              class="mat-elevation-z day"
-              [expanded]="i === 0"
-              hideToggle
-            >
-              <mat-expansion-panel-header
-                [collapsedHeight]="'30px'"
-                [expandedHeight]="'30px'"
-              >
-                <mat-panel-title>
-                  {{day?.dayDate | date:' MMM dd': boundaries?.timezone}} <small class="pl-1">
-                    {{day?.dayDate | date:'yyyy': boundaries?.timezone}}</small>
-                </mat-panel-title>
-                <mat-panel-description>
-                  <div class="mr-auto"></div>
-                  ({{day?.dayEvents.length}} events)
-                </mat-panel-description>
-              </mat-expansion-panel-header>
-              <mat-nav-list dense>
-                <ng-container *ngFor="let dayEvent of day?.dayEvents; let j = index;trackBy: trackEvent">
-                  <a
-                    mat-list-item
-                    [routerLink]="['/v2/events', dayEvent?.event?.event_resource_id]"
-                    [ngClass]="{
-                      'active': dayEvent?.event?.event_resource_id === currentEvent?.event_resource_id,
-                      'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(dayEvent?.event?.status) > -1 && dayEvent?.event?.evaluation_mode === 'manual',
-                      'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(dayEvent?.event?.status) > -1 && dayEvent?.event?.evaluation_mode === 'automatic',
-                      'event-rejected-manual': ['rejected'].indexOf(dayEvent?.event?.status) > -1 && dayEvent?.event?.evaluation_mode === 'manual',
-                      'event-rejected-automatic': ['rejected'].indexOf(dayEvent?.event?.status) > -1 && dayEvent?.event?.evaluation_mode === 'automatic'
-                  }"
-                  >
-                    <mat-icon>
-                      {{dayEvent?.event?.event_type | eventTypeIcon}}
-                    </mat-icon>
-                    <div class="px-3">
-                      {{dayEvent?.event?.time_utc | date:'HH:mm:ss':dayEvent?.event?.timezone}}
-                      <small>{{dayEvent?.event?.time_utc | date:'.SSS'}}</small>
-                      <ng-container *ngIf="dayEvent?.event?.magnitude !== -999">
-                        ({{dayEvent?.event?.magnitude | eventMagnitude}} {{dayEvent?.event?.magnitude_type}})
-                      </ng-container>
-                    </div>
-                    <div class="mr-auto"></div>
-                    <button
-                      class="chart-button"
-                      mat-icon-button
-                      matTooltip="Open chart"
-                      (click)="openChart(dayEvent?.event)"
-                    >
-                      <mat-icon>insert_chart_outlined</mat-icon>
-                    </button>
-                  </a>
-                  <mat-divider *ngIf="j !== day?.dayEvents?.length - 1"></mat-divider>
-                </ng-container>
-              </mat-nav-list>
-            </mat-expansion-panel>
-
-          </mat-accordion>
-
+          <app-event-catalog
+            [events]="events"
+            [timezone]="boundaries?.timezone"
+            [currentEvent]="currentEvent"
+            (chartClick)="openChart($event)"
+            (eventClick)="openEvent($event)"
+          ></app-event-catalog>
         </ng-template>
-
         <ngx-loading [show]="loadingEventList"></ngx-loading>
       </mat-expansion-panel>
 

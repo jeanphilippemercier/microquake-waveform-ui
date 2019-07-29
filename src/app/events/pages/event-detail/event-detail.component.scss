@@ -40,28 +40,6 @@ mat-expansion-panel-header {
   }
 }
 
-
-.day {
-
-  &.mat-expansion-panel-spacing {
-    margin: 0;
-  }
-
-  mat-expansion-panel-header {
-
-    &,
-    &:focus,
-    &:hover {
-      background: #f9f9f9;
-
-      mat-panel-title {
-        font-weight: 500;
-      }
-    }
-  }
-}
-
-
 mat-expansion-panel.event-list {
   position: relative;
   height: 50%;
@@ -87,37 +65,6 @@ mat-expansion-panel.event-detail {
 
   &.mat-expansion-panel-spacing {
     margin: 0;
-  }
-}
-
-.mat-list-base .mat-list-item {
-
-  &.active {
-
-    &,
-    & small {
-      font-weight: 800;
-    }
-  }
-
-  &.event-accepted-manual {
-    color: green;
-  }
-
-  &.event-accepted-automatic {
-    color: blue;
-  }
-
-  &.event-rejected-manual {
-    color: red;
-  }
-
-  &.event-rejected-automatic {
-    color: purple;
-  }
-
-  button.chart-button {
-    color: #aaa;
   }
 }
 
