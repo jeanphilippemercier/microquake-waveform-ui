@@ -176,7 +176,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openEvent(event: IEvent) {
-    this._router.navigate(['/v2/events', event.event_resource_id]);
+    this._router.navigate(['/events', event.event_resource_id]);
   }
 
   async openEventFilterDialog() {

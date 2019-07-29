@@ -22,6 +22,7 @@ export class EventListComponent implements OnInit {
   sites: Site[];
   site: Site;
   network: Network;
+  networks: Network[];
 
   eventTypes: EventType[];
   selectedEventTypes: EventType[];
@@ -89,7 +90,18 @@ export class EventListComponent implements OnInit {
     this._saveOptions();
   }
 
-  siteNetworkChanged(event) {
+  siteChanged($event: Site) {
+    console.log($event);
+
+    if ($event && $event.networks && $event.networks.length > 0) {
+      this.networks = $event.networks;
+    } else {
+      this.networks = null;
+    }
+    this._saveOptions();
+  }
+  networkChanged($event) {
+    console.log($event);
     this._saveOptions();
   }
 
@@ -107,11 +119,14 @@ export class EventListComponent implements OnInit {
 
   private async _loadSites() {
     this.sites = await this._catalogApiService.get_sites().toPromise();
+    this.networks = null;
+
     const options: ViewerOptions = JSON.parse(localStorage.getItem('viewer-options'));
 
     if (options) {
       if (options.site) {
         this.site = this.sites.find(site => site.code === options.site);
+        this.networks = this.site.networks;
       }
       if (options.network && this.site && this.site.networks) {
         this.network = this.site.networks.find(network => network.code === options.network);

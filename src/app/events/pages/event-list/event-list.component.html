@@ -11,13 +11,15 @@
             <app-site-select-field
               [sites]="sites"
               [(site)]="site"
+              (siteChange)="siteChanged($event)"
               (clearSelection)="clearSelectionClicked($event)"
             ></app-site-select-field>
           </div>
           <div class="col-12">
             <app-site-network-field
-              [(networks)]="site.networks"
-              (networkChange)="siteNetworkChanged($event)"
+              [(networks)]="networks"
+              [(network)]="network"
+              (networkChange)="networkChanged($event)"
             ></app-site-network-field>
           </div>
         </div>
@@ -197,7 +199,7 @@
               mat-icon-button
               matTooltip="Show detail"
               color="primary"
-              [routerLink]="['/v2/events',element.event_resource_id]"
+              [routerLink]="['/events',element.event_resource_id]"
             >
               <mat-icon>insert_chart_outlined</mat-icon>
             </button>
