@@ -2,21 +2,19 @@
 import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import * as $ from 'jquery';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
-import { environment } from '@env/environment';
 import { globals } from '../../../../globals';
 import { CatalogApiService } from '@core/services/catalog-api.service';
 import { Subscription } from 'rxjs/Subscription';
-import { MessageService } from '@core/services/message.service';
-import { ActivatedRoute } from '@angular/router';
 import { Validators, FormControl } from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { EventApiService } from '@app/core/services/event-api.service.js';
 import { EventWaveformQuery, IEvent } from '@app/core/interfaces/event.interface.js';
-import { HttpResponse } from '@angular/common/http';
 import ApiUtil from '@app/core/utils/api-util.js';
-import { Observable } from 'rxjs';
+import { MatBottomSheetRef, MatBottomSheet, MatDialogRef, MatDialog } from '@angular/material';
+import { first } from 'rxjs/operators';
+import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 
 @Component({
   selector: 'app-waveform-2',
@@ -114,9 +112,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   rateControl = new FormControl('rateControl', [Validators.max(this.maxFreq)]);
   minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
 
+  helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
+  helpDialogOpened = false;
+
   constructor(
     private _eventApiService: EventApiService,
-    private _catalogService: CatalogApiService
+    private _catalogService: CatalogApiService,
+    private _matDialog: MatDialog
   ) { }
 
   ngOnDestroy() { }
@@ -2223,6 +2225,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     return response.body;
+  }
+
+  async openHelpDialog() {
+    if (this.helpDialogOpened || this.helpDialogRef) {
+      return;
+    }
+
+    this.helpDialogOpened = true;
+    this.helpDialogRef = this._matDialog.open(EventHelpDialogComponent);
+
+    this.helpDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.helpDialogRef;
+      this.helpDialogOpened = false;
+    });
   }
 
 }

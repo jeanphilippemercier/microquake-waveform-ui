@@ -1,6 +1,13 @@
 <mat-dialog-actions align="end">
   <ng-container ngProjectAs="btn-close">
-    <button mat-icon-button (click)="closeModal()" tabindex=-1 color="primary"><mat-icon aria-label="Close">highlight_off</mat-icon></button>
+    <button
+      mat-icon-button
+      (click)="close()"
+      tabindex=-1
+      color="primary"
+    >
+      <mat-icon aria-label="Close">highlight_off</mat-icon>
+    </button>
   </ng-container>
 </mat-dialog-actions>
 <h1 mat-dialog-title>Help</h1>

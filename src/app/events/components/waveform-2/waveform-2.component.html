@@ -84,7 +84,16 @@
     >
       <mat-icon>compare_arrows</mat-icon>
     </button>
-    <app-help-dialog class="float-left"></app-help-dialog>
+    <button
+      [disabled]="helpSheetOpened"
+      mat-icon-button
+      id='helpBtn'
+      matTooltip='Show Help'
+      (click)="openHelpDialog()"
+    >s
+      <mat-icon>help</mat-icon>
+    </button>
+
     <div class="float-left filters">
       <mat-form-field class="input-form-width float-left">
         <mat-label>Low Corner</mat-label>

@@ -15,8 +15,6 @@ import {
   MatSortModule, MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule,
 } from '@angular/material';
 
-import { HelpDialogComponent } from './dialogs/help-dialog/help-dialog.component';
-import { HelpDialogSheetComponent } from './sheets/help-dialog-sheet.component';
 import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
@@ -31,6 +29,7 @@ import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
 import { MomentModule } from 'ngx-moment';
 import { EventCatalogComponent } from './components/event-catalog/event-catalog.component';
+import { EventHelpDialogComponent } from './dialogs/event-help-dialog/event-help-dialog.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -92,8 +91,10 @@ const COMPONTENTS = [
 ];
 
 const DIALOGS = [
-  HelpDialogComponent,
-  HelpDialogSheetComponent
+  EventHelpDialogComponent
+];
+
+const SHEETS = [
 ];
 
 const PIPES = [
@@ -106,6 +107,7 @@ const PIPES = [
   declarations: [
     ...COMPONTENTS,
     ...DIALOGS,
+    ...SHEETS,
     ...PIPES,
   ],
   imports: [
@@ -120,6 +122,7 @@ const PIPES = [
   exports: [
     ...COMPONTENTS,
     ...DIALOGS,
+    ...SHEETS,
     ...PIPES,
     CommonModule,
     FormsModule,
@@ -130,7 +133,8 @@ const PIPES = [
     ...CDK_MODULES
   ],
   entryComponents: [
-    ...DIALOGS
+    ...DIALOGS,
+    ...SHEETS
   ]
 })
 export class SharedModule { }
