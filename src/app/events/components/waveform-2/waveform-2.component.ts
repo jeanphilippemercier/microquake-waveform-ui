@@ -4,7 +4,6 @@ import * as $ from 'jquery';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import { globals } from '../../../../globals';
 import { CatalogApiService } from '@core/services/catalog-api.service';
-import { Subscription } from 'rxjs/Subscription';
 import { Validators, FormControl } from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
@@ -12,7 +11,7 @@ import * as moment from 'moment';
 import { EventApiService } from '@app/core/services/event-api.service.js';
 import { EventWaveformQuery, IEvent } from '@app/core/interfaces/event.interface.js';
 import ApiUtil from '@app/core/utils/api-util.js';
-import { MatBottomSheetRef, MatBottomSheet, MatDialogRef, MatDialog } from '@angular/material';
+import { MatDialogRef, MatDialog } from '@angular/material';
 import { first } from 'rxjs/operators';
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 
@@ -22,7 +21,7 @@ import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/
   styleUrls: ['./waveform-2.component.scss']
 })
 
-export class Waveform2Component implements OnInit, OnDestroy {
+export class Waveform2Component implements OnInit {
 
   private _event: IEvent;
 
@@ -38,17 +37,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return this._event;
   }
 
-  private passband: any;
-  private convYUnits: number;
-  private bHoldEventTrigger: boolean;
-  private menu: any;
-  private bMenuVisible: boolean;
-  private xViewPortMinStack: any[];
-  private xViewportMaxStack: any[];
-  private timezone: string;
+  @Input() timezone = '+00:00';
+
+  private _passband = filter.BAND_PASS;
+  private _convYUnits = 1000; // factor to convert input units from m to mmm
+  private _bHoldEventTrigger: boolean;
+  private _menu: any;
+  private _bMenuVisible = false;
+  private _xViewPortMinStack: any[];
+  private _xViewportMaxStack: any[];
 
   eventMessage: any;
-  subscription: Subscription;
   site: any;
   network: any;
   allSensors: any[];
@@ -57,42 +56,42 @@ export class Waveform2Component implements OnInit, OnDestroy {
   allPicksChanged: any[];
   originTravelTimes: any[];
   activeSensors: any[];
-  lastPicksState: any;
+  lastPicksState: any = null;
   timeOrigin: any;
   contextTimeOrigin: any;
   timeEnd: any;
   origin: any;
-  waveformOrigin: any;
+  waveformOrigin: any = {};
   options: any;
 
-  bCommonTime: boolean;
-  bCommonAmplitude: boolean;
-  bZoomAll: boolean;
-  bDisplayComposite: boolean;
-  bSortTraces: boolean;
-  bShowPredictedPicks: boolean;
-  bRemoveBias: boolean;
+  bCommonTime = true;
+  bCommonAmplitude = false;
+  bZoomAll = false;
+  bDisplayComposite = true;
+  bSortTraces = false;
+  bShowPredictedPicks = true;
+  bRemoveBias = false;
   numPoles: any;
   lowFreqCorner: any;
   highFreqCorner: any;
 
-  pickingMode: any;
+  pickingMode: any = 'none';
 
-  bFilterChanged: boolean;
+  bFilterChanged = true;
 
-  picksBias: number;
+  picksBias = 0;
 
-  selected: number;
-  selectedContextMenu: number;
-  lastSelectedXPosition: number;
+  selected = -1;
+  selectedContextMenu = -1;
+  lastSelectedXPosition = -1;
   lastDownTarget: any;  // last mouse down selection
   eventTimeOriginHeader: string;
 
   page_size = globals.chartsPerPage;
-  page_number: number;
-  num_pages: number;
-  loaded_pages: number;
-  progressValue: number;
+  page_number = 0;
+  num_pages = 0;
+  loaded_pages = 0;
+  progressValue = 0;
 
   chartHeight: number;
   pageOffsetX: number;
@@ -121,58 +120,23 @@ export class Waveform2Component implements OnInit, OnDestroy {
     private _matDialog: MatDialog
   ) { }
 
-  ngOnDestroy() { }
-
   async ngOnInit() {
 
+    this.options = JSON.parse(window.localStorage.getItem('viewer-options')) || {};
+
+    this.numPoles = this.options.numPoles ? this.options.numPoles : globals.numPoles;
+    this.lowFreqCorner = this.options.lowFreqCorner ? this.options.lowFreqCorner : globals.lowFreqCorner;
+    this.highFreqCorner = this.options.highFreqCorner ? this.options.highFreqCorner : globals.highFreqCorner;
+    this.site = this.options.site ? this.options.site : '';
+    this.network = this.options.network ? this.options.network : '';
+
+    this._menu = document.querySelector('.menu');
+
+    this.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
+    this.pageOffsetY = $('#waveform-panel').position().top + 30;
+    this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 20) / globals.chartsPerPage);
+
     const self = this;
-
-    self.options = JSON.parse(window.localStorage.getItem('viewer-options'));
-    self.options = self.options ? self.options : {};
-
-    self.bCommonTime = true;
-    self.bCommonAmplitude = false;
-    self.bZoomAll = false;
-    self.bDisplayComposite = true;
-    self.bSortTraces = false;
-    self.bShowPredictedPicks = true;
-    self.bRemoveBias = false;
-    self.picksBias = 0;
-    self.num_pages = 0;
-    self.loaded_pages = 0;
-    self.progressValue = 0;
-
-    self.numPoles = self.options.hasOwnProperty('numPoles') ? self.options.numPoles : globals.numPoles;
-    self.lowFreqCorner = self.options.hasOwnProperty('lowFreqCorner') ? self.options.lowFreqCorner : globals.lowFreqCorner;
-    self.highFreqCorner = self.options.hasOwnProperty('highFreqCorner') ? self.options.highFreqCorner : globals.highFreqCorner;
-    self.site = self.options.hasOwnProperty('site') ? self.options.site : '';
-    self.network = self.options.hasOwnProperty('network') ? self.options.network : '';
-
-    self.passband = filter.BAND_PASS;
-
-    self.convYUnits = 1000; // factor to convert input units from m to mmm
-
-    self.selected = -1;
-    self.selectedContextMenu = -1;
-    self.lastSelectedXPosition = -1;
-
-    self.menu = document.querySelector('.menu');
-    self.bMenuVisible = false;
-
-    self.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
-    self.pageOffsetY = $('#waveform-panel').position().top + 30;
-    self.chartHeight = Math.floor((window.innerHeight - self.pageOffsetY - 20) / globals.chartsPerPage);
-    self.page_number = 0;
-
-    self.waveformOrigin = {};
-
-    self.timezone = '+00:00';
-    self.bFilterChanged = true;
-
-    self.pickingMode = 'none';
-    self.lastPicksState = null;
-
-
     $('#commonAmplitude').on('click', () => {
       self.bCommonAmplitude = !self.bCommonAmplitude;
       $(this).toggleClass('active');
@@ -242,11 +206,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
       self.toggleMenu('hide');
     });
 
-    self.addEventListeners();
+    this.addEventListeners();
   }
 
   private _handleEvent(event) {
     this.currentEventId = event.event_resource_id;
+    this.destroyCharts();
+
     if (globals.enablePagingLoad) {
       if (this.bDataLoading) {
         this.loading = true;
@@ -257,65 +223,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-
-  reload(params) {
-    if (params.hasOwnProperty('reload')) {
-      let url = location.href;
-      if (url.endsWith('reload')) {
-        url = url.slice(0, -6);
-        window.location.replace(url);
-      }
-    }
-  }
-
-  async getNotification(message) {
-    console.log(`getNotification`);
-    console.log(message);
-
-    // console.log(message);
-    if (!message.hasOwnProperty('event_resource_id')) {
-      if (message.action === 'treeLoaded') {
-        this.loading = false;
-        return;
-      }
-      this.currentEventId = null;
-      this.destroyCharts();
-      if (message.action === 'treeLoading') {
-        this.loading = true;
-      }
-      return;
-    }
-    if (message.hasOwnProperty('timezone')) {
-      this.timezone = message.timezone;
-    }
-    /*
-    if (message.action === 'interactive-process' && message.event_resource_id === this.currentEventId) {
-        this.onInteractiveProcess();
-    }
-    */
-    if (message.action === 'load' && message.event_resource_id !== this.currentEventId) {
-      this.currentEventId = message.event_resource_id;
-      if (globals.enablePagingLoad) {
-        if (this.bDataLoading) {
-          this.loading = true;
-        }
-        this.loadEventFirstPage(message);
-      } else {
-        this.loadEvent(message);
-      }
-    }
-  }
-
-  delay(timer) {
-    return new Promise(resolve => {
-      timer = timer || 2000;
-      setTimeout(function () {
-        resolve();
-      }, timer);
-    });
-  }
-
-
   saveOption(option) {
     const self = this;
 
@@ -325,7 +232,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   loadEvent(event) {
     const self = this;
-    console.log(`loadEvent`);
 
     if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
       const id = event.event_resource_id;
@@ -605,8 +511,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       self.renderContextChart();
       self.setChartKeys();
       for (const sensor of self.activeSensors) {
-        sensor.chart.options.viewportMinStack = self.xViewPortMinStack;
-        sensor.chart.options.viewportMaxStack = self.xViewportMaxStack;
+        sensor.chart.options.viewportMinStack = self._xViewPortMinStack;
+        sensor.chart.options.viewportMaxStack = self._xViewportMaxStack;
       }
     }
   }
@@ -626,11 +532,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
     // reset picks last known state
     self.lastPicksState = null;
     if (reset) { // first page , new event
-      self.xViewPortMinStack = [];
-      self.xViewportMaxStack = [];
+      self._xViewPortMinStack = [];
+      self._xViewportMaxStack = [];
     } else {             // remember zoom history
-      self.xViewPortMinStack = self.activeSensors[0].chart.options.viewportMinStack;
-      self.xViewportMaxStack = self.activeSensors[0].chart.options.viewportMaxStack;
+      self._xViewPortMinStack = self.activeSensors[0].chart.options.viewportMinStack;
+      self._xViewportMaxStack = self.activeSensors[0].chart.options.viewportMaxStack;
     }
     self.destroyCharts();
     self.renderPage();
@@ -651,14 +557,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   toggleMenu(command) {
     const self = this;
-    (<any>self.menu).style.display = command === 'show' ? 'block' : 'none';
-    self.bMenuVisible = !self.bMenuVisible;
+    (<any>self._menu).style.display = command === 'show' ? 'block' : 'none';
+    self._bMenuVisible = !self._bMenuVisible;
   }
 
   setPosition({ top, left }) {
     const self = this;
-    (<any>self.menu).style.left = `${left}px`;
-    (<any>self.menu).style.top = `${top}px`;
+    (<any>self._menu).style.left = `${left}px`;
+    (<any>self._menu).style.top = `${top}px`;
     self.toggleMenu('show');
   }
 
@@ -670,7 +576,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         maximum = Math.abs(dataPoints[i].y);
       }
     }
-    const ret = Math.ceil(maximum * (self.convYUnits * 10000)) / (self.convYUnits * 10000);
+    const ret = Math.ceil(maximum * (self._convYUnits * 10000)) / (self._convYUnits * 10000);
     return ret;
   }
 
@@ -757,7 +663,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         zoomType: 'x',
         animationEnabled: true,
         rangeChanged: function (e) {
-          self.bHoldEventTrigger = true;
+          self._bHoldEventTrigger = true;
           if (!e.chart.options.viewportMinStack) {
             e.chart.options.viewportMinStack = [];
             e.chart.options.viewportMaxStack = [];
@@ -791,7 +697,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           enabled: false,
           contentFormatter: function (e) {
             const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
               '<br/>' +
               '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
             return content;
@@ -800,10 +706,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         axisX: {
           minimum: self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0,
           maximum: self.getXmax(i),
-          viewportMinimum: self.bZoomAll && self.xViewPortMinStack.length > 0 ?
-            self.xViewPortMinStack[self.xViewPortMinStack.length - 1] : self.getXvpMin(),
-          viewportMaximum: self.bZoomAll && self.xViewportMaxStack.length > 0 ?
-            self.xViewportMaxStack[self.xViewportMaxStack.length - 1] : self.getXvpMax(),
+          viewportMinimum: self.bZoomAll && self._xViewPortMinStack.length > 0 ?
+            self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : self.getXvpMin(),
+          viewportMaximum: self.bZoomAll && self._xViewportMaxStack.length > 0 ?
+            self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : self.getXvpMax(),
           includeZero: true,
           labelAutoFit: false,
           labelWrap: false,
@@ -826,7 +732,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             if (e.value === 0) {
               return '0 mm/s';
             } else {
-              return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
+              return Math.ceil(e.value * self._convYUnits * 1000) / 1000;
             }
           }
         },
@@ -966,7 +872,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         enabled: true,
         contentFormatter: function (e) {
           const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
             '<br/>' +
             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
           return content;
@@ -977,10 +883,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         maximum: Math.max(
           self.contextSensor[0].channels[0].microsec + self.contextSensor[0].channels[0].duration,
           self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
-        viewportMinimum: self.xViewPortMinStack.length > 0 ?
-          self.xViewPortMinStack[self.xViewPortMinStack.length - 1] : null,
-        viewportMaximum: self.bZoomAll && self.xViewportMaxStack.length > 0 ?
-          self.xViewportMaxStack[self.xViewportMaxStack.length - 1] : null,
+        viewportMinimum: self._xViewPortMinStack.length > 0 ?
+          self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : null,
+        viewportMaximum: self.bZoomAll && self._xViewportMaxStack.length > 0 ?
+          self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : null,
         includeZero: true,
         labelAutoFit: false,
         labelWrap: false,
@@ -1002,7 +908,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           if (e.value === 0) {
             return '0 mm/s';
           } else {
-            return Math.ceil(e.value * self.convYUnits * 1000) / 1000;
+            return Math.ceil(e.value * self._convYUnits * 1000) / 1000;
           }
         }
       },
@@ -1034,11 +940,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
             const parentOffset = $(this).parent().offset();
             const relX = e.pageX - parentOffset.left;
             if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
-              if (!self.bHoldEventTrigger) {
+              if (!self._bHoldEventTrigger) {
                 self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
               }
             } else if (self.pickingMode === 'S') { // create or move S pick on Left mouse click in S picking mode
-              if (!self.bHoldEventTrigger) {
+              if (!self._bHoldEventTrigger) {
                 self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
               }
             } else {
@@ -1058,7 +964,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           self.lastDownTarget = ind;
 
           if (!($(e.target).parents('.menu').length > 0)) {
-            if (self.bMenuVisible) {
+            if (self._bMenuVisible) {
               self.selectedContextMenu = -1;
               self.toggleMenu('hide');
               return;
@@ -1106,7 +1012,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         $(canvas_chart).last().on('mousemove', function (e) {  // move selected stripLine
           if (self.selected !== -1) {
-            self.bHoldEventTrigger = true;
+            self._bHoldEventTrigger = true;
             const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
             const chart = self.activeSensors[i].chart;
             const parentOffset = $(this).parent().offset();
@@ -1139,7 +1045,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         $(canvas_chart).last().on('mouseup', function (e) {
           setTimeout(function () {
-            self.bHoldEventTrigger = false;
+            self._bHoldEventTrigger = false;
           }, 500);
           if (self.selected !== -1) {   // clear selection and change the cursor
             $(this)[0].style.cursor = 'default';
@@ -1299,9 +1205,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   updateZoomStackCharts(vpMin, vpMax) {
     const self = this;
-    if (self.xViewPortMinStack.length === 0 || self.xViewPortMinStack[self.xViewPortMinStack.length - 1] !== vpMin) {
-      self.xViewPortMinStack.push(vpMin);
-      self.xViewportMaxStack.push(vpMax);
+    if (self._xViewPortMinStack.length === 0 || self._xViewPortMinStack[self._xViewPortMinStack.length - 1] !== vpMin) {
+      self._xViewPortMinStack.push(vpMin);
+      self._xViewportMaxStack.push(vpMax);
       for (let i = 0; i < self.activeSensors.length; i++) {
         const chart = self.activeSensors[i].chart;
         if (!chart.options.viewportMinStack) {
@@ -1649,20 +1555,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
   back() {
     const self = this;
     if (self.bZoomAll) {
-      if (self.xViewPortMinStack && self.xViewPortMinStack.length > 0) {
-        self.xViewPortMinStack.pop();
-        self.xViewportMaxStack.pop();
+      if (self._xViewPortMinStack && self._xViewPortMinStack.length > 0) {
+        self._xViewPortMinStack.pop();
+        self._xViewportMaxStack.pop();
       }
       for (let j = 0; j < self.activeSensors.length - 1; j++) {
         const chart = self.activeSensors[j].chart;
-        chart.options.viewportMinStack = self.xViewPortMinStack;
-        chart.options.viewportMaxStack = self.xViewportMaxStack;
+        chart.options.viewportMinStack = self._xViewPortMinStack;
+        chart.options.viewportMaxStack = self._xViewportMaxStack;
         if (!chart.options.axisX) {
           chart.options.axisX = {};
         }
-        if (self.xViewPortMinStack && self.xViewPortMinStack.length > 0) {
-          chart.options.axisX.viewportMinimum = self.xViewPortMinStack[self.xViewPortMinStack.length - 1];
-          chart.options.axisX.viewportMaximum = self.xViewportMaxStack[self.xViewportMaxStack.length - 1];
+        if (self._xViewPortMinStack && self._xViewPortMinStack.length > 0) {
+          chart.options.axisX.viewportMinimum = self._xViewPortMinStack[self._xViewPortMinStack.length - 1];
+          chart.options.axisX.viewportMaximum = self._xViewportMaxStack[self._xViewportMaxStack.length - 1];
           chart.render();
         } else {
           self.resetChartViewX(chart);
@@ -2051,7 +1957,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (self.lowFreqCorner >= 0 && self.highFreqCorner <= sample_rate / 2) {
       butterworth = filter.createButterworth(
         self.numPoles, // poles
-        self.passband,
+        self._passband,
         self.lowFreqCorner, // low corner
         self.highFreqCorner, // high corner
         1 / sample_rate
