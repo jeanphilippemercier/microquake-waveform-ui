@@ -20,7 +20,9 @@
       mat-icon-button
       id="commonTime"
       matTooltip="Common Time Scale for All Channels"
-      class=" active"
+      class="activatable"
+      [ngClass]="{'active': bCommonTime}"
+      (click)="toggleCommonTime()"
     >
       <mat-icon>more_horiz</mat-icon>
     </button>
@@ -28,6 +30,9 @@
       mat-icon-button
       id="commonAmplitude"
       matTooltip="Common Amplitude Scale for All Channels"
+      class="activatable"
+      [ngClass]="{'active': bCommonAmplitude}"
+      (click)="toggleCommonAmplitude()"
     >
       <mat-icon>more_vert</mat-icon>
     </button>
@@ -35,6 +40,9 @@
       mat-icon-button
       id="zoomAll"
       matTooltip="Zoom or Pan All Channels"
+      class="activatable"
+      [ngClass]="{'active': bZoomAll}"
+      (click)="toggleZoomAll()"
     >
       <mat-icon>link</mat-icon>
     </button>
@@ -58,7 +66,9 @@
       mat-icon-button
       id="display3C"
       matTooltip="Display Composite or 3-Component Traces"
-      class=""
+      class="activatable"
+      [ngClass]="{'active': bDisplayComposite}"
+      (click)="toggleDisplay3c()"
     >
       <mat-icon>filter_3</mat-icon>
     </button>
@@ -66,6 +76,11 @@
       mat-icon-button
       id="sortTraces"
       matTooltip="Sort Traces by Distance to Origin"
+      class="activatable"
+      [ngClass]="{'active': sortTraces}"
+      (click)="toggleSortTraces()"
+      [hidden]="sortTracesBtnHidden"
+      [disabled]="!loadedAll"
     >
       <mat-icon>sort</mat-icon>
     </button>
@@ -73,7 +88,9 @@
       mat-icon-button
       id="togglePredictedPicks"
       matTooltip="Toggle Predicted Picks"
-      class=" active"
+      class="activatable"
+      [ngClass]="{'active': bShowPredictedPicks}"
+      (click)="togglePredictedPicks()"
     >
       <mat-icon>blur_linear</mat-icon>
     </button>
@@ -81,6 +98,9 @@
       mat-icon-button
       id="togglePredictedPicksBias"
       matTooltip="Toggle Remove Predicted Picks Bias"
+      [ngClass]="{'active': bRemoveBias}"
+      (click)="togglePredictedPicksBias()"
+      [disabled]="!loadedAll"
     >
       <mat-icon>compare_arrows</mat-icon>
     </button>
@@ -169,8 +189,7 @@
       aria-label="Picking Mode"
       matTooltip="Select Picking Mode P, S or None"
       #group="matButtonToggleGroup"
-      [value]="pickingMode"
-      (change)="onPickingModeChange(group.value)"
+      [(ngModel)]="pickingMode"
     >
       <mat-button-toggle value="P">
         <mat-icon>local_parking</mat-icon>

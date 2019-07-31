@@ -138,9 +138,17 @@ a.mat-menu-item>mat-icon {
   }
 }
 
-mat-progress-bar{
+mat-progress-bar {
   position: absolute;
   top: 0;
   width: 100%;
 
+}
+
+.activatable {
+  opacity: 0.5;
+
+  &.active {
+    opacity: 1.0;
+  }
 }

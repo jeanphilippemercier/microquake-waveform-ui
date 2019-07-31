@@ -68,7 +68,8 @@ export class Waveform2Component implements OnInit {
   bCommonAmplitude = false;
   bZoomAll = false;
   bDisplayComposite = true;
-  bSortTraces = false;
+  sortTraces = false;
+  sortTracesBtnHidden = false;
   bShowPredictedPicks = true;
   bRemoveBias = false;
   numPoles: any;
@@ -114,6 +115,8 @@ export class Waveform2Component implements OnInit {
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
 
+  loadedAll = false;
+
   constructor(
     private _eventApiService: EventApiService,
     private _catalogService: CatalogApiService,
@@ -137,52 +140,6 @@ export class Waveform2Component implements OnInit {
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 20) / globals.chartsPerPage);
 
     const self = this;
-    $('#commonAmplitude').on('click', () => {
-      self.bCommonAmplitude = !self.bCommonAmplitude;
-      $(this).toggleClass('active');
-      self.resetAllChartsViewY();
-    });
-
-    $('#commonTime').on('click', () => {
-      self.bCommonTime = !self.bCommonTime;
-      $(this).toggleClass('active');
-      self.resetAllChartsViewX();
-    });
-
-    $('#zoomAll').on('click', () => {
-      self.bZoomAll = !self.bZoomAll;
-      $(this).toggleClass('active');
-    });
-
-    $('#display3C').on('click', () => {
-      self.bDisplayComposite = !self.bDisplayComposite;
-      $(this).toggleClass('active');
-      self.changePage(false);
-    });
-
-    $('#sortTraces').on('click', () => {
-      if (!self.bSortTraces) { // turn on once only
-        self.bSortTraces = !self.bSortTraces;
-        $(this).toggleClass('active');
-        self.sortTraces();
-        self.changePage(false);
-      }
-    });
-
-    $('#togglePredictedPicks').on('click', () => {
-      self.bShowPredictedPicks = !self.bShowPredictedPicks;
-      self.togglePredictedPicksVisibility(self.bShowPredictedPicks);
-      $(this).toggleClass('active');
-    });
-
-    $('#togglePredictedPicksBias').on('click', () => {
-      if (self.picksBias === 0) {  // if pagination is enabled calculate bias first time button is clicked
-        self.calcPicksBias();
-      }
-      self.bRemoveBias = !self.bRemoveBias;
-      self.changePredictedPicksByBias(self.bRemoveBias, true);
-      $(this).toggleClass('active');
-    });
 
     // If the context menu element is clicked
     $('.menu li').on('click', function () {
@@ -222,6 +179,7 @@ export class Waveform2Component implements OnInit {
       this.loadEvent(event);
     }
   }
+
 
   saveOption(option) {
     const self = this;
@@ -270,12 +228,11 @@ export class Waveform2Component implements OnInit {
 
                           self.activateRemoveBias(false);
 
-                          if (!self.bSortTraces) { // sort traces on when loading all data (no pagination)
-                            self.bSortTraces = !self.bSortTraces;
-                            $('#sortTraces').toggleClass('active');
-                            $('#sortTraces').prop('hidden', true); // hide button
+                          if (!self.sortTraces) { // sort traces on when loading all data (no pagination)
+                            self.sortTraces = !self.sortTraces;
+                            self.sortTracesBtnHidden = true;
                           }
-                          self.sortTraces();
+                          self._sortTraces();
 
                           $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
                           $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
@@ -304,6 +261,7 @@ export class Waveform2Component implements OnInit {
 
   loadEventFirstPage(event) {
     const self = this;
+    this.loadedAll = false;
 
     if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
       const message = event;
@@ -353,21 +311,16 @@ export class Waveform2Component implements OnInit {
                             self.picksBias = 0;
                             if (self.bRemoveBias) { // by default turn remove bias off with paged loading
                               self.bRemoveBias = !self.bRemoveBias;
-                              $('#togglePredictedPicksBias').toggleClass('active');
                             }
 
-                            if (self.bSortTraces) { // by default turn off sort traces with paged loading
-                              self.bSortTraces = !self.bSortTraces;
-                              $('#sortTraces').toggleClass('active');
-                              $('#sortTraces').prop('hidden', false); // button visible
+                            // by default turn off sort traces with paged loading
+                            if (self.sortTraces) {
+                              self.sortTraces = !self.sortTraces;
+                              self.sortTracesBtnHidden = false;
                             }
 
                             $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
                             $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
-
-                            // disable buttons until all pages are loaded
-                            $('#togglePredictedPicksBias').prop('disabled', true); // button disabled
-                            $('#sortTraces').prop('disabled', true); // button disabled
 
                             self.getEvent(event, true).then(contextFile => {
                               if (id === self.currentEventId) {
@@ -459,11 +412,10 @@ export class Waveform2Component implements OnInit {
     self.num_pages = Math.ceil(self.allSensors.length / (self.page_size - 1));
     self.bDataLoading = false; // unlock page changes
     console.log('Loaded data for ' + self.allSensors.length + ' sensors');
-    // enable toolbar buttons after all pages are loaded
-    $('#sortTraces').prop('disabled', false);
-    $('#togglePredictedPicksBias').prop('disabled', false);
+
     // remove bias from predicted picks, force a refresh
     // self.activateRemoveBias(true);
+    this.loadedAll = true;
   }
 
   confirmEvent(event) {
@@ -921,11 +873,6 @@ export class Waveform2Component implements OnInit {
     self.activeSensors[i].chart.render();
   }
 
-  onPickingModeChange(value) {
-    const self = this;
-    self.pickingMode = value;
-  }
-
   setChartKeys() {
     const self = this;
     for (let j = 0; j < self.activeSensors.length; j++) {
@@ -1165,42 +1112,53 @@ export class Waveform2Component implements OnInit {
 
 
   togglePredictedPicks() {
-    const self = this;
-    self.bShowPredictedPicks = !self.bShowPredictedPicks;
-    if (self.bShowPredictedPicks) {
-      $('#togglePredictedPicks').addClass('active');
-      $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'true');
-    } else {
-      $('#togglePredictedPicks').removeClass('active focus');
-      $('#togglePredictedPicks')[0].setAttribute('aria-pressed', 'false');
+    this.bShowPredictedPicks = !this.bShowPredictedPicks;
+
+    for (const sensor of this.allSensors) {
+      if (sensor.picks) {
+        for (const pick of sensor.picks) {
+          if (pick.label === pick.label.toLowerCase()) {
+            pick.opacity = this.bShowPredictedPicks ? 0.5 : 0;
+          }
+        }
+      }
     }
-    self.togglePredictedPicksVisibility(self.bShowPredictedPicks);
+    this.changePage(false);
   }
 
   toggleCommonTime() {
-    const self = this;
-    self.bCommonTime = !self.bCommonTime;
-    if (self.bCommonTime) {
-      $('#commonTime').addClass('active');
-      $('#commonTime')[0].setAttribute('aria-pressed', 'true');
-    } else {
-      $('#commonTime').removeClass('active focus');
-      $('#commonTime')[0].setAttribute('aria-pressed', 'false');
-    }
-    self.resetAllChartsViewX();
+    this.bCommonTime = !this.bCommonTime;
+    this.resetAllChartsViewX();
   }
 
   toggleCommonAmplitude() {
-    const self = this;
-    self.bCommonAmplitude = !self.bCommonAmplitude;
-    if (self.bCommonAmplitude) {
-      $('#commonAmplitude').addClass('active');
-      $('#commonAmplitude')[0].setAttribute('aria-pressed', 'true');
-    } else {
-      $('#commonAmplitude').removeClass('active focus');
-      $('#commonAmplitude')[0].setAttribute('aria-pressed', 'false');
+    this.bCommonAmplitude = !this.bCommonAmplitude;
+    this.resetAllChartsViewY();
+  }
+
+  toggleZoomAll() {
+    this.bZoomAll = !this.bZoomAll;
+  }
+
+  toggleDisplay3c() {
+    this.bDisplayComposite = !this.bDisplayComposite;
+    this.changePage(false);
+  }
+
+  toggleSortTraces() {
+    if (!this.sortTraces) { // turn on once only
+      this.sortTraces = !this.sortTraces;
+      this._sortTraces();
+      this.changePage(false);
     }
-    self.resetAllChartsViewY();
+  }
+
+  togglePredictedPicksBias() {
+    if (this.picksBias === 0) {  // if pagination is enabled calculate bias first time button is clicked
+      this.calcPicksBias();
+    }
+    this.bRemoveBias = !this.bRemoveBias;
+    this.changePredictedPicksByBias(this.bRemoveBias, true);
   }
 
   updateZoomStackCharts(vpMin, vpMax) {
@@ -1767,21 +1725,6 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-  togglePredictedPicksVisibility(show) {
-    const self = this;
-    for (const sensor of this.allSensors) {
-      if (sensor.hasOwnProperty('picks')) {
-        for (const pick of sensor.picks) {
-          if (pick.label === pick.label.toLowerCase()) {
-            pick.opacity = show ? 0.5 : 0;
-          }
-        }
-      }
-    }
-    self.changePage(false);
-  }
-
-
   calcPicksBias() {
     const self = this;
     let picksTotalBias = 0; // calculate pickBias as average value of picks - predicted picks
@@ -1812,7 +1755,6 @@ export class Waveform2Component implements OnInit {
 
     if (!self.bRemoveBias) { // turn remove bias on when loading all data (no pagination)
       self.bRemoveBias = !self.bRemoveBias;
-      $('#togglePredictedPicksBias').toggleClass('active');
     }
     self.calcPicksBias();
     self.changePredictedPicksByBias(self.bRemoveBias, show);
@@ -1844,7 +1786,7 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-  sortTraces() {
+  private _sortTraces() {
     const self = this;
 
     if (Array.isArray(self.allSensors)) {
