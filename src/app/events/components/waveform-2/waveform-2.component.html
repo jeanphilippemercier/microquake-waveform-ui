@@ -225,7 +225,10 @@
       (pageChange)="page_number = $event; changePage(false)"
     ></pagination-controls>
   </mat-toolbar>
-  <div id="waveform-panel">
+  <div
+    id="waveform-panel"
+    #waveformContainer
+  >
     <div
       class="text-color"
       id="zeroTime"
@@ -233,10 +236,14 @@
     >{{eventTimeOriginHeader}}</div>
   </div>
 </div>
-<ul class="menu">
-  <li data-action="deleteP">Delete P Pick</li>
-  <li data-action="deleteS">Delete S Pick</li>
-  <li data-action="newP">New P Pick</li>
-  <li data-action="newS">New S Pick</li>
-  <li data-action="showTooltip">Toggle Tooltip</li>
+<ul
+  class="menu"
+  #contextMenuChart
+  [hidden]="!contextMenuChartVisible"
+>
+  <li (click)="contextMenuClick(ContextMenuChartAction.DELETE_P)">Delete P Pick</li>
+  <li (click)="contextMenuClick(ContextMenuChartAction.DELETE_S)">Delete S Pick</li>
+  <li (click)="contextMenuClick(ContextMenuChartAction.NEW_P)">New P Pick</li>
+  <li (click)="contextMenuClick(ContextMenuChartAction.NEW_S)">New S Pick</li>
+  <li (click)="contextMenuClick(ContextMenuChartAction.SHOW_TOOLTIP)">Toggle Tooltip</li>
 </ul>
