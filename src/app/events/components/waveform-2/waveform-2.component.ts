@@ -1,19 +1,35 @@
-/*jshint esversion: 6 */
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
-import * as $ from 'jquery';
+import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
-import { globals } from '../../../../globals';
-import { CatalogApiService } from '@core/services/catalog-api.service';
 import { Validators, FormControl } from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { EventApiService } from '@app/core/services/event-api.service.js';
-import { EventWaveformQuery, IEvent } from '@app/core/interfaces/event.interface.js';
-import ApiUtil from '@app/core/utils/api-util.js';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { first } from 'rxjs/operators';
+
+import { globals } from '../../../../globals';
+import { CatalogApiService } from '@services/catalog-api.service';
+import { EventApiService } from '@services/event-api.service';
+import { EventWaveformQuery, IEvent } from '@interfaces/event.interface';
+import ApiUtil from '@core/utils/api-util';
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
+
+
+interface Sensor {
+  chart: canvasjs.Chart;
+  picks: any;
+  container: any;
+  channels: any;
+  sensor_code: any;
+}
+
+enum ContextMenuChartAction {
+  DELETE_P = 'delete p',
+  DELETE_S = 'delete s',
+  NEW_P = 'new p',
+  NEW_S = 'new s',
+  SHOW_TOOLTIP = 'show tooltip',
+}
 
 @Component({
   selector: 'app-waveform-2',
@@ -38,14 +54,15 @@ export class Waveform2Component implements OnInit {
   }
 
   @Input() timezone = '+00:00';
+  @ViewChild('contextMenuChart') private _menu: ElementRef;
+  @ViewChild('waveformContainer') private _waveformContainer: ElementRef;
 
   private _passband = filter.BAND_PASS;
   private _convYUnits = 1000; // factor to convert input units from m to mmm
   private _bHoldEventTrigger: boolean;
-  private _menu: any;
-  private _bMenuVisible = false;
   private _xViewPortMinStack: any[];
   private _xViewportMaxStack: any[];
+  contextMenuChartVisible = false;
 
   eventMessage: any;
   site: any;
@@ -55,7 +72,7 @@ export class Waveform2Component implements OnInit {
   allPicks: any[];
   allPicksChanged: any[];
   originTravelTimes: any[];
-  activeSensors: any[];
+  activeSensors: Sensor[];
   lastPicksState: any = null;
   timeOrigin: any;
   contextTimeOrigin: any;
@@ -95,8 +112,8 @@ export class Waveform2Component implements OnInit {
   progressValue = 0;
 
   chartHeight: number;
-  pageOffsetX: number;
-  pageOffsetY: number;
+  pageOffsetX = 0;
+  pageOffsetY = 30;
 
   loading = false;
   treeLoading = false;
@@ -117,10 +134,13 @@ export class Waveform2Component implements OnInit {
 
   loadedAll = false;
 
+  ContextMenuChartAction = ContextMenuChartAction;
+
   constructor(
     private _eventApiService: EventApiService,
     private _catalogService: CatalogApiService,
-    private _matDialog: MatDialog
+    private _matDialog: MatDialog,
+    private _renderer: Renderer2
   ) { }
 
   async ngOnInit() {
@@ -132,38 +152,8 @@ export class Waveform2Component implements OnInit {
     this.highFreqCorner = this.options.highFreqCorner ? this.options.highFreqCorner : globals.highFreqCorner;
     this.site = this.options.site ? this.options.site : '';
     this.network = this.options.network ? this.options.network : '';
-
-    this._menu = document.querySelector('.menu');
-
-    this.pageOffsetX = $('#waveform-panel').offsetParent()[0].offsetLeft;
-    this.pageOffsetY = $('#waveform-panel').position().top + 30;
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 20) / globals.chartsPerPage);
-
-    const self = this;
-
-    // If the context menu element is clicked
-    $('.menu li').on('click', function () {
-      if (self.selectedContextMenu !== -1) {
-        // This is the triggered action name
-        const action = $(this).attr('data-action');
-        switch (action) {
-
-          // A case for each action. Your actions here
-          case 'deleteP': self.deletePicks(self.selectedContextMenu, 'P', null); break;
-          case 'deleteS': self.deletePicks(self.selectedContextMenu, 'S', null); break;
-          case 'newP': self.addPick(self.selectedContextMenu, 'P', null); break;
-          case 'newS': self.addPick(self.selectedContextMenu, 'S', null); break;
-          case 'showTooltip': self.toggleTooltip(self.selectedContextMenu, null); break;
-          default: break;
-        }
-      }
-
-      // Hide it AFTER the action was triggered
-      self.selectedContextMenu = -1;
-      self.toggleMenu('hide');
-    });
-
-    this.addEventListeners();
+    this.addKeyDownEventListeners();
   }
 
   private _handleEvent(event) {
@@ -180,6 +170,20 @@ export class Waveform2Component implements OnInit {
     }
   }
 
+  contextMenuClick(action: ContextMenuChartAction) {
+    if (this.selectedContextMenu !== -1) {
+      switch (action) {
+        case ContextMenuChartAction.DELETE_P: this.deletePicks(this.selectedContextMenu, 'P', null); break;
+        case ContextMenuChartAction.DELETE_S: this.deletePicks(this.selectedContextMenu, 'S', null); break;
+        case ContextMenuChartAction.NEW_P: this.addPick(this.selectedContextMenu, 'P', null); break;
+        case ContextMenuChartAction.NEW_S: this.addPick(this.selectedContextMenu, 'S', null); break;
+        case ContextMenuChartAction.SHOW_TOOLTIP: this.toggleTooltip(this.selectedContextMenu, null); break;
+        default: break;
+      }
+    }
+    this.selectedContextMenu = -1;
+    this.toggleContextMenuChart('hide');
+  }
 
   saveOption(option) {
     const self = this;
@@ -233,9 +237,6 @@ export class Waveform2Component implements OnInit {
                             self.sortTracesBtnHidden = true;
                           }
                           self._sortTraces();
-
-                          $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
-                          $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
 
                           // display data (first page)
                           self.changePage(true);
@@ -318,9 +319,6 @@ export class Waveform2Component implements OnInit {
                               self.sortTraces = !self.sortTraces;
                               self.sortTracesBtnHidden = false;
                             }
-
-                            $('#toggleSaveEventType').prop('disabled', true); // save button disabled initially
-                            $('#toggleSaveEventStatus').prop('disabled', true); // save button disabled initially
 
                             self.getEvent(event, true).then(contextFile => {
                               if (id === self.currentEventId) {
@@ -445,9 +443,11 @@ export class Waveform2Component implements OnInit {
   findValue(obj, key, value) {
     return obj.find(v => v[key] === value);
   }
+
   findNestedValue(obj, key, subkey, value, otherkey, othervalue) {
     return obj.find(v => (v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
   }
+
   renderPage() {
     const self = this;
 
@@ -468,7 +468,6 @@ export class Waveform2Component implements OnInit {
       }
     }
   }
-
 
   changePage(reset) {
     const self = this;
@@ -507,17 +506,16 @@ export class Waveform2Component implements OnInit {
         });
   }
 
-  toggleMenu(command) {
-    const self = this;
-    (<any>self._menu).style.display = command === 'show' ? 'block' : 'none';
-    self._bMenuVisible = !self._bMenuVisible;
-  }
-
-  setPosition({ top, left }) {
-    const self = this;
-    (<any>self._menu).style.left = `${left}px`;
-    (<any>self._menu).style.top = `${top}px`;
-    self.toggleMenu('show');
+  toggleContextMenuChart(force?: 'show' | 'hide') {
+    if (force) {
+      if (force === 'show') {
+        this.contextMenuChartVisible = true;
+      } else {
+        this.contextMenuChartVisible = false;
+      }
+      return;
+    }
+    this.contextMenuChartVisible = !this.contextMenuChartVisible;
   }
 
   maxValue(dataPoints) {
@@ -573,28 +571,25 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-
   renderCharts() {
-    const self = this;
     // Chart Options, Render
-    const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      this.activeSensors[i].container = 'container' + i.toString();
 
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-
-      self.activeSensors[i].container = i.toString() + 'Container';
-
-      if ($('#' + self.activeSensors[i].container).length === 0) {
-        $('<div>').attr({
-          'id': self.activeSensors[i].container,
-          'style': divStyle
-        }).appendTo('#waveform-panel');
+      if (document.querySelectorAll('#' + this.activeSensors[i].container).length === 0) {
+        const div = document.createElement('div');
+        div.id = this.activeSensors[i].container;
+        div.style.height = this.chartHeight + 'px';
+        div.style.maxWidth = '2000px';
+        div.style.margin = '0px auto';
+        this._renderer.appendChild(this._waveformContainer.nativeElement, div);
       }
 
       const data = [];
-      for (const channel of self.activeSensors[i].channels) {
-        if ((!self.bDisplayComposite && channel.channel_id !== globals.compositeChannelCode)
-          || (self.bDisplayComposite && channel.channel_id === globals.compositeChannelCode)
-          || (self.bDisplayComposite && self.activeSensors[i].channels.length === 1)) {
+      for (const channel of this.activeSensors[i].channels) {
+        if ((!this.bDisplayComposite && channel.channel_id !== globals.compositeChannelCode)
+          || (this.bDisplayComposite && channel.channel_id === globals.compositeChannelCode)
+          || (this.bDisplayComposite && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
               name: channel.code_id,
@@ -608,8 +603,9 @@ export class Waveform2Component implements OnInit {
         }
       }
 
-      const yMax = self.getYmax(i);
+      const yMax = this.getYmax(i);
 
+      const self = this;
       const options = {
         zoomEnabled: true,
         zoomType: 'x',
@@ -697,7 +693,7 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-  addEventListeners() {
+  addKeyDownEventListeners() {
     const self = this;
 
     document.addEventListener('keydown', (e: any) => {
@@ -774,18 +770,19 @@ export class Waveform2Component implements OnInit {
 
   renderContextChart() {
     const self = this;
-    const divStyle = 'height: ' + self.chartHeight + 'px; max-width: 2000px; margin: 0px auto;';
     // Chart Options, Render
 
     const i = self.activeSensors.length - 1;
 
-    self.activeSensors[i].container = i.toString() + 'Container';
+    self.activeSensors[i].container = 'container' + i.toString();
 
-    if ($('#' + self.activeSensors[i].container).length === 0) {
-      $('<div>').attr({
-        'id': self.activeSensors[i].container,
-        'style': divStyle
-      }).appendTo('#waveform-panel');
+    if (document.querySelectorAll('#' + this.activeSensors[i].container).length === 0) {
+      const div = document.createElement('div');
+      div.id = this.activeSensors[i].container;
+      div.style.height = this.chartHeight + 'px';
+      div.style.maxWidth = '2000px';
+      div.style.margin = '0px auto';
+      this._renderer.appendChild(this._waveformContainer.nativeElement, div);
     }
 
     const data = [];
@@ -877,15 +874,22 @@ export class Waveform2Component implements OnInit {
     const self = this;
     for (let j = 0; j < self.activeSensors.length; j++) {
       const canvas_chart = '#' + self.activeSensors[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
+      const chartEl = self.activeSensors[j].chart;
+
+      const chartElDom: Element = chartEl.get('container');
+      const chartElCanvasesDom = chartElDom.querySelectorAll('.canvasjs-chart-canvas');
+      const canvas = chartElCanvasesDom[chartElCanvasesDom.length - 1];
 
       if (j < self.activeSensors.length - 1) {    // exclude context trace
+
         // Create or move picks
-        $(canvas_chart).last().on('click', function (e) {
+        canvas.addEventListener('click', (e: MouseEvent) => {
+
           if (self.selected === -1) { // ignore if we have a drag event
-            const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
+            const ind = j;
             const chart = self.activeSensors[ind].chart;
-            const parentOffset = $(this).parent().offset();
-            const relX = e.pageX - parentOffset.left;
+
+            const relX = e.offsetX; // - 0; // parentOffset.left;
             if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
               if (!self._bHoldEventTrigger) {
                 self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
@@ -905,36 +909,36 @@ export class Waveform2Component implements OnInit {
         });
 
         // Drag picks
-        $(canvas_chart).last().on('mousedown', function (e) {
-          // e.target equals current canvaj_chart: $(canvas_chart)[1]
-          const ind = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-          self.lastDownTarget = ind;
+        canvas.addEventListener('mousedown', (e: MouseEvent) => {
+          const idx = j;
+          self.lastDownTarget = idx;
 
-          if (!($(e.target).parents('.menu').length > 0)) {
-            if (self._bMenuVisible) {
-              self.selectedContextMenu = -1;
-              self.toggleMenu('hide');
-              return;
-            }
+          if (self.contextMenuChartVisible) {
+            self.selectedContextMenu = -1;
+            self.toggleContextMenuChart('hide');
+            return;
           }
-          const chart = self.activeSensors[ind].chart;
-          const parentOffset = $(this).parent().offset();
-          const relX = e.pageX - parentOffset.left;
-          const relY = e.pageY - parentOffset.top;
+
+          const chart = self.activeSensors[idx].chart;
+          const relX = e.offsetX;
+          const relY = e.offsetY;
+
           if (e.button === 0) {  // drag active on left mouse button only
             // check if we are on a pick
             // Get the selected stripLine & change the cursor
-            const pickLines = chart.axisX[0].stripLines;
+            const pickLines = <canvasjs.ChartStrip[]>chart.axisX[0].stripLines;
             for (let i = 0; i < pickLines.length; i++) {
               const label = pickLines[i].label;
               if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
-                if (pickLines[i].get('bounds') &&
-                  relX > pickLines[i].get('bounds').x1 - globals.snapDistance &&
-                  relX < pickLines[i].get('bounds').x2 + globals.snapDistance &&
-                  relY > pickLines[i].get('bounds').y1 &&
-                  relY < pickLines[i].get('bounds').y2) {  // move pick
-                  self.savePicksState(ind, self.activeSensors[ind].sensor_code, self.activeSensors[ind].picks);
-                  $(this)[0].style.cursor = 'pointer';
+                const chartStripBounds = <canvasjs.ChartStripBounds>pickLines[i].get('bounds');
+
+                if (chartStripBounds &&
+                  relX > chartStripBounds.x1 - globals.snapDistance &&
+                  relX < chartStripBounds.x2 + globals.snapDistance &&
+                  relY > chartStripBounds.y1 &&
+                  relY < chartStripBounds.y2) {  // move pick
+                  self.savePicksState(idx, self.activeSensors[idx].sensor_code, self.activeSensors[idx].picks);
+
                   self.selected = i;
                   break;
                 }
@@ -942,14 +946,14 @@ export class Waveform2Component implements OnInit {
             }
           } else if (e.button === 1) {  // remove P or S on Middle mouse Click
             if (self.pickingMode === 'P') {
-              self.deletePicks(ind, 'P', null); // remove P picks on Middle mouse click in P picking mode
+              self.deletePicks(idx, 'P', null); // remove P picks on Middle mouse click in P picking mode
             } else if (self.pickingMode === 'S') {
-              self.deletePicks(ind, 'S', null); // remove S picks on Middle mouse click in S picking mode
+              self.deletePicks(idx, 'S', null); // remove S picks on Middle mouse click in S picking mode
             } else {
               if (e.ctrlKey) {
-                self.deletePicks(ind, 'P', null); // remove P on Ctrl + Middle mouse button click
+                self.deletePicks(idx, 'P', null); // remove P on Ctrl + Middle mouse button click
               } else if (e.shiftKey) {
-                self.deletePicks(ind, 'S', null); // remove S on Shift + Middle mouse button click
+                self.deletePicks(idx, 'S', null); // remove S on Shift + Middle mouse button click
               }
             }
           } else if (e.button === 2) {  // save position on right mouse button, context menu
@@ -957,18 +961,21 @@ export class Waveform2Component implements OnInit {
           }
         });
 
-        $(canvas_chart).last().on('mousemove', function (e) {  // move selected stripLine
+        // move selected stripLine
+        canvas.addEventListener('mousemove', (e: MouseEvent) => {
+
           if (self.selected !== -1) {
             self._bHoldEventTrigger = true;
-            const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-            const chart = self.activeSensors[i].chart;
-            const parentOffset = $(this).parent().offset();
-            const relX = e.pageX - parentOffset.left;
+            const idx = j;
+            const chart = self.activeSensors[idx].chart; // self.activeSensors[idx].chart;
+
+            const relX = e.offsetX;
             const data = chart.options.data[0].dataPoints;
             const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
             const pickType = chart.options.axisX.stripLines[self.selected].label;
             const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-            const otherPick = self.findValue(self.activeSensors[i].picks, 'label', otherPickType);
+            const otherPick = self.findValue(self.activeSensors[idx].picks, 'label', otherPickType);
+
             if (otherPick) {
               if (pickType === 'P') {
                 if (position > otherPick.value) {
@@ -981,45 +988,56 @@ export class Waveform2Component implements OnInit {
               }
             }
             if (position >= data[0].x && position <= data[data.length - 1].x) {
-              $(this)[0].style.cursor = 'pointer';
+
               chart.options.axisX.stripLines[self.selected].value = position;
-              self.activeSensors[i].picks = chart.options.axisX.stripLines;
+              self.activeSensors[idx].picks = chart.options.axisX.stripLines;
               chart.options.zoomEnabled = false;
               chart.render();
             }
           }
         });
 
-        $(canvas_chart).last().on('mouseup', function (e) {
+        canvas.addEventListener('mouseup', (e: MouseEvent) => {
           setTimeout(function () {
             self._bHoldEventTrigger = false;
           }, 500);
-          if (self.selected !== -1) {   // clear selection and change the cursor
-            $(this)[0].style.cursor = 'default';
+
+          // clear selection and change the cursor
+          if (self.selected !== -1) {
             self.selected = -1;
-            const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-            const chart = self.activeSensors[i].chart;
-            chart.options.axisX.stripLines = self.activeSensors[i].picks;
+            const idx = j;
+            const chart = self.activeSensors[idx].chart;
+            // chart.options.axisX.stripLines = self.activeSensors[i].picks;
+
             chart.options.zoomEnabled = true;   // turn zoom back on
             chart.render();
             document.getElementById('toolbar').focus();
           }
         });
 
+        canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+          e.preventDefault();
+          this._menu.nativeElement.style.left = `${e.offsetX}px`;
+          this._menu.nativeElement.style.top = `${e.y}px`;
+          this.toggleContextMenuChart('show');
+          self.selectedContextMenu = j;
+          return false;
+        });
+
       }  // not on context trace
 
+
       // Wheel events: zoomp/pan, move picks in picking mode
-      $(canvas_chart)[1].addEventListener('wheel', function (e) {
+      canvas.addEventListener('wheel', (e: WheelEvent) => {
+        const idx = j;
         // in pick mode wheel up moves pick left, wheel down moves pick right
-        if (self.pickingMode !== 'none'
-          && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-          const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-          if (i < self.activeSensors.length - 1) {
+        if (self.pickingMode !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          if (idx < self.activeSensors.length - 1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.deltaY < 0) { // scrolling up
-              self.movePick(i, self.pickingMode, -step, true, false);
+              self.movePick(idx, self.pickingMode, -step, true, false);
             } else if (e.deltaY > 0) { // scrolling down
-              self.movePick(i, self.pickingMode, step, true, false);
+              self.movePick(idx, self.pickingMode, step, true, false);
             }
           }
         }
@@ -1028,11 +1046,10 @@ export class Waveform2Component implements OnInit {
 
           e.preventDefault();
 
-          const i = parseInt($(this).parent().parent()[0].id.replace('Container', ''), 10);
-          const chart = self.activeSensors[i].chart;
+          const chart = self.activeSensors[idx].chart;
 
           const relOffsetX = e.clientX - self.pageOffsetX;
-          const relOffsetY = e.clientY - self.pageOffsetY - i * self.chartHeight;
+          const relOffsetY = e.clientY - self.pageOffsetY - idx * self.chartHeight;
 
           if (relOffsetX < chart.plotArea.x1 ||
             relOffsetX > chart.plotArea.x2 ||
@@ -1043,8 +1060,8 @@ export class Waveform2Component implements OnInit {
 
           const axis = (e.shiftKey || e.altKey) ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
 
-          const viewportMin = axis.get('viewportMinimum'),
-            viewportMax = axis.get('viewportMaximum'),
+          const viewportMin = +axis.get('viewportMinimum'),
+            viewportMax = +axis.get('viewportMaximum'),
             interval = (viewportMax - viewportMin) / globals.zoomSteps;  // control zoom step
           // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
 
@@ -1081,12 +1098,12 @@ export class Waveform2Component implements OnInit {
 
           if ((newViewportMax - newViewportMin) > (2 * interval)) {
             if (self.bZoomAll
-              && i < self.activeSensors.length - 1) {  // exclude context trace
+              && idx < self.activeSensors.length - 1) {  // exclude context trace
               self.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
             } else {  // zoom selected trace only
               if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
                 axis.set('viewportMinimum', newViewportMin, false);
-                axis.set('viewportMaximum', newViewportMax);
+                axis.set('viewportMaximum', newViewportMax, false);
                 chart.render();
               }
             }
@@ -1094,19 +1111,6 @@ export class Waveform2Component implements OnInit {
           }
         }
       });
-
-      if (j < self.activeSensors.length - 1) {  // exclude context trace
-        $('#' + self.activeSensors[j].container).on('contextmenu', e => {
-          e.preventDefault();
-          const origin = {
-            left: e.pageX,
-            top: e.pageY
-          };
-          self.setPosition(origin);
-          self.selectedContextMenu = j;
-          return false;
-        });
-      }
     }
   }
 
@@ -1209,7 +1213,7 @@ export class Waveform2Component implements OnInit {
 
   resetChartViewX(chart) {
     const self = this;
-    const channel = parseInt(chart.container.id.replace('Container', ''), 10);
+    const channel = parseInt(chart.container.id.replace('container', ''), 10);
     chart.options.axisX.viewportMinimum = self.getXvpMin();
     chart.options.axisX.viewportMaximum = self.getXvpMax();
     chart.options.axisX.minimum = self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0;
@@ -1232,7 +1236,7 @@ export class Waveform2Component implements OnInit {
 
   resetChartViewY(chart) {
     const self = this;
-    const channel = parseInt(chart.container.id.replace('Container', ''), 10);
+    const channel = parseInt(chart.container.id.replace('container', ''), 10);
     chart.options.axisY.viewportMinimum = null;
     chart.options.axisY.viewportMaximum = null;
     chart.options.axisY.maximum = self.getYmax(channel);
@@ -1253,7 +1257,7 @@ export class Waveform2Component implements OnInit {
 
   resetChartViewXY(chart) {
     const self = this;
-    const channel = parseInt(chart.container.id.replace('Container', ''), 10);
+    const channel = parseInt(chart.container.id.replace('container', ''), 10);
     chart.options.axisX.viewportMinimum = self.getXvpMin();
     chart.options.axisX.viewportMaximum = self.getXvpMax();
     chart.options.axisX.minimum = self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0;
@@ -1345,7 +1349,7 @@ export class Waveform2Component implements OnInit {
     for (let i = 0; i < self.activeSensors.length; i++) {
       const chart = self.activeSensors[i].chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      min = i === 0 ? axis.get('minimum') : Math.min(axis.get('minimum'), min);
+      min = i === 0 ? axis.get('minimum') : Math.min(+axis.get('minimum'), min);
     }
     return min;
   }
@@ -1356,7 +1360,7 @@ export class Waveform2Component implements OnInit {
     for (let i = 0; i < self.activeSensors.length - 1; i++) {
       const chart = self.activeSensors[i].chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      max = i === 0 ? axis.get('maximum') : Math.max(axis.get('maximum'), max);
+      max = i === 0 ? axis.get('maximum') : Math.max(+axis.get('maximum'), max);
     }
     return max;
   }
@@ -1371,7 +1375,7 @@ export class Waveform2Component implements OnInit {
         const chart = self.activeSensors[i].chart;
         const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
         axis.set('viewportMinimum', vpMin, false);
-        axis.set('viewportMaximum', vpMax);
+        axis.set('viewportMaximum', vpMax, false);
         chart.render();
       }
     }
@@ -1892,7 +1896,6 @@ export class Waveform2Component implements OnInit {
     return (eventData);
   }
 
-
   createButterworthFilter(sample_rate): any {
     const self = this;
     let butterworth = null;
@@ -1955,7 +1958,6 @@ export class Waveform2Component implements OnInit {
     self.bFilterChanged = false;
     return sensors;
   }
-
 
   addCompositeTrace(sensors): any[] {
     let message = '';
@@ -2088,5 +2090,4 @@ export class Waveform2Component implements OnInit {
       this.helpDialogOpened = false;
     });
   }
-
 }

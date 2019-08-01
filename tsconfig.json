@@ -12,7 +12,8 @@
     "importHelpers": true,
     "target": "es5",
     "typeRoots": [
-      "node_modules/@types"
+      "node_modules/@types",
+      "typings"
     ],
     "lib": [
       "es2018",
@@ -28,5 +29,13 @@
       "@services/*": ["src/app/core/services/*"],
       "@interfaces/*": ["src/app/core/interfaces/*"]
     }
-  }
+  },
+  "include": [
+    "./typings/**/*.d.ts",
+    "./src/**/*"
+  ],
+  "exclude": [
+    "./node_modules/*",
+    "./dist/*"
+  ]
 }
