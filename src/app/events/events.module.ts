@@ -6,7 +6,6 @@ import { EventListComponent } from './pages/event-list/event-list.component';
 
 import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { FlexLayoutModule } from '@angular/flex-layout';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
@@ -35,7 +34,6 @@ const ROUTES: Routes = [
   imports: [
     RouterModule.forChild(ROUTES),
     SharedModule,
-    FlexLayoutModule,
     NgxLoadingModule,
     NgxPaginationModule
   ],
