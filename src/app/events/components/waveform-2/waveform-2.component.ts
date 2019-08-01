@@ -1,16 +1,17 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
-import { globals } from '../../../../globals';
-import { CatalogApiService } from '@core/services/catalog-api.service';
 import { Validators, FormControl } from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { EventApiService } from '@app/core/services/event-api.service';
-import { EventWaveformQuery, IEvent } from '@app/core/interfaces/event.interface';
-import ApiUtil from '@app/core/utils/api-util';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { first } from 'rxjs/operators';
+
+import { globals } from '../../../../globals';
+import { CatalogApiService } from '@services/catalog-api.service';
+import { EventApiService } from '@services/event-api.service';
+import { EventWaveformQuery, IEvent } from '@interfaces/event.interface';
+import ApiUtil from '@core/utils/api-util';
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 
 
@@ -937,7 +938,7 @@ export class Waveform2Component implements OnInit {
                   relY > chartStripBounds.y1 &&
                   relY < chartStripBounds.y2) {  // move pick
                   self.savePicksState(idx, self.activeSensors[idx].sensor_code, self.activeSensors[idx].picks);
-                  e.srcElement.classList.add('active');
+
                   self.selected = i;
                   break;
                 }
@@ -987,7 +988,6 @@ export class Waveform2Component implements OnInit {
               }
             }
             if (position >= data[0].x && position <= data[data.length - 1].x) {
-              e.srcElement.classList.add('active');
 
               chart.options.axisX.stripLines[self.selected].value = position;
               self.activeSensors[idx].picks = chart.options.axisX.stripLines;
@@ -1004,7 +1004,6 @@ export class Waveform2Component implements OnInit {
 
           // clear selection and change the cursor
           if (self.selected !== -1) {
-            e.srcElement.classList.remove('active');
             self.selected = -1;
             const idx = j;
             const chart = self.activeSensors[idx].chart;
