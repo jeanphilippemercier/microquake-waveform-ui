@@ -1,5 +1,5 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
-import { MatDialog, MatDrawer } from '@angular/material';
+import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material';
 import { Router } from '@angular/router';
 
 import { User } from '@interfaces/user.interface';
@@ -12,14 +12,13 @@ import { AuthDialogComponent } from '@app/auth/dialogs/auth-dialog/auth-dialog.c
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit {
   user: User;
-  @ViewChild('drawer') drawer: MatDrawer;
 
   constructor(
     private _dialog: MatDialog,
     private _authService: AuthService,
-    private _menuService: MenuService,
+    public menuService: MenuService,
     private _router: Router
   ) { }
 
@@ -29,7 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this._authService.loggedUser.subscribe(user => {
       this.user = user;
       if (user === null) {
-        this._menuService.close();
+        this.menuService.close();
         this._router.navigate(['..']);
         this.openAuthDialog();
       }
@@ -40,10 +39,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     const dialogRef = this._dialog.open(AuthDialogComponent, {
       disableClose: true
     });
-  }
-
-  ngAfterViewInit() {
-    this._menuService.init(this.drawer);
   }
 
   logoutClick() {
