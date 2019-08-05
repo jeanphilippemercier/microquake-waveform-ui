@@ -1,0 +1,219 @@
+<mat-toolbar color="primary">
+  <app-header-layout
+    [showEventSidebarButton]="false"
+    [eventSidebarOpened]="waveformService.sidebarOpened | async"
+    (eventSidebarOpenedChange)="onEventSidebarCollapseClick()"
+    [width]="'350px'"
+  ></app-header-layout>
+
+  <button
+    mat-icon-button
+    matTooltip="Common Time Scale for All Channels"
+    class="activatable"
+    [ngClass]="{'active': waveformService.commonTimeScale | async}"
+    (click)="onCommonTimeScaleClick()"
+  >
+    <mat-icon>more_horiz</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Common Amplitude Scale for All Channels"
+    class="activatable"
+    [ngClass]="{'active': waveformService.commonAmplitudeScale | async}"
+    (click)="onCommonAmplitudeScaleClick()"
+  >
+    <mat-icon>more_vert</mat-icon>
+  </button>
+
+
+  <button
+    mat-icon-button
+    matTooltip="Zoom or Pan All Channels"
+    class="activatable"
+    [ngClass]="{'active': waveformService.zoomAll | async}"
+    (click)="onZoomAllClick()"
+  >
+    <mat-icon>link</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Undo last Time Zoom or Pan"
+    (click)="onBackClick()"
+  >
+    <mat-icon>undo</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Reset View after Zoom or Pan"
+    (click)="onResetAllChartsViewClick()"
+  >
+    <mat-icon>settings_backup_restore</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Display Composite or 3-Component Traces"
+    class="activatable"
+    [ngClass]="{'active': waveformService.displayComposite | async}"
+    (click)="onDisplayCompositeClick()"
+  >
+    <mat-icon>filter_3</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Sort Traces by Distance to Origin"
+    class="activatable"
+    [ngClass]="{'active': waveformService.sortTraces | async}"
+    (click)="onSortTracesClick()"
+    [hidden]="waveformService.sortTracesHidden | async"
+    [disabled]="!(waveformService.loadedAll | async) || (waveformService.sortTracesHidden | async)"
+  >
+    <mat-icon>sort</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Toggle Predicted Picks"
+    class="activatable"
+    [ngClass]="{'active': waveformService.predictedPicks | async}"
+    (click)="onPredictedPicksClick()"
+  >
+    <mat-icon>blur_linear</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Toggle Remove Predicted Picks Bias"
+    [ngClass]="{'active': waveformService.predictedPicksBias | async}"
+    (click)="onPredictedPicksBiasClick()"
+    [disabled]="!(waveformService.loadedAll | async)"
+  >
+    <mat-icon>compare_arrows</mat-icon>
+  </button>
+
+  <button
+    [disabled]="helpDialogOpened"
+    mat-icon-button
+    matTooltip='Show Help'
+    (click)="onHelpDialogClick()"
+  >
+    <mat-icon>help</mat-icon>
+  </button>
+
+  <div class="float-left filters">
+
+    <mat-form-field class="input-form-width float-left">
+      <mat-label>Low Corner</mat-label>
+      <input
+        matInput
+        matTooltip="Butterworth Filter Low Corner Frequency"
+        type="number"
+        step="10"
+        min="0"
+        (keydown.enter)="onApplyFilter()"
+        [(ngModel)]="lowFreqCorner"
+        [formControl]="minRateControl"
+      >
+      <div
+        *ngIf="minRateControl.invalid && (minRateControl.dirty || minRateControl.touched)"
+        class="alert alert-danger"
+      >
+        <div *ngIf="!!minRateControl.errors.min">
+          Min 0
+        </div>
+      </div>
+    </mat-form-field>
+
+    <mat-form-field class="input-form-width float-left">
+      <mat-label>High Corner</mat-label>
+      <input
+        matInput
+        matTooltip="Butterworth Filter High Corner Frequency"
+        type="number"
+        step="100"
+        [max]="maxFreq"
+        (keydown.enter)="onApplyFilter()"
+        [(ngModel)]="highFreqCorner"
+        [formControl]="rateControl"
+      >
+      <div
+        *ngIf="rateControl.invalid && (rateControl.dirty || rateControl.touched)"
+        class="alert alert-danger"
+      >
+        <div *ngIf="!!rateControl.errors.max">
+          Max {{maxFreq}}
+        </div>
+      </div>
+    </mat-form-field>
+
+    <mat-form-field class="input-form-width-less float-left">
+      <mat-label>Poles</mat-label>
+      <input
+        matInput
+        matTooltip="Number of Poles for Butterworth Filter"
+        type="number"
+        (keydown.enter)="onApplyFilter()"
+        [(ngModel)]="numPoles"
+        [ngModelOptions]="{standalone: true}"
+      >
+    </mat-form-field>
+
+  </div>
+
+  <button
+    mat-icon-button
+    matTooltip="Apply Filter"
+    (click)="onApplyFilter()"
+  >
+    <mat-icon>redo</mat-icon>
+  </button>
+
+  <mat-button-toggle-group
+    name="pickingMode"
+    aria-label="Picking Mode"
+    matTooltip="Select Picking Mode P, S or None"
+    #group="matButtonToggleGroup"
+    [ngModel]="pickingMode"
+    (ngModelChange)="onPickingModeChange($event)"
+  >
+    <mat-button-toggle value="P">
+      <mat-icon>local_parking</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="S">
+      <mat-icon>strikethrough_s</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="none">
+      <mat-icon>trip_origin</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <button
+    mat-icon-button
+    matTooltip="Undo Last Picking Operation"
+    (click)="onUndoLastPickingClick()"
+  >
+    <mat-icon>cached</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Interactive Process"
+    (click)="onInteractiveProcessClick()"
+  >
+    <mat-icon>launch</mat-icon>
+  </button>
+  <div class="mr-auto"></div>
+  <mat-paginator
+    color="primary"
+    [hidePageSize]="true"
+    [length]="(waveformService.loadedAll | async) ? (waveformService.allSensors | async)?.length : pageSize"
+    [pageSize]="pageSize"
+    (page)="onPageChanged($event)"
+    [disabled]="!(waveformService.loadedAll | async)"
+  >
+  </mat-paginator>
+</mat-toolbar>

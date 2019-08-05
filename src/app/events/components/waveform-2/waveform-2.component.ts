@@ -1,18 +1,18 @@
-import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2 } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, EventEmitter, Output, OnDestroy } from '@angular/core';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import { Validators, FormControl } from '@angular/forms';
 import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { MatDialogRef, MatDialog } from '@angular/material';
-import { first } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
-import { globals } from '../../../../globals';
+import { globals } from '@src/globals';
 import { CatalogApiService } from '@services/catalog-api.service';
 import { EventApiService } from '@services/event-api.service';
 import { EventWaveformQuery, IEvent } from '@interfaces/event.interface';
 import ApiUtil from '@core/utils/api-util';
-import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
+import { WaveformService } from '@services/waveform.service';
+import { Subject } from 'rxjs';
 
 
 interface Sensor {
@@ -37,7 +37,7 @@ enum ContextMenuChartAction {
   styleUrls: ['./waveform-2.component.scss']
 })
 
-export class Waveform2Component implements OnInit {
+export class Waveform2Component implements OnInit, OnDestroy {
 
   private _event: IEvent;
 
@@ -48,7 +48,6 @@ export class Waveform2Component implements OnInit {
       this._handleEvent(this._event);
     }
   }
-
   get event(): IEvent {
     return this._event;
   }
@@ -56,6 +55,14 @@ export class Waveform2Component implements OnInit {
   @Input() timezone = '+00:00';
   @ViewChild('contextMenuChart') private _menu: ElementRef;
   @ViewChild('waveformContainer') private _waveformContainer: ElementRef;
+
+  private _commonTimeScale = true;
+  private _commonAmplitudeScale = false;
+  private _zoomAll = false;
+  private _displayComposite = true;
+  private _sortTraces = false;
+  private _predictedPicks = true;
+  private _predictedPicksBias = true;
 
   private _passband = filter.BAND_PASS;
   private _convYUnits = 1000; // factor to convert input units from m to mmm
@@ -81,20 +88,10 @@ export class Waveform2Component implements OnInit {
   waveformOrigin: any = {};
   options: any;
 
-  bCommonTime = true;
-  bCommonAmplitude = false;
-  bZoomAll = false;
   bDisplayComposite = true;
-  sortTraces = false;
-  sortTracesBtnHidden = false;
   bShowPredictedPicks = true;
   bRemoveBias = false;
-  numPoles: any;
-  lowFreqCorner: any;
   highFreqCorner: any;
-
-  pickingMode: any = 'none';
-
   bFilterChanged = true;
 
   picksBias = 0;
@@ -128,32 +125,131 @@ export class Waveform2Component implements OnInit {
   maxFreq = globals.highFreqCorner;
   rateControl = new FormControl('rateControl', [Validators.max(this.maxFreq)]);
   minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
-
-  helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
-  helpDialogOpened = false;
-
-  loadedAll = false;
-
   ContextMenuChartAction = ContextMenuChartAction;
 
+  sidebarOpened = true;
+  waveformShow = true;
+
+  private _unsubscribe = new Subject<void>();
+
   constructor(
+    private _waveformService: WaveformService,
     private _eventApiService: EventApiService,
     private _catalogService: CatalogApiService,
-    private _matDialog: MatDialog,
     private _renderer: Renderer2
   ) { }
 
   async ngOnInit() {
 
-    this.options = JSON.parse(window.localStorage.getItem('viewer-options')) || {};
-
-    this.numPoles = this.options.numPoles ? this.options.numPoles : globals.numPoles;
-    this.lowFreqCorner = this.options.lowFreqCorner ? this.options.lowFreqCorner : globals.lowFreqCorner;
-    this.highFreqCorner = this.options.highFreqCorner ? this.options.highFreqCorner : globals.highFreqCorner;
-    this.site = this.options.site ? this.options.site : '';
-    this.network = this.options.network ? this.options.network : '';
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 20) / globals.chartsPerPage);
     this.addKeyDownEventListeners();
+    this.subscribeToolbar();
+  }
+
+  ngOnDestroy(): void {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
+  }
+
+  subscribeToolbar() {
+    this._waveformService.undoLastZoomOrPanClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => this.undoLastZoomOrPan());
+
+    this._waveformService.resetAllChartsViewClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => this.resetAllChartsViewXY());
+
+    this._waveformService.zoomAll
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => this._zoomAll = val);
+
+    this._waveformService.commonTimeScale
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (this._commonTimeScale !== val) {
+          this._commonTimeScale = val;
+          this.resetAllChartsViewX();
+        }
+      });
+
+    this._waveformService.commonAmplitudeScale
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (this._commonAmplitudeScale !== val) {
+          this._commonAmplitudeScale = val;
+          this.resetAllChartsViewY();
+        }
+      });
+
+    this._waveformService.displayComposite
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (val !== this._displayComposite) {
+          this._displayComposite = val;
+          this.changePage(false);
+        }
+      });
+
+    this._waveformService.sortTraces
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (!this._sortTraces && val) {
+          this._sortTraces = !this._sortTraces;
+          this._sortAllTraces();
+          this.changePage(false);
+        }
+      });
+
+    this._waveformService.predictedPicks
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (val !== this._predictedPicks) {
+          this._predictedPicks = val;
+          this.predicatePicks();
+        }
+      });
+
+    this._waveformService.predictedPicksBias
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (val !== this._predictedPicksBias) {
+          this._predictedPicksBias = val;
+          this.predictePicksBias();
+        }
+      });
+
+    this._waveformService.applyFilterClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => {
+        this.applyFilter();
+      });
+
+    this._waveformService.interactiveProcessClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => this.onInteractiveProcess());
+
+    this._waveformService.pageChangedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((index: number) => {
+        this.page_number = index;
+        this.changePage(false);
+      });
+
+
+    this._waveformService.sidebarOpened
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(async (val) => {
+        if (this.sidebarOpened !== val) {
+          this.sidebarOpened = val;
+          this.loading = true;
+          this.waveformShow = false;
+          await new Promise(resolve => setTimeout(() => resolve(), 500));
+          this.waveformShow = true;
+          this.changePage(false);
+          this.loading = false;
+        }
+      });
   }
 
   private _handleEvent(event) {
@@ -185,13 +281,6 @@ export class Waveform2Component implements OnInit {
     this.toggleContextMenuChart('hide');
   }
 
-  saveOption(option) {
-    const self = this;
-
-    self.options[option] = self[option];
-    window.localStorage.setItem('viewer-options', JSON.stringify(self.options));
-  }
-
   loadEvent(event) {
     const self = this;
 
@@ -204,11 +293,16 @@ export class Waveform2Component implements OnInit {
           if (eventData && eventData.hasOwnProperty('sensors')) {
             // filter and recompute composite traces
             self.allSensors = self.addCompositeTrace(self.filterData(eventData.sensors));
+            this._waveformService.allSensors.next(this.allSensors);
             self.timeOrigin = eventData.timeOrigin;
             self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
             if (self.allSensors.length > 0) {
               // get origins
-              this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
+              this._catalogService.get_origins_by_id(
+                self._waveformService.site.getValue(),
+                self._waveformService.network.getValue(),
+                id
+              ).subscribe(origins => {
                 let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                 if (!origin) {
                   window.alert('Event preferred origin from catalog not found');
@@ -219,29 +313,37 @@ export class Waveform2Component implements OnInit {
                 if (origin) {
                   self.waveformOrigin = origin;
                   // get travel times for preferred origin
-                  this._catalogService.get_traveltimes_by_id(self.site, self.network, id, origin.origin_resource_id)
-                    .subscribe(traveltimes => {
-                      self.originTravelTimes = traveltimes;
-                      this.addPredictedPicksData(self.allSensors, self.timeOrigin);
-                      // get arrivals, picks for preferred origin
-                      this._catalogService.get_arrivals_by_id(self.site, self.network, id, origin.origin_resource_id)
-                        .subscribe(picks => {
-                          self.allPicks = picks;
-                          self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
-                          this.addArrivalsPickData(self.allSensors, self.timeOrigin);
+                  this._catalogService.get_traveltimes_by_id(
+                    self._waveformService.site.getValue(),
+                    self._waveformService.network.getValue(),
+                    id,
+                    origin.origin_resource_id
+                  ).subscribe(traveltimes => {
+                    self.originTravelTimes = traveltimes;
+                    this.addPredictedPicksData(self.allSensors, self.timeOrigin);
+                    // get arrivals, picks for preferred origin
+                    this._catalogService.get_arrivals_by_id(
+                      self._waveformService.site.getValue(),
+                      self._waveformService.network.getValue(),
+                      id,
+                      origin.origin_resource_id
+                    ).subscribe(picks => {
+                      self.allPicks = picks;
+                      self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
+                      this.addArrivalsPickData(self.allSensors, self.timeOrigin);
 
-                          self.activateRemoveBias(false);
+                      self.activateRemoveBias(false);
 
-                          if (!self.sortTraces) { // sort traces on when loading all data (no pagination)
-                            self.sortTraces = !self.sortTraces;
-                            self.sortTracesBtnHidden = true;
-                          }
-                          self._sortTraces();
+                      if (!self._sortTraces) { // sort traces on when loading all data (no pagination)
+                        self._sortTraces = !self._sortTraces;
+                        self._waveformService.sortTracesHidden.next(true);
+                      }
+                      self._sortAllTraces();
 
-                          // display data (first page)
-                          self.changePage(true);
-                        });
+                      // display data (first page)
+                      self.changePage(true);
                     });
+                  });
                 } else {
                   console.log('No event preferred origin found');
                   // display data (first page)
@@ -249,8 +351,8 @@ export class Waveform2Component implements OnInit {
                 }
               });
               console.log('Loaded data for ' + self.allSensors.length + ' sensors');
-              this.eventTimeOriginHeader = 'Site: ' + this.site +
-                ' Network: ' + this.network + ' ' +
+              this.eventTimeOriginHeader = 'Site: ' + self._waveformService.site.getValue() +
+                ' Network: ' + self._waveformService.network.getValue() + ' ' +
                 moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
                   .format('YYYY-MM-DD HH:mm:ss.S');
             }
@@ -262,7 +364,7 @@ export class Waveform2Component implements OnInit {
 
   loadEventFirstPage(event) {
     const self = this;
-    this.loadedAll = false;
+    this._waveformService.loadedAll.next(false);
 
     if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
       const message = event;
@@ -278,6 +380,7 @@ export class Waveform2Component implements OnInit {
             if (eventData && eventData.hasOwnProperty('sensors')) {
               // filter and recompute composite traces
               self.allSensors = self.addCompositeTrace(self.filterData(eventData.sensors));
+              this._waveformService.allSensors.next(this.allSensors);
               self.loaded_pages = 1;
               self.progressValue = (self.loaded_pages / self.num_pages) * 100;
               for (let i = self.allSensors.length; i < self.num_pages * (self.page_size - 1); i++) {
@@ -287,7 +390,11 @@ export class Waveform2Component implements OnInit {
               self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
               if (self.allSensors.length > 0) {
                 // get origins
-                this._catalogService.get_origins_by_id(self.site, self.network, id).subscribe(origins => {
+                this._catalogService.get_origins_by_id(
+                  self._waveformService.site.getValue(),
+                  self._waveformService.network.getValue(),
+                  id
+                ).subscribe(origins => {
                   let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
                   if (!origin) {
                     window.alert('Warning: Event preferred origin from catalog not found');
@@ -296,55 +403,62 @@ export class Waveform2Component implements OnInit {
                   if (origin) {
                     self.waveformOrigin = origin;
                     // get travel times for preferred origin
-                    this._catalogService.get_traveltimes_by_id
-                      (self.site, self.network, id, origin.origin_resource_id)
-                      .subscribe(traveltimes => {
-                        self.originTravelTimes = traveltimes;
-                        this.addPredictedPicksData(self.allSensors, self.timeOrigin);
-                        // get arrivals, picks for preferred origin
-                        this._catalogService.get_arrivals_by_id
-                          (self.site, self.network, id, origin.origin_resource_id)
-                          .subscribe(picks => {
-                            self.allPicks = picks;
-                            self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
-                            this.addArrivalsPickData(self.allSensors, self.timeOrigin);
+                    this._catalogService.get_traveltimes_by_id(
+                      self._waveformService.site.getValue(),
+                      self._waveformService.network.getValue(),
+                      id,
+                      origin.origin_resource_id
+                    ).subscribe(traveltimes => {
+                      self.originTravelTimes = traveltimes;
+                      this.addPredictedPicksData(self.allSensors, self.timeOrigin);
+                      // get arrivals, picks for preferred origin
+                      this._catalogService.get_arrivals_by_id(
+                        self._waveformService.site.getValue(),
+                        self._waveformService.network.getValue(),
+                        id,
+                        origin.origin_resource_id
+                      ).subscribe(picks => {
+                        self.allPicks = picks;
+                        self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
+                        this.addArrivalsPickData(self.allSensors, self.timeOrigin);
 
-                            self.picksBias = 0;
-                            if (self.bRemoveBias) { // by default turn remove bias off with paged loading
-                              self.bRemoveBias = !self.bRemoveBias;
-                            }
+                        self.picksBias = 0;
+                        if (self.bRemoveBias) { // by default turn remove bias off with paged loading
+                          self.bRemoveBias = !self.bRemoveBias;
+                        }
 
-                            // by default turn off sort traces with paged loading
-                            if (self.sortTraces) {
-                              self.sortTraces = !self.sortTraces;
-                              self.sortTracesBtnHidden = false;
-                            }
+                        // by default turn off sort traces with paged loading
+                        if (self._sortTraces) {
+                          self._sortTraces = !self._sortTraces;
+                          self._waveformService.sortTracesHidden.next(false);
+                        }
 
-                            self.getEvent(event, true).then(contextFile => {
-                              if (id === self.currentEventId) {
-                                if (contextFile) {
-                                  const contextData = self.parseMiniseed(contextFile, true);
-                                  if (contextData && contextData.hasOwnProperty('sensors')) {
-                                    self.contextSensor = self.filterData(contextData.sensors);
-                                    self.contextSensor = contextData.sensors;
-                                    self.contextTimeOrigin = contextData.timeOrigin;
-                                  }
-                                }
-                                self.changePage(true);  // display data (first page)
-                                if (self.loaded_pages === self.num_pages) {
-                                  self.afterLoading(id);
-                                } else {
-                                  this.asyncLoadEventPages(id);  // load next pages
-                                }
+                        self.getEvent(event, true).then(contextFile => {
+                          if (id === self.currentEventId) {
+                            if (contextFile) {
+                              const contextData = self.parseMiniseed(contextFile, true);
+                              if (contextData && contextData.hasOwnProperty('sensors')) {
+                                self.contextSensor = self.filterData(contextData.sensors);
+                                self.contextSensor = contextData.sensors;
+                                self.contextTimeOrigin = contextData.timeOrigin;
                               }
-                            });
+                            }
+                            self.changePage(true);  // display data (first page)
+                            if (self.loaded_pages === self.num_pages) {
+                              self.afterLoading(id);
+                            } else {
+                              this.asyncLoadEventPages(id);  // load next pages
+                            }
+                          }
+                        });
 
-                            this.eventTimeOriginHeader = 'Site: ' + this.site +
-                              ' Network: ' + this.network + ' ' +
-                              moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                                .format('YYYY-MM-DD HH:mm:ss.S');
-                          });
+                        this.eventTimeOriginHeader = 'Site: ' +
+                          self._waveformService.site.getValue() +
+                          ' Network: ' + self._waveformService.network.getValue() + ' ' +
+                          moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
+                            .format('YYYY-MM-DD HH:mm:ss.S');
                       });
+                    });
                   } else {
                     window.alert('No event preferred origin found');
                   }
@@ -393,9 +507,9 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-
   afterLoading(event_id) {
     const self = this;
+
 
     if (event_id !== self.currentEventId) {
       console.log('Changed event on afterloading');
@@ -413,7 +527,7 @@ export class Waveform2Component implements OnInit {
 
     // remove bias from predicted picks, force a refresh
     // self.activateRemoveBias(true);
-    this.loadedAll = true;
+    this._waveformService.loadedAll.next(true);
   }
 
   confirmEvent(event) {
@@ -456,8 +570,7 @@ export class Waveform2Component implements OnInit {
     const numPages = globals.enablePagingLoad ?
       self.num_pages : Math.ceil(self.allSensors.length / pageSize);
     if (pageNumber > 0 && pageNumber <= numPages) {
-      self.activeSensors = self.allSensors.slice
-        ((pageNumber - 1) * pageSize, Math.min(pageNumber * pageSize, self.allSensors.length));
+      self.activeSensors = self.allSensors.slice((pageNumber - 1) * pageSize, Math.min(pageNumber * pageSize, self.allSensors.length));
       self.activeSensors.push(self.contextSensor[0]);  // context trace is last
       self.renderCharts();
       self.renderContextChart();
@@ -587,9 +700,9 @@ export class Waveform2Component implements OnInit {
 
       const data = [];
       for (const channel of this.activeSensors[i].channels) {
-        if ((!this.bDisplayComposite && channel.channel_id !== globals.compositeChannelCode)
-          || (this.bDisplayComposite && channel.channel_id === globals.compositeChannelCode)
-          || (this.bDisplayComposite && this.activeSensors[i].channels.length === 1)) {
+        if ((!this._displayComposite && channel.channel_id !== globals.compositeChannelCode)
+          || (this._displayComposite && channel.channel_id === globals.compositeChannelCode)
+          || (this._displayComposite && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
               name: channel.code_id,
@@ -617,7 +730,7 @@ export class Waveform2Component implements OnInit {
             e.chart.options.viewportMaxStack = [];
           }
           if (e.trigger === 'zoom') {
-            if (self.bZoomAll) {
+            if (self._zoomAll) {
               self.zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
             } else {
               e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
@@ -654,9 +767,9 @@ export class Waveform2Component implements OnInit {
         axisX: {
           minimum: self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0,
           maximum: self.getXmax(i),
-          viewportMinimum: self.bZoomAll && self._xViewPortMinStack.length > 0 ?
+          viewportMinimum: self._zoomAll && self._xViewPortMinStack.length > 0 ?
             self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : self.getXvpMin(),
-          viewportMaximum: self.bZoomAll && self._xViewportMaxStack.length > 0 ?
+          viewportMaximum: self._zoomAll && self._xViewportMaxStack.length > 0 ?
             self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : self.getXvpMax(),
           includeZero: true,
           labelAutoFit: false,
@@ -674,7 +787,7 @@ export class Waveform2Component implements OnInit {
         axisY: {
           minimum: -yMax,
           maximum: yMax,
-          interval: self.bCommonAmplitude ? null : yMax / 2,
+          interval: self._commonAmplitudeScale ? null : yMax / 2,
           includeZero: true,
           labelFormatter: function (e) {
             if (e.value === 0) {
@@ -697,29 +810,30 @@ export class Waveform2Component implements OnInit {
     const self = this;
 
     document.addEventListener('keydown', (e: any) => {
+
       const target = e.target || e.srcElement;
       if (!/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName)) {
         if (e.keyCode === 80) {  // p
-          self.togglePredictedPicks();
+          this._waveformService.predictedPicks.next(!this._predictedPicks);
         }
         if (e.keyCode === 90) {  // z
-          self.toggleCommonTime();
+          this._waveformService.commonTimeScale.next(!this._commonTimeScale);
         }
         if (e.keyCode === 88) {   // x
-          self.toggleCommonAmplitude();
+          this._waveformService.commonAmplitudeScale.next(!this._commonAmplitudeScale);
         }
         if (e.keyCode === 68) {   // d
-          if (self.pickingMode === 'P') {
-            self.pickingMode = 'none';
+          if (this._waveformService.pickingMode.getValue() === 'P') {
+            this._waveformService.pickingMode.next('none');
           } else {
-            self.pickingMode = 'P';
+            this._waveformService.pickingMode.next('P');
           }
         }
         if (e.keyCode === 70) {   // f
-          if (self.pickingMode === 'S') {
-            self.pickingMode = 'none';
+          if (this._waveformService.pickingMode.getValue() === 'S') {
+            this._waveformService.pickingMode.next('none');
           } else {
-            self.pickingMode = 'S';
+            this._waveformService.pickingMode.next('S');
           }
         }
         if (e.keyCode === 83) {   // s, undo picking
@@ -729,22 +843,22 @@ export class Waveform2Component implements OnInit {
           document.getElementById('helpBtn').click();
         }
         if (e.keyCode === 39) {  // right arrow moves pick to right
-          if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+          if (this._waveformService.pickingMode.getValue() !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              self.movePick(self.lastDownTarget, self.pickingMode, step * 10, true, true);
+              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), step * 10, true, true);
             } else { // by step
-              self.movePick(self.lastDownTarget, self.pickingMode, step, true, true);
+              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), step, true, true);
             }
           }
         }
         if (e.keyCode === 37) {  // left arrow moves pick to left
-          if (self.pickingMode !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+          if (this._waveformService.pickingMode.getValue() !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              self.movePick(self.lastDownTarget, self.pickingMode, -step * 10, true, true);
+              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), -step * 10, true, true);
             } else { // by step
-              self.movePick(self.lastDownTarget, self.pickingMode, -step, true, true);
+              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), -step, true, true);
             }
           }
         }
@@ -834,7 +948,7 @@ export class Waveform2Component implements OnInit {
           self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
         viewportMinimum: self._xViewPortMinStack.length > 0 ?
           self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : null,
-        viewportMaximum: self.bZoomAll && self._xViewportMaxStack.length > 0 ?
+        viewportMaximum: self._zoomAll && self._xViewportMaxStack.length > 0 ?
           self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : null,
         includeZero: true,
         labelAutoFit: false,
@@ -851,7 +965,7 @@ export class Waveform2Component implements OnInit {
       axisY: {
         minimum: -yMax,
         maximum: yMax,
-        interval: self.bCommonAmplitude ? null : yMax / 2,
+        interval: self._commonAmplitudeScale ? null : yMax / 2,
         includeZero: true,
         labelFormatter: function (e) {
           if (e.value === 0) {
@@ -873,7 +987,6 @@ export class Waveform2Component implements OnInit {
   setChartKeys() {
     const self = this;
     for (let j = 0; j < self.activeSensors.length; j++) {
-      const canvas_chart = '#' + self.activeSensors[j].container + ' > .canvasjs-chart-container > .canvasjs-chart-canvas';
       const chartEl = self.activeSensors[j].chart;
 
       const chartElDom: Element = chartEl.get('container');
@@ -890,11 +1003,13 @@ export class Waveform2Component implements OnInit {
             const chart = self.activeSensors[ind].chart;
 
             const relX = e.offsetX; // - 0; // parentOffset.left;
-            if (self.pickingMode === 'P') { // create or move P pick on Left mouse click in P picking mode
+            if (this._waveformService.pickingMode.getValue() === 'P') {
+              // create or move P pick on Left mouse click in P picking mode
               if (!self._bHoldEventTrigger) {
                 self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
               }
-            } else if (self.pickingMode === 'S') { // create or move S pick on Left mouse click in S picking mode
+            } else if (this._waveformService.pickingMode.getValue() === 'S') {
+              // create or move S pick on Left mouse click in S picking mode
               if (!self._bHoldEventTrigger) {
                 self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
               }
@@ -945,9 +1060,9 @@ export class Waveform2Component implements OnInit {
               }
             }
           } else if (e.button === 1) {  // remove P or S on Middle mouse Click
-            if (self.pickingMode === 'P') {
+            if (this._waveformService.pickingMode.getValue() === 'P') {
               self.deletePicks(idx, 'P', null); // remove P picks on Middle mouse click in P picking mode
-            } else if (self.pickingMode === 'S') {
+            } else if (this._waveformService.pickingMode.getValue() === 'S') {
               self.deletePicks(idx, 'S', null); // remove S picks on Middle mouse click in S picking mode
             } else {
               if (e.ctrlKey) {
@@ -1031,13 +1146,13 @@ export class Waveform2Component implements OnInit {
       canvas.addEventListener('wheel', (e: WheelEvent) => {
         const idx = j;
         // in pick mode wheel up moves pick left, wheel down moves pick right
-        if (self.pickingMode !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        if (this._waveformService.pickingMode.getValue() !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
           if (idx < self.activeSensors.length - 1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.deltaY < 0) { // scrolling up
-              self.movePick(idx, self.pickingMode, -step, true, false);
+              self.movePick(idx, this._waveformService.pickingMode.getValue(), -step, true, false);
             } else if (e.deltaY > 0) { // scrolling down
-              self.movePick(idx, self.pickingMode, step, true, false);
+              self.movePick(idx, this._waveformService.pickingMode.getValue(), step, true, false);
             }
           }
         }
@@ -1097,7 +1212,7 @@ export class Waveform2Component implements OnInit {
           }
 
           if ((newViewportMax - newViewportMin) > (2 * interval)) {
-            if (self.bZoomAll
+            if (self._zoomAll
               && idx < self.activeSensors.length - 1) {  // exclude context trace
               self.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
             } else {  // zoom selected trace only
@@ -1114,15 +1229,14 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-
-  togglePredictedPicks() {
-    this.bShowPredictedPicks = !this.bShowPredictedPicks;
-
+  predicatePicks() {
     for (const sensor of this.allSensors) {
       if (sensor.picks) {
         for (const pick of sensor.picks) {
+          console.log(pick);
+
           if (pick.label === pick.label.toLowerCase()) {
-            pick.opacity = this.bShowPredictedPicks ? 0.5 : 0;
+            pick.opacity = this._predictedPicks ? 0.5 : 0;
           }
         }
       }
@@ -1130,34 +1244,7 @@ export class Waveform2Component implements OnInit {
     this.changePage(false);
   }
 
-  toggleCommonTime() {
-    this.bCommonTime = !this.bCommonTime;
-    this.resetAllChartsViewX();
-  }
-
-  toggleCommonAmplitude() {
-    this.bCommonAmplitude = !this.bCommonAmplitude;
-    this.resetAllChartsViewY();
-  }
-
-  toggleZoomAll() {
-    this.bZoomAll = !this.bZoomAll;
-  }
-
-  toggleDisplay3c() {
-    this.bDisplayComposite = !this.bDisplayComposite;
-    this.changePage(false);
-  }
-
-  toggleSortTraces() {
-    if (!this.sortTraces) { // turn on once only
-      this.sortTraces = !this.sortTraces;
-      this._sortTraces();
-      this.changePage(false);
-    }
-  }
-
-  togglePredictedPicksBias() {
+  predictePicksBias() {
     if (this.picksBias === 0) {  // if pagination is enabled calculate bias first time button is clicked
       this.calcPicksBias();
     }
@@ -1289,7 +1376,7 @@ export class Waveform2Component implements OnInit {
   getXmax(pos) {
     const self = this;
     const endMicrosec = self.activeSensors[pos].channels[0].microsec + self.activeSensors[pos].channels[0].duration;
-    return self.bCommonTime ?
+    return self._commonTimeScale ?
       Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000) : endMicrosec;
   }
 
@@ -1302,12 +1389,12 @@ export class Waveform2Component implements OnInit {
 
   getXvpMax() {
     const self = this;
-    return self.bCommonTime ? self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000 : null;
+    return self._commonTimeScale ? self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000 : null;
   }
 
   getXvpMin() {
     const self = this;
-    return self.bCommonTime ? 0 : null;
+    return self._commonTimeScale ? 0 : null;
   }
 
   getValueMaxAll() {
@@ -1332,7 +1419,7 @@ export class Waveform2Component implements OnInit {
         self.maxValue(self.activeSensors[sensor].channels[0].data) :
         Math.max(self.maxValue(self.activeSensors[sensor].channels[j].data), val);
     }
-    return (self.bCommonAmplitude || val === 0) ? self.getValueMaxAll() : val;
+    return (self._commonAmplitudeScale || val === 0) ? self.getValueMaxAll() : val;
   }
 
   getYmaxContext() {
@@ -1514,9 +1601,9 @@ export class Waveform2Component implements OnInit {
     document.getElementById('toolbar').focus();
   }
 
-  back() {
+  undoLastZoomOrPan() {
     const self = this;
-    if (self.bZoomAll) {
+    if (self._zoomAll) {
       if (self._xViewPortMinStack && self._xViewPortMinStack.length > 0) {
         self._xViewPortMinStack.pop();
         self._xViewportMaxStack.pop();
@@ -1695,13 +1782,17 @@ export class Waveform2Component implements OnInit {
   }
 
   addPredictedPicksData(sensors, origin) {
+
     const self = this;
     for (const sensor of sensors) {
+
       if (sensor.hasOwnProperty('sensor_code')) {
-        const sensorOrigin = self.findValue(self.originTravelTimes, 'sensor_id', sensor.sensor_code);
+        const sensorOrigin = self.findValue(self.originTravelTimes, 'station_id', sensor.sensor_code);
+
         if (sensorOrigin) {
           sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
           for (const pickKey of ['P', 'S']) {
+
             const key = 'travel_time_' + pickKey.toLowerCase();
             if (sensorOrigin.hasOwnProperty(key)) {
               const picktime_utc = this.addTime(this.waveformOrigin.time_utc, sensorOrigin[key]);
@@ -1790,7 +1881,7 @@ export class Waveform2Component implements OnInit {
     }
   }
 
-  private _sortTraces() {
+  private _sortAllTraces() {
     const self = this;
 
     if (Array.isArray(self.allSensors)) {
@@ -1801,10 +1892,8 @@ export class Waveform2Component implements OnInit {
         sortKey = 's_predicted_time_utc';
       }
       if (sortKey) {
-        self.allSensors.sort
-          (this.sort_array_by
-            (sortKey, false, function (x) { return x ? moment(x) : moment.now(); })
-          );
+        self.allSensors.sort(this.sort_array_by(sortKey, false, function (x) { return x ? moment(x) : moment.now(); })
+        );
       }
     }
   }
@@ -1897,14 +1986,13 @@ export class Waveform2Component implements OnInit {
   }
 
   createButterworthFilter(sample_rate): any {
-    const self = this;
     let butterworth = null;
-    if (self.lowFreqCorner >= 0 && self.highFreqCorner <= sample_rate / 2) {
+    if (this._waveformService.lowFreqCorner.getValue() >= 0 && this._waveformService.highFreqCorner.getValue() <= sample_rate / 2) {
       butterworth = filter.createButterworth(
-        self.numPoles, // poles
-        self._passband,
-        self.lowFreqCorner, // low corner
-        self.highFreqCorner, // high corner
+        this._waveformService.numPoles.getValue(),
+        this._passband,
+        this._waveformService.lowFreqCorner.getValue(),
+        this._waveformService.highFreqCorner.getValue(),
         1 / sample_rate
       );
     }
@@ -1912,15 +2000,14 @@ export class Waveform2Component implements OnInit {
   }
 
   applyFilter() {
-    const self = this;
-
-    if (self.bFilterChanged && self.allSensors.length > 0) {
-      self.saveOption('numPoles');
-      self.saveOption('lowFreqCorner');
-      self.saveOption('highFreqCorner');
-      self.allSensors = self.addCompositeTrace(self.filterData(self.allSensors)); // filter and recompute composite traces
-      self.contextSensor = self.filterData(self.contextSensor);
-      self.changePage(false);
+    if (this.allSensors.length > 0) {
+      this._waveformService.saveOption('numPoles', this._waveformService.numPoles.getValue());
+      this._waveformService.saveOption('lowFreqCorner', this._waveformService.lowFreqCorner.getValue());
+      this._waveformService.saveOption('highFreqCorner', this._waveformService.highFreqCorner.getValue());
+      this.allSensors = this.addCompositeTrace(this.filterData(this.allSensors)); // filter and recompute composite traces
+      this._waveformService.allSensors.next(this.allSensors);
+      this.contextSensor = this.filterData(this.contextSensor);
+      this.changePage(false);
     }
   }
 
@@ -2053,7 +2140,6 @@ export class Waveform2Component implements OnInit {
     });
   }
 
-
   async getEventPage(event_id, page) {
     const self = this;
     const query: EventWaveformQuery = {
@@ -2077,17 +2163,4 @@ export class Waveform2Component implements OnInit {
     return response.body;
   }
 
-  async openHelpDialog() {
-    if (this.helpDialogOpened || this.helpDialogRef) {
-      return;
-    }
-
-    this.helpDialogOpened = true;
-    this.helpDialogRef = this._matDialog.open(EventHelpDialogComponent);
-
-    this.helpDialogRef.afterClosed().pipe(first()).subscribe(val => {
-      delete this.helpDialogRef;
-      this.helpDialogOpened = false;
-    });
-  }
 }

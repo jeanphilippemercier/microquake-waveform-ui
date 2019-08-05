@@ -3,34 +3,22 @@
     #drawer
     fixedInViewport="false"
     [mode]="'over'"
-    [opened]="false"
+    [opened]="menuService.menuOpened | async"
     class="sidenav"
   >
-    <div
-      class="sidebar"
-    >
+    <div class="sidebar">
       <mat-toolbar color="">
         <div class="w-100 d-flex justify-content-between">
           <div>
             <div class="logo">
-              <a
-                href="https://api.microquake.org"
-                class="simple-text"
-              >
-                <div class="logo-img">
-                  <img src="/assets/img/pulse.png" />
-                </div>
-              </a>
+              <div class="logo-img">
+                <img src="/assets/img/pulse.png" />
+              </div>
             </div>
           </div>
           <div>
             <div class="logo">
-              <a
-                href="https://api.microquake.org"
-                class="simple-text"
-              >
-                Microquake
-              </a>
+              Microquake
             </div>
           </div>
           <div>
@@ -58,9 +46,7 @@
   </mat-sidenav>
 
   <mat-sidenav-content>
-    <div
-      class="wrapper"
-    >
+    <div class="wrapper">
       <div class="main-panel">
         <router-outlet></router-outlet>
         <app-footer-layout *ngIf=""></app-footer-layout>

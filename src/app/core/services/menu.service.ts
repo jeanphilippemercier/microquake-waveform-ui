@@ -1,39 +1,22 @@
 import { Injectable } from '@angular/core';
-import { MatDrawer } from '@angular/material';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MenuService {
 
-  _drawer: MatDrawer;
-
-  init(drawer: MatDrawer) {
-    this._drawer = drawer;
-
-  }
+  menuOpened: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   async open() {
-    if (!this._drawer) {
-      console.error(`no menu drawer`);
-      return;
-    }
-    this._drawer.open();
+    this.menuOpened.next(true);
   }
 
   async close() {
-    if (!this._drawer) {
-      console.error(`no menu drawer`);
-      return;
-    }
-    this._drawer.close();
+    this.menuOpened.next(false);
   }
 
   async toggle() {
-    if (!this._drawer) {
-      console.error(`no menu drawer`);
-      return;
-    }
-    this._drawer.toggle();
+    this.menuOpened.next(!this.menuOpened.getValue());
   }
 }
