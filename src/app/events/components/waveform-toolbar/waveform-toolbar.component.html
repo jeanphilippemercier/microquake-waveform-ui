@@ -88,7 +88,7 @@
   <button
     mat-icon-button
     matTooltip="Toggle Remove Predicted Picks Bias"
-    [ngClass]="{'active': predictedPicksBias | async}"
+    [ngClass]="{'active': waveformService.predictedPicksBias | async}"
     (click)="onPredictedPicksBiasClick()"
     [disabled]="!(waveformService.loadedAll | async)"
   >
