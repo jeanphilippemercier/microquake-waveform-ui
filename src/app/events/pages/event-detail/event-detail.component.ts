@@ -13,6 +13,7 @@ import {
 } from '@interfaces/event.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
+import { WaveformService } from '@services/waveform.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -57,6 +58,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private _eventApiService: EventApiService,
+    public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
     private _matDialog: MatDialog,
     private _router: Router
@@ -138,7 +140,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.sites = await this._eventApiService.getSites().toPromise();
     const options = JSON.parse(localStorage.getItem('viewer-options'));
 
-    if (options) {
+    if (options && options.site && options.network) {
       if (options.site) {
         this.site = this.sites.find(site => site.code === options.site);
       }
@@ -259,5 +261,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
 
     this.loadingCurrentEventAndList = false;
+  }
+
+  onCollapseButtonClick() {
+    this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
   }
 }

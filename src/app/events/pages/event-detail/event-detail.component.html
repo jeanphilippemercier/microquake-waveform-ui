@@ -1,10 +1,10 @@
+<app-waveform-toolbar></app-waveform-toolbar>
 <mat-sidenav-container>
   <mat-sidenav
     mode="side"
     align="start"
-    opened
+    [opened]="(waveformService.sidebarOpened | async)"
   >
-    <app-header-layout></app-header-layout>
     <mat-accordion
       class="d-flex flex-column"
       [multi]="true"
@@ -115,6 +115,27 @@
     </mat-accordion>
   </mat-sidenav>
   <mat-sidenav-content>
+    <div
+      class="collapse-button"
+      [ngClass]="{'outside': !(waveformService.sidebarOpened | async)}"
+    >
+      <button
+        [color]="!(waveformService.sidebarOpened | async) ? 'primary' : ''"
+        type="button"
+        aria-label="Toggle event sidebar"
+        mat-mini-fab
+        (click)="onCollapseButtonClick()"
+      >
+        <mat-icon
+          *ngIf="(waveformService.sidebarOpened | async)"
+          aria-label="Event sidebar icon"
+        >arrow_left</mat-icon>
+        <mat-icon
+          *ngIf="!(waveformService.sidebarOpened | async)"
+          aria-label="Event sidebar icon"
+        >arrow_right</mat-icon>
+      </button>
+    </div>
     <app-waveform-2
       *ngIf="true"
       [event]="currentEventChart"
