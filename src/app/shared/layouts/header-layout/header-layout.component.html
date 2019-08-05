@@ -1,4 +1,7 @@
-<mat-toolbar color="primary">
+<div
+  [style.width]="width"
+  class="d-flex"
+>
   <button
     type="button"
     aria-label="Toggle sidenav"
@@ -7,7 +10,24 @@
   >
     <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
   </button>
-
   <div class="mr-auto"></div>
+  <ng-container *ngIf="showEventSidebarButton">
+    <button
+      type="button"
+      aria-label="Toggle event sidebar"
+      mat-icon-button
+      (click)="onSidebarButtonClick(!eventSidebarOpened)"
+    >
+      <mat-icon
+        *ngIf="eventSidebarOpened"
+        aria-label="Event sidebar icon"
+      >arrow_left</mat-icon>
+      <mat-icon
+        *ngIf="!eventSidebarOpened"
+        aria-label="Event sidebar icon"
+      >arrow_right</mat-icon>
+    </button>
 
-</mat-toolbar>
+  </ng-container>
+
+</div>

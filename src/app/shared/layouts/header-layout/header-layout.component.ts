@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, Input, EventEmitter, Output } from '@angular/core';
 import { MenuService } from '@app/core/services/menu.service';
 import { MatDrawer } from '@angular/material';
 
@@ -12,11 +12,22 @@ export class HeaderLayoutComponent {
   @ViewChild('drawer') drawer: MatDrawer;
   today = new Date();
 
+  @Input() width = '100%';
+
+  @Input() showEventSidebarButton = false;
+
+  @Input() eventSidebarOpened = false;
+  @Output() eventSidebarOpenedChange: EventEmitter<boolean> = new EventEmitter();
+
   constructor(
     private _menuService: MenuService
   ) { }
 
   async drawerClick() {
     await this._menuService.toggle();
+  }
+
+  onSidebarButtonClick($event) {
+    this.eventSidebarOpenedChange.emit($event);
   }
 }
