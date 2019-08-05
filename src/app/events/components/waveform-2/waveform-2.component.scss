@@ -1,6 +1,7 @@
 .content {
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
+  position: relative;
 
   #waveform-panel {
     position: relative;
@@ -35,67 +36,6 @@
   background-color: #DEF;
 }
 
-
-.btn-tbar {
-  margin: 0px 0px 0px 0px;
-}
-
-.table>tbody>tr:first-child>td {
-  border: none;
-}
-
-.table>tbody>tr:first-child>th {
-  border: none;
-}
-
-.mat-form-field {
-  width: 100%;
-  font-size: 16px;
-}
-
-.pagination /deep/ .ngx-pagination {
-  padding-left: 0;
-  margin-top: 10px;
-  margin-bottom: 8px;
-
-  a,
-  button {
-    padding: 2px;
-    color: #fff;
-
-    &:hover,
-    &:focus {
-      background: transparent;
-      font-weight: 800;
-    }
-  }
-
-  .current {
-    background: transparent;
-    font-weight: 800;
-  }
-}
-
-.pagination {
-  font-size: 14px;
-
-  .ngx-pagination {
-    padding-left: 0;
-  }
-}
-
-.input-form-width {
-  width: 80px;
-  padding: 0px;
-  margin: 0px;
-}
-
-.input-form-width-less {
-  width: 60px;
-  padding: 0px;
-  margin: 0px;
-}
-
 button.mat-menu-item {
   line-height: 24px !important;
 }
@@ -112,43 +52,11 @@ a.mat-menu-item>mat-icon {
   color: blue !important;
 }
 
-
-#toolbar {
-
-  button {
-    float: left;
-  }
-
-  .pagination {
-    float: left;
-  }
-
-  mat-button-toggle-group {
-    float: left;
-  }
-}
-
-.filters {
-  margin-top: 20px;
-
-  .mat-form-field-wrapper {
-    padding-bottom: 0;
-  }
-}
-
 mat-progress-bar {
+  z-index: 1000;
   position: absolute;
   top: 0;
   width: 100%;
-
-}
-
-.activatable {
-  opacity: 0.5;
-
-  &.active {
-    opacity: 1.0;
-  }
 }
 
 #waveform-panel {
