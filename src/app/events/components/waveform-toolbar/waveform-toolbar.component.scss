@@ -1,0 +1,57 @@
+.mat-form-field {
+  width: 100%;
+  font-size: 16px;
+}
+
+
+.input-form-width {
+  width: 80px;
+  padding: 0px;
+  margin: 0px;
+}
+
+.input-form-width-less {
+  width: 60px;
+  padding: 0px;
+  margin: 0px;
+}
+
+#toolbar {
+
+  button {
+    float: left;
+  }
+
+  .pagination {
+    float: left;
+  }
+
+  mat-button-toggle-group {
+    float: left;
+  }
+}
+
+.filters {
+  margin-top: 20px;
+
+  .mat-form-field-wrapper {
+    padding-bottom: 0;
+  }
+}
+
+.activatable {
+  opacity: 0.5;
+
+  &.active {
+    opacity: 1.0;
+  }
+}
+
+mat-paginator {
+  background: transparent;
+  color: #fff;
+
+  /deep/ .mat-paginator-range-label {
+    margin: 0px;
+  }
+}

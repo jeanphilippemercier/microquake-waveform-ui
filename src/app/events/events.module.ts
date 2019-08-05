@@ -10,6 +10,7 @@ import { Waveform2Component } from './components/waveform-2/waveform-2.component
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 import { RouterModule, Routes } from '@angular/router';
+import { WaveformToolbarComponent } from './components/waveform-toolbar/waveform-toolbar.component';
 
 const ROUTES: Routes = [
   {
@@ -28,6 +29,7 @@ const ROUTES: Routes = [
     EventDetailComponent,
     EventListComponent,
     Waveform2Component,
+    WaveformToolbarComponent,
     EventFilterDialogComponent,
     EventUpdateDialogComponent
   ],
