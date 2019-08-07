@@ -1,13 +1,10 @@
 <div class="container-fluid content p-0">
   <mat-progress-bar
-    *ngIf="progressValue !== 100"
+    *ngIf="false && progressValue !== 100"
     mode="determinate"
     value="{{progressValue}}"
   ></mat-progress-bar>
-  <ngx-loading
-    [show]="loading"
-    [config]="{ backdropBorderRadius: '3px' }"
-  ></ngx-loading>
+  <ngx-loading [show]="waveformService.loading | async"></ngx-loading>
   <div
     id="waveform-panel"
     #waveformContainer

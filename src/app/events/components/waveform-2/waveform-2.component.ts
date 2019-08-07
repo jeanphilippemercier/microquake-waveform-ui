@@ -1,27 +1,18 @@
-import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, EventEmitter, Output, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, OnDestroy } from '@angular/core';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import { Validators, FormControl } from '@angular/forms';
-import * as miniseed from 'seisplotjs-miniseed';
+
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, distinctUntilChanged, skip } from 'rxjs/operators';
 
 import { globals } from '@src/globals';
-import { CatalogApiService } from '@services/catalog-api.service';
 import { EventApiService } from '@services/event-api.service';
-import { EventWaveformQuery, IEvent } from '@interfaces/event.interface';
+import { EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor } from '@interfaces/event.interface';
 import ApiUtil from '@core/utils/api-util';
+import WaveformUtil from '@core/utils/waveform-util';
 import { WaveformService } from '@services/waveform.service';
 import { Subject } from 'rxjs';
-
-
-interface Sensor {
-  chart: canvasjs.Chart;
-  picks: any;
-  container: any;
-  channels: any;
-  sensor_code: any;
-}
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -56,14 +47,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
   @ViewChild('contextMenuChart') private _menu: ElementRef;
   @ViewChild('waveformContainer') private _waveformContainer: ElementRef;
 
-  private _commonTimeScale = true;
-  private _commonAmplitudeScale = false;
-  private _zoomAll = false;
-  private _displayComposite = true;
-  private _sortTraces = false;
-  private _predictedPicks = true;
-  private _predictedPicksBias = true;
-
   private _passband = filter.BAND_PASS;
   private _convYUnits = 1000; // factor to convert input units from m to mmm
   private _bHoldEventTrigger: boolean;
@@ -72,10 +55,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   contextMenuChartVisible = false;
 
   eventMessage: any;
-  site: any;
-  network: any;
-  allSensors: any[];
-  contextSensor: any[];
+  allSensors: Sensor[];
+  contextSensor: Sensor[];
   allPicks: any[];
   allPicksChanged: any[];
   originTravelTimes: any[];
@@ -88,9 +69,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
   waveformOrigin: any = {};
   options: any;
 
-  bDisplayComposite = true;
-  bShowPredictedPicks = true;
-  bRemoveBias = false;
   highFreqCorner: any;
   bFilterChanged = true;
 
@@ -101,11 +79,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
   lastSelectedXPosition = -1;
   lastDownTarget: any;  // last mouse down selection
   eventTimeOriginHeader: string;
-
-  page_size = globals.chartsPerPage;
-  page_number = 0;
-  num_pages = 0;
-  loaded_pages = 0;
   progressValue = 0;
 
   chartHeight: number;
@@ -113,8 +86,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
   pageOffsetY = 30;
 
   loading = false;
-  treeLoading = false;
-  bDataLoading = false;
   monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   currentEventId: string;
@@ -127,23 +98,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
   minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
   ContextMenuChartAction = ContextMenuChartAction;
 
-  sidebarOpened = true;
   waveformShow = true;
 
   private _unsubscribe = new Subject<void>();
 
   constructor(
-    private _waveformService: WaveformService,
+    public waveformService: WaveformService,
     private _eventApiService: EventApiService,
-    private _catalogService: CatalogApiService,
     private _renderer: Renderer2
   ) { }
 
   async ngOnInit() {
-
-    this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 20) / globals.chartsPerPage);
+    this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this.addKeyDownEventListeners();
-    this.subscribeToolbar();
+    this._subscribeToolbar();
   }
 
   ngOnDestroy(): void {
@@ -151,119 +119,134 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._unsubscribe.complete();
   }
 
-  subscribeToolbar() {
-    this._waveformService.undoLastZoomOrPanClickedObs
+  private _subscribeToolbar(): void {
+    this.waveformService.undoLastZoomOrPanClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this.undoLastZoomOrPan());
 
-    this._waveformService.resetAllChartsViewClickedObs
+    this.waveformService.resetAllChartsViewClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this.resetAllChartsViewXY());
 
-    this._waveformService.zoomAll
-      .pipe(takeUntil(this._unsubscribe))
-      .subscribe((val: boolean) => this._zoomAll = val);
-
-    this._waveformService.commonTimeScale
-      .pipe(takeUntil(this._unsubscribe))
+    this.waveformService.commonTimeScale
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe((val: boolean) => {
-        if (this._commonTimeScale !== val) {
-          this._commonTimeScale = val;
-          this.resetAllChartsViewX();
-        }
+        this.resetAllChartsViewX();
       });
 
-    this._waveformService.commonAmplitudeScale
-      .pipe(takeUntil(this._unsubscribe))
+    this.waveformService.commonAmplitudeScale
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe((val: boolean) => {
-        if (this._commonAmplitudeScale !== val) {
-          this._commonAmplitudeScale = val;
-          this.resetAllChartsViewY();
-        }
+        this.resetAllChartsViewY();
       });
 
-    this._waveformService.displayComposite
-      .pipe(takeUntil(this._unsubscribe))
+    this.waveformService.displayComposite
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe((val: boolean) => {
-        if (val !== this._displayComposite) {
-          this._displayComposite = val;
-          this.changePage(false);
-        }
+        this.changePage(false);
       });
 
-    this._waveformService.sortTraces
-      .pipe(takeUntil(this._unsubscribe))
+
+    this.waveformService.predictedPicks
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe((val: boolean) => {
-        if (!this._sortTraces && val) {
-          this._sortTraces = !this._sortTraces;
-          this._sortAllTraces();
-          this.changePage(false);
-        }
+        this.changePage(false);
       });
 
-    this._waveformService.predictedPicks
-      .pipe(takeUntil(this._unsubscribe))
+    this.waveformService.predictedPicksBias
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe((val: boolean) => {
-        if (val !== this._predictedPicks) {
-          this._predictedPicks = val;
-          this.predicatePicks();
-        }
+        this.predictePicksBias();
+        this.changePage(false);
       });
 
-    this._waveformService.predictedPicksBias
-      .pipe(takeUntil(this._unsubscribe))
-      .subscribe((val: boolean) => {
-        if (val !== this._predictedPicksBias) {
-          this._predictedPicksBias = val;
-          this.predictePicksBias();
-        }
-      });
-
-    this._waveformService.applyFilterClickedObs
+    this.waveformService.applyFilterClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => {
         this.applyFilter();
       });
 
-    this._waveformService.interactiveProcessClickedObs
+    this.waveformService.undoLastPickingClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => this.undoLastPicking());
+
+    this.waveformService.interactiveProcessClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this.onInteractiveProcess());
 
-    this._waveformService.pageChangedObs
+    this.waveformService.pageChangedObs
       .pipe(takeUntil(this._unsubscribe))
-      .subscribe((index: number) => {
-        this.page_number = index;
-        this.changePage(false);
+      .subscribe(async (index: number) => {
+        this.waveformService.loading.next(true);
+        if (!this._isEventPageAlreadyLoaded(index)) {
+          await this.loadEventPage(this.currentEventId, index);
+          this.waveformService.currentPage.next(index);
+          this.afterLoading(this.currentEventId);
+          this.changePage(false);
+        } else {
+          this.waveformService.currentPage.next(index);
+          this.changePage(false);
+        }
+        this.waveformService.loading.next(false);
       });
 
-
-    this._waveformService.sidebarOpened
-      .pipe(takeUntil(this._unsubscribe))
+    this.waveformService.sidebarOpened
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
       .subscribe(async (val) => {
-        if (this.sidebarOpened !== val) {
-          this.sidebarOpened = val;
-          this.loading = true;
-          this.waveformShow = false;
-          await new Promise(resolve => setTimeout(() => resolve(), 500));
-          this.waveformShow = true;
-          this.changePage(false);
-          this.loading = false;
-        }
+        this.waveformService.loading.next(true);
+        this.waveformShow = false;
+        await new Promise(resolve => setTimeout(() => resolve(), 500));
+        this.waveformShow = true;
+        this.changePage(false);
+        this.waveformService.loading.next(false);
       });
   }
 
-  private _handleEvent(event) {
-    this.currentEventId = event.event_resource_id;
-    this.destroyCharts();
+  private _isEventPageAlreadyLoaded(index: number) {
+    const pageSize = this.waveformService.pageSize.getValue();
 
-    if (globals.enablePagingLoad) {
-      if (this.bDataLoading) {
-        this.loading = true;
+    const start = ((index - 1) * (pageSize - 1));
+    const end = start + (pageSize - 2);
+
+    if (this.allSensors && this.allSensors[start] && this.allSensors[end]) {
+      if (
+        this.allSensors[start].channels && this.allSensors[start].channels.length &&
+        this.allSensors[end].channels && this.allSensors[end].channels.length
+      ) {
+        return true;
       }
-      this.loadEventFirstPage(event);
-    } else {
-      this.loadEvent(event);
     }
+    return false;
+  }
+
+  private _handleEvent(event: IEvent) {
+    this.currentEventId = event.event_resource_id;
+    this._destroyCharts();
+    this._loadEventFirstPage(event);
   }
 
   contextMenuClick(action: ContextMenuChartAction) {
@@ -281,342 +264,272 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this.toggleContextMenuChart('hide');
   }
 
-  loadEvent(event) {
-    const self = this;
-
-    if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
-      const id = event.event_resource_id;
-      const preferred_origin_id = event.preferred_origin_id;
-      self.getEvent(event, null).then(eventFile => {
-        if (eventFile) {
-          const eventData = self.parseMiniseed(eventFile, false);
-          if (eventData && eventData.hasOwnProperty('sensors')) {
-            // filter and recompute composite traces
-            self.allSensors = self.addCompositeTrace(self.filterData(eventData.sensors));
-            this._waveformService.allSensors.next(this.allSensors);
-            self.timeOrigin = eventData.timeOrigin;
-            self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
-            if (self.allSensors.length > 0) {
-              // get origins
-              this._catalogService.get_origins_by_id(
-                self._waveformService.site.getValue(),
-                self._waveformService.network.getValue(),
-                id
-              ).subscribe(origins => {
-                let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
-                if (!origin) {
-                  window.alert('Event preferred origin from catalog not found');
-                  console.log('Event preferred origin from catalog not found');
-                  origin = self.findValue(origins, 'preferred_origin', true);
-                }
-                this.page_number = 1;
-                if (origin) {
-                  self.waveformOrigin = origin;
-                  // get travel times for preferred origin
-                  this._catalogService.get_traveltimes_by_id(
-                    self._waveformService.site.getValue(),
-                    self._waveformService.network.getValue(),
-                    id,
-                    origin.origin_resource_id
-                  ).subscribe(traveltimes => {
-                    self.originTravelTimes = traveltimes;
-                    this.addPredictedPicksData(self.allSensors, self.timeOrigin);
-                    // get arrivals, picks for preferred origin
-                    this._catalogService.get_arrivals_by_id(
-                      self._waveformService.site.getValue(),
-                      self._waveformService.network.getValue(),
-                      id,
-                      origin.origin_resource_id
-                    ).subscribe(picks => {
-                      self.allPicks = picks;
-                      self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
-                      this.addArrivalsPickData(self.allSensors, self.timeOrigin);
-
-                      self.activateRemoveBias(false);
-
-                      if (!self._sortTraces) { // sort traces on when loading all data (no pagination)
-                        self._sortTraces = !self._sortTraces;
-                        self._waveformService.sortTracesHidden.next(true);
-                      }
-                      self._sortAllTraces();
-
-                      // display data (first page)
-                      self.changePage(true);
-                    });
-                  });
-                } else {
-                  console.log('No event preferred origin found');
-                  // display data (first page)
-                  self.changePage(true);
-                }
-              });
-              console.log('Loaded data for ' + self.allSensors.length + ' sensors');
-              this.eventTimeOriginHeader = 'Site: ' + self._waveformService.site.getValue() +
-                ' Network: ' + self._waveformService.network.getValue() + ' ' +
-                moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                  .format('YYYY-MM-DD HH:mm:ss.S');
-            }
-          }
-        }
-      });
+  private async _loadEventFirstPage(event: IEvent) {
+    if (!event) {
+      console.error(`No event`);
+      return;
     }
-  }
 
-  loadEventFirstPage(event) {
-    const self = this;
-    this._waveformService.loadedAll.next(false);
-
-    if (event.hasOwnProperty('waveform_file') || event.hasOwnProperty('variable_size_waveform_file')) {
-      const message = event;
-      const id = event.event_resource_id;
-      const preferred_origin_id = event.preferred_origin_id;
-      // first page
-      this.page_number = 1;
-      self.bDataLoading = true;
-      self.getEventPage(id, 1).then(eventFile => {
-        if (id === self.currentEventId) {
-          if (eventFile) {
-            const eventData = self.parseMiniseed(eventFile, false);
-            if (eventData && eventData.hasOwnProperty('sensors')) {
-              // filter and recompute composite traces
-              self.allSensors = self.addCompositeTrace(self.filterData(eventData.sensors));
-              this._waveformService.allSensors.next(this.allSensors);
-              self.loaded_pages = 1;
-              self.progressValue = (self.loaded_pages / self.num_pages) * 100;
-              for (let i = self.allSensors.length; i < self.num_pages * (self.page_size - 1); i++) {
-                self.allSensors[i] = { 'channels': [] };
-              }
-              self.timeOrigin = eventData.timeOrigin;
-              self.timeEnd = moment(self.timeOrigin).add(globals.fixedDuration, 'seconds');
-              if (self.allSensors.length > 0) {
-                // get origins
-                this._catalogService.get_origins_by_id(
-                  self._waveformService.site.getValue(),
-                  self._waveformService.network.getValue(),
-                  id
-                ).subscribe(origins => {
-                  let origin = self.findValue(origins, 'origin_resource_id', preferred_origin_id);
-                  if (!origin) {
-                    window.alert('Warning: Event preferred origin from catalog not found');
-                    origin = self.findValue(origins, 'preferred_origin', true);
-                  }
-                  if (origin) {
-                    self.waveformOrigin = origin;
-                    // get travel times for preferred origin
-                    this._catalogService.get_traveltimes_by_id(
-                      self._waveformService.site.getValue(),
-                      self._waveformService.network.getValue(),
-                      id,
-                      origin.origin_resource_id
-                    ).subscribe(traveltimes => {
-                      self.originTravelTimes = traveltimes;
-                      this.addPredictedPicksData(self.allSensors, self.timeOrigin);
-                      // get arrivals, picks for preferred origin
-                      this._catalogService.get_arrivals_by_id(
-                        self._waveformService.site.getValue(),
-                        self._waveformService.network.getValue(),
-                        id,
-                        origin.origin_resource_id
-                      ).subscribe(picks => {
-                        self.allPicks = picks;
-                        self.allPicksChanged = JSON.parse(JSON.stringify(self.allPicks));
-                        this.addArrivalsPickData(self.allSensors, self.timeOrigin);
-
-                        self.picksBias = 0;
-                        if (self.bRemoveBias) { // by default turn remove bias off with paged loading
-                          self.bRemoveBias = !self.bRemoveBias;
-                        }
-
-                        // by default turn off sort traces with paged loading
-                        if (self._sortTraces) {
-                          self._sortTraces = !self._sortTraces;
-                          self._waveformService.sortTracesHidden.next(false);
-                        }
-
-                        self.getEvent(event, true).then(contextFile => {
-                          if (id === self.currentEventId) {
-                            if (contextFile) {
-                              const contextData = self.parseMiniseed(contextFile, true);
-                              if (contextData && contextData.hasOwnProperty('sensors')) {
-                                self.contextSensor = self.filterData(contextData.sensors);
-                                self.contextSensor = contextData.sensors;
-                                self.contextTimeOrigin = contextData.timeOrigin;
-                              }
-                            }
-                            self.changePage(true);  // display data (first page)
-                            if (self.loaded_pages === self.num_pages) {
-                              self.afterLoading(id);
-                            } else {
-                              this.asyncLoadEventPages(id);  // load next pages
-                            }
-                          }
-                        });
-
-                        this.eventTimeOriginHeader = 'Site: ' +
-                          self._waveformService.site.getValue() +
-                          ' Network: ' + self._waveformService.network.getValue() + ' ' +
-                          moment(eventData.timeOrigin).utc().utcOffset(self.timezone)
-                            .format('YYYY-MM-DD HH:mm:ss.S');
-                      });
-                    });
-                  } else {
-                    window.alert('No event preferred origin found');
-                  }
-                });
-              }
-            }
-          }
-        }
-
-      });
+    if (!event.waveform_file && !event.variable_size_waveform_file) {
+      console.error(`No waveform_file or variable_size_waveform_file in event`);
+      return;
     }
-  }
 
-  async asyncLoadEventPages(event_id) {
-    const self = this;
+    this.waveformService.loading.next(true);
+    this.waveformService.loadedAll.next(false);
+    const preferred_origin_id = event.preferred_origin_id;
 
-    for (let i = 2; i <= self.num_pages; i++) {
-      if (event_id !== self.currentEventId) {
-        console.log('Changed event on loading pages');
-        break;
+    // first page
+    this.waveformService.currentPage.next(1);
+
+    try {
+      const eventFile = await this.getEventPage(event.event_resource_id, 1);
+
+      if (!eventFile) {
+        console.error(`no eventFile`);
+        return;
       }
-      await self.getEventPage(event_id, i).then(eventFile => {
-        if (event_id === self.currentEventId) {
-          const eventData = self.parseMiniseed(eventFile, false);
-          if (eventData && eventData.hasOwnProperty('sensors') && eventData.sensors.length > 0) {
-            if (!self.timeOrigin.isSame(eventData.timeOrigin)) {
-              console.log('Warning: Different origin time on page: ', i);
-            }
-            // filter and recompute composite traces
-            const sensors = self.addCompositeTrace(self.filterData(eventData.sensors));
-            self.addPredictedPicksData(sensors, self.timeOrigin);
-            self.addArrivalsPickData(sensors, self.timeOrigin);
-            for (let j = 0; j < sensors.length; j++) {
-              self.allSensors[(self.page_size - 1) * (i - 1) + j] = sensors[j];
-            }
-          }
-          self.loaded_pages++;
-          self.progressValue = self.loaded_pages / self.num_pages * 100;
-          if (self.loaded_pages === self.num_pages) {
-            self.afterLoading(event_id);
-          }
-        } else {
-          console.log('Changed event on await loading');
+
+      const eventData = WaveformUtil.parseMiniseed(eventFile, false);
+
+      if (eventData && eventData.sensors) {
+
+        // filter and recompute composite traces
+        this.allSensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
+        this.waveformService.allSensors.next(this.allSensors);
+        this.waveformService.loadedPages.next(1);
+        this.progressValue = (this.waveformService.loadedPages.getValue() / this.waveformService.maxPages.getValue()) * 100;
+        const max = this.waveformService.maxPages.getValue() * (this.waveformService.pageSize.getValue() - 1);
+
+        for (let i = this.allSensors.length; i < max; i++) {
+          this.allSensors[i] = { 'channels': [] };
         }
-      });
+
+        this.timeOrigin = eventData.timeOrigin;
+        this.timeEnd = moment(this.timeOrigin).add(globals.fixedDuration, 'seconds');
+
+        if (this.allSensors.length > 0) {
+
+          // get origins
+          const originsQuery: EventOriginsQuery = {
+            site_code: this.waveformService.site.getValue(),
+            network_code: this.waveformService.network.getValue(),
+            event_id: event.event_resource_id
+          };
+
+          const origins = await this._eventApiService.getEventOriginsById(originsQuery).toPromise();
+
+          let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
+
+          if (!origin) {
+            window.alert('Warning: Event preferred origin from catalog not found');
+            console.error('No event preferred origin found');
+            origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
+            return;
+          }
+
+          this.waveformOrigin = origin;
+
+          // get travel times for preferred origin
+          const traveltimes = await this._eventApiService.getEventOriginTraveltimesById(
+            event.event_resource_id,
+            origin.origin_resource_id
+          ).toPromise();
+
+          this.originTravelTimes = traveltimes;
+          this.addPredictedPicksData(this.allSensors, this.timeOrigin);
+
+          const arrivalsQuery: EventArrivalsQuery = {
+            site_code: this.waveformService.site.getValue(),
+            network_code: this.waveformService.network.getValue(),
+            event_id: event.event_resource_id,
+            origin_id: origin.origin_resource_id
+          };
+
+          // get arrivals, picks for preferred origin
+          const picks = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
+
+          this.allPicks = picks;
+          this.allPicksChanged = JSON.parse(JSON.stringify(this.allPicks));
+          this.addArrivalsPickData(this.allSensors, this.timeOrigin);
+
+          this.picksBias = 0;
+          const contextFile = await this.getWaveformContextFile(event);
+
+          if (contextFile) {
+            const contextData = WaveformUtil.parseMiniseed(contextFile, true);
+            if (contextData && contextData.sensors) {
+              this.contextSensor = this.filterData(contextData.sensors);
+              this.contextSensor = contextData.sensors;
+              this.contextTimeOrigin = contextData.timeOrigin;
+            }
+          }
+
+          // display data (first page)
+          this.afterLoading(event.event_resource_id);
+          this.changePage(true);
+
+          // if (this.waveformService.loadedPages.getValue() === this.waveformService.maxPages.getValue()) {
+          //   this.afterLoading(event.event_resource_id);
+          // } else {
+          //   // load next pages
+          //   // this.asyncLoadEventPages(event.event_resource_id);
+          // }
+
+          this.eventTimeOriginHeader = `
+              Site: ${this.waveformService.site.getValue()}
+              Network: ${this.waveformService.network.getValue()}
+              ${moment(eventData.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S')}
+              `;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.waveformService.loading.next(false);
+    }
+  }
+
+  async loadEventPage(event_id: string, idx: number) {
+
+    if (event_id !== this.currentEventId) {
+      console.log('Changed event on loading pages');
+      return;
+    }
+
+    const eventFile = await this.getEventPage(event_id, idx);
+    const eventData = WaveformUtil.parseMiniseed(eventFile, false);
+
+    if (eventData && eventData.sensors && eventData.sensors.length > 0) {
+      if (!this.timeOrigin.isSame(eventData.timeOrigin)) {
+        console.log('Warning: Different origin time on page: ', idx);
+      }
+      // filter and recompute composite traces
+      const sensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
+      this.addPredictedPicksData(sensors, this.timeOrigin);
+      this.addArrivalsPickData(sensors, this.timeOrigin);
+      for (let j = 0; j < sensors.length; j++) {
+        this.allSensors[(this.waveformService.pageSize.getValue() - 1) * (idx - 1) + j] = sensors[j];
+      }
+    }
+    this.waveformService.loadedPages.next(this.waveformService.loadedPages.getValue() + 1);
+    this.progressValue = this.waveformService.loadedPages.getValue() / this.waveformService.maxPages.getValue() * 100;
+    if (this.waveformService.loadedPages.getValue() === this.waveformService.maxPages.getValue()) {
+    }
+
+  }
+
+  async asyncLoadEventPages(event_id: string) {
+
+    for (let i = 2; i <= this.waveformService.maxPages.getValue(); i++) {
+      if (event_id !== this.currentEventId) {
+        console.log('Changed event on loading pages');
+        return;
+      }
+      const eventFile = await this.getEventPage(event_id, i);
+      const eventData = WaveformUtil.parseMiniseed(eventFile, false);
+
+      if (eventData && eventData.sensors && eventData.sensors.length > 0) {
+        if (!this.timeOrigin.isSame(eventData.timeOrigin)) {
+          console.log('Warning: Different origin time on page: ', i);
+        }
+        // filter and recompute composite traces
+        const sensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
+        this.addPredictedPicksData(sensors, this.timeOrigin);
+        this.addArrivalsPickData(sensors, this.timeOrigin);
+        for (let j = 0; j < sensors.length; j++) {
+          this.allSensors[(this.waveformService.pageSize.getValue() - 1) * (i - 1) + j] = sensors[j];
+        }
+      }
+      this.waveformService.loadedPages.next(this.waveformService.loadedPages.getValue() + 1);
+      this.progressValue = this.waveformService.loadedPages.getValue() / this.waveformService.maxPages.getValue() * 100;
+      if (this.waveformService.loadedPages.getValue() === this.waveformService.maxPages.getValue()) {
+      }
+      this.afterLoading(event_id);
     }
   }
 
   afterLoading(event_id) {
-    const self = this;
 
-
-    if (event_id !== self.currentEventId) {
+    if (event_id !== this.currentEventId) {
       console.log('Changed event on afterloading');
       return;
     }
-    // eliminate placeholders, sanitize sensors array
-    let index = self.allSensors.findIndex(sensor => sensor.channels.length === 0);
-    while (index >= 0) {
-      self.allSensors.splice(index, 1);
-      index = self.allSensors.findIndex(sensor => sensor.channels.length === 0);
+
+    const maxPages = Math.ceil(this.allSensors.length / (this.waveformService.pageSize.getValue() - 1));
+    if (this.waveformService.currentPage.getValue() === maxPages) {
+      // eliminate placeholders, sanitize sensors array
+      let index = this.allSensors.findIndex(sensor => sensor.channels.length === 0);
+      while (index >= 0) {
+        this.allSensors.splice(index, 1);
+        index = this.allSensors.findIndex(sensor => sensor.channels.length === 0);
+      }
+      console.log('Loaded data for ' + this.allSensors.length + ' sensors');
+      // remove bias from predicted picks, force a refresh
+      // this.activateRemoveBias(true);
+      this.waveformService.loadedAll.next(true);
     }
-    self.num_pages = Math.ceil(self.allSensors.length / (self.page_size - 1));
-    self.bDataLoading = false; // unlock page changes
-    console.log('Loaded data for ' + self.allSensors.length + ' sensors');
-
-    // remove bias from predicted picks, force a refresh
-    // self.activateRemoveBias(true);
-    this._waveformService.loadedAll.next(true);
   }
 
-  confirmEvent(event) {
-    console.log(event);
-    if (event.hasOwnProperty('reprocess')) {
-      const event_id = event.reprocess.event_resource_id;
-      // const new_origin_id = event.reprocess.origin_resource_id;
-      console.log(event_id);
-    }
 
-  }
+  private _renderPage() {
 
-  sort_array_by(field, reverse, primer) {
-
-    const key = primer ?
-      function (x) { return primer(x[field]); } :
-      function (x) { return x[field]; };
-
-    reverse = !reverse ? 1 : -1;
-
-    return function (a, b) {
-      const A = key(a), B = key(b);
-      return ((A < B) ? -1 : ((A > B) ? 1 : 0)) * [-1, 1][+!!reverse];
-    };
-  }
-
-  findValue(obj, key, value) {
-    return obj.find(v => v[key] === value);
-  }
-
-  findNestedValue(obj, key, subkey, value, otherkey, othervalue) {
-    return obj.find(v => (v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
-  }
-
-  renderPage() {
-    const self = this;
-
-    const pageNumber = self.page_number;
-    const pageSize = self.page_size - 1; // traces loaded from API
-    const numPages = globals.enablePagingLoad ?
-      self.num_pages : Math.ceil(self.allSensors.length / pageSize);
+    const pageNumber = this.waveformService.currentPage.getValue();
+    const pageSize = this.waveformService.pageSize.getValue() - 1; // traces loaded from API
+    const numPages = this.waveformService.maxPages.getValue();
     if (pageNumber > 0 && pageNumber <= numPages) {
-      self.activeSensors = self.allSensors.slice((pageNumber - 1) * pageSize, Math.min(pageNumber * pageSize, self.allSensors.length));
-      self.activeSensors.push(self.contextSensor[0]);  // context trace is last
-      self.renderCharts();
-      self.renderContextChart();
-      self.setChartKeys();
-      for (const sensor of self.activeSensors) {
-        sensor.chart.options.viewportMinStack = self._xViewPortMinStack;
-        sensor.chart.options.viewportMaxStack = self._xViewportMaxStack;
+
+      this.activeSensors = this.allSensors.slice((pageNumber - 1) * pageSize, Math.min(pageNumber * pageSize, this.allSensors.length));
+      this.activeSensors = this.activeSensors.filter(activeSensor => activeSensor.channels && activeSensor.channels.length > 0);
+      this.activeSensors.push(this.contextSensor[0]);  // context trace is last
+
+      this.predicatePicks();
+
+      this._renderCharts();
+      this._renderContextChart();
+      this.setChartKeys();
+      for (const sensor of this.activeSensors) {
+        sensor.chart.options.viewportMinStack = this._xViewPortMinStack;
+        sensor.chart.options.viewportMaxStack = this._xViewportMaxStack;
       }
     }
   }
 
-  changePage(reset) {
-    const self = this;
+  changePage(reset: boolean) {
+
     if (!reset) {
       this.updateArrivalWithPickData();
     }
-    if (self.bDataLoading && self.page_number > self.loaded_pages) {
+    if (this.loading && this.waveformService.currentPage.getValue() > this.waveformService.loadedPages.getValue()) {
       window.alert('Please wait for requested page to load');
       return;  // no page change til data is fully loaded
     }
     // reset last selected channel
-    self.lastDownTarget = null;
+    this.lastDownTarget = null;
     // reset picks last known state
-    self.lastPicksState = null;
+    this.lastPicksState = null;
     if (reset) { // first page , new event
-      self._xViewPortMinStack = [];
-      self._xViewportMaxStack = [];
+      this._xViewPortMinStack = [];
+      this._xViewportMaxStack = [];
     } else {             // remember zoom history
-      self._xViewPortMinStack = self.activeSensors[0].chart.options.viewportMinStack;
-      self._xViewportMaxStack = self.activeSensors[0].chart.options.viewportMaxStack;
+      this._xViewPortMinStack = this.activeSensors[0].chart.options.viewportMinStack;
+      this._xViewportMaxStack = this.activeSensors[0].chart.options.viewportMaxStack;
     }
-    self.destroyCharts();
-    self.renderPage();
+    this._destroyCharts();
+    this._renderPage();
   }
 
   onInteractiveProcess() {
-    const self = this;
+
     this.updateArrivalWithPickData();
-    self._catalogService.update_event_picks_by_id
-      (self.currentEventId, self.allPicksChanged)
-      .subscribe((response) => {
-        console.log(response);
-      },
-        (error) => {
-          window.alert('Error updating event: ' + error.error.message);
-        });
+    try {
+      const response = this._eventApiService.updateEventPicksById(this.currentEventId, this.allPicksChanged).toPromise();
+      console.log(response);
+    } catch (err) {
+      console.error(err);
+      window.alert('Error updating event: ' + err.error.message);
+
+    }
   }
 
   toggleContextMenuChart(force?: 'show' | 'hide') {
@@ -632,14 +545,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   maxValue(dataPoints) {
-    const self = this;
+
     let maximum = Math.abs(dataPoints[0].y);
     for (let i = 0; i < dataPoints.length; i++) {
       if (Math.abs(dataPoints[i].y) > maximum) {
         maximum = Math.abs(dataPoints[i].y);
       }
     }
-    const ret = Math.ceil(maximum * (self._convYUnits * 10000)) / (self._convYUnits * 10000);
+    const ret = Math.ceil(maximum * (this._convYUnits * 10000)) / (this._convYUnits * 10000);
     return ret;
   }
 
@@ -671,12 +584,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return ts.toISOString().slice(0, -4) + str.substring(str.length - 6) + 'Z';
   }
 
-  destroyCharts() {
-    const self = this;
-    if (self.activeSensors) {
-      for (let i = 0; i < self.activeSensors.length; i++) {
-        self.activeSensors[i].chart.destroy();
-        const elem = document.getElementById(self.activeSensors[i].container);
+  private _destroyCharts() {
+
+    if (this.activeSensors) {
+      for (let i = 0; i < this.activeSensors.length; i++) {
+        this.activeSensors[i].chart.destroy();
+        const elem = document.getElementById(this.activeSensors[i].container);
         if (elem) {
           elem.parentElement.removeChild(elem);
         }
@@ -684,7 +597,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  renderCharts() {
+  private _renderCharts() {
     // Chart Options, Render
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
       this.activeSensors[i].container = 'container' + i.toString();
@@ -700,9 +613,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       const data = [];
       for (const channel of this.activeSensors[i].channels) {
-        if ((!this._displayComposite && channel.channel_id !== globals.compositeChannelCode)
-          || (this._displayComposite && channel.channel_id === globals.compositeChannelCode)
-          || (this._displayComposite && this.activeSensors[i].channels.length === 1)) {
+        if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode)
+          || (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode)
+          || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
               name: channel.code_id,
@@ -717,33 +630,32 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
 
       const yMax = this.getYmax(i);
-
-      const self = this;
       const options = {
         zoomEnabled: true,
         zoomType: 'x',
         animationEnabled: true,
-        rangeChanged: function (e) {
-          self._bHoldEventTrigger = true;
+        rangeChanged: (e) => {
+          this._bHoldEventTrigger = true;
           if (!e.chart.options.viewportMinStack) {
             e.chart.options.viewportMinStack = [];
             e.chart.options.viewportMaxStack = [];
           }
           if (e.trigger === 'zoom') {
-            if (self._zoomAll) {
-              self.zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
+            if (this.waveformService.zoomAll.getValue()) {
+              this.zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
             } else {
               e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
               e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
             }
           }
           if (e.trigger === 'reset') {
-            self.resetChartViewX(e.chart);
+            this.resetChartViewX(e.chart);
           }
-          document.getElementById('toolbar').focus();
+          this._waveformContainer.nativeElement.focus();
+
         },
         title: {
-          text: self.activeSensors[i].sensor_code,
+          text: this.activeSensors[i].sensor_code,
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
@@ -756,139 +668,134 @@ export class Waveform2Component implements OnInit, OnDestroy {
         },
         toolTip: {
           enabled: false,
-          contentFormatter: function (e) {
+          contentFormatter: (e) => {
             const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * this._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
               '<br/>' +
               '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
             return content;
           }
         },
         axisX: {
-          minimum: self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0,
-          maximum: self.getXmax(i),
-          viewportMinimum: self._zoomAll && self._xViewPortMinStack.length > 0 ?
-            self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : self.getXvpMin(),
-          viewportMaximum: self._zoomAll && self._xViewportMaxStack.length > 0 ?
-            self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : self.getXvpMax(),
+          minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
+          maximum: this.getXmax(i),
+          viewportMinimum: this.waveformService.zoomAll.getValue() && this._xViewPortMinStack.length > 0 ?
+            this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : this.getXvpMin(),
+          viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
+            this._xViewportMaxStack[this._xViewportMaxStack.length - 1] : this.getXvpMax(),
           includeZero: true,
           labelAutoFit: false,
           labelWrap: false,
-          labelFormatter: function (e) {
+          labelFormatter: (e) => {
             if (e.value === 0) {
-              const d = moment(self.timeOrigin).utc().utcOffset(self.timezone);
+              const d = moment(this.timeOrigin).utc().utcOffset(this.timezone);
               return d.format('HH:mm:ss.S');
             } else {
               return e.value / 1000000 + ' s';
             }
           },
-          stripLines: self.activeSensors[i].picks
+          stripLines: this.activeSensors[i].picks
         },
         axisY: {
           minimum: -yMax,
           maximum: yMax,
-          interval: self._commonAmplitudeScale ? null : yMax / 2,
+          interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
-          labelFormatter: function (e) {
+          labelFormatter: (e) => {
             if (e.value === 0) {
               return '0 mm/s';
             } else {
-              return Math.ceil(e.value * self._convYUnits * 1000) / 1000;
+              return Math.ceil(e.value * this._convYUnits * 1000) / 1000;
             }
           }
         },
         data: data
       };
 
-      self.activeSensors[i].chart = new CanvasJS.Chart(self.activeSensors[i].container, options);
-
-      self.activeSensors[i].chart.render();
+      this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
+      this.activeSensors[i].chart.render();
     }
   }
 
   addKeyDownEventListeners() {
-    const self = this;
 
     document.addEventListener('keydown', (e: any) => {
 
       const target = e.target || e.srcElement;
       if (!/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName)) {
         if (e.keyCode === 80) {  // p
-          this._waveformService.predictedPicks.next(!this._predictedPicks);
+          this.waveformService.predictedPicks.next(!this.waveformService.predictedPicks.getValue());
         }
         if (e.keyCode === 90) {  // z
-          this._waveformService.commonTimeScale.next(!this._commonTimeScale);
+          this.waveformService.commonTimeScale.next(!this.waveformService.commonTimeScale.getValue());
         }
         if (e.keyCode === 88) {   // x
-          this._waveformService.commonAmplitudeScale.next(!this._commonAmplitudeScale);
+          this.waveformService.commonAmplitudeScale.next(!this.waveformService.commonAmplitudeScale.getValue());
         }
         if (e.keyCode === 68) {   // d
-          if (this._waveformService.pickingMode.getValue() === 'P') {
-            this._waveformService.pickingMode.next('none');
+          if (this.waveformService.pickingMode.getValue() === 'P') {
+            this.waveformService.pickingMode.next('none');
           } else {
-            this._waveformService.pickingMode.next('P');
+            this.waveformService.pickingMode.next('P');
           }
         }
         if (e.keyCode === 70) {   // f
-          if (this._waveformService.pickingMode.getValue() === 'S') {
-            this._waveformService.pickingMode.next('none');
+          if (this.waveformService.pickingMode.getValue() === 'S') {
+            this.waveformService.pickingMode.next('none');
           } else {
-            this._waveformService.pickingMode.next('S');
+            this.waveformService.pickingMode.next('S');
           }
         }
         if (e.keyCode === 83) {   // s, undo picking
-          self.undoLastPicking();
+          this.undoLastPicking();
         }
         if (e.keyCode === 72) {   // h, help
           document.getElementById('helpBtn').click();
         }
         if (e.keyCode === 39) {  // right arrow moves pick to right
-          if (this._waveformService.pickingMode.getValue() !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+          if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), step * 10, true, true);
+              this.movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), step * 10, true, true);
             } else { // by step
-              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), step, true, true);
+              this.movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), step, true, true);
             }
           }
         }
         if (e.keyCode === 37) {  // left arrow moves pick to left
-          if (this._waveformService.pickingMode.getValue() !== 'none' && self.lastDownTarget !== null && self.lastDownTarget > -1) {
+          if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), -step * 10, true, true);
+              this.movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), -step * 10, true, true);
             } else { // by step
-              self.movePick(self.lastDownTarget, this._waveformService.pickingMode.getValue(), -step, true, true);
+              this.movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), -step, true, true);
             }
           }
         }
         if (e.keyCode === 49 || e.keyCode === 97) {
-          if (self.page_number > 1) {
-            self.page_number = self.page_number - 1;
-            self.changePage(false);
+          if (this.waveformService.currentPage.getValue() > 1) {
+            this.waveformService.currentPage.next(this.waveformService.currentPage.getValue() - 1);
+            this.changePage(false);
           }
         }
         if (e.keyCode === 50 || e.keyCode === 98) {
-          const numPages = globals.enablePagingLoad ?
-            self.loaded_pages : Math.ceil(self.allSensors.length / (self.page_size - 1));
-          if (self.page_number < numPages) {
-            self.page_number = self.page_number + 1;
-            self.changePage(false);
+          const numPages = this.waveformService.loadedPages.getValue();
+          if (this.waveformService.currentPage.getValue() < numPages) {
+            this.waveformService.currentPage.next(this.waveformService.currentPage.getValue() + 1);
+            this.changePage(false);
           }
         }
       }
-    },
-      false);
-
+    }, false);
   }
 
-  renderContextChart() {
-    const self = this;
+  private _renderContextChart() {
+
     // Chart Options, Render
 
-    const i = self.activeSensors.length - 1;
+    const i = this.activeSensors.length - 1;
 
-    self.activeSensors[i].container = 'container' + i.toString();
+    this.activeSensors[i].container = 'container' + i.toString();
 
     if (document.querySelectorAll('#' + this.activeSensors[i].container).length === 0) {
       const div = document.createElement('div');
@@ -900,7 +807,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const data = [];
-    for (const channel of self.activeSensors[i].channels) {
+    for (const channel of this.activeSensors[i].channels) {
       data.push(
         {
           name: channel.code_id,
@@ -913,14 +820,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
         });
     }
 
-    const yMax = self.getYmax(i);
+    const yMax = this.getYmax(i);
 
-    const timeOriginValue = self.calculateTimeOffset(self.timeOrigin, self.contextTimeOrigin);
+    const timeOriginValue = this.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
     const optionsContext = {
       zoomEnabled: true,
       animationEnabled: true,
       title: {
-        text: self.activeSensors[i].sensor_code,
+        text: this.activeSensors[i].sensor_code,
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
@@ -933,27 +840,27 @@ export class Waveform2Component implements OnInit, OnDestroy {
       },
       toolTip: {
         enabled: true,
-        contentFormatter: function (e) {
+        contentFormatter: (e) => {
           const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * self._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * this._convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
             '<br/>' +
             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
           return content;
         }
       },
       axisX: {
-        minimum: self.contextTimeOrigin.millisecond() * 1000,
+        minimum: this.contextTimeOrigin.millisecond() * 1000,
         maximum: Math.max(
-          self.contextSensor[0].channels[0].microsec + self.contextSensor[0].channels[0].duration,
-          self.calculateTimeOffset(self.timeEnd, self.contextTimeOrigin)),
-        viewportMinimum: self._xViewPortMinStack.length > 0 ?
-          self._xViewPortMinStack[self._xViewPortMinStack.length - 1] : null,
-        viewportMaximum: self._zoomAll && self._xViewportMaxStack.length > 0 ?
-          self._xViewportMaxStack[self._xViewportMaxStack.length - 1] : null,
+          this.contextSensor[0].channels[0].microsec + this.contextSensor[0].channels[0].duration,
+          this.calculateTimeOffset(this.timeEnd, this.contextTimeOrigin)),
+        viewportMinimum: this._xViewPortMinStack.length > 0 ?
+          this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : null,
+        viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
+          this._xViewportMaxStack[this._xViewportMaxStack.length - 1] : null,
         includeZero: true,
         labelAutoFit: false,
         labelWrap: false,
-        labelFormatter: function (e) {
+        labelFormatter: (e) => {
           return e.value / 1000000 + ' s';
         },
         stripLines: [{
@@ -965,59 +872,59 @@ export class Waveform2Component implements OnInit, OnDestroy {
       axisY: {
         minimum: -yMax,
         maximum: yMax,
-        interval: self._commonAmplitudeScale ? null : yMax / 2,
+        interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
-        labelFormatter: function (e) {
+        labelFormatter: (e) => {
           if (e.value === 0) {
             return '0 mm/s';
           } else {
-            return Math.ceil(e.value * self._convYUnits * 1000) / 1000;
+            return Math.ceil(e.value * this._convYUnits * 1000) / 1000;
           }
         }
       },
       data: data
     };
     optionsContext.data[0].dataPoints[0]['indexLabel'] =
-      moment(self.contextSensor[0].channels[0].start).utc().utcOffset(self.timezone).format('HH:mm:ss.S');
-    self.activeSensors[i].chart = new CanvasJS.Chart(self.activeSensors[i].container, optionsContext);
+      moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
+    this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, optionsContext);
 
-    self.activeSensors[i].chart.render();
+    this.activeSensors[i].chart.render();
   }
 
   setChartKeys() {
-    const self = this;
-    for (let j = 0; j < self.activeSensors.length; j++) {
-      const chartEl = self.activeSensors[j].chart;
+
+    for (let j = 0; j < this.activeSensors.length; j++) {
+      const chartEl = this.activeSensors[j].chart;
 
       const chartElDom: Element = chartEl.get('container');
       const chartElCanvasesDom = chartElDom.querySelectorAll('.canvasjs-chart-canvas');
       const canvas = chartElCanvasesDom[chartElCanvasesDom.length - 1];
 
-      if (j < self.activeSensors.length - 1) {    // exclude context trace
+      if (j < this.activeSensors.length - 1) {    // exclude context trace
 
         // Create or move picks
         canvas.addEventListener('click', (e: MouseEvent) => {
 
-          if (self.selected === -1) { // ignore if we have a drag event
+          if (this.selected === -1) { // ignore if we have a drag event
             const ind = j;
-            const chart = self.activeSensors[ind].chart;
+            const chart = this.activeSensors[ind].chart;
 
             const relX = e.offsetX; // - 0; // parentOffset.left;
-            if (this._waveformService.pickingMode.getValue() === 'P') {
+            if (this.waveformService.pickingMode.getValue() === 'P') {
               // create or move P pick on Left mouse click in P picking mode
-              if (!self._bHoldEventTrigger) {
-                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
+              if (!this._bHoldEventTrigger) {
+                this.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
               }
-            } else if (this._waveformService.pickingMode.getValue() === 'S') {
+            } else if (this.waveformService.pickingMode.getValue() === 'S') {
               // create or move S pick on Left mouse click in S picking mode
-              if (!self._bHoldEventTrigger) {
-                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+              if (!this._bHoldEventTrigger) {
+                this.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
               }
             } else {
               if (e.ctrlKey) {  // create or move P on Ctrl + left mouse button click
-                self.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
+                this.addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
               } else if (e.shiftKey) {   // create or move S pick on Shift + left mouse button click
-                self.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+                this.addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
               }
             }
           }
@@ -1026,15 +933,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
         // Drag picks
         canvas.addEventListener('mousedown', (e: MouseEvent) => {
           const idx = j;
-          self.lastDownTarget = idx;
+          this.lastDownTarget = idx;
 
-          if (self.contextMenuChartVisible) {
-            self.selectedContextMenu = -1;
-            self.toggleContextMenuChart('hide');
+          if (this.contextMenuChartVisible) {
+            this.selectedContextMenu = -1;
+            this.toggleContextMenuChart('hide');
             return;
           }
 
-          const chart = self.activeSensors[idx].chart;
+          const chart = this.activeSensors[idx].chart;
           const relX = e.offsetX;
           const relY = e.offsetY;
 
@@ -1052,44 +959,44 @@ export class Waveform2Component implements OnInit, OnDestroy {
                   relX < chartStripBounds.x2 + globals.snapDistance &&
                   relY > chartStripBounds.y1 &&
                   relY < chartStripBounds.y2) {  // move pick
-                  self.savePicksState(idx, self.activeSensors[idx].sensor_code, self.activeSensors[idx].picks);
+                  this.savePicksState(idx, this.activeSensors[idx].sensor_code, this.activeSensors[idx].picks);
 
-                  self.selected = i;
+                  this.selected = i;
                   break;
                 }
               }
             }
           } else if (e.button === 1) {  // remove P or S on Middle mouse Click
-            if (this._waveformService.pickingMode.getValue() === 'P') {
-              self.deletePicks(idx, 'P', null); // remove P picks on Middle mouse click in P picking mode
-            } else if (this._waveformService.pickingMode.getValue() === 'S') {
-              self.deletePicks(idx, 'S', null); // remove S picks on Middle mouse click in S picking mode
+            if (this.waveformService.pickingMode.getValue() === 'P') {
+              this.deletePicks(idx, 'P', null); // remove P picks on Middle mouse click in P picking mode
+            } else if (this.waveformService.pickingMode.getValue() === 'S') {
+              this.deletePicks(idx, 'S', null); // remove S picks on Middle mouse click in S picking mode
             } else {
               if (e.ctrlKey) {
-                self.deletePicks(idx, 'P', null); // remove P on Ctrl + Middle mouse button click
+                this.deletePicks(idx, 'P', null); // remove P on Ctrl + Middle mouse button click
               } else if (e.shiftKey) {
-                self.deletePicks(idx, 'S', null); // remove S on Shift + Middle mouse button click
+                this.deletePicks(idx, 'S', null); // remove S on Shift + Middle mouse button click
               }
             }
           } else if (e.button === 2) {  // save position on right mouse button, context menu
-            self.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
+            this.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
           }
         });
 
         // move selected stripLine
         canvas.addEventListener('mousemove', (e: MouseEvent) => {
 
-          if (self.selected !== -1) {
-            self._bHoldEventTrigger = true;
+          if (this.selected !== -1) {
+            this._bHoldEventTrigger = true;
             const idx = j;
-            const chart = self.activeSensors[idx].chart; // self.activeSensors[idx].chart;
+            const chart = this.activeSensors[idx].chart; // this.activeSensors[idx].chart;
 
             const relX = e.offsetX;
             const data = chart.options.data[0].dataPoints;
             const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
-            const pickType = chart.options.axisX.stripLines[self.selected].label;
+            const pickType = chart.options.axisX.stripLines[this.selected].label;
             const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-            const otherPick = self.findValue(self.activeSensors[idx].picks, 'label', otherPickType);
+            const otherPick = WaveformUtil.findValue(this.activeSensors[idx].picks, 'label', otherPickType);
 
             if (otherPick) {
               if (pickType === 'P') {
@@ -1104,8 +1011,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
             }
             if (position >= data[0].x && position <= data[data.length - 1].x) {
 
-              chart.options.axisX.stripLines[self.selected].value = position;
-              self.activeSensors[idx].picks = chart.options.axisX.stripLines;
+              chart.options.axisX.stripLines[this.selected].value = position;
+              this.activeSensors[idx].picks = chart.options.axisX.stripLines;
               chart.options.zoomEnabled = false;
               chart.render();
             }
@@ -1113,20 +1020,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
         });
 
         canvas.addEventListener('mouseup', (e: MouseEvent) => {
-          setTimeout(function () {
-            self._bHoldEventTrigger = false;
+          setTimeout(() => {
+            this._bHoldEventTrigger = false;
           }, 500);
 
           // clear selection and change the cursor
-          if (self.selected !== -1) {
-            self.selected = -1;
+          if (this.selected !== -1) {
+            this.selected = -1;
             const idx = j;
-            const chart = self.activeSensors[idx].chart;
-            // chart.options.axisX.stripLines = self.activeSensors[i].picks;
+            const chart = this.activeSensors[idx].chart;
+            // chart.options.axisX.stripLines = this.activeSensors[i].picks;
 
             chart.options.zoomEnabled = true;   // turn zoom back on
             chart.render();
-            document.getElementById('toolbar').focus();
+            this._waveformContainer.nativeElement.focus();
           }
         });
 
@@ -1135,7 +1042,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this._menu.nativeElement.style.left = `${e.offsetX}px`;
           this._menu.nativeElement.style.top = `${e.y}px`;
           this.toggleContextMenuChart('show');
-          self.selectedContextMenu = j;
+          this.selectedContextMenu = j;
           return false;
         });
 
@@ -1146,13 +1053,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
       canvas.addEventListener('wheel', (e: WheelEvent) => {
         const idx = j;
         // in pick mode wheel up moves pick left, wheel down moves pick right
-        if (this._waveformService.pickingMode.getValue() !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-          if (idx < self.activeSensors.length - 1) {
+        if (this.waveformService.pickingMode.getValue() !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          if (idx < this.activeSensors.length - 1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.deltaY < 0) { // scrolling up
-              self.movePick(idx, this._waveformService.pickingMode.getValue(), -step, true, false);
+              this.movePick(idx, this.waveformService.pickingMode.getValue(), -step, true, false);
             } else if (e.deltaY > 0) { // scrolling down
-              self.movePick(idx, this._waveformService.pickingMode.getValue(), step, true, false);
+              this.movePick(idx, this.waveformService.pickingMode.getValue(), step, true, false);
             }
           }
         }
@@ -1161,10 +1068,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           e.preventDefault();
 
-          const chart = self.activeSensors[idx].chart;
+          const chart = this.activeSensors[idx].chart;
 
-          const relOffsetX = e.clientX - self.pageOffsetX;
-          const relOffsetY = e.clientY - self.pageOffsetY - idx * self.chartHeight;
+          const relOffsetX = e.clientX - this.pageOffsetX;
+          const relOffsetY = e.clientY - this.pageOffsetY - idx * this.chartHeight;
 
           if (relOffsetX < chart.plotArea.x1 ||
             relOffsetX > chart.plotArea.x2 ||
@@ -1212,9 +1119,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
           }
 
           if ((newViewportMax - newViewportMin) > (2 * interval)) {
-            if (self._zoomAll
-              && idx < self.activeSensors.length - 1) {  // exclude context trace
-              self.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
+            if (this.waveformService.zoomAll.getValue()
+              && idx < this.activeSensors.length - 1) {  // exclude context trace
+              this.zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
             } else {  // zoom selected trace only
               if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
                 axis.set('viewportMinimum', newViewportMin, false);
@@ -1222,7 +1129,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
                 chart.render();
               }
             }
-            document.getElementById('toolbar').focus();
+            this._waveformContainer.nativeElement.focus();
           }
         }
       });
@@ -1230,35 +1137,31 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   predicatePicks() {
-    for (const sensor of this.allSensors) {
-      if (sensor.picks) {
-        for (const pick of sensor.picks) {
-          console.log(pick);
-
-          if (pick.label === pick.label.toLowerCase()) {
-            pick.opacity = this._predictedPicks ? 0.5 : 0;
+    if (this.activeSensors) {
+      for (const sensor of this.activeSensors) {
+        if (sensor.picks) {
+          for (const pick of sensor.picks) {
+            if (pick.label === pick.label.toLowerCase()) {
+              pick.opacity = this.waveformService.predictedPicks.getValue() ? 0.5 : 0;
+            }
           }
         }
       }
     }
-    this.changePage(false);
   }
 
   predictePicksBias() {
-    if (this.picksBias === 0) {  // if pagination is enabled calculate bias first time button is clicked
-      this.calcPicksBias();
-    }
-    this.bRemoveBias = !this.bRemoveBias;
-    this.changePredictedPicksByBias(this.bRemoveBias, true);
+    this.calcPicksBias();
+    this.changePredictedPicksByBias(this.waveformService.predictedPicksBias.getValue());
   }
 
   updateZoomStackCharts(vpMin, vpMax) {
-    const self = this;
-    if (self._xViewPortMinStack.length === 0 || self._xViewPortMinStack[self._xViewPortMinStack.length - 1] !== vpMin) {
-      self._xViewPortMinStack.push(vpMin);
-      self._xViewportMaxStack.push(vpMax);
-      for (let i = 0; i < self.activeSensors.length; i++) {
-        const chart = self.activeSensors[i].chart;
+
+    if (this._xViewPortMinStack.length === 0 || this._xViewPortMinStack[this._xViewPortMinStack.length - 1] !== vpMin) {
+      this._xViewPortMinStack.push(vpMin);
+      this._xViewportMaxStack.push(vpMax);
+      for (let i = 0; i < this.activeSensors.length; i++) {
+        const chart = this.activeSensors[i].chart;
         if (!chart.options.viewportMinStack) {
           chart.options.viewportMinStack = [];
           chart.options.viewportMaxStack = [];
@@ -1273,138 +1176,143 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   resetAllChartsViewX() {
-    const self = this;
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-      self.resetChartViewX(self.activeSensors[i].chart);
+
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      this.resetChartViewX(this.activeSensors[i].chart);
     }
-    self.resetChartViewXContext(self.activeSensors[self.activeSensors.length - 1].chart);
+    this.resetChartViewXContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
   resetAllChartsViewY() {
-    const self = this;
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-      self.resetChartViewY(self.activeSensors[i].chart);
+
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      this.resetChartViewY(this.activeSensors[i].chart);
     }
-    self.resetChartViewYContext(self.activeSensors[self.activeSensors.length - 1].chart);
+    this.resetChartViewYContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
   resetAllChartsViewXY() {
-    const self = this;
 
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-      self.resetChartViewXY(self.activeSensors[i].chart);
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      this.resetChartViewXY(this.activeSensors[i].chart);
     }
-    self.resetChartViewXYContext(self.activeSensors[self.activeSensors.length - 1].chart);
+    this.resetChartViewXYContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
 
   resetChartViewX(chart) {
-    const self = this;
+
     const channel = parseInt(chart.container.id.replace('container', ''), 10);
-    chart.options.axisX.viewportMinimum = self.getXvpMin();
-    chart.options.axisX.viewportMaximum = self.getXvpMax();
-    chart.options.axisX.minimum = self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0;
-    chart.options.axisX.maximum = self.getXmax(channel);
+    chart.options.axisX.viewportMinimum = this.getXvpMin();
+    chart.options.axisX.viewportMaximum = this.getXvpMax();
+    chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
+    chart.options.axisX.maximum = this.getXmax(channel);
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
     chart.render();
   }
 
   resetChartViewXContext(chart) {
-    const self = this;
+
     chart.options.axisX.viewportMinimum = null;
     chart.options.axisX.viewportMaximum = null;
-    chart.options.axisX.minimum = self.contextTimeOrigin.millisecond() * 1000;
-    chart.options.axisX.maximum = self.getXmaxContext();
+    chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
+    chart.options.axisX.maximum = this.getXmaxContext();
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
     chart.render();
   }
 
   resetChartViewY(chart) {
-    const self = this;
+
     const channel = parseInt(chart.container.id.replace('container', ''), 10);
     chart.options.axisY.viewportMinimum = null;
     chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = self.getYmax(channel);
+    chart.options.axisY.maximum = this.getYmax(channel);
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
     chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
   resetChartViewYContext(chart) {
-    const self = this;
+
     chart.options.axisY.viewportMinimum = null;
     chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = self.getYmaxContext();
+    chart.options.axisY.maximum = this.getYmaxContext();
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
     chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
   resetChartViewXY(chart) {
-    const self = this;
+
     const channel = parseInt(chart.container.id.replace('container', ''), 10);
-    chart.options.axisX.viewportMinimum = self.getXvpMin();
-    chart.options.axisX.viewportMaximum = self.getXvpMax();
-    chart.options.axisX.minimum = self.timeOrigin ? self.timeOrigin.millisecond() * 1000 : 0;
-    chart.options.axisX.maximum = self.getXmax(channel);
+    chart.options.axisX.viewportMinimum = this.getXvpMin();
+    chart.options.axisX.viewportMaximum = this.getXvpMax();
+    chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
+    chart.options.axisX.maximum = this.getXmax(channel);
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
     chart.options.axisY.viewportMinimum = null;
     chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = self.getYmax(channel);
+    chart.options.axisY.maximum = this.getYmax(channel);
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
     chart.render();
   }
 
   resetChartViewXYContext(chart) {
-    const self = this;
+
     chart.options.axisX.viewportMinimum = null;
     chart.options.axisX.viewportMaximum = null;
-    chart.options.axisX.minimum = self.contextTimeOrigin.millisecond() * 1000;
-    chart.options.axisX.maximum = self.getXmaxContext();
+    chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
+    chart.options.axisX.maximum = this.getXmaxContext();
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
     chart.options.axisY.viewportMinimum = null;
     chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = self.getYmaxContext();
+    chart.options.axisY.maximum = this.getYmaxContext();
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
     chart.render();
   }
 
   getXmax(pos) {
-    const self = this;
-    const endMicrosec = self.activeSensors[pos].channels[0].microsec + self.activeSensors[pos].channels[0].duration;
-    return self._commonTimeScale ?
-      Math.max(endMicrosec, self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000) : endMicrosec;
+    const endMicrosec = this.activeSensors[pos].channels[0].microsec + this.activeSensors[pos].channels[0].duration;
+
+    if (this.waveformService.commonTimeScale.getValue()) {
+      return Math.max(endMicrosec, this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000);
+    }
+
+    return endMicrosec;
+
   }
 
   getXmaxContext() {
-    const self = this;
-    const val = self.contextSensor[0].channels.length > 0 ?
-      self.contextSensor[0].channels[0].microsec + self.contextSensor[0].channels[0].duration : null;
+
+    const val = this.contextSensor[0].channels.length > 0 ?
+      this.contextSensor[0].channels[0].microsec + this.contextSensor[0].channels[0].duration : null;
     return val;
   }
 
   getXvpMax() {
-    const self = this;
-    return self._commonTimeScale ? self.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000 : null;
+    if (this.waveformService.commonTimeScale.getValue()) {
+      return this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000;
+    }
+
+    return null;
   }
 
   getXvpMin() {
-    const self = this;
-    return self._commonTimeScale ? 0 : null;
+    return this.waveformService.commonTimeScale.getValue() ? 0 : null;
   }
 
   getValueMaxAll() {
-    const self = this;
+
     let val;
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-      for (let j = 0; j < self.activeSensors[i].channels.length; j++) {
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      for (let j = 0; j < this.activeSensors[i].channels.length; j++) {
         val = i === 0 && j === 0 ?
-          self.maxValue(self.activeSensors[0].channels[0].data) :
-          Math.max(self.maxValue(self.activeSensors[i].channels[j].data), val);
+          this.maxValue(this.activeSensors[0].channels[0].data) :
+          Math.max(this.maxValue(this.activeSensors[i].channels[j].data), val);
       }
     }
     return val;
@@ -1412,29 +1320,29 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
 
   getYmax(sensor) {
-    const self = this;
+
     let val = 0;
-    for (let j = 0; j < self.activeSensors[sensor].channels.length; j++) {
+    for (let j = 0; j < this.activeSensors[sensor].channels.length; j++) {
       val = j === 0 ?
-        self.maxValue(self.activeSensors[sensor].channels[0].data) :
-        Math.max(self.maxValue(self.activeSensors[sensor].channels[j].data), val);
+        this.maxValue(this.activeSensors[sensor].channels[0].data) :
+        Math.max(this.maxValue(this.activeSensors[sensor].channels[j].data), val);
     }
-    return (self._commonAmplitudeScale || val === 0) ? self.getValueMaxAll() : val;
+    return (this.waveformService.commonAmplitudeScale.getValue() || val === 0) ? this.getValueMaxAll() : val;
   }
 
   getYmaxContext() {
-    const self = this;
-    const val = self.contextSensor[0].channels.length > 0 ?
-      self.maxValue(self.contextSensor[0].channels[0].data) : 0;
-    return (val === 0) ? self.getValueMaxAll() : val;
+
+    const val = this.contextSensor[0].channels.length > 0 ?
+      this.maxValue(this.contextSensor[0].channels[0].data) : 0;
+    return (val === 0) ? this.getValueMaxAll() : val;
   }
 
 
   getAxisMinAll(isXaxis) {
-    const self = this;
+
     let min;
-    for (let i = 0; i < self.activeSensors.length; i++) {
-      const chart = self.activeSensors[i].chart;
+    for (let i = 0; i < this.activeSensors.length; i++) {
+      const chart = this.activeSensors[i].chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
       min = i === 0 ? axis.get('minimum') : Math.min(+axis.get('minimum'), min);
     }
@@ -1442,10 +1350,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   getAxisMaxAll(isXaxis) {
-    const self = this;
+
     let max;
-    for (let i = 0; i < self.activeSensors.length - 1; i++) {
-      const chart = self.activeSensors[i].chart;
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      const chart = this.activeSensors[i].chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
       max = i === 0 ? axis.get('maximum') : Math.max(+axis.get('maximum'), max);
     }
@@ -1453,13 +1361,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   zoomAllCharts(vpMin, vpMax, isXaxis) {
-    const self = this;
+
     if (isXaxis) {
-      self.updateZoomStackCharts(vpMin, vpMax);
+      this.updateZoomStackCharts(vpMin, vpMax);
     }
-    if (vpMin >= self.getAxisMinAll(isXaxis) && vpMax <= self.getAxisMaxAll(isXaxis)) {
-      for (let i = 0; i < self.activeSensors.length - 1; i++) {
-        const chart = self.activeSensors[i].chart;
+    if (vpMin >= this.getAxisMinAll(isXaxis) && vpMax <= this.getAxisMaxAll(isXaxis)) {
+      for (let i = 0; i < this.activeSensors.length - 1; i++) {
+        const chart = this.activeSensors[i].chart;
         const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
         axis.set('viewportMinimum', vpMin, false);
         axis.set('viewportMaximum', vpMax, false);
@@ -1469,22 +1377,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   savePicksState(ind, sensor, picks) {
-    const self = this;
-    self.lastPicksState = {};
-    self.lastPicksState.index = ind;
-    self.lastPicksState.sensor_code = sensor;
-    self.lastPicksState.picks = JSON.parse(JSON.stringify(picks));
+
+    this.lastPicksState = {};
+    this.lastPicksState.index = ind;
+    this.lastPicksState.sensor_code = sensor;
+    this.lastPicksState.picks = JSON.parse(JSON.stringify(picks));
   }
 
   undoLastPicking() {
-    const self = this;
-    if (self.lastPicksState) {
-      const ind = self.lastPicksState.index;
-      const sensor = self.activeSensors[ind];
-      if (self.lastPicksState.sensor_code === sensor.sensor_code) {
+
+    if (this.lastPicksState) {
+      const ind = this.lastPicksState.index;
+      const sensor = this.activeSensors[ind];
+      if (this.lastPicksState.sensor_code === sensor.sensor_code) {
         const chart = sensor.chart;
-        const picks = self.lastPicksState.picks;
-        self.savePicksState(ind, sensor.sensor_code, sensor.picks);
+        const picks = this.lastPicksState.picks;
+        this.savePicksState(ind, sensor.sensor_code, sensor.picks);
         sensor.picks = picks;
         chart.options.axisX.stripLines = sensor.picks;
         chart.render();
@@ -1493,18 +1401,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   addPick(ind, pickType, value) {
-    const self = this;
-    const sensor = self.activeSensors[ind];
+
+    const sensor = this.activeSensors[ind];
     const chart = sensor.chart;
     const data = chart.options.data[0].dataPoints;
-    const position = value ? Math.round(value) : Math.round(self.lastSelectedXPosition);
+    const position = value ? Math.round(value) : Math.round(this.lastSelectedXPosition);
     if (position < data[0].x || position > data[data.length - 1].x) {
       window.alert('Pick cannot be created outside of the current trace view');
       return;
     }
     sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
     const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-    const otherPick = self.findValue(sensor.picks, 'label', otherPickType);
+    const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
     if (otherPick) {
       if (pickType === 'P') {
         if (position > otherPick.value) {
@@ -1518,7 +1426,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
-    self.savePicksState(ind, sensor.sensor_code, sensor.picks);
+    this.savePicksState(ind, sensor.sensor_code, sensor.picks);
     // remove any existing pick of this type
     sensor.picks = sensor.picks.filter(el => el.label !== pickType);
     sensor.picks.push({
@@ -1530,13 +1438,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
     });
     chart.options.axisX.stripLines = sensor.picks;
     chart.render();
-    document.getElementById('toolbar').focus();
+    this._waveformContainer.nativeElement.focus();
   }
 
   deletePicks(ind, pickType, value) {
-    const self = this;
-    const sensor = self.activeSensors[ind];
-    self.savePicksState(ind, sensor.sensor_code, sensor.picks);
+
+    const sensor = this.activeSensors[ind];
+    this.savePicksState(ind, sensor.sensor_code, sensor.picks);
     const chart = sensor.chart;
     if (value) {
       sensor.picks = sensor.picks
@@ -1546,16 +1454,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
     chart.options.axisX.stripLines = sensor.picks;
     chart.render();
-    document.getElementById('toolbar').focus();
+    this._waveformContainer.nativeElement.focus();
   }
 
   movePick(ind, pickType, value, fromCurrentPosition, issueWarning) {
-    const self = this;
-    const sensor = self.activeSensors[ind];
+
+    const sensor = this.activeSensors[ind];
     const chart = sensor.chart;
     sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
     // find existing pick of this type
-    const pick = self.findValue(sensor.picks, 'label', pickType);
+    const pick = WaveformUtil.findValue(sensor.picks, 'label', pickType);
     if (!pick) {
       if (issueWarning) {
         window.alert('No ' + pickType + ' pick to move');
@@ -1569,7 +1477,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
     const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-    const otherPick = self.findValue(sensor.picks, 'label', otherPickType);
+    const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
     if (otherPick) {
       if (pickType === 'P') {
         if (position > otherPick.value) {
@@ -1583,49 +1491,49 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
-    self.savePicksState(ind, sensor.sensor_code, sensor.picks);
+    this.savePicksState(ind, sensor.sensor_code, sensor.picks);
     // move pick
     pick.value = position;
     sensor.picks = sensor.picks.filter(el => el.label !== pickType);
     sensor.picks.push(pick);
     chart.options.axisX.stripLines = sensor.picks;
     chart.render();
-    document.getElementById('toolbar').focus();
+    this._waveformContainer.nativeElement.focus();
   }
 
   toggleTooltip(ind, value) {
-    const self = this;
-    value = value ? value : !self.activeSensors[ind].chart.options.toolTip.enabled;
-    self.activeSensors[ind].chart.options.toolTip.enabled = value;
-    self.activeSensors[ind].chart.render();
-    document.getElementById('toolbar').focus();
+
+    value = value ? value : !this.activeSensors[ind].chart.options.toolTip.enabled;
+    this.activeSensors[ind].chart.options.toolTip.enabled = value;
+    this.activeSensors[ind].chart.render();
+    this._waveformContainer.nativeElement.focus();
   }
 
   undoLastZoomOrPan() {
-    const self = this;
-    if (self._zoomAll) {
-      if (self._xViewPortMinStack && self._xViewPortMinStack.length > 0) {
-        self._xViewPortMinStack.pop();
-        self._xViewportMaxStack.pop();
+
+    if (this.waveformService.zoomAll.getValue()) {
+      if (this._xViewPortMinStack && this._xViewPortMinStack.length > 0) {
+        this._xViewPortMinStack.pop();
+        this._xViewportMaxStack.pop();
       }
-      for (let j = 0; j < self.activeSensors.length - 1; j++) {
-        const chart = self.activeSensors[j].chart;
-        chart.options.viewportMinStack = self._xViewPortMinStack;
-        chart.options.viewportMaxStack = self._xViewportMaxStack;
+      for (let j = 0; j < this.activeSensors.length - 1; j++) {
+        const chart = this.activeSensors[j].chart;
+        chart.options.viewportMinStack = this._xViewPortMinStack;
+        chart.options.viewportMaxStack = this._xViewportMaxStack;
         if (!chart.options.axisX) {
           chart.options.axisX = {};
         }
-        if (self._xViewPortMinStack && self._xViewPortMinStack.length > 0) {
-          chart.options.axisX.viewportMinimum = self._xViewPortMinStack[self._xViewPortMinStack.length - 1];
-          chart.options.axisX.viewportMaximum = self._xViewportMaxStack[self._xViewportMaxStack.length - 1];
+        if (this._xViewPortMinStack && this._xViewPortMinStack.length > 0) {
+          chart.options.axisX.viewportMinimum = this._xViewPortMinStack[this._xViewPortMinStack.length - 1];
+          chart.options.axisX.viewportMaximum = this._xViewportMaxStack[this._xViewportMaxStack.length - 1];
           chart.render();
         } else {
-          self.resetChartViewX(chart);
+          this.resetChartViewX(chart);
         }
       }
     } else {
-      if (self.lastDownTarget !== null && self.lastDownTarget > -1) {
-        const chart = self.activeSensors[self.lastDownTarget].chart;
+      if (this.lastDownTarget !== null && this.lastDownTarget > -1) {
+        const chart = this.activeSensors[this.lastDownTarget].chart;
         const viewportMinStack = chart.options.viewportMinStack;
         const viewportMaxStack = chart.options.viewportMaxStack;
         if (!chart.options.axisX) {
@@ -1638,31 +1546,29 @@ export class Waveform2Component implements OnInit, OnDestroy {
           chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
           chart.render();
         } else {
-          self.resetChartViewX(chart);
+          this.resetChartViewX(chart);
         }
       }
     }
-    document.getElementById('toolbar').focus();
+    this._waveformContainer.nativeElement.focus();
   }
 
   updateArrivalWithPickData() {
-    const self = this;
-    if (self.activeSensors) {
-      for (let i = 0; i < self.activeSensors.length - 1; i++) {
-        const sensor = self.activeSensors[i];
+    if (this.activeSensors) {
+      for (let i = 0; i < this.activeSensors.length - 1; i++) {
+        const sensor = this.activeSensors[i];
         this.updateSensorPicks(sensor, 'P');
         this.updateSensorPicks(sensor, 'S');
       }
     }
   }
 
-  updateSensorPicks(sensor, picktype) {
-    const self = this;
-    const pick = sensor.picks ? self.findValue(sensor.picks, 'label', picktype) : undefined;
-    const arrpick = self.findNestedValue
-      (self.allPicksChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
+  updateSensorPicks(sensor: Sensor, picktype) {
+    const pick = sensor.picks ? WaveformUtil.findValue(sensor.picks, 'label', picktype) : undefined;
+    const arrpick = WaveformUtil.findNestedValue
+      (this.allPicksChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
     if (pick) {
-      const pick_time = self.addTimeOffsetMicro(self.timeOrigin, pick.value);
+      const pick_time = this.addTimeOffsetMicro(this.timeOrigin, pick.value);
       if (arrpick) {  // existing pick
         if (arrpick.pick.time_utc !== pick_time) {
           console.log(sensor.sensor_code, picktype);
@@ -1714,29 +1620,28 @@ export class Waveform2Component implements OnInit, OnDestroy {
         console.log(sensor.sensor_code, picktype);
         console.log('add pick');
         console.log(newpick);
-        self.allPicksChanged.push(newpick);
+        this.allPicksChanged.push(newpick);
       }
     } else {
       if (arrpick) {  // delete pick
         console.log(sensor.sensor_code, picktype);
         console.log('delete pick');
         console.log(arrpick);
-        self.allPicksChanged = self.allPicksChanged.filter(item => item !== arrpick);
+        this.allPicksChanged = this.allPicksChanged.filter(item => item !== arrpick);
       }
     }
 
   }
 
-  addArrivalsPickData(sensors, origin) {
-    const self = this;
+  addArrivalsPickData(sensors: Sensor[], origin) {
     const missingSensors = [];
-    for (const arrival of self.allPicks) {
+    for (const arrival of this.allPicks) {
       if (arrival.hasOwnProperty('pick')) {
         const pick = arrival.pick;
 
         if (pick.sensor) {
           if (moment(pick.time_utc).isValid()) {
-            const sensor = self.findValue(sensors, 'sensor_code', pick.sensor.toString());
+            const sensor = WaveformUtil.findValue(sensors, 'sensor_code', pick.sensor.toString());
             if (sensor) {
               sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ?
                 sensor.picks : [];
@@ -1744,7 +1649,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               if (pickKey !== '') {
                 sensor[pickKey.toLowerCase() + '_pick_time_utc'] = pick.time_utc;
                 sensor.picks.push({
-                  value: self.calculateTimeOffsetMicro(pick.time_utc, origin),   // rel timeOrigin full second
+                  value: this.calculateTimeOffsetMicro(pick.time_utc, origin),   // rel timeOrigin full second
                   thickness: globals.picksLineThickness,
                   color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
                   label: pickKey,
@@ -1757,23 +1662,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
               }
             }
           } else {
-            console.log('Invalid pick time for ' + pick.sensor + ' (' + pick.phase_hint + '): ' + pick.time_utc);
+            console.error('Invalid pick time for ' + pick.sensor + ' (' + pick.phase_hint + '): ' + pick.time_utc);
           }
 
         } else {
-          console.log('Invalid pick sensor for arrival id: ' + arrival.arrival_resource_id);
+          console.error('Invalid pick sensor for arrival id: ' + arrival.arrival_resource_id);
         }
       } else {
-        console.log('Picks not found for arrival id: ' + arrival.arrival_resource_id);
+        console.error('Picks not found for arrival id: ' + arrival.arrival_resource_id);
       }
     }
     if (missingSensors.length > 0) {
-      self.picksWarning = 'No waveforms for picks at sensors: ' + missingSensors.toString();
+      this.picksWarning = 'No waveforms for picks at sensors: ' + missingSensors.toString();
     }
   }
 
   addTime(start_time, traveltime): String {
-    const self = this;
     const d = moment(start_time);
     d.millisecond(0);   // to second precision
     const seconds = parseFloat(start_time.slice(-8, -1)) + traveltime;
@@ -1781,50 +1685,53 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
   }
 
-  addPredictedPicksData(sensors, origin) {
+  addPredictedPicksData(sensors: Sensor[], origin: Date) {
 
-    const self = this;
     for (const sensor of sensors) {
 
-      if (sensor.hasOwnProperty('sensor_code')) {
-        const sensorOrigin = self.findValue(self.originTravelTimes, 'station_id', sensor.sensor_code);
+      if (!sensor.sensor_code) {
+        return;
+      }
 
-        if (sensorOrigin) {
-          sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
-          for (const pickKey of ['P', 'S']) {
+      const sensorOrigin = WaveformUtil.findValue(this.originTravelTimes, 'station_id', sensor.sensor_code);
 
-            const key = 'travel_time_' + pickKey.toLowerCase();
-            if (sensorOrigin.hasOwnProperty(key)) {
-              const picktime_utc = this.addTime(this.waveformOrigin.time_utc, sensorOrigin[key]);
-              const pickTime = moment(picktime_utc.toString());  // UTC
-              if (!self.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
-                self.picksWarning += 'Predicted picks outside the display time window\n';
-              }
-              sensor[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
-              sensor.picks.push({
-                value: self.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
-                thickness: globals.predictedPicksLineThickness,
-                lineDashType: 'dash',
-                opacity: 0.5,
-                color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
-                label: pickKey.toLowerCase(),
-                labelAlign: 'far',
-                labelFormatter: function (e) {
-                  return e.stripLine.opacity === 0 ? '' : e.stripLine.label;
-                }
-              });
-            }
+      if (!sensorOrigin) {
+        return;
+      }
+
+      sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
+
+      for (const pickKey of ['P', 'S']) {
+        const key = 'travel_time_' + pickKey.toLowerCase();
+
+        if (sensorOrigin[key]) {
+          const picktime_utc = this.addTime(this.waveformOrigin.time_utc, sensorOrigin[key]);
+          const pickTime = moment(picktime_utc.toString());  // UTC
+
+          if (!this.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
+            this.picksWarning += 'Predicted picks outside the display time window\n';
           }
+
+          sensor[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
+          sensor.picks.push({
+            value: this.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
+            thickness: globals.predictedPicksLineThickness,
+            lineDashType: 'dash',
+            opacity: 0.5,
+            color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+            label: pickKey.toLowerCase(),
+            labelAlign: 'far',
+            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+          });
         }
       }
     }
   }
 
   calcPicksBias() {
-    const self = this;
     let picksTotalBias = 0; // calculate pickBias as average value of picks - predicted picks
     let nPicksBias = 0;
-    for (const sensor of self.allSensors) {
+    for (const sensor of this.allSensors) {
       for (const pickKey of ['p', 's']) {
         const predicted_key = pickKey + '_predicted_time_utc';
         const pick_key = pickKey + '_pick_time_utc';
@@ -1842,157 +1749,39 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
-    self.picksBias = Math.round(picksTotalBias / nPicksBias);
+    this.picksBias = Math.round(picksTotalBias / nPicksBias);
   }
 
-  activateRemoveBias(show) {
-    const self = this;
-
-    if (!self.bRemoveBias) { // turn remove bias on when loading all data (no pagination)
-      self.bRemoveBias = !self.bRemoveBias;
-    }
-    self.calcPicksBias();
-    self.changePredictedPicksByBias(self.bRemoveBias, show);
-  }
-
-  changePredictedPicksByBias(removeBias, show) {
-    const self = this;
-
-    if (self.picksBias !== 0) {
+  changePredictedPicksByBias(removeBias: boolean) {
+    if (this.picksBias !== 0) {
       for (const sensor of this.allSensors) {
         if (sensor.hasOwnProperty('picks')) {
           for (const pick of sensor.picks) {
             if (pick.label === pick.label.toLowerCase()) {
-              pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
+              pick.value = removeBias ? pick.value + this.picksBias : pick.value - this.picksBias;
             }
           }
         }
       }
-      if (self.contextSensor[0].hasOwnProperty('picks')) {
-        for (const pick of self.contextSensor[0].picks) {
+
+      if (this.contextSensor[0].hasOwnProperty('picks')) {
+        for (const pick of this.contextSensor[0].picks) {
           if (pick.label === pick.label.toLowerCase()) {
-            pick.value = removeBias ? pick.value + self.picksBias : pick.value - self.picksBias;
+            pick.value = removeBias ? pick.value + this.picksBias : pick.value - this.picksBias;
           }
         }
       }
-      if (show) {
-        self.changePage(false);
-      }
     }
-  }
-
-  private _sortAllTraces() {
-    const self = this;
-
-    if (Array.isArray(self.allSensors)) {
-      let sortKey = '';
-      if (self.allSensors.some(el => el.hasOwnProperty('p_predicted_time_utc'))) {
-        sortKey = 'p_predicted_time_utc';
-      } else if (self.allSensors.some(el => el.hasOwnProperty('s_predicted_time_utc'))) {
-        sortKey = 's_predicted_time_utc';
-      }
-      if (sortKey) {
-        self.allSensors.sort(this.sort_array_by(sortKey, false, function (x) { return x ? moment(x) : moment.now(); })
-        );
-      }
-    }
-  }
-
-  parseMiniseed(file, isContext): any {
-    const self = this;
-    const records = miniseed.parseDataRecords(file);
-    const channelsMap = miniseed.byChannel(records);
-    const sensors = [];
-    let zTime = null, timeOrigin = null;
-    const eventData = {};
-    let changetimeOrigin = false;
-    channelsMap.forEach(function (this, value, key, map) {
-      const sg = miniseed.createSeismogram(channelsMap.get(key));
-      const header = channelsMap.get(key)[0].header;
-      let valid = false;
-      if (isContext || (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0))) {
-        valid = true;
-      } else {
-        console.log('Warning - zero data channel: ' + sg.codes());
-        self.tracesInfo = self.tracesInfo ?
-          (self.tracesInfo.includes(sg.codes()) ? self.tracesInfo : self.tracesInfo + ', ' + sg.codes()) :
-          'Zero traces: ' + sg.codes();
-      }
-      if (!zTime) {
-        zTime = moment(sg.start());  // starting time (use it up to tenth of second)
-        zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
-      } else {
-        if (!sg.start().isSame(zTime, 'second')) {
-          zTime = moment(moment.min(zTime, sg.start()));
-          changetimeOrigin = true;
-        }
-      }
-      const seismogram = valid ? filter.rMean(sg) : sg;
-      const channel = {};
-      channel['code_id'] = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
-      channel['sensor_code'] = sg.stationCode();
-      channel['channel_id'] = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
-      channel['sample_rate'] = sg.sampleRate();
-      channel['start'] = sg.start();  // moment object (good up to milisecond)
-      // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
-      channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-      channel['raw'] = seismogram;
-      channel['valid'] = valid;
-      const data = [];
-      for (let k = 0; k < seismogram.numPoints(); k++) {
-        data.push({
-          x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
-          y: seismogram.y()[k],  // trace after mean removal
-        });
-      }
-      channel['data'] = data;
-      channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
-      let sensor = self.findValue(sensors, 'sensor_code', sg.stationCode());
-      if (!sensor) {
-        sensor = { sensor_code: sg.stationCode(), channels: [] };
-        sensors.push(sensor);
-      }
-      const invalid = (sensor.channels).findIndex((x) => !x.valid);
-      if (invalid >= 0) {
-        sensor.channels[invalid] = channel;  // valid channel replaces invalid channel (placeholder)
-      } else {
-        if (valid || (!valid && sensor.channels.length === 0)) {
-          sensor.channels.push(channel);
-        }
-      }
-    });
-    if (zTime && zTime.isValid()) {
-      timeOrigin = moment(zTime);
-      if (changetimeOrigin) {
-        console.log('***changetimeOrigin channels change in earliest time second detected');
-        zTime.millisecond(0);
-        for (const sensor of sensors) {
-          for (const channel of sensor.channels) {
-            if (!channel.start.isSame(zTime, 'second')) {
-              const offset = channel.start.diff(zTime, 'seconds') * 1000000;
-              channel.microsec += offset;
-              for (const datasample of channel.data) { // microsecond offset from new zeroTime
-                datasample['x'] += offset;
-              }
-            }
-          }
-        }
-
-      }
-    }
-    eventData['sensors'] = sensors;
-    eventData['timeOrigin'] = timeOrigin;
-    return (eventData);
   }
 
   createButterworthFilter(sample_rate): any {
     let butterworth = null;
-    if (this._waveformService.lowFreqCorner.getValue() >= 0 && this._waveformService.highFreqCorner.getValue() <= sample_rate / 2) {
+    if (this.waveformService.lowFreqCorner.getValue() >= 0 && this.waveformService.highFreqCorner.getValue() <= sample_rate / 2) {
       butterworth = filter.createButterworth(
-        this._waveformService.numPoles.getValue(),
+        this.waveformService.numPoles.getValue(),
         this._passband,
-        this._waveformService.lowFreqCorner.getValue(),
-        this._waveformService.highFreqCorner.getValue(),
+        this.waveformService.lowFreqCorner.getValue(),
+        this.waveformService.highFreqCorner.getValue(),
         1 / sample_rate
       );
     }
@@ -2001,19 +1790,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   applyFilter() {
     if (this.allSensors.length > 0) {
-      this._waveformService.saveOption('numPoles', this._waveformService.numPoles.getValue());
-      this._waveformService.saveOption('lowFreqCorner', this._waveformService.lowFreqCorner.getValue());
-      this._waveformService.saveOption('highFreqCorner', this._waveformService.highFreqCorner.getValue());
-      this.allSensors = this.addCompositeTrace(this.filterData(this.allSensors)); // filter and recompute composite traces
-      this._waveformService.allSensors.next(this.allSensors);
+      this.waveformService.saveOption('numPoles', this.waveformService.numPoles.getValue());
+      this.waveformService.saveOption('lowFreqCorner', this.waveformService.lowFreqCorner.getValue());
+      this.waveformService.saveOption('highFreqCorner', this.waveformService.highFreqCorner.getValue());
+      this.allSensors = WaveformUtil.addCompositeTrace(this.filterData(this.allSensors)); // filter and recompute composite traces
+      this.waveformService.allSensors.next(this.allSensors);
       this.contextSensor = this.filterData(this.contextSensor);
       this.changePage(false);
     }
   }
 
 
-  filterData(sensors): any[] {
-    const self = this;
+  filterData(sensors: Sensor[]): Sensor[] {
     for (const sensor of sensors) {
       // remove composite traces if existing
       const pos = sensor.channels.findIndex(v => v.channel_id === globals.compositeChannelCode);
@@ -2025,7 +1813,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           if (channel.valid) {
             const sg = channel.raw.clone();
             let seis = null;
-            const butterworth = self.createButterworthFilter(channel.sample_rate);
+            const butterworth = this.createButterworthFilter(channel.sample_rate);
             if (butterworth) {
               seis = filter.taper.taper(sg);
               butterworth.filterInPlace(seis.y());
@@ -2042,125 +1830,37 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
-    self.bFilterChanged = false;
+    this.bFilterChanged = false;
     return sensors;
   }
 
-  addCompositeTrace(sensors): any[] {
-    let message = '';
-    for (const sensor of sensors) {
-      if (sensor.channels.length === 3) {
-        if (sensor.channels[0].start.isSame(sensor.channels[1].start) &&
-          sensor.channels[0].start.isSame(sensor.channels[2].start) &&
-          sensor.channels[0].microsec === sensor.channels[1].microsec &&
-          sensor.channels[0].microsec === sensor.channels[2].microsec) {
-          if (sensor.channels[0].sample_rate === sensor.channels[1].sample_rate &&
-            sensor.channels[0].sample_rate === sensor.channels[2].sample_rate) {
-            if (sensor.channels[0].data.length === sensor.channels[1].data.length &&
-              sensor.channels[0].data.length === sensor.channels[2].data.length) {
-              const compositeTrace = {};
-              compositeTrace['code_id'] = sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
-              compositeTrace['sensor_code'] = sensor.sensor_code;
-              compositeTrace['channel_id'] = globals.compositeChannelCode;
-              compositeTrace['sample_rate'] = sensor.channels[0].sample_rate;
-              compositeTrace['start'] = sensor.channels[0].start;  // moment object (good up to milisecond)
-              compositeTrace['microsec'] = sensor.channels[0].microsec;
-              compositeTrace['data'] = [];
-              compositeTrace['duration'] = sensor.channels[0].duration;  // in microseconds
-              for (let k = 0; k < sensor.channels[0].data.length; k++) {
-                let compositeValue = 0, sign = 1;
-                for (let j = 0; j < 3; j++) {
-                  const value = sensor.channels[j].data[k]['y'];
-                  sign = sensor.channels[j].channel_id.toLowerCase() === globals.signComponent.toLowerCase() ?
-                    Math.sign(value) : sign;
-                  compositeValue += Math.pow(value, 2);
-                }
-                sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
-                compositeValue = Math.sqrt(compositeValue) * sign;
-                compositeTrace['data'].push({
-                  x: sensor.channels[0].data[k]['x'],
-                  y: compositeValue
-                });
-              }
-              sensor.channels.push(compositeTrace);
-            } else {
-              console.log('Cannot create 3C composite trace for sensor: '
-                + sensor['sensor_code'] + ' different channel lengths');
-            }
-          } else {
-            console.log('Cannot create 3C composite trace for sensor: ' +
-              sensor['sensor_code'] + ' different sample rates: ' +
-              sensor.channels[0].sample_rate + sensor.channels[2].sample_rate + sensor.channels[2].sample_rate);
-          }
-        } else {
-          console.log('Cannot create 3C composite trace for sensor: '
-            + sensor['sensor_code'] + ' different channels start times ' +
-            sensor.channels[0].start.toISOString() + sensor.channels[1].start.toISOString()
-            + sensor.channels[2].start.toISOString());
-        }
-      } else {
-        message += 'Cannot create 3C composite trace for sensor: ' + sensor['sensor_code'] +
-          ' available channels: ' + sensor.channels.length + ' (' +
-          (sensor.channels.length > 0 ? sensor.channels[0].channel_id +
-            (sensor.channels.length > 1 ? sensor.channels[1].channel_id
-              : ' ') : ' ') + ')\n';
-      }
+  async getWaveformContextFile(event: IEvent): Promise<any> {
+    try {
+      return await this._eventApiService.getWaveformContextFile(event.waveform_context_file).toPromise();
+    } catch (err) {
+      window.alert('Error getting miniseed data file');
+      console.error(err);
     }
-    if (message) {
-      console.log(message);
-      // window.alert(message);
-    }
-    return sensors;
   }
 
-
-  getEvent(event, bContext): any {
-    const self = this;
-
-    return new Promise(resolve => {
-      const mshr = new XMLHttpRequest();
-      const waveform_file = bContext ? event.waveform_context_file :
-        event.hasOwnProperty('waveform_file') && event.waveform_file ? event.waveform_file : event.variable_size_waveform_file;
-      mshr.open('GET', waveform_file, true);
-      mshr.responseType = 'arraybuffer';
-      self.loading = true;
-      mshr.onreadystatechange = () => {
-        if (mshr.readyState === mshr.DONE) {
-          if (mshr.status === 200) {
-            self.loading = false;
-            resolve(mshr.response);
-          } else {
-            self.loading = false;
-            window.alert('Error getting miniseed data file');
-            console.log('Error getting miniseed', mshr.statusText);
-          }
-        }
-      };
-      mshr.send();
-    });
-  }
-
-  async getEventPage(event_id, page) {
-    const self = this;
+  async getEventPage(eventId: string, page: number) {
     const query: EventWaveformQuery = {
       page_number: page,
       traces_per_page: globals.chartsPerPage - 1
     };
-    self.loading = page === 1 ? true : false;
-    const response = await this._eventApiService.getEventWaveform(event_id, query).toPromise();
-    self.loading = false;
+    const response = await this._eventApiService.getEventWaveform(eventId, query).toPromise();
 
     if (page === 1) {
-      self.num_pages = globals.max_num_pages;
       const filename = ApiUtil.getAttachmentFilenameFromArrayBufferHttpResponse(response);
 
+      let maxPages = globals.max_num_pages;
       if (filename.indexOf('of_') && filename.lastIndexOf('.')) {
-        self.num_pages = parseInt(
-          filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
+        maxPages = parseInt(filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
       }
+
+      this.waveformService.maxPages.next(maxPages);
     }
 
     return response.body;
   }
-
 }
