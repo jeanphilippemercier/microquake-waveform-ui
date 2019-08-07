@@ -65,18 +65,6 @@
 
   <button
     mat-icon-button
-    matTooltip="Sort Traces by Distance to Origin"
-    class="activatable"
-    [ngClass]="{'active': waveformService.sortTraces | async}"
-    (click)="onSortTracesClick()"
-    [hidden]="waveformService.sortTracesHidden | async"
-    [disabled]="!(waveformService.loadedAll | async) || (waveformService.sortTracesHidden | async)"
-  >
-    <mat-icon>sort</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
     matTooltip="Toggle Predicted Picks"
     class="activatable"
     [ngClass]="{'active': waveformService.predictedPicks | async}"
@@ -90,7 +78,6 @@
     matTooltip="Toggle Remove Predicted Picks Bias"
     [ngClass]="{'active': waveformService.predictedPicksBias | async}"
     (click)="onPredictedPicksBiasClick()"
-    [disabled]="!(waveformService.loadedAll | async)"
   >
     <mat-icon>compare_arrows</mat-icon>
   </button>
@@ -207,13 +194,28 @@
     <mat-icon>launch</mat-icon>
   </button>
   <div class="mr-auto"></div>
-  <mat-paginator
-    color="primary"
-    [hidePageSize]="true"
-    [length]="(waveformService.loadedAll | async) ? (waveformService.allSensors | async)?.length : pageSize"
-    [pageSize]="pageSize"
-    (page)="onPageChanged($event)"
-    [disabled]="!(waveformService.loadedAll | async)"
+  <button
+    mat-icon-button
+    [disabled]="
+    (waveformService.currentPage | async) <= 1 ||
+    (waveformService.loading | async)
+    "
+    (click)="onPageChanged(-1)"
   >
-  </mat-paginator>
+    <mat-icon>chevron_left</mat-icon>
+  </button>
+  <small class="pagination-pages">
+    <span class="current">{{(waveformService.currentPage | async) | ordinal}}</span><br>
+    <span class="suffix-label">page</span>
+  </small>
+  <button
+    mat-icon-button
+    [disabled]="
+    (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
+    (waveformService.loading | async)
+    "
+    (click)="onPageChanged(1)"
+  >
+    <mat-icon>chevron_right</mat-icon>
+  </button>
 </mat-toolbar>
