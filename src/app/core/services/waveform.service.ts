@@ -15,8 +15,6 @@ export class WaveformService implements OnInit {
   commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject(false);
   zoomAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
   displayComposite: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  sortTracesHidden: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  sortTraces: BehaviorSubject<boolean> = new BehaviorSubject(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
   predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(true);
   pickingMode: BehaviorSubject<any> = new BehaviorSubject('none'); // TODO: add interface
@@ -52,6 +50,13 @@ export class WaveformService implements OnInit {
 
   options: any = {};
   sidebarOpened: BehaviorSubject<boolean> = new BehaviorSubject(true);
+
+  pageSize: BehaviorSubject<number> = new BehaviorSubject(globals.chartsPerPage);
+  currentPage: BehaviorSubject<number> = new BehaviorSubject(1);
+  maxPages: BehaviorSubject<number> = new BehaviorSubject(globals.max_num_pages);
+  loadedPages: BehaviorSubject<number> = new BehaviorSubject(0);
+
+  loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private _matDialog: MatDialog
