@@ -1,12 +1,3 @@
-export interface EventType {
-  id: number;
-  identifier: string;
-  microquake_type: string;
-  quakeml_type: string;
-  site: number;
-  site_code: string;
-}
-
 export enum QuakemlType {
   NOT_EXISTING = 'not existing',
   NOT_REPORTED = 'not reported',
@@ -73,28 +64,13 @@ export enum EventEvaluationMode {
   AUTOMATIC = 'automatic'
 }
 
-export interface EventQuery {
-  start_time: string;
-  end_time: string;
+export interface EventType {
+  id: number;
+  identifier: string;
+  microquake_type: string;
+  quakeml_type: string;
+  site: number;
   site_code: string;
-  network_code: string;
-  time_range?: number; // TODO: add to API ?
-  type?: QuakemlType[];
-  status?: EvaluationStatus[];
-}
-
-export interface BoundariesQuery {
-  site_code?: string;
-  network_code?: string;
-}
-
-export interface MicroquakeEventTypesQuery {
-  site_code: string;
-}
-
-export interface EventWaveformQuery {
-  page_number: number;
-  traces_per_page: number;
 }
 
 export interface IEvent {
@@ -134,13 +110,59 @@ export interface IEvent {
   z: number;
 }
 
-export interface EventUpdateInput extends Partial<IEvent> {
-  event_resource_id: string;
-}
-
-
 export interface Boundaries {
   timezone: string;
   min_time: string;
   max_time: string;
+}
+
+export interface Sensor {
+  chart?: canvasjs.Chart;
+  picks?: any;
+  container?: any;
+  channels: any;
+  sensor_code?: any;
+}
+
+// DTO
+export interface EventUpdateInput extends Partial<IEvent> {
+  event_resource_id: string;
+}
+
+// QUERIES
+export interface EventQuery {
+  start_time: string;
+  end_time: string;
+  site_code: string;
+  network_code: string;
+  time_range?: number; // TODO: add to API ?
+  type?: QuakemlType[];
+  status?: EvaluationStatus[];
+}
+
+export interface BoundariesQuery {
+  site_code?: string;
+  network_code?: string;
+}
+
+export interface MicroquakeEventTypesQuery {
+  site_code: string;
+}
+
+export interface EventWaveformQuery {
+  page_number: number;
+  traces_per_page: number;
+}
+
+export interface EventOriginsQuery {
+  site_code: string;
+  network_code: string;
+  event_id: string;
+}
+
+export interface EventArrivalsQuery {
+  site_code: string;
+  network_code: string;
+  event_id: string;
+  origin_id?: string;
 }
