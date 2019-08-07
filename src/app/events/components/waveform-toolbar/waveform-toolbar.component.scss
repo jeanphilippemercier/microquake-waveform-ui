@@ -55,3 +55,18 @@ mat-paginator {
     margin: 0px;
   }
 }
+
+.pagination-pages {
+  font-size: 12px;
+  line-height: 14px;
+  text-align: center;
+
+  .current {
+    font-weight: 400;
+  }
+
+  .suffix-label {
+    font-size: 11px;
+    opacity: 0.5;
+  }
+}

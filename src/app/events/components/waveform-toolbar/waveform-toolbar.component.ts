@@ -29,8 +29,6 @@ export class WaveformToolbarComponent implements OnInit {
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
 
-  pageSize = 6;
-
   constructor(
     public waveformService: WaveformService
   ) { }
@@ -63,10 +61,6 @@ export class WaveformToolbarComponent implements OnInit {
 
   onDisplayCompositeClick() {
     this.waveformService.displayComposite.next(!this.waveformService.displayComposite.getValue());
-  }
-
-  onSortTracesClick() {
-    this.waveformService.sortTraces.next(!this.waveformService.sortTraces.getValue());
   }
 
   onPredictedPicksClick() {
@@ -105,9 +99,7 @@ export class WaveformToolbarComponent implements OnInit {
     this.waveformService.openHelpDialog();
   }
 
-  onPageChanged($event: PageEvent) {
-    this.waveformService.pageChanged.next($event.pageIndex + 1);
+  onPageChanged(calcOp: number) {
+    this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() + calcOp);
   }
-
-
 }

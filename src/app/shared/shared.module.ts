@@ -14,6 +14,7 @@ import {
   MatRippleModule, MatSelectModule, MatSidenavModule, MatSliderModule, MatSlideToggleModule, MatSnackBarModule,
   MatSortModule, MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule,
 } from '@angular/material';
+import { MomentModule } from 'ngx-moment';
 
 import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
@@ -23,13 +24,13 @@ import { EventModeFieldComponent } from './forms/fields/event-mode-field/event-m
 import { EventDateFieldComponent } from './forms/fields/event-date-field/event-date-field.component';
 import { SiteSelectFieldComponent } from './forms/fields/site-select-field/site-select-field.component';
 import { SiteNetworkFieldComponent } from './forms/fields/site-network-field/site-network-field.component';
-import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventInfoComponent } from './components/event-info/event-info.component';
-import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
-import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
-import { MomentModule } from 'ngx-moment';
 import { EventCatalogComponent } from './components/event-catalog/event-catalog.component';
 import { EventHelpDialogComponent } from './dialogs/event-help-dialog/event-help-dialog.component';
+import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
+import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
+import { OrdinalPipe } from './pipes/ordinal.pipe';
+import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -98,6 +99,7 @@ const SHEETS = [
 ];
 
 const PIPES = [
+  OrdinalPipe,
   EventQuakemlToMicroquakeTypePipe,
   EventTypeIconPipe,
   EventMagnitudePipe
