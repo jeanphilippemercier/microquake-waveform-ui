@@ -1,12 +1,12 @@
 import { Injectable, NgZone } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable, of, Observer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
-  EventWaveformQuery, EventUpdateInput, Boundaries
+  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery
 } from '@interfaces/event.interface';
 import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
@@ -21,7 +21,16 @@ export class EventApiService {
     private _ngZone: NgZone
   ) { }
 
-  getEventWaveform(eventId: string, query: EventWaveformQuery) {
+
+  getWaveformContextFile(contextUrl: string): Observable<any> {
+    const url = `${contextUrl}`;
+    const params = ApiUtil.getHttpParams({});
+    const responseType = `arraybuffer`;
+
+    return this._http.get(url, { params, responseType });
+  }
+
+  getEventWaveform(eventId: string, query: EventWaveformQuery): Observable<HttpResponse<ArrayBuffer>> {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
     const params = ApiUtil.getHttpParams(query);
     const responseType = `arraybuffer`;
@@ -81,26 +90,10 @@ export class EventApiService {
     return this._http.post(API_URL, data, _httpOptions);
   }
 
-  getOriginsById(site, network, eventId): any {
-    const API_URL = environment.apiUrl + globals.apiOrigins;
-    const params = new HttpParams()
-      .set('site_code', site)
-      .set('network_code', network)
-      .set('event_id', eventId);
-    return this._http.get(API_URL, { params })
-      .pipe(
-        /*
-        timeout(60000),
-        catchError(err => {
-            // console.log('caught mapping error and rethrowing', err);
-            return throwError(err);
-        }),*/
-        catchError(err => {
-          console.log('caught rethrown error, providing fallback value');
-          return of([]);
-        })
-      );
-
+  getEventOriginsById(query: EventOriginsQuery): any {
+    const url = `${environment.apiUrl}${globals.apiOrigins}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get(url, { params });
   }
 
   updatePartialOriginById(originId, dataObj): any {
@@ -117,50 +110,15 @@ export class EventApiService {
     return this._http.patch(API_URL, data, _httpOptions);
   }
 
-  getArrivalsById(site, network, eventId, originId): any {
-    const API_URL = environment.apiUrl + globals.apiArrivals;
-    let params = new HttpParams()
-      .set('site_code', site)
-      .set('network_code', network)
-      .set('event_id', eventId);
-    if (originId) {
-      params = params.append('origin_id', originId);
-    }
-    return this._http.get(API_URL, { params })
-      .pipe(
-        /*
-        timeout(60000),
-        catchError(err => {
-            // console.log('caught mapping error and rethrowing', err);
-            return throwError(err);
-        }),*/
-        catchError(err => {
-          console.log('caught rethrown error, providing fallback value');
-          return of([]);
-        })
-      );
+  getEventArrivalsById(query: EventArrivalsQuery): any {
+    const url = `${environment.apiUrl}${globals.apiArrivals}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get(url, { params });
   }
 
-  getTraveltimesById(site, network, eventId, originId): any {
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId +
-      '/' + globals.apiOrigins + '/' + originId +
-      '/' + globals.apiTravelTimes;
-    const params = new HttpParams()
-      .set('site_code', site)
-      .set('network_code', network);
-    return this._http.get(API_URL, { params })
-      .pipe(
-        /*
-        timeout(60000),
-        catchError(err => {
-            // console.log('caught mapping error and rethrowing', err);
-            return throwError(err);
-        }),*/
-        catchError(err => {
-          console.log('caught rethrown error, providing fallback value');
-          return of([]);
-        })
-      );
+  getEventOriginTraveltimesById(eventId: string, originId: string): any {
+    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/${globals.apiOrigins}/${originId}/${globals.apiTravelTimes}`;
+    return this._http.get(url);
   }
 
   getReprocessEventById(site, network, eventId): any {
