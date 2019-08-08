@@ -116,12 +116,33 @@ export interface Boundaries {
   max_time: string;
 }
 
+// TODO: add actual sensor params from API
 export interface Sensor {
+  id?: string;
+  code?: string;
+  station?: string;
   chart?: canvasjs.Chart;
   picks?: any;
   container?: any;
   channels: any;
   sensor_code?: any;
+}
+
+export interface Origin {
+  origin_resource_id: string;
+  preferred_origin: boolean;
+  evaluation_mode: EventEvaluationMode;
+  evaluation_status: EvaluationStatus;
+  event: string;
+  insertion_timestamp: string;
+  modification_timestamp: string;
+  network: number;
+  site: number;
+  time_utc: string;
+  uncertainty: string;
+  x: number;
+  y: number;
+  z: number;
 }
 
 // DTO
