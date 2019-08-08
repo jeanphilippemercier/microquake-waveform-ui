@@ -1,5 +1,5 @@
 import { Injectable, OnInit } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, ReplaySubject } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { first } from 'rxjs/operators';
 
@@ -46,7 +46,7 @@ export class WaveformService implements OnInit {
   site: BehaviorSubject<string> = new BehaviorSubject('');
   network: BehaviorSubject<string> = new BehaviorSubject('');
 
-  allSensors: BehaviorSubject<any[]> = new BehaviorSubject([]);
+  loadedSensors: BehaviorSubject<any[]> = new BehaviorSubject([]);
 
   options: any = {};
   sidebarOpened: BehaviorSubject<boolean> = new BehaviorSubject(true);
@@ -57,6 +57,9 @@ export class WaveformService implements OnInit {
   loadedPages: BehaviorSubject<number> = new BehaviorSubject(0);
 
   loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
+
+  waveformComponentInitialized: ReplaySubject<boolean> = new ReplaySubject(1);
+  waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();
 
   constructor(
     private _matDialog: MatDialog

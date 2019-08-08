@@ -6,7 +6,7 @@ import { Observable, of, Observer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
-  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery
+  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery, Origin
 } from '@interfaces/event.interface';
 import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
@@ -90,10 +90,17 @@ export class EventApiService {
     return this._http.post(API_URL, data, _httpOptions);
   }
 
-  getEventOriginsById(query: EventOriginsQuery): any {
+
+  getOriginById(originId: string): Observable<Origin> {
+    const url = `${environment.apiUrl}${globals.apiOrigins}/${originId}`;
+    const params = ApiUtil.getHttpParams({});
+    return this._http.get<Origin>(url, { params });
+  }
+
+  getOrigins(query: EventOriginsQuery): Observable<Origin[]> {
     const url = `${environment.apiUrl}${globals.apiOrigins}`;
     const params = ApiUtil.getHttpParams(query);
-    return this._http.get(url, { params });
+    return this._http.get<Origin[]>(url, { params });
   }
 
   updatePartialOriginById(originId, dataObj): any {

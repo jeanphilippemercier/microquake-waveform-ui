@@ -76,6 +76,7 @@
   <button
     mat-icon-button
     matTooltip="Toggle Remove Predicted Picks Bias"
+    class="activatable"
     [ngClass]="{'active': waveformService.predictedPicksBias | async}"
     (click)="onPredictedPicksBiasClick()"
   >

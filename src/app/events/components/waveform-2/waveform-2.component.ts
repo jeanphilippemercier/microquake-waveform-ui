@@ -4,15 +4,16 @@ import { Validators, FormControl } from '@angular/forms';
 
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { takeUntil, distinctUntilChanged, skip } from 'rxjs/operators';
+import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
 
 import { globals } from '@src/globals';
 import { EventApiService } from '@services/event-api.service';
-import { EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor } from '@interfaces/event.interface';
+import { EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor, Origin } from '@interfaces/event.interface';
 import ApiUtil from '@core/utils/api-util';
 import WaveformUtil from '@core/utils/waveform-util';
 import { WaveformService } from '@services/waveform.service';
 import { Subject } from 'rxjs';
+import { InventoryApiService } from '@services/inventory-api.service.js';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -30,7 +31,6 @@ enum ContextMenuChartAction {
 
 export class Waveform2Component implements OnInit, OnDestroy {
 
-  private _event: IEvent;
 
   @Input()
   set event(event: IEvent) {
@@ -42,6 +42,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   get event(): IEvent {
     return this._event;
   }
+  private _event: IEvent;
 
   @Input() timezone = '+00:00';
   @ViewChild('contextMenuChart') private _menu: ElementRef;
@@ -54,19 +55,32 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _xViewportMaxStack: any[];
   contextMenuChartVisible = false;
 
-  eventMessage: any;
-  allSensors: Sensor[];
+  /*
+  * SENSORS
+  */
+
+  // sensors loaded from api - don't mutate this!
+  allSensorsOrig: Sensor[] = [];
+  // duplicated allSensorsOrig for current chart
+  allSensors: Sensor[] = [];
+  // currently loaded sensors with waveform data
+  loadedSensors: Sensor[] = [];
+  // currently active sensors (shown on screen)
+  activeSensors: Sensor[] = [];
+  // hashMap for all sensors
+  allSensorsMap: { [key: number]: number } = {};
+  // context sensor
   contextSensor: Sensor[];
+
   allPicks: any[];
   allPicksChanged: any[];
   originTravelTimes: any[];
-  activeSensors: Sensor[];
   lastPicksState: any = null;
   timeOrigin: any;
   contextTimeOrigin: any;
   timeEnd: any;
   origin: any;
-  waveformOrigin: any = {};
+  waveformOrigin: Origin;
   options: any;
 
   highFreqCorner: any;
@@ -105,18 +119,46 @@ export class Waveform2Component implements OnInit, OnDestroy {
   constructor(
     public waveformService: WaveformService,
     private _eventApiService: EventApiService,
+    private _inventoryApiService: InventoryApiService,
     private _renderer: Renderer2
   ) { }
 
   async ngOnInit() {
+    this.waveformService.loading.next(true);
+    await this._loadAllSensors();
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this.addKeyDownEventListeners();
     this._subscribeToolbar();
+
+    this.waveformService.waveformComponentInitialized.next(true);
   }
 
   ngOnDestroy(): void {
     this._unsubscribe.next();
     this._unsubscribe.complete();
+  }
+
+  private async _loadAllSensors() {
+    try {
+      this.allSensorsOrig = await this._inventoryApiService.getSensors().toPromise();
+      this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.id] = idx);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  private _mapSensorInfoToLoadedSensors(loadedSensors: Sensor[], allSensors: Sensor[], allSensorsMap: { [key: number]: number }) {
+    if (loadedSensors) {
+      loadedSensors = loadedSensors.map(sensor => {
+        const allSensorInfo = allSensors[allSensorsMap[sensor.sensor_code]];
+
+        if (allSensorInfo) {
+          sensor = { ...sensor, ...allSensorInfo };
+        }
+        return sensor;
+      });
+    }
+    return loadedSensors;
   }
 
   private _subscribeToolbar(): void {
@@ -176,7 +218,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         takeUntil(this._unsubscribe)
       )
       .subscribe((val: boolean) => {
-        this.predictePicksBias();
+        this.predicatePicksBias();
         this.changePage(false);
       });
 
@@ -232,10 +274,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const start = ((index - 1) * (pageSize - 1));
     const end = start + (pageSize - 2);
 
-    if (this.allSensors && this.allSensors[start] && this.allSensors[end]) {
+    if (this.loadedSensors && this.loadedSensors[start] && this.loadedSensors[end]) {
       if (
-        this.allSensors[start].channels && this.allSensors[start].channels.length &&
-        this.allSensors[end].channels && this.allSensors[end].channels.length
+        this.loadedSensors[start].channels && this.loadedSensors[start].channels.length &&
+        this.loadedSensors[end].channels && this.loadedSensors[end].channels.length
       ) {
         return true;
       }
@@ -243,7 +285,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return false;
   }
 
-  private _handleEvent(event: IEvent) {
+  private async _handleEvent(event: IEvent) {
+
+    await new Promise(resolve => {
+      this.waveformService.waveformComponentInitialized.pipe(
+        take(1),
+        skipWhile(val => val !== true)
+      ).subscribe(val => resolve());
+    });
+
+    this.allSensors = JSON.parse(JSON.stringify(this.allSensorsOrig));
     this.currentEventId = event.event_resource_id;
     this._destroyCharts();
     this._loadEventFirstPage(event);
@@ -295,20 +346,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if (eventData && eventData.sensors) {
 
         // filter and recompute composite traces
-        this.allSensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
-        this.waveformService.allSensors.next(this.allSensors);
+        this.loadedSensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
+
+        this.waveformService.loadedSensors.next(this.loadedSensors);
         this.waveformService.loadedPages.next(1);
         this.progressValue = (this.waveformService.loadedPages.getValue() / this.waveformService.maxPages.getValue()) * 100;
-        const max = this.waveformService.maxPages.getValue() * (this.waveformService.pageSize.getValue() - 1);
 
-        for (let i = this.allSensors.length; i < max; i++) {
-          this.allSensors[i] = { 'channels': [] };
+        for (let i = this.loadedSensors.length; i < this.allSensors.length; i++) {
+          this.loadedSensors[i] = { 'channels': [] };
         }
 
         this.timeOrigin = eventData.timeOrigin;
         this.timeEnd = moment(this.timeOrigin).add(globals.fixedDuration, 'seconds');
 
-        if (this.allSensors.length > 0) {
+        if (this.loadedSensors.length > 0) {
 
           // get origins
           const originsQuery: EventOriginsQuery = {
@@ -317,8 +368,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             event_id: event.event_resource_id
           };
 
-          const origins = await this._eventApiService.getEventOriginsById(originsQuery).toPromise();
-
+          const origins = await this._eventApiService.getOrigins(originsQuery).toPromise();
           let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
 
           if (!origin) {
@@ -337,7 +387,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
           ).toPromise();
 
           this.originTravelTimes = traveltimes;
-          this.addPredictedPicksData(this.allSensors, this.timeOrigin);
 
           const arrivalsQuery: EventArrivalsQuery = {
             site_code: this.waveformService.site.getValue(),
@@ -351,7 +400,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           this.allPicks = picks;
           this.allPicksChanged = JSON.parse(JSON.stringify(this.allPicks));
-          this.addArrivalsPickData(this.allSensors, this.timeOrigin);
+
+          // load predicted picks
+          // load arrival picks
+          this.allSensors = this.addPredictedPicksData(this.allSensors, this.originTravelTimes, this.timeOrigin);
+          this.allSensors = this.addArrivalsPickData(this.allSensors, this.allPicks, this.timeOrigin);
+
+          this.loadedSensors = this._mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.allSensorsMap);
 
           this.picksBias = 0;
           const contextFile = await this.getWaveformContextFile(event);
@@ -361,6 +416,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             if (contextData && contextData.sensors) {
               this.contextSensor = this.filterData(contextData.sensors);
               this.contextSensor = contextData.sensors;
+              this.contextSensor = this._mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.allSensorsMap);
               this.contextTimeOrigin = contextData.timeOrigin;
             }
           }
@@ -405,11 +461,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
         console.log('Warning: Different origin time on page: ', idx);
       }
       // filter and recompute composite traces
-      const sensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
-      this.addPredictedPicksData(sensors, this.timeOrigin);
-      this.addArrivalsPickData(sensors, this.timeOrigin);
+      let sensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
+      sensors = this._mapSensorInfoToLoadedSensors(sensors, this.allSensors, this.allSensorsMap);
+
       for (let j = 0; j < sensors.length; j++) {
-        this.allSensors[(this.waveformService.pageSize.getValue() - 1) * (idx - 1) + j] = sensors[j];
+        this.loadedSensors[(this.waveformService.pageSize.getValue() - 1) * (idx - 1) + j] = sensors[j];
       }
     }
     this.waveformService.loadedPages.next(this.waveformService.loadedPages.getValue() + 1);
@@ -419,36 +475,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   }
 
-  async asyncLoadEventPages(event_id: string) {
-
-    for (let i = 2; i <= this.waveformService.maxPages.getValue(); i++) {
-      if (event_id !== this.currentEventId) {
-        console.log('Changed event on loading pages');
-        return;
-      }
-      const eventFile = await this.getEventPage(event_id, i);
-      const eventData = WaveformUtil.parseMiniseed(eventFile, false);
-
-      if (eventData && eventData.sensors && eventData.sensors.length > 0) {
-        if (!this.timeOrigin.isSame(eventData.timeOrigin)) {
-          console.log('Warning: Different origin time on page: ', i);
-        }
-        // filter and recompute composite traces
-        const sensors = WaveformUtil.addCompositeTrace(this.filterData(eventData.sensors));
-        this.addPredictedPicksData(sensors, this.timeOrigin);
-        this.addArrivalsPickData(sensors, this.timeOrigin);
-        for (let j = 0; j < sensors.length; j++) {
-          this.allSensors[(this.waveformService.pageSize.getValue() - 1) * (i - 1) + j] = sensors[j];
-        }
-      }
-      this.waveformService.loadedPages.next(this.waveformService.loadedPages.getValue() + 1);
-      this.progressValue = this.waveformService.loadedPages.getValue() / this.waveformService.maxPages.getValue() * 100;
-      if (this.waveformService.loadedPages.getValue() === this.waveformService.maxPages.getValue()) {
-      }
-      this.afterLoading(event_id);
-    }
-  }
-
   afterLoading(event_id) {
 
     if (event_id !== this.currentEventId) {
@@ -456,15 +482,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
 
-    const maxPages = Math.ceil(this.allSensors.length / (this.waveformService.pageSize.getValue() - 1));
+    const maxPages = Math.ceil(this.loadedSensors.length / (this.waveformService.pageSize.getValue() - 1));
     if (this.waveformService.currentPage.getValue() === maxPages) {
       // eliminate placeholders, sanitize sensors array
-      let index = this.allSensors.findIndex(sensor => sensor.channels.length === 0);
+      let index = this.loadedSensors.findIndex(sensor => sensor.channels.length === 0);
       while (index >= 0) {
-        this.allSensors.splice(index, 1);
-        index = this.allSensors.findIndex(sensor => sensor.channels.length === 0);
+        this.loadedSensors.splice(index, 1);
+        index = this.loadedSensors.findIndex(sensor => sensor.channels.length === 0);
       }
-      console.log('Loaded data for ' + this.allSensors.length + ' sensors');
+      console.log('Loaded data for ' + this.loadedSensors.length + ' sensors');
       // remove bias from predicted picks, force a refresh
       // this.activateRemoveBias(true);
       this.waveformService.loadedAll.next(true);
@@ -475,16 +501,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _renderPage() {
 
     const pageNumber = this.waveformService.currentPage.getValue();
-    const pageSize = this.waveformService.pageSize.getValue() - 1; // traces loaded from API
+    const pageSize = this.waveformService.pageSize.getValue() - 1;
     const numPages = this.waveformService.maxPages.getValue();
     if (pageNumber > 0 && pageNumber <= numPages) {
 
-      this.activeSensors = this.allSensors.slice((pageNumber - 1) * pageSize, Math.min(pageNumber * pageSize, this.allSensors.length));
+      const start = (pageNumber - 1) * pageSize;
+      const end = Math.min(pageNumber * pageSize, this.loadedSensors.length);
+      this.activeSensors = this.loadedSensors.slice(start, end);
       this.activeSensors = this.activeSensors.filter(activeSensor => activeSensor.channels && activeSensor.channels.length > 0);
-      this.activeSensors.push(this.contextSensor[0]);  // context trace is last
+      // context trace is last
+      this.activeSensors.push(this.contextSensor[0]);
 
       this.predicatePicks();
-
       this._renderCharts();
       this._renderContextChart();
       this.setChartKeys();
@@ -655,7 +683,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         },
         title: {
-          text: this.activeSensors[i].sensor_code,
+          text: `${this.activeSensors[i].station}. (${this.activeSensors[i].sensor_code})`,
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
@@ -827,7 +855,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       zoomEnabled: true,
       animationEnabled: true,
       title: {
-        text: this.activeSensors[i].sensor_code,
+        text: `${this.activeSensors[i].station}. (${this.activeSensors[i].sensor_code})`,
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
@@ -1150,7 +1178,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  predictePicksBias() {
+  predicatePicksBias() {
     this.calcPicksBias();
     this.changePredictedPicksByBias(this.waveformService.predictedPicksBias.getValue());
   }
@@ -1565,8 +1593,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   updateSensorPicks(sensor: Sensor, picktype) {
     const pick = sensor.picks ? WaveformUtil.findValue(sensor.picks, 'label', picktype) : undefined;
-    const arrpick = WaveformUtil.findNestedValue
-      (this.allPicksChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
+    const arrpick = WaveformUtil.findNestedValue(this.allPicksChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
+
     if (pick) {
       const pick_time = this.addTimeOffsetMicro(this.timeOrigin, pick.value);
       if (arrpick) {  // existing pick
@@ -1633,15 +1661,63 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   }
 
-  addArrivalsPickData(sensors: Sensor[], origin) {
+
+  addPredictedPicksData(sensors: Sensor[], originTravelTimes: any, origin: Date) {
+
+    for (const sensor of sensors) {
+
+      if (!sensor.code) {
+        console.error(`no sensor.code on addPredictedPicksData`);
+        return;
+      }
+
+      const sensorOrigin = WaveformUtil.findValue(originTravelTimes, 'station_id', sensor.code);
+
+      if (!sensorOrigin) {
+        console.error(`no sensorOrigin on addPredictedPicksData`);
+        return;
+      }
+
+      sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
+
+      for (const pickKey of ['P', 'S']) {
+        const key = 'travel_time_' + pickKey.toLowerCase();
+
+        if (sensorOrigin[key]) {
+          const picktime_utc = this.addTime(this.waveformOrigin.time_utc, sensorOrigin[key]);
+          const pickTime = moment(picktime_utc.toString());  // UTC
+
+          if (!this.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
+            this.picksWarning += 'Predicted picks outside the display time window\n';
+          }
+
+          sensor[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
+          sensor.picks.push({
+            value: this.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
+            thickness: globals.predictedPicksLineThickness,
+            lineDashType: 'dash',
+            opacity: 0.5,
+            color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
+            label: pickKey.toLowerCase(),
+            labelAlign: 'far',
+            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+          });
+        }
+      }
+    }
+
+    return sensors;
+  }
+
+  addArrivalsPickData(sensors: Sensor[], allPicks: any, origin) {
     const missingSensors = [];
-    for (const arrival of this.allPicks) {
+    for (const arrival of allPicks) {
       if (arrival.hasOwnProperty('pick')) {
         const pick = arrival.pick;
 
         if (pick.sensor) {
           if (moment(pick.time_utc).isValid()) {
-            const sensor = WaveformUtil.findValue(sensors, 'sensor_code', pick.sensor.toString());
+            const sensor = WaveformUtil.findValue(sensors, 'code', pick.sensor.toString());
             if (sensor) {
               sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ?
                 sensor.picks : [];
@@ -1675,6 +1751,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (missingSensors.length > 0) {
       this.picksWarning = 'No waveforms for picks at sensors: ' + missingSensors.toString();
     }
+    return sensors;
   }
 
   addTime(start_time, traveltime): String {
@@ -1685,53 +1762,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
   }
 
-  addPredictedPicksData(sensors: Sensor[], origin: Date) {
-
-    for (const sensor of sensors) {
-
-      if (!sensor.sensor_code) {
-        return;
-      }
-
-      const sensorOrigin = WaveformUtil.findValue(this.originTravelTimes, 'station_id', sensor.sensor_code);
-
-      if (!sensorOrigin) {
-        return;
-      }
-
-      sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
-
-      for (const pickKey of ['P', 'S']) {
-        const key = 'travel_time_' + pickKey.toLowerCase();
-
-        if (sensorOrigin[key]) {
-          const picktime_utc = this.addTime(this.waveformOrigin.time_utc, sensorOrigin[key]);
-          const pickTime = moment(picktime_utc.toString());  // UTC
-
-          if (!this.picksWarning && (pickTime.isBefore(origin) || pickTime.isAfter(this.timeEnd))) {
-            this.picksWarning += 'Predicted picks outside the display time window\n';
-          }
-
-          sensor[pickKey.toLowerCase() + '_predicted_time_utc'] = picktime_utc;
-          sensor.picks.push({
-            value: this.calculateTimeOffsetMicro(picktime_utc, origin),  // relative to timeOrigin's full second
-            thickness: globals.predictedPicksLineThickness,
-            lineDashType: 'dash',
-            opacity: 0.5,
-            color: pickKey === 'P' ? 'blue' : pickKey === 'S' ? 'red' : 'black',
-            label: pickKey.toLowerCase(),
-            labelAlign: 'far',
-            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
-          });
-        }
-      }
-    }
-  }
-
   calcPicksBias() {
     let picksTotalBias = 0; // calculate pickBias as average value of picks - predicted picks
     let nPicksBias = 0;
     for (const sensor of this.allSensors) {
+
       for (const pickKey of ['p', 's']) {
         const predicted_key = pickKey + '_predicted_time_utc';
         const pick_key = pickKey + '_pick_time_utc';
@@ -1754,7 +1789,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   changePredictedPicksByBias(removeBias: boolean) {
     if (this.picksBias !== 0) {
-      for (const sensor of this.allSensors) {
+      for (const sensor of this.loadedSensors) {
         if (sensor.hasOwnProperty('picks')) {
           for (const pick of sensor.picks) {
             if (pick.label === pick.label.toLowerCase()) {
@@ -1789,12 +1824,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   applyFilter() {
-    if (this.allSensors.length > 0) {
+    if (this.loadedSensors.length > 0) {
       this.waveformService.saveOption('numPoles', this.waveformService.numPoles.getValue());
       this.waveformService.saveOption('lowFreqCorner', this.waveformService.lowFreqCorner.getValue());
       this.waveformService.saveOption('highFreqCorner', this.waveformService.highFreqCorner.getValue());
-      this.allSensors = WaveformUtil.addCompositeTrace(this.filterData(this.allSensors)); // filter and recompute composite traces
-      this.waveformService.allSensors.next(this.allSensors);
+      this.loadedSensors = WaveformUtil.addCompositeTrace(this.filterData(this.loadedSensors)); // filter and recompute composite traces
+      this.waveformService.loadedSensors.next(this.loadedSensors);
       this.contextSensor = this.filterData(this.contextSensor);
       this.changePage(false);
     }
