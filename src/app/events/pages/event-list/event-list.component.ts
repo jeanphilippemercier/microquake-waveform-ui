@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { CatalogApiService } from '@app/core/services/catalog-api.service';
-import { Site, Network } from '@app/core/interfaces/site.interface';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import { EventType, EvaluationStatus } from '@app/core/interfaces/event.interface';
+import { MatTableDataSource, MatDialogRef, MatDialog } from '@angular/material';
 import * as moment from 'moment';
-import { MatTableDataSource } from '@angular/material';
+import { first } from 'rxjs/operators';
+
+import { EventUpdateDialog } from '@interfaces/dialogs.interface';
+import { Site, Network } from '@interfaces/site.interface';
+import { EventType, EvaluationStatus, IEvent, EventEvaluationMode, EventUpdateInput } from '@interfaces/event.interface';
+import { EventApiService } from '@services/event-api.service';
+import { CatalogApiService } from '@services/catalog-api.service';
+import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 
 interface ViewerOptions {
   site?: string;
@@ -29,6 +32,7 @@ export class EventListComponent implements OnInit {
 
   evaluationStatuses: EvaluationStatus[];
   selectedEvaluationStatuses: EvaluationStatus[];
+  eventEvaluationModes: EventEvaluationMode[];
 
   eventStartDate: Date = moment().startOf('day').subtract(5, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
@@ -38,9 +42,13 @@ export class EventListComponent implements OnInit {
 
   events: any; // TODO: typings
 
+  eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
+  eventUpdateDialogOpened = false;
+
   constructor(
     private _catalogApiService: CatalogApiService,
-    private _router: Router
+    private _matDialog: MatDialog,
+    private _eventApiService: EventApiService
   ) { }
 
   async ngOnInit() {
@@ -57,6 +65,7 @@ export class EventListComponent implements OnInit {
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._catalogApiService.get_microquake_event_types(this.site).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
+    this.eventEvaluationModes = Object.values(EventEvaluationMode);
   }
 
   private async _loadEvents() {
@@ -132,6 +141,55 @@ export class EventListComponent implements OnInit {
         this.network = this.site.networks.find(network => network.code === options.network);
       }
     }
+  }
+
+  private async _updateEvent(event: IEvent) {
+    if (!event) {
+      return;
+    }
+
+    this.events.some((ev, idx) => {
+      if (ev.event_resource_id === event.event_resource_id) {
+        this.events[idx] = Object.assign(ev, event);
+        return true;
+      }
+    });
+  }
+
+  async openEventUpdateDialog($event: IEvent) {
+    if (this.eventUpdateDialogRef || this.eventUpdateDialogOpened) {
+      return;
+    }
+    this.eventUpdateDialogOpened = true;
+
+    this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
+      hasBackdrop: true,
+      width: '600px',
+      data: {
+        event: $event,
+        evaluationStatuses: this.evaluationStatuses,
+        eventTypes: this.eventTypes,
+        eventEvaluationModes: this.eventEvaluationModes
+      }
+    });
+
+    this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
+      try {
+        this.eventUpdateDialogRef.componentInstance.loading = true;
+        const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
+        this._updateEvent(result);
+        this.eventUpdateDialogRef.close();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventUpdateDialogRef.componentInstance.loading = false;
+      }
+    });
+
+    this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.eventUpdateDialogRef;
+      this.eventUpdateDialogOpened = false;
+    });
   }
 
 }
