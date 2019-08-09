@@ -206,8 +206,8 @@
     <mat-icon>chevron_left</mat-icon>
   </button>
   <small class="pagination-pages">
-    <span class="current">{{(waveformService.currentPage | async) | ordinal}}</span><br>
-    <span class="suffix-label">page</span>
+    <span class="current">{{waveformService.currentPage | async}}</span> / {{waveformService.maxPages | async}}<br>
+    <span class="suffix-label">pages</span>
   </small>
   <button
     mat-icon-button

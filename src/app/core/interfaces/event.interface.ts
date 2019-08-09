@@ -116,6 +116,13 @@ export interface Boundaries {
   max_time: string;
 }
 
+export interface WaveformInfo {
+  num_of_pages: number;
+  pages: string[];
+  context: string;
+  complete_stations: string[];
+}
+
 // TODO: add actual sensor params from API
 export interface Sensor {
   id?: string;

@@ -8,7 +8,9 @@ import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/ope
 
 import { globals } from '@src/globals';
 import { EventApiService } from '@services/event-api.service';
-import { EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor, Origin } from '@interfaces/event.interface';
+import {
+  EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor, Origin, WaveformInfo
+} from '@interfaces/event.interface';
 import ApiUtil from '@core/utils/api-util';
 import WaveformUtil from '@core/utils/waveform-util';
 import { WaveformService } from '@services/waveform.service';
@@ -113,6 +115,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   ContextMenuChartAction = ContextMenuChartAction;
 
   waveformShow = true;
+
+  waveformInfo: WaveformInfo;
 
   private _unsubscribe = new Subject<void>();
 
@@ -241,7 +245,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .subscribe(async (index: number) => {
         this.waveformService.loading.next(true);
         if (!this._isEventPageAlreadyLoaded(index)) {
-          await this.loadEventPage(this.currentEventId, index);
+          await this.loadWaveformPage(index);
           this.waveformService.currentPage.next(index);
           this.afterLoading(this.currentEventId);
           this.changePage(false);
@@ -334,8 +338,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this.waveformService.currentPage.next(1);
 
     try {
-      const eventFile = await this.getEventPage(event.event_resource_id, 1);
 
+      const query: EventWaveformQuery = {
+        page_number: this.waveformService.currentPage.getValue(),
+        traces_per_page: this.waveformService.pageSize.getValue() - 1
+      };
+
+      this.waveformInfo = await this._eventApiService.getWaveformInfo(event.event_resource_id, query).toPromise();
+
+      if (!this.waveformInfo) {
+        console.error(`no waveformInfo`);
+        return;
+      }
+
+      this.waveformService.maxPages.next(this.waveformInfo.num_of_pages);
+
+      const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[0]).toPromise();
       if (!eventFile) {
         console.error(`no eventFile`);
         return;
@@ -409,7 +427,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this.loadedSensors = this._mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.allSensorsMap);
 
           this.picksBias = 0;
-          const contextFile = await this.getWaveformContextFile(event);
+          const contextFile = await this.getWaveformContextFile(this.waveformInfo.context);
 
           if (contextFile) {
             const contextData = WaveformUtil.parseMiniseed(contextFile, true);
@@ -446,14 +464,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  async loadEventPage(event_id: string, idx: number) {
+  async loadWaveformPage(idx: number) {
 
-    if (event_id !== this.currentEventId) {
-      console.log('Changed event on loading pages');
+    if (!this.waveformInfo || !this.waveformInfo.pages[idx]) {
+      console.error(`no waveformInfo or waveform file for current page ${idx}`);
       return;
     }
 
-    const eventFile = await this.getEventPage(event_id, idx);
+    const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[idx]).toPromise();
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
@@ -661,7 +679,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const options = {
         zoomEnabled: true,
         zoomType: 'x',
-        animationEnabled: true,
+        animationEnabled: false,
         rangeChanged: (e) => {
           this._bHoldEventTrigger = true;
           if (!e.chart.options.viewportMinStack) {
@@ -853,7 +871,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const timeOriginValue = this.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
     const optionsContext = {
       zoomEnabled: true,
-      animationEnabled: true,
+      animationEnabled: false,
       title: {
         text: `${this.activeSensors[i].station}. (${this.activeSensors[i].sensor_code})`,
         dockInsidePlotArea: true,
@@ -1869,33 +1887,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return sensors;
   }
 
-  async getWaveformContextFile(event: IEvent): Promise<any> {
+  async getWaveformContextFile(contextFileUrl: string): Promise<any> {
     try {
-      return await this._eventApiService.getWaveformContextFile(event.waveform_context_file).toPromise();
+      return await this._eventApiService.getWaveformFile(contextFileUrl).toPromise();
     } catch (err) {
       window.alert('Error getting miniseed data file');
       console.error(err);
     }
-  }
-
-  async getEventPage(eventId: string, page: number) {
-    const query: EventWaveformQuery = {
-      page_number: page,
-      traces_per_page: globals.chartsPerPage - 1
-    };
-    const response = await this._eventApiService.getEventWaveform(eventId, query).toPromise();
-
-    if (page === 1) {
-      const filename = ApiUtil.getAttachmentFilenameFromArrayBufferHttpResponse(response);
-
-      let maxPages = globals.max_num_pages;
-      if (filename.indexOf('of_') && filename.lastIndexOf('.')) {
-        maxPages = parseInt(filename.substring(filename.indexOf('of_') + 3, filename.lastIndexOf('.')), 10);
-      }
-
-      this.waveformService.maxPages.next(maxPages);
-    }
-
-    return response.body;
   }
 }

@@ -6,7 +6,7 @@ import { Observable, of, Observer } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
-  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery, Origin
+  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery, Origin, WaveformInfo
 } from '@interfaces/event.interface';
 import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
@@ -22,21 +22,21 @@ export class EventApiService {
   ) { }
 
 
-  getWaveformContextFile(contextUrl: string): Observable<any> {
-    const url = `${contextUrl}`;
+  getWaveformFile(contextUrl: string): Observable<any> {
+    let url = `${contextUrl}`;
+    // TODO: tmp fix for cors error
+    url = url.replace(/^http:\/\//i, 'https://');
+
     const params = ApiUtil.getHttpParams({});
     const responseType = `arraybuffer`;
 
     return this._http.get(url, { params, responseType });
   }
 
-  getEventWaveform(eventId: string, query: EventWaveformQuery): Observable<HttpResponse<ArrayBuffer>> {
+  getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformInfo> {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
     const params = ApiUtil.getHttpParams(query);
-    const responseType = `arraybuffer`;
-    const observe = 'response';
-
-    return this._http.get(url, { params, responseType, observe });
+    return this._http.get<WaveformInfo>(url, { params });
   }
 
   getEvents(query: EventQuery): Observable<IEvent[]> {
