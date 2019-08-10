@@ -1,4 +1,5 @@
-import { IEvent, EvaluationStatus, EventType, EventEvaluationMode, EventQuery } from './event.interface';
+import { IEvent, EvaluationStatus, EventType, EventEvaluationMode } from './event.interface';
+import { EventQuery } from './event-query.interface';
 import { Site } from './site.interface';
 
 export interface EventUpdateDialog {

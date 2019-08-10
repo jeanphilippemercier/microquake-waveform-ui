@@ -2,7 +2,8 @@ import { Component, Inject, EventEmitter } from '@angular/core';
 import { MAT_DIALOG_DATA, MatRadioChange } from '@angular/material';
 import * as moment from 'moment';
 
-import { EventQuery, EventType, EvaluationStatus, EventEvaluationMode } from '@interfaces/event.interface';
+import { EventType, EvaluationStatus, EventEvaluationMode } from '@interfaces/event.interface';
+import { EventQuery } from '@interfaces/event-query.interface';
 import { Site } from '@interfaces/site.interface';
 import { EventFilterDialogData } from '@interfaces/dialogs.interface';
 

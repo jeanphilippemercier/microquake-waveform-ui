@@ -5,10 +5,11 @@ import { first } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/site.interface';
-import { EventType, EvaluationStatus, IEvent, EventEvaluationMode, EventUpdateInput } from '@interfaces/event.interface';
+import { EventType, EvaluationStatus, IEvent, EventEvaluationMode } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
 import { CatalogApiService } from '@services/catalog-api.service';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
+import { EventUpdateInput } from '@interfaces/event-dto.interface';
 
 interface ViewerOptions {
   site?: string;

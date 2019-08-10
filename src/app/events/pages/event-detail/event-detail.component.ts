@@ -8,9 +8,9 @@ import { MatDialog, MatDialogRef } from '@angular/material';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/site.interface';
 import { EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
-import {
-  IEvent, EvaluationStatus, EventType, EventUpdateInput, EventEvaluationMode, EventQuery, Boundaries
-} from '@interfaces/event.interface';
+import { IEvent, EvaluationStatus, EventType, EventEvaluationMode, Boundaries } from '@interfaces/event.interface';
+import { EventQuery } from '@interfaces/event-query.interface';
+import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';

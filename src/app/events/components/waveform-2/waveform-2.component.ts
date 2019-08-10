@@ -1,20 +1,19 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, OnDestroy } from '@angular/core';
-import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import { Validators, FormControl } from '@angular/forms';
-
+import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
-import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
 
 import { globals } from '@src/globals';
-import { EventApiService } from '@services/event-api.service';
-import {
-  EventWaveformQuery, IEvent, EventOriginsQuery, EventArrivalsQuery, Sensor, Origin, WaveformInfo
-} from '@interfaces/event.interface';
-import ApiUtil from '@core/utils/api-util';
 import WaveformUtil from '@core/utils/waveform-util';
+import { IEvent, Origin } from '@interfaces/event.interface';
+import { Sensor } from '@interfaces/inventory.interface';
+import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
+import { WaveformQueryResponse } from '@interfaces/event-dto.interface.js';
 import { WaveformService } from '@services/waveform.service';
-import { Subject } from 'rxjs';
+import { EventApiService } from '@services/event-api.service';
 import { InventoryApiService } from '@services/inventory-api.service.js';
 
 enum ContextMenuChartAction {
@@ -116,7 +115,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   waveformShow = true;
 
-  waveformInfo: WaveformInfo;
+  waveformInfo: WaveformQueryResponse;
 
   private _unsubscribe = new Subject<void>();
 
@@ -144,7 +143,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private async _loadAllSensors() {
     try {
-      this.allSensorsOrig = await this._inventoryApiService.getSensors().toPromise();
+      // TODO: remove getSensors query once waveformInfo contains information about all active sensors
+      const response = await this._inventoryApiService.getSensors({
+        page_size: 200
+      }).toPromise();
+
+      this.allSensorsOrig = response.results;
       this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.id] = idx);
     } catch (err) {
       console.error(err);
@@ -330,21 +334,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
 
+    const preferred_origin_id = event.preferred_origin_id;
     this.waveformService.loading.next(true);
     this.waveformService.loadedAll.next(false);
-    const preferred_origin_id = event.preferred_origin_id;
-
-    // first page
     this.waveformService.currentPage.next(1);
 
     try {
 
-      const query: EventWaveformQuery = {
-        page_number: this.waveformService.currentPage.getValue(),
-        traces_per_page: this.waveformService.pageSize.getValue() - 1
-      };
-
-      this.waveformInfo = await this._eventApiService.getWaveformInfo(event.event_resource_id, query).toPromise();
+      this.waveformInfo = await this._eventApiService.getWaveformInfo(event.event_resource_id).toPromise();
 
       if (!this.waveformInfo) {
         console.error(`no waveformInfo`);
@@ -353,7 +350,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       this.waveformService.maxPages.next(this.waveformInfo.num_of_pages);
 
-      const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[0]).toPromise();
+      const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
+      const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+
       if (!eventFile) {
         console.error(`no eventFile`);
         return;
@@ -466,12 +465,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   async loadWaveformPage(idx: number) {
 
-    if (!this.waveformInfo || !this.waveformInfo.pages[idx]) {
+    if (!this.waveformInfo || !this.waveformInfo.pages[idx - 1]) {
       console.error(`no waveformInfo or waveform file for current page ${idx}`);
       return;
     }
 
-    const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[idx]).toPromise();
+    const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[idx - 1]).toPromise();
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
@@ -701,7 +700,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         },
         title: {
-          text: `${this.activeSensors[i].station}. (${this.activeSensors[i].sensor_code})`,
+          text: `${this.activeSensors[i].station ? this.activeSensors[i].station : '??'}. (${this.activeSensors[i].sensor_code})`,
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
@@ -873,7 +872,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       zoomEnabled: true,
       animationEnabled: false,
       title: {
-        text: `${this.activeSensors[i].station}. (${this.activeSensors[i].sensor_code})`,
+        text: `${this.activeSensors[i].station ? this.activeSensors[i].station : ''}. (${this.activeSensors[i].sensor_code})`,
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',

@@ -2,7 +2,7 @@ import * as miniseed from 'seisplotjs-miniseed';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
-import { Sensor } from '@interfaces/event.interface';
+import { Sensor } from '@interfaces/inventory.interface';
 
 export default class WaveformUtil {
 

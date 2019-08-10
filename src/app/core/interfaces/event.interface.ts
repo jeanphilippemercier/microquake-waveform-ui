@@ -116,25 +116,6 @@ export interface Boundaries {
   max_time: string;
 }
 
-export interface WaveformInfo {
-  num_of_pages: number;
-  pages: string[];
-  context: string;
-  complete_stations: string[];
-}
-
-// TODO: add actual sensor params from API
-export interface Sensor {
-  id?: string;
-  code?: string;
-  station?: string;
-  chart?: canvasjs.Chart;
-  picks?: any;
-  container?: any;
-  channels: any;
-  sensor_code?: any;
-}
-
 export interface Origin {
   origin_resource_id: string;
   preferred_origin: boolean;
@@ -150,47 +131,4 @@ export interface Origin {
   x: number;
   y: number;
   z: number;
-}
-
-// DTO
-export interface EventUpdateInput extends Partial<IEvent> {
-  event_resource_id: string;
-}
-
-// QUERIES
-export interface EventQuery {
-  start_time: string;
-  end_time: string;
-  site_code: string;
-  network_code: string;
-  time_range?: number; // TODO: add to API ?
-  type?: QuakemlType[];
-  status?: EvaluationStatus[];
-}
-
-export interface BoundariesQuery {
-  site_code?: string;
-  network_code?: string;
-}
-
-export interface MicroquakeEventTypesQuery {
-  site_code: string;
-}
-
-export interface EventWaveformQuery {
-  page_number: number;
-  traces_per_page: number;
-}
-
-export interface EventOriginsQuery {
-  site_code: string;
-  network_code: string;
-  event_id: string;
-}
-
-export interface EventArrivalsQuery {
-  site_code: string;
-  network_code: string;
-  event_id: string;
-  origin_id?: string;
 }

@@ -1,15 +1,15 @@
 import { Injectable, NgZone } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
-import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
-import { Observable, of, Observer } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, Observer } from 'rxjs';
+import { IEvent, Boundaries, Origin } from '@interfaces/event.interface';
 import {
-  IEvent, EventQuery, BoundariesQuery, MicroquakeEventTypesQuery,
-  EventWaveformQuery, EventUpdateInput, Boundaries, EventOriginsQuery, EventArrivalsQuery, Origin, WaveformInfo
-} from '@interfaces/event.interface';
+  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
+} from '@interfaces/event-query.interface';
 import { Site } from '@interfaces/site.interface';
 import ApiUtil from '../utils/api-util';
+import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -33,10 +33,10 @@ export class EventApiService {
     return this._http.get(url, { params, responseType });
   }
 
-  getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformInfo> {
+  getWaveformInfo(eventId: string, query: EventWaveformQuery = {}): Observable<WaveformQueryResponse> {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
     const params = ApiUtil.getHttpParams(query);
-    return this._http.get<WaveformInfo>(url, { params });
+    return this._http.get<WaveformQueryResponse>(url, { params });
   }
 
   getEvents(query: EventQuery): Observable<IEvent[]> {
@@ -68,7 +68,6 @@ export class EventApiService {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
     return this._http.get<IEvent>(url);
   }
-
 
   updateEventById(eventId: string, body: EventUpdateInput): Observable<any> {
 
