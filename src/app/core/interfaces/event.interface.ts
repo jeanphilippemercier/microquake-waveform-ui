@@ -59,7 +59,7 @@ export enum EvaluationStatusGroup {
   REJECTED = 'rejected'
 }
 
-export enum EventEvaluationMode {
+export enum EvaluationMode {
   MANUAL = 'manual',
   AUTOMATIC = 'automatic'
 }
@@ -119,7 +119,7 @@ export interface Boundaries {
 export interface Origin {
   origin_resource_id: string;
   preferred_origin: boolean;
-  evaluation_mode: EventEvaluationMode;
+  evaluation_mode: EvaluationMode;
   evaluation_status: EvaluationStatus;
   event: string;
   insertion_timestamp: string;
@@ -131,4 +131,57 @@ export interface Origin {
   x: number;
   y: number;
   z: number;
+}
+
+export interface Traveltime {
+  station_id: string;
+  travel_time_p: number;
+  travel_time_s: number;
+}
+
+export interface ArrivalBase<T> {
+  pick: T;
+  arrival_resource_id: string;
+  azimuth: number;
+  distance: number;
+  earth_model: string;
+  event: string;
+  network: number;
+  origin: string;
+  phase: PickKey;
+  site: number;
+  takeoff_angle: number;
+  time_correction: any;
+  time_residual: number;
+}
+
+export interface Arrival extends ArrivalBase<Pick> {
+  pick: Pick;
+}
+
+export interface Pick {
+  evaluation_mode: EvaluationMode;
+  evaluation_status: EvaluationStatus;
+  event: string;
+  filter_id: any;
+  method_id: any;
+  network: number;
+  onset: any;
+  phase_hint: string;
+  pick_resource_id: string;
+  polarity: any;
+  sensor: number;
+  site: number;
+  time_errors: any;
+  time_utc: string;
+}
+
+export enum PredictedPickKey {
+  p = 'p',
+  s = 's'
+}
+
+export enum PickKey {
+  P = 'P',
+  S = 'S'
 }

@@ -1,7 +1,13 @@
-import { IEvent } from './event.interface';
+import { IEvent, Arrival, Pick, ArrivalBase } from './event.interface';
 
 export interface EventUpdateInput extends Partial<IEvent> {
   event_resource_id: string;
+}
+
+export interface PickUpdateInput extends Partial<Pick> {
+}
+
+export interface ArrivalUpdateInput extends Partial<ArrivalBase<PickUpdateInput>> {
 }
 
 export interface WaveformQueryResponse {
