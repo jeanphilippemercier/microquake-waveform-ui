@@ -8,7 +8,7 @@ import { MatDialog, MatDialogRef } from '@angular/material';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/site.interface';
 import { EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
-import { IEvent, EvaluationStatus, EventType, EventEvaluationMode, Boundaries } from '@interfaces/event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
@@ -40,7 +40,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
-  eventEvaluationModes: EventEvaluationMode[];
+  eventEvaluationModes: EvaluationMode[];
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
@@ -133,7 +133,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
-    this.eventEvaluationModes = Object.values(EventEvaluationMode);
+    this.eventEvaluationModes = Object.values(EvaluationMode);
   }
 
   private async _loadSites() {

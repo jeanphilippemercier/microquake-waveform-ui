@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { IEvent, EventType, EvaluationStatus, EventEvaluationMode } from '@interfaces/event.interface';
+import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-info',
@@ -13,7 +13,7 @@ export class EventInfoComponent implements OnInit {
   @Input() editEnabled = false;
   @Input() eventTypes: EventType[];
   @Input() evaluationStatuses: EvaluationStatus[];
-  @Input() eventEvaluationModes: EventEvaluationMode[];
+  @Input() eventEvaluationModes: EvaluationMode[];
   @Input() showEventResourceId = false;
   @Input() showTimeResidual = false;
   @Input() showUncertainty = false;
@@ -21,7 +21,7 @@ export class EventInfoComponent implements OnInit {
 
   selectedEventType: EventType;
   selectedEvenStatus: EvaluationStatus;
-  selectedEventEvaluationMode: EventEvaluationMode;
+  selectedEvaluationMode: EvaluationMode;
 
   ngOnInit() {
     if (this.event && this.eventTypes && this.eventTypes.length > 0) {
@@ -33,7 +33,7 @@ export class EventInfoComponent implements OnInit {
     }
 
     if (this.event && this.eventEvaluationModes && this.eventEvaluationModes.length > 0) {
-      this.selectedEventEvaluationMode = this.eventEvaluationModes.find(
+      this.selectedEvaluationMode = this.eventEvaluationModes.find(
         eventEvaluationMode => eventEvaluationMode === this.event.evaluation_mode
       );
     }
@@ -55,7 +55,7 @@ export class EventInfoComponent implements OnInit {
     this.eventChange.emit(this.event);
   }
 
-  onEventEvaluationModeChange(eventEvaluationMode: EventEvaluationMode) {
+  onEvaluationModeChange(eventEvaluationMode: EvaluationMode) {
     if (eventEvaluationMode && eventEvaluationMode !== this.event.evaluation_mode) {
       this.event.evaluation_mode = eventEvaluationMode;
     }

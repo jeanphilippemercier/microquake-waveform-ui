@@ -3,7 +3,7 @@ import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, Observer } from 'rxjs';
-import { IEvent, Boundaries, Origin } from '@interfaces/event.interface';
+import { IEvent, Boundaries, Origin, Traveltime } from '@interfaces/event.interface';
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
 } from '@interfaces/event-query.interface';
@@ -21,12 +21,19 @@ export class EventApiService {
     private _ngZone: NgZone
   ) { }
 
-
-  getWaveformFile(contextUrl: string): Observable<any> {
-    let url = `${contextUrl}`;
-    // TODO: tmp fix for cors error
-    url = url.replace(/^http:\/\//i, 'https://');
-
+  /**
+    * Get mseed file for waveform chart from url.
+    *
+    * @remarks
+    *
+    * Use {@link EventApiService.getWaveformInfo()} to obtain urls for mseed files.
+    *
+    * @param contextUrl - url for waveform file
+    * @returns mseed file in ArrayBuffer
+    *
+    */
+  getWaveformFile(contextUrl: string): Observable<ArrayBuffer> {
+    const url = `${contextUrl}`;
     const params = ApiUtil.getHttpParams({});
     const responseType = `arraybuffer`;
 
@@ -122,9 +129,9 @@ export class EventApiService {
     return this._http.get(url, { params });
   }
 
-  getEventOriginTraveltimesById(eventId: string, originId: string): any {
+  getEventOriginTraveltimes(eventId: string, originId: string): Observable<Traveltime[]> {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/${globals.apiOrigins}/${originId}/${globals.apiTravelTimes}`;
-    return this._http.get(url);
+    return this._http.get<Traveltime[]>(url);
   }
 
   getReprocessEventById(site, network, eventId): any {

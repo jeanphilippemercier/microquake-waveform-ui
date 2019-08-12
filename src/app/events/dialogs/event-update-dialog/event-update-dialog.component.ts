@@ -1,7 +1,7 @@
 import { Component, Inject, EventEmitter } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
-import { IEvent, EventType, EvaluationStatus, EventEvaluationMode } from '@app/core/interfaces/event.interface';
+import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@app/core/interfaces/event.interface';
 import { EventUpdateInput } from '@app/core/interfaces/event-dto.interface';
 
 @Component({
@@ -18,7 +18,7 @@ export class EventUpdateDialogComponent {
   editedValues: EventUpdateInput;
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
-  eventEvaluationModes: EventEvaluationMode[];
+  eventEvaluationModes: EvaluationMode[];
 
   loading = false;
 

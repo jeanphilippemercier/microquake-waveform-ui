@@ -1,7 +1,7 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { MatSelectChange } from '@angular/material';
 
-import { EventEvaluationMode } from '@interfaces/event.interface';
+import { EvaluationMode } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-mode-field',
@@ -12,22 +12,22 @@ export class EventModeFieldComponent {
 
   @Input() label = `Event Mode`;
   @Input() multiple = true;
-  @Input() eventEvaluationModes: EventEvaluationMode[];
+  @Input() eventEvaluationModes: EvaluationMode[];
 
   // for multiple === false
-  @Input() selectedEventEvaluationMode: EventEvaluationMode;
-  @Output() selectedEventEvaluationModeChange: EventEmitter<EventEvaluationMode> = new EventEmitter();
+  @Input() selectedEvaluationMode: EvaluationMode;
+  @Output() selectedEvaluationModeChange: EventEmitter<EvaluationMode> = new EventEmitter();
 
   // for multiple === true
-  @Input() selectedEventEvaluationModes: EventEvaluationMode[];
-  @Output() selectedEventEvaluationModesChange: EventEmitter<EventEvaluationMode[]> = new EventEmitter();
+  @Input() selectedEvaluationModes: EvaluationMode[];
+  @Output() selectedEvaluationModesChange: EventEmitter<EvaluationMode[]> = new EventEmitter();
 
-  onChangeEventEvaluationMode(event: MatSelectChange) {
-    this.selectedEventEvaluationModeChange.emit(event.value);
+  onChangeEvaluationMode(event: MatSelectChange) {
+    this.selectedEvaluationModeChange.emit(event.value);
   }
 
-  onChangeEventEvaluationModes(event: MatSelectChange) {
-    this.selectedEventEvaluationModesChange.emit(event.value);
+  onChangeEvaluationModes(event: MatSelectChange) {
+    this.selectedEvaluationModesChange.emit(event.value);
   }
 
 }

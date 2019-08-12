@@ -3,8 +3,12 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
+import { PickKey, Arrival, Traveltime, PredictedPickKey } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
+
+  // factor to convert input units from m to mmm
+  static convYUnits = 1000;
 
   static findValue(obj, key, value) {
     return obj.find(v => v[key] === value);
@@ -182,6 +186,220 @@ export default class WaveformUtil {
     return sensors;
   }
 
+  static maxValue(dataPoints: { x: number, y: number }[]) {
+
+    let maximum = Math.abs(dataPoints[0].y);
+    for (let i = 0; i < dataPoints.length; i++) {
+      if (Math.abs(dataPoints[i].y) > maximum) {
+        maximum = Math.abs(dataPoints[i].y);
+      }
+    }
+    const ret = Math.ceil(maximum * (WaveformUtil.convYUnits * 10000)) / (WaveformUtil.convYUnits * 10000);
+    return ret;
+  }
+
+  static addSecondsToUtc(startTimeUtc: string, secondsToAdd: number): string {
+    const d = moment(startTimeUtc);
+    d.millisecond(0);   // to second precision
+    const seconds = parseFloat(startTimeUtc.slice(-8, -1)) + secondsToAdd;
+    const end_time = moment(d).add(Math.floor(seconds), 'seconds'); // to the second
+    return end_time.toISOString().slice(0, -4) + (seconds % 1).toFixed(6).substring(2) + 'Z';
+  }
+
+  // microsec time offset from the origin full second with millisec precision
+  static calculateTimeOffset(time: moment.Moment, origin: moment.Moment) {
+    let diff = moment(time).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
+    diff *= 1000000;
+    diff += moment(time).millisecond() * 1000;
+    return diff;
+  }
+
+  // microsec time offset from the origin full second with microsec precision
+  static calculateTimeOffsetMicro(timeUtc: string, origin: moment.Moment) {
+    let diff = moment(timeUtc).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
+    diff *= 1000000;
+    diff += parseInt(timeUtc.slice(-7, -1), 10);
+    return diff;
+  }
+
+  // microsec time offset from the origin full second with microsec precision
+  static addTimeOffsetMicro(origin: moment.Moment, micro: number) {
+
+    const fullseconds = Math.floor(micro / 1000000);
+    const microsec = micro - fullseconds * 1000000;
+    const str = '000000' + microsec;
+    const ts = moment(origin).millisecond(0).add(fullseconds, 'seconds');
+    return ts.toISOString().slice(0, -4) + str.substring(str.length - 6) + 'Z';
+  }
+
+  // tslint:disable-next-line:max-line-length
+  static addPredictedPicksDataToSensors(sensors: Sensor[], originTravelTimes: Traveltime[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
+
+    for (const sensor of sensors) {
+
+      const sensorOrigin = originTravelTimes.find(travelTime => travelTime.station_id === sensor.code);
+
+      if (!sensorOrigin) {
+        console.error(`no sensorOrigin on addPredictedPicksData for sensor`);
+        console.error(sensor);
+        return;
+      }
+
+      sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
+
+      for (const pickKey of Object.values(PredictedPickKey)) {
+        let picktime_utc: string;
+
+        if (pickKey === PredictedPickKey.p) {
+          picktime_utc = WaveformUtil.addSecondsToUtc(waveformOriginTimeUtc, sensorOrigin.travel_time_p);
+        } else if (pickKey === PredictedPickKey.s) {
+          picktime_utc = WaveformUtil.addSecondsToUtc(waveformOriginTimeUtc, sensorOrigin.travel_time_s);
+        } else {
+          console.error(`wrong predictedPickKey`);
+          continue;
+        }
+        const pickTime = moment(picktime_utc);
+
+        if ((pickTime.isBefore(timeStart) || pickTime.isAfter(timeEnd))) {
+          console.error(`Predicted picks outside the display time window`);
+        }
+
+        sensor[pickKey + '_predicted_time_utc'] = picktime_utc;
+        sensor.picks.push({
+          value: WaveformUtil.calculateTimeOffsetMicro(picktime_utc, timeStart),  // relative to timeOrigin's full second
+          thickness: globals.predictedPicksLineThickness,
+          lineDashType: 'dash',
+          opacity: 0.5,
+          color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
+          label: pickKey,
+          labelAlign: 'far',
+          labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+        });
+      }
+    }
+
+    return sensors;
+  }
+
+
+  static addArrivalsPickDataToSensors(sensors: Sensor[], arrivals: Arrival[], origin: moment.Moment): Sensor[] {
+    const missingSensors = [];
+    for (const arrival of arrivals) {
+
+      if (!arrival.pick) {
+        console.error('Picks not found for arrival id: ' + arrival.arrival_resource_id);
+        continue;
+      }
+
+      if (!arrival.pick.sensor) {
+        console.error('Invalid pick sensor for arrival id: ' + arrival.arrival_resource_id);
+        continue;
+      }
+
+      if (!moment(arrival.pick.time_utc).isValid()) {
+        console.error(`Invalid pick time for ${arrival.pick.sensor} (${arrival.pick.phase_hint}): ${arrival.pick.time_utc}`);
+        continue;
+      }
+
+      const sensor = WaveformUtil.findValue(sensors, 'code', arrival.pick.sensor.toString());
+
+      if (!sensor) {
+        if (!missingSensors.includes(arrival.pick.sensor)) {
+          missingSensors.push(arrival.pick.sensor);
+        }
+        continue;
+      }
+
+      sensor.picks = (sensor.picks && sensor.picks instanceof Array) ? sensor.picks : [];
+
+      if (arrival.phase === PickKey.P) {
+        sensor.P_pick_time_utc = arrival.pick.time_utc;
+      } else if (arrival.phase === PickKey.S) {
+        sensor.S_pick_time_utc = arrival.pick.time_utc;
+      } else {
+        continue;
+      }
+
+      sensor[arrival.phase + '_pick_time_utc'] = arrival.pick.time_utc;
+      sensor.picks.push({
+        value: WaveformUtil.calculateTimeOffsetMicro(arrival.pick.time_utc, origin),   // rel timeOrigin full second
+        thickness: globals.picksLineThickness,
+        color: arrival.phase === PickKey.P ? 'blue' : arrival.phase === PickKey.S ? 'red' : 'black',
+        label: arrival.phase,
+        labelAlign: 'far',
+      });
+    }
+
+    if (missingSensors.length > 0) {
+      console.error(`No waveforms for picks at sensors: ${missingSensors.toString()}`);
+    }
+    return sensors;
+  }
+
+  /**
+   * Returns pick bias.
+   *
+   * @param sensors - Sensors which picks are are used in calculation
+   * @returns average value of (picks - predicted picks) on all input sensors
+   *
+   */
+  static calculatePicksBias(sensors: Sensor[]): number {
+    let picksTotalBias = 0;
+    let nPicksBias = 0;
+    for (const sensor of sensors) {
+
+      for (const pickKey of ['p', 's']) {
+        const predicted_key = pickKey + '_predicted_time_utc';
+        const pick_key = pickKey + '_pick_time_utc';
+        if (sensor.hasOwnProperty(predicted_key) && sensor.hasOwnProperty(pick_key)) {
+          const pickTime = moment(sensor[pick_key]);
+          const referenceTime = moment(sensor[predicted_key]);
+          if (pickTime.isValid() && referenceTime.isValid()) {
+            const microsec = sensor[pick_key].slice(-7, -1);
+            const microsec_ref = sensor[predicted_key].slice(-7, -1);
+            const offset = pickTime.millisecond(0)
+              .diff(referenceTime.millisecond(0), 'seconds') * 1000000;
+            picksTotalBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
+            nPicksBias++;
+          }
+        }
+      }
+    }
+    return Math.round(picksTotalBias / nPicksBias);
+  }
+
+
+  /**
+   * Returns sensors populated with pick data.
+   *
+   * @remarks
+   *
+   * Function should be used to add to sensorsToPopulate information about picks (arrivals and traveltimes) which should be already stored
+   * on sensorsWithAllInfo sensors.
+   *
+   * Should be used after
+   * {@link WaveformUtil.addPredictedPicksDataToSensors()}
+   * {@link WaveformUtil.addArrivalsPickDataToSensors()}
+   *
+   * @param sensorsToPopulate - sensorsToPopulate
+   * @param sensorsWithAllInfo - all parameters from this object will replace sensorsToPopulate
+   * @param allSensorsMap - map of all sensors to help quickly navigate through data
+   * @returns sensors populated with picks.
+   *
+   */
+  static mapSensorInfoToLoadedSensors(sensorsToPopulate: Sensor[], sensorsWithAllInfo: Sensor[], allSensorsMap: { [key: number]: number }) {
+    if (sensorsToPopulate) {
+      sensorsToPopulate = sensorsToPopulate.map(sensor => {
+        const allSensorInfo = sensorsWithAllInfo[allSensorsMap[sensor.sensor_code]];
+
+        if (allSensorInfo) {
+          sensor = { ...sensor, ...allSensorInfo };
+        }
+        return sensor;
+      });
+    }
+    return sensorsToPopulate;
+  }
 }
 
 

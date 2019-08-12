@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import ApiUtil from '@core/utils/api-util';
 import { environment } from '@env/environment';
-import { Sensor } from '@interfaces/inventory.interface';
+import { Sensor, Component, SensorType } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 
@@ -23,6 +23,20 @@ export class InventoryApiService {
     const params = ApiUtil.getHttpParams(query);
 
     return this._http.get<PaginationResponse<Sensor>>(url, { params });
+  }
+
+  getSensorTypes(query: any = {}): Observable<SensorType> {
+    const url = `${environment.apiUrl}inventory/sensors`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<SensorType>(url, { params });
+  }
+
+  getComponents(query: PaginationRequest = {}): Observable<PaginationResponse<Component>> {
+    const url = `${environment.apiUrl}inventory/comonents`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<PaginationResponse<Component>>(url, { params });
   }
 
   getStations(): Observable<any> {

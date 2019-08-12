@@ -5,7 +5,7 @@ import { first } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/site.interface';
-import { EventType, EvaluationStatus, IEvent, EventEvaluationMode } from '@interfaces/event.interface';
+import { EventType, EvaluationStatus, IEvent, EvaluationMode } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
 import { CatalogApiService } from '@services/catalog-api.service';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
@@ -33,7 +33,7 @@ export class EventListComponent implements OnInit {
 
   evaluationStatuses: EvaluationStatus[];
   selectedEvaluationStatuses: EvaluationStatus[];
-  eventEvaluationModes: EventEvaluationMode[];
+  eventEvaluationModes: EvaluationMode[];
 
   eventStartDate: Date = moment().startOf('day').subtract(5, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
@@ -66,7 +66,7 @@ export class EventListComponent implements OnInit {
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._catalogApiService.get_microquake_event_types(this.site).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
-    this.eventEvaluationModes = Object.values(EventEvaluationMode);
+    this.eventEvaluationModes = Object.values(EvaluationMode);
   }
 
   private async _loadEvents() {

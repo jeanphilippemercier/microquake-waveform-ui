@@ -307,7 +307,7 @@ declare namespace canvasjs {
     /**
      * axisY object lets you set various parameters of Y Axis like interval, grid lines, etc. It is mostly vertical, except when we are working with Bar Charts, where axisY is horizontal.
      */
-    axisY?: ChartAxisYOptions | ChartAxisYOptions[];
+    axisY?: ChartAxisYOptions;
     /**
      * axisY2 is the secondary axis which renders on the opposite of primary axis (axisY). It is mostly vertical, except when we are working with Bar Charts, where axisY2 is horizontal.
      */

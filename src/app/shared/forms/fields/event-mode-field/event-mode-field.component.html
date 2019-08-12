@@ -1,8 +1,8 @@
 <mat-form-field>
   <mat-label>{{label}}</mat-label>
   <mat-select
-    [(ngModel)]="multiple ? selectedEventEvaluationModes : selectedEventEvaluationMode"
-    (selectionChange)="multiple ? onChangeEventEvaluationModes($event) : onChangeEventEvaluationMode($event)"
+    [(ngModel)]="multiple ? selectedEvaluationModes : selectedEvaluationMode"
+    (selectionChange)="multiple ? onChangeEvaluationModes($event) : onChangeEvaluationMode($event)"
     [multiple]="multiple"
   >
     <mat-option
