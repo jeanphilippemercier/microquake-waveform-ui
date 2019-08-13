@@ -1,4 +1,4 @@
-import { IEvent, Arrival, Pick, ArrivalBase } from './event.interface';
+import { IEvent, Pick, ArrivalBase } from './event.interface';
 
 export interface EventUpdateInput extends Partial<IEvent> {
   event_resource_id: string;

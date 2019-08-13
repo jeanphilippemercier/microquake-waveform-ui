@@ -4,7 +4,7 @@ import * as moment from 'moment';
 
 import { EventType, EvaluationStatus, EvaluationMode } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
-import { Site } from '@interfaces/site.interface';
+import { Site } from '@interfaces/inventory.interface';
 import { EventFilterDialogData } from '@interfaces/dialogs.interface';
 
 @Component({

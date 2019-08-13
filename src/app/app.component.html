@@ -34,6 +34,14 @@
           <mat-icon mat-list-icon>view_comfy</mat-icon>
           <h4 matLine>Events</h4>
         </a>
+        <h3 mat-subheader>Inventory</h3>
+        <a
+          mat-list-item
+          [routerLink]="['/inventory']"
+        >
+          <mat-icon mat-list-icon>line_style</mat-icon>
+          <h4 matLine>Sites</h4>
+        </a>
         <a
           mat-list-item
           (click)="logoutClick()"

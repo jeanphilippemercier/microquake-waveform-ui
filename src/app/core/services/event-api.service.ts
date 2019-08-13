@@ -7,7 +7,7 @@ import { IEvent, Boundaries, Origin, Traveltime } from '@interfaces/event.interf
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
 } from '@interfaces/event-query.interface';
-import { Site } from '@interfaces/site.interface';
+import { Site } from '@interfaces/inventory.interface';
 import ApiUtil from '../utils/api-util';
 import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
 
@@ -64,11 +64,6 @@ export class EventApiService {
     const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get(url, { params });
-  }
-
-  getSites(): Observable<Site[]> {
-    const url = `${environment.apiUrl}${globals.apiSites}`;
-    return this._http.get<Site[]>(url);
   }
 
   getEventById(eventId: string): Observable<IEvent> {

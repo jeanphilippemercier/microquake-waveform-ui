@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { InventoryApiService } from '@services/inventory-api.service';
+import { Site } from '@interfaces/inventory.interface';
 
 @Component({
   selector: 'app-inventory-site-list-page',
@@ -7,9 +9,15 @@ import { Component, OnInit } from '@angular/core';
 })
 export class InventorySiteListPageComponent implements OnInit {
 
-  constructor() { }
+  displayedColumns: string[] = ['name', 'id', 'networks', 'actions'];
+  dataSource: Site[];
 
-  ngOnInit() {
+  constructor(
+    private _inventoryApiSevice: InventoryApiService
+  ) { }
+
+  async ngOnInit() {
+    this.dataSource = await this._inventoryApiSevice.getSites().toPromise();
   }
 
 }

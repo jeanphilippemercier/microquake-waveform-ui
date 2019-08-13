@@ -1,3 +1,75 @@
+
+export interface SiteBase {
+  name: string;
+  code: string;
+  coordinate_system: CoordinateSystem;
+  country?: string;
+  description?: string;
+  operator?: string;
+  timezone: Timezone;
+}
+
+export interface Site extends SiteBase {
+  id: number;
+  networks: Network[];
+}
+
+export enum CoordinateSystem {
+  CARTESIAN_LOCAL = 'Cartesian/Local',
+  UTM = 'UTM',
+  SPHERICAL = 'Spherical'
+}
+
+export enum Timezone {
+  UTC = '00:00',
+  UTC_MINUS_01 = '-01:00',
+  UTC_MINUS_02 = '-02:00',
+  UTC_MINUS_03 = '-03:00',
+  UTC_MINUS_03_30 = '-03:30',
+  UTC_MINUS_04 = '-04:00',
+  UTC_MINUS_05 = '-05:00',
+  UTC_MINUS_06 = '-06:00',
+  UTC_MINUS_07 = '-07:00',
+  UTC_MINUS_08 = '-08:00',
+  UTC_MINUS_09 = '-09:00',
+  UTC_MINUS_09_30 = '-09:30',
+  UTC_MINUS_10 = '-10:00',
+  UTC_MINUS_11 = '-11:00',
+  UTC_MINUS_12 = '-12:00',
+  UTC_PLUS_01 = '+01:00',
+  UTC_PLUS_02 = '+02:00',
+  UTC_PLUS_03 = '+03:00',
+  UTC_PLUS_04 = '+04:00',
+  UTC_PLUS_05 = '+05:00',
+  UTC_PLUS_05_30 = '+05:30',
+  UTC_PLUS_05_45 = '+05:45',
+  UTC_PLUS_06 = '+06:00',
+  UTC_PLUS_06_30 = '+06:30',
+  UTC_PLUS_07 = '+07:00',
+  UTC_PLUS_08 = '+08:00',
+  UTC_PLUS_08_45 = '+08:45',
+  UTC_PLUS_09 = '+09:00',
+  UTC_PLUS_09_30 = '+09:30',
+  UTC_PLUS_10 = '+10:00',
+  UTC_PLUS_10_30 = '+10:30',
+  UTC_PLUS_11 = '+11:00',
+  UTC_PLUS_12 = '+12:00',
+  UTC_PLUS_12_45 = '+12:45',
+  UTC_PLUS_13 = '+13:00',
+  UTC_PLUS_14 = '+14:00',
+}
+
+export interface Network {
+  code: string;
+  contact_email: string;
+  contact_name: string;
+  contact_phone: string;
+  description: string;
+  id: number;
+  name: string;
+  site: number;
+}
+
 export interface Sensor {
   id: number;
   code: string;
