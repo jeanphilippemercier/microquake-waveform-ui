@@ -35,7 +35,7 @@ export class EventListComponent implements OnInit {
   selectedEvaluationStatuses: EvaluationStatus[];
   eventEvaluationModes: EvaluationMode[];
 
-  eventStartDate: Date = moment().startOf('day').subtract(5, 'days').toDate();
+  eventStartDate: Date = moment().startOf('day').subtract(15, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
 
   displayedColumns: string[] = ['date', 'time', 'magnitude', 'status', 'type', 'mode', 'actions'];
