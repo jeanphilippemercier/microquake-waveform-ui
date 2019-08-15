@@ -566,7 +566,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         },
         title: {
-          text: `${this.activeSensors[i].station ? this.activeSensors[i].station : '??'}. (${this.activeSensors[i].sensor_code})`,
+          text: `${this.activeSensors[i].station ? this.activeSensors[i].station.id : '??'}. (${this.activeSensors[i].sensor_code})`,
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
@@ -738,7 +738,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       zoomEnabled: true,
       animationEnabled: false,
       title: {
-        text: `${this.activeSensors[i].station ? this.activeSensors[i].station : ''}. (${this.activeSensors[i].sensor_code})`,
+        text: `${this.activeSensors[i].station ? this.activeSensors[i].station.id : '??'}. (${this.activeSensors[i].sensor_code})`,
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
