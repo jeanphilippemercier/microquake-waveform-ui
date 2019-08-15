@@ -69,21 +69,8 @@ export interface Network {
   name: string;
   site: number;
 }
-
-export interface Sensor {
-  id: number;
+export interface SensorBase {
   code: string;
-  chart?: canvasjs.Chart;
-  picks?: any;
-  S_pick_time_utc?: string;
-  P_pick_time_utc?: string;
-
-  container?: any;
-  channels?: any;
-  station: string;
-  sensor_code?: any;
-  site: number;
-  borehole?: number;
   name: string;
   commissioning_date: string;
   decommissioning_date: string;
@@ -94,7 +81,27 @@ export interface Sensor {
   manufacturer: string;
   enabled: boolean;
   signal_quality: SignalQuality;
-  components: Component[];
+  components: IComponent[];
+}
+
+export interface Sensor extends SensorBase {
+  sensor_code?: any;
+  chart?: canvasjs.Chart;
+  picks?: any;
+  S_pick_time_utc?: string;
+  P_pick_time_utc?: string;
+  container?: any;
+  channels?: any;
+
+  id: number;
+  station: {
+    id: number;
+    name: string;
+  } | null;
+  borehole?: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 export interface SignalQuality {
@@ -108,7 +115,7 @@ export interface SignalQuality {
   sensor: number;
 }
 
-export interface Component {
+export interface IComponent {
   id: number;
   sensor_type: SensorType;
   code: ComponentCode;
@@ -141,4 +148,37 @@ export enum SensorType {
 
 export enum MotionType {
   MM_PER_S_VELOCITY = 'mm/s (velocity)'
+}
+
+
+export interface Borehole {
+  id: number;
+  name: string;
+  length: number;
+  azimuth: any;
+  dip: any;
+  collar_location_x: number;
+  collar_location_y: number;
+  collar_location_z: number;
+  toe_x: number;
+  toe_y: number;
+  toe_z: number;
+  trace_x: number;
+  trace_y: number;
+  trace_z: number;
+  vtp_file_url: string;
+  dfx_file_url: string;
+}
+
+export interface Station {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  network: Network;
+  location_x: number;
+  location_y: number;
+  location_z: number;
+  communication: string;
+  power: string;
 }
