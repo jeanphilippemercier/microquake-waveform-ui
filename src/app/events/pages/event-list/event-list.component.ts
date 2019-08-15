@@ -4,7 +4,7 @@ import * as moment from 'moment';
 import { first } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
-import { Site, Network } from '@interfaces/site.interface';
+import { Site, Network } from '@interfaces/inventory.interface';
 import { EventType, EvaluationStatus, IEvent, EvaluationMode } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
 import { CatalogApiService } from '@services/catalog-api.service';
@@ -35,10 +35,10 @@ export class EventListComponent implements OnInit {
   selectedEvaluationStatuses: EvaluationStatus[];
   eventEvaluationModes: EvaluationMode[];
 
-  eventStartDate: Date = moment().startOf('day').subtract(5, 'days').toDate();
+  eventStartDate: Date = moment().startOf('day').subtract(15, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
 
-  displayedColumns: string[] = ['date', 'time', 'magnitude', 'status', 'type', 'mode', 'location', 'actions'];
+  displayedColumns: string[] = ['date', 'time', 'magnitude', 'status', 'type', 'mode', 'actions'];
   dataSource: MatTableDataSource<any>;
 
   events: any; // TODO: typings

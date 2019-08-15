@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { MatSelectChange } from '@angular/material';
 
-import { Site } from '@interfaces/site.interface';
+import { Site } from '@interfaces/inventory.interface';
 
 @Component({
   selector: 'app-site-select-field',

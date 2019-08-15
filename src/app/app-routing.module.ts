@@ -19,6 +19,10 @@ const routes: Routes = [
       {
         path: '',
         loadChildren: './events/events.module#EventsModule',
+      },
+      {
+        path: '',
+        loadChildren: './inventory/inventory.module#InventoryModule',
       }
     ]
   },

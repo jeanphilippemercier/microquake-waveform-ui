@@ -242,7 +242,7 @@ export default class WaveformUtil {
       if (!sensorOrigin) {
         console.error(`no sensorOrigin on addPredictedPicksData for sensor`);
         console.error(sensor);
-        return;
+        continue;
       }
 
       sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];

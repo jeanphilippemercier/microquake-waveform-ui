@@ -6,7 +6,7 @@ import { first } from 'rxjs/operators';
 import { MatDialog, MatDialogRef } from '@angular/material';
 
 import { EventApiService } from '@services/event-api.service';
-import { Site, Network } from '@interfaces/site.interface';
+import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
@@ -14,6 +14,7 @@ import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';
+import { InventoryApiService } from '@services/inventory-api.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -58,6 +59,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private _eventApiService: EventApiService,
+    private _inventoryApiService: InventoryApiService,
     public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
     private _matDialog: MatDialog,
@@ -137,7 +139,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private async _loadSites() {
-    this.sites = await this._eventApiService.getSites().toPromise();
+    this.sites = await this._inventoryApiService.getSites().toPromise();
     const options = JSON.parse(localStorage.getItem('viewer-options'));
 
     if (options && options.site && options.network) {

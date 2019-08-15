@@ -1,0 +1,203 @@
+<mat-toolbar color="primary">
+  <app-header-layout></app-header-layout>
+</mat-toolbar>
+<form
+  class="container-fluid px-4 py-3"
+  #inventoryForm="ngForm"
+>
+  <div class="row">
+    <div class="col-12 mb-3">
+      <h3>
+        Inventory /
+        <a [routerLink]="['/inventory/sites']">Sites</a> /
+        {{siteId ? siteId : 'Creating new'}}
+      </h3>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="py-4">
+
+        <div class="row">
+          <div class="col-3 pr-5 border-right">
+            <mat-list>
+              <mat-list-item [routerLink]="['/inventory/sites']">
+                <mat-icon mat-list-icon>arrow_back</mat-icon>
+                <h4 matLine>back to list</h4>
+              </mat-list-item>
+              <ng-container *ngIf="pageMode !== PageMode.CREATE">
+                <h3 mat-subheader>Site's submenu</h3>
+                <mat-list-item class="active">
+                  <mat-icon mat-list-icon>visibility</mat-icon>
+                  <h4 matLine>Details</h4>
+                </mat-list-item>
+                <mat-divider></mat-divider>
+                <mat-list-item>
+                  <mat-icon mat-list-icon>view_comfy</mat-icon>
+                  <h4 matLine>Networks</h4>
+                </mat-list-item>
+              </ng-container>
+            </mat-list>
+          </div>
+
+          <div class="col-9 px-5">
+            <div class="row">
+              <ng-container *ngIf="pageMode !== PageMode.CREATE">
+                <div class="col pb-1">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Id</mat-label>
+                    <input
+                      matInput
+                      placeholder="Id"
+                      [(ngModel)]="siteId"
+                      name="siteId"
+                      [disabled]="true"
+                    >
+                  </mat-form-field>
+                </div>
+              </ng-container>
+
+
+              <div class="col-12 py-1">
+                <div class="row">
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Name</mat-label>
+                      <input
+                        matInput
+                        required
+                        [(ngModel)]="site.name"
+                        name="siteName"
+                        [disabled]="editDisabled"
+                      >
+                    </mat-form-field>
+                  </div>
+
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Code</mat-label>
+                      <input
+                        matInput
+                        required
+                        [(ngModel)]="site.code"
+                        name="siteCode"
+                        [disabled]="editDisabled"
+                      >
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+
+              <div class="col-12 py-1">
+                <div class="row">
+
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Coordinate system</mat-label>
+                      <mat-select
+                        required
+                        [(ngModel)]="site.coordinate_system"
+                        name="siteCoordinateSystem"
+                        [disabled]="editDisabled"
+                      >
+                        <mat-option
+                          *ngFor="let coordinateSystem of coordinateSystems"
+                          [value]="coordinateSystem"
+                        >{{coordinateSystem}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Timezone</mat-label>
+                      <mat-select
+                        required
+                        [(ngModel)]="site.timezone"
+                        [disabled]="editDisabled"
+                        name="siteTimezone"
+                      >
+                        <mat-option
+                          *ngFor="let timezone of timezones"
+                          [value]="timezone"
+                        >UTC {{timezone}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col py-1">
+                <div class="row">
+
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Operator</mat-label>
+                      <input
+                        matInput
+                        placeholder="Operator"
+                        [(ngModel)]="site.operator"
+                        name="siteOperator"
+                        [disabled]="editDisabled"
+                      >
+                    </mat-form-field>
+                  </div>
+
+                  <div class="col">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Country</mat-label>
+                      <input
+                        matInput
+                        [(ngModel)]="site.country"
+                        name="siteCountry"
+                        [disabled]="editDisabled"
+                      >
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 py-1">
+                <mat-form-field appearance="outline">
+                  <mat-label>Description</mat-label>
+                  <textarea
+                    matInput
+                    [(ngModel)]="site.description"
+                    name="siteDescription"
+                    [disabled]="editDisabled"
+                  ></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="col-12 pt-1" *ngIf="">
+                <div class="d-flex">
+                  <div class="mr-auto"></div>
+                  <button
+                    class="mr-3"
+                    mat-raised-button
+                  >Cancel</button>
+                  <button
+                    [color]="'primary'"
+                    mat-raised-button
+                  >Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-container *ngIf="">
+
+            {{site | json}}
+
+          </ng-container>
+
+
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
+</form>
