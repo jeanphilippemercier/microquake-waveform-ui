@@ -5,11 +5,11 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site } from '@interfaces/inventory.interface';
-import { Sensor, Component, SensorType } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole } from '@interfaces/inventory.interface';
+import { Sensor, IComponent, SensorType } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
-import { SiteUpdateInput, SiteCreateInput } from '@interfaces/inventory-dto.interface';
+import { SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput } from '@interfaces/inventory-dto.interface';
 
 
 @Injectable({
@@ -21,6 +21,9 @@ export class InventoryApiService {
     private _http: HttpClient,
   ) { }
 
+  /**
+   * SITES
+  */
 
   getSites(): Observable<Site[]> {
     const url = `${environment.apiUrl}${globals.apiSites}`;
@@ -42,12 +45,41 @@ export class InventoryApiService {
     return this._http.post<Site>(url, body);
   }
 
+
+  /**
+   * SENSORS
+  */
+
   getSensors(query: PaginationRequest = {}): Observable<PaginationResponse<Sensor>> {
     const url = `${environment.apiUrl}inventory/sensors`;
     const params = ApiUtil.getHttpParams(query);
 
     return this._http.get<PaginationResponse<Sensor>>(url, { params });
   }
+
+  getSensor(sensorId: number): Observable<Sensor> {
+    const url = `${environment.apiUrl}inventory/sensors/${sensorId}`;
+    return this._http.get<Sensor>(url);
+  }
+
+  createSensor(body: SensorCreateInput): Observable<Sensor> {
+    const url = `${environment.apiUrl}inventory/sensors`;
+    return this._http.post<Sensor>(url, body);
+  }
+
+  updateSensor(sensorId: number, body: SensorUpdateInput): Observable<Sensor> {
+    const url = `${environment.apiUrl}inventory/sensors/${sensorId}`;
+    return this._http.patch<Sensor>(url, body);
+  }
+
+  deleteSensor(sensorId: number): Observable<Sensor> {
+    const url = `${environment.apiUrl}inventory/sensors/${sensorId}`;
+    return this._http.delete<Sensor>(url);
+  }
+
+  /**
+   * SENSOR TYPES
+  */
 
   getSensorTypes(query: any = {}): Observable<SensorType> {
     const url = `${environment.apiUrl}inventory/sensors`;
@@ -56,17 +88,68 @@ export class InventoryApiService {
     return this._http.get<SensorType>(url, { params });
   }
 
-  getComponents(query: PaginationRequest = {}): Observable<PaginationResponse<Component>> {
-    const url = `${environment.apiUrl}inventory/comonents`;
+  /**ƒ
+   * COMPONENTS
+  */
+  getComponents(query: PaginationRequest = {}): Observable<PaginationResponse<IComponent>> {
+    const url = `${environment.apiUrl}inventory/components`;
     const params = ApiUtil.getHttpParams(query);
 
-    return this._http.get<PaginationResponse<Component>>(url, { params });
+    return this._http.get<PaginationResponse<IComponent>>(url, { params });
   }
 
-  getStations(): Observable<any> {
-    const url = `${environment.apiUrl}inventory/stations`;
-    const params = ApiUtil.getHttpParams({});
 
-    return this._http.get<any>(url, { params });
+  /**
+   * STATIONS
+  */
+
+  getStations(query: PaginationRequest = {}): Observable<PaginationResponse<Station>> {
+    const url = `${environment.apiUrl}inventory/stations`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<PaginationResponse<Station>>(url, { params });
+  }
+
+  getStation(stationId: number): Observable<Station> {
+    const url = `${environment.apiUrl}inventory/stations/${stationId}`;
+    return this._http.get<Station>(url);
+  }
+
+  createStation(body: any): Observable<Station> {
+    const url = `${environment.apiUrl}inventory/stations`;
+    return this._http.post<Station>(url, body);
+  }
+
+  deleteStation(stationId: number): Observable<Station> {
+    const url = `${environment.apiUrl}inventory/stations/${stationId}`;
+    return this._http.delete<Station>(url);
+  }
+
+
+
+  /**
+   * BOREHOLES
+  */
+
+  getBoreholes(query: PaginationRequest = {}): Observable<PaginationResponse<Borehole>> {
+    const url = `${environment.apiUrl}inventory/boreholes`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<PaginationResponse<Borehole>>(url, { params });
+  }
+
+  getBorehole(boreholeId: number): Observable<Borehole> {
+    const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
+    return this._http.get<Borehole>(url);
+  }
+
+  createBorehole(body: any): Observable<Borehole> {
+    const url = `${environment.apiUrl}inventory/boreholes`;
+    return this._http.post<Borehole>(url, body);
+  }
+
+  deleteBorehole(boreholeId: number): Observable<Borehole> {
+    const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
+    return this._http.delete<Borehole>(url);
   }
 }
