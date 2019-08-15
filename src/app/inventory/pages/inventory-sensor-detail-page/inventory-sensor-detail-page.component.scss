@@ -1,0 +1,13 @@
+mat-list-item.active {
+  background: #eee;
+  font-weight: 400;
+}
+
+/deep/ mat-tab-body {
+  padding-top: 30px;
+}
+
+.header,
+.content {
+  background: #fff;
+}
