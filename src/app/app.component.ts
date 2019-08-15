@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material';
 import { Router } from '@angular/router';
 
@@ -43,6 +43,18 @@ export class AppComponent implements OnInit {
 
   logoutClick() {
     this._authService.logout();
+  }
+
+  onMenuOpenedChange($event) {
+    if ($event) {
+      this.menuService.open();
+    } else {
+      this.menuService.close();
+    }
+  }
+
+  closeMenu() {
+    this.menuService.close();
   }
 
 }
