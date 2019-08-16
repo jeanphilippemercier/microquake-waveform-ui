@@ -1,15 +1,16 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, Observer } from 'rxjs';
-import { IEvent, Boundaries, Origin, Traveltime } from '@interfaces/event.interface';
+import { Observable, Subject } from 'rxjs';
+import { IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType } from '@interfaces/event.interface';
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
 } from '@interfaces/event-query.interface';
-import { Site } from '@interfaces/inventory.interface';
 import ApiUtil from '../utils/api-util';
 import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
+import { WebSocketService } from './websocket.service';
+import { map, filter } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,7 @@ export class EventApiService {
 
   constructor(
     private _http: HttpClient,
-    private _ngZone: NgZone
+    private _websocket: WebSocketService
   ) { }
 
   /**
@@ -139,31 +140,13 @@ export class EventApiService {
     return this._http.get(API_URL, { params });
   }
 
+  onServerEvent(): Observable<WebsocketEventResponse> {
+    const url = environment.wss;
 
-  getServerUpdatedEvent(): Observable<any> {
-    const url = `${environment.url}eventstream/`;
-    const eventSource = new EventSource(url);
-    const source = new EventSource(environment.url + 'eventstream/');
-    source.addEventListener('message', message => {
-      console.log('eventstream message');
-      console.log(message);
-    });
-
-    return new Observable((observer: Observer<any>) => {
-
-      eventSource.onmessage = event => {
-        this._ngZone.run(() => {
-          observer.next(event);
-        });
-      };
-
-      eventSource.onerror = error => {
-        this._ngZone.run(() => {
-          observer.error(error);
-        });
-      };
-
-    });
+    return <Subject<WebsocketEventResponse>>this._websocket.connect(url).pipe(
+      map((response: MessageEvent) => JSON.parse(response.data)),
+      filter((val: WebsocketEventResponse) => val.type === WebsocketResponseType.EVENT)
+    );
   }
 
 }
