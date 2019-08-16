@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType } from '@interfaces/event.interface';
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
@@ -10,7 +10,7 @@ import {
 import ApiUtil from '../utils/api-util';
 import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
 import { WebSocketService } from './websocket.service';
-import { map, filter } from 'rxjs/operators';
+import { filter, retry } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -143,8 +143,8 @@ export class EventApiService {
   onServerEvent(): Observable<WebsocketEventResponse> {
     const url = environment.wss;
 
-    return <Subject<WebsocketEventResponse>>this._websocket.connect(url).pipe(
-      map((response: MessageEvent) => JSON.parse(response.data)),
+    return this._websocket.connect<WebsocketEventResponse>(url).pipe(
+      retry(),
       filter((val: WebsocketEventResponse) => val.type === WebsocketResponseType.EVENT)
     );
   }
