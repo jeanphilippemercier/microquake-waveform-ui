@@ -31,11 +31,14 @@ export class EventCatalogComponent {
     return this._events;
   }
 
+  // to force changeDetection
+  @Input() forceCD = 0;
   @Input() currentEvent: IEvent;
   @Input() timezone: string;
 
   @Output() eventClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
   @Output() chartClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
+
 
   days: EventDay[] = [];
   daysMap: any = {};

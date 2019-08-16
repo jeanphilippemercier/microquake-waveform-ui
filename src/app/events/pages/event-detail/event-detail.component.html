@@ -68,6 +68,7 @@
             </p>
           </ng-container>
           <app-event-catalog
+            [forceCD]="changeDetectCatalog"
             [events]="events"
             [timezone]="boundaries?.timezone"
             [currentEvent]="currentEvent"

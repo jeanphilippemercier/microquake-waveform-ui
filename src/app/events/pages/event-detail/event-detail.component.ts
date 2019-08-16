@@ -57,6 +57,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   boundaries: Boundaries;
 
+  changeDetectCatalog = 0;
+
   constructor(
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
@@ -100,7 +102,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
           // try to find event in catalog events (already loaded events)
           if (this.events) {
-            clickedEvent = this.events.find(ev => ev.event_resource_id === eventId);
+            const idx = this.events.findIndex(ev => ev.event_resource_id === eventId);
+            if (idx > -1) {
+              clickedEvent = Object.assign({}, this.events[idx]);
+            }
           }
 
           // load event from api if not found in catalog events
@@ -177,40 +182,26 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private async _updateEvent(event: IEvent) {
+
     if (!event) {
       return;
     }
 
     // check if event with same ID already in catalog
-    const idx = this.events.findIndex((ev) => {
-      return ev.event_resource_id === event.event_resource_id;
+    this.events.some((ev, idx) => {
+      if (ev.event_resource_id === event.event_resource_id) {
+        if (JSON.stringify(ev) !== JSON.stringify(event)) {
+          this.events[idx] = Object.assign(this.events[idx], event);
+          this.changeDetectCatalog = new Date().getTime();
+        }
+        return true;
+      }
     });
 
-
-    // event is already in catalog
-    if (idx >= 0) {
-
-      // don't update if already same
-      if (JSON.stringify(this.events[idx]) !== JSON.stringify(event)) {
-        this.events[idx] = Object.assign(this.events[idx], event);
-      }
-
-      if (this.currentEvent === this.events[idx]) {
-        // no need for currentEvent update if currentEvent is same ref as in catalog array
-        return;
-      } else if (this.currentEvent.event_resource_id === this.events[idx].event_resource_id) {
-        // if event with same ID is in catalog array, but currentEvent was previously loaded as standalone.
-        // Assign catalog el ref to currentEvent
-        this.currentEvent = this.events[idx];
-        return;
-      }
-    }
-
-    // currentEvent ID not in catalog array.
-    // currentEvent is standalone without any other ref in catalog array
     if (event.event_resource_id === this.currentEvent.event_resource_id) {
-      this.currentEvent = event;
+      this.currentEvent = Object.assign({}, event);
     }
+
   }
 
   async openChart(event: IEvent) {
