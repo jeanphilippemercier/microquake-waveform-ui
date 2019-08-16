@@ -110,6 +110,23 @@ export interface IEvent {
   z: number;
 }
 
+export enum WebsocketResponseOperation {
+  CREATE = 'create',
+  UPDATE = 'update',
+  REPROCESS = 'reprocess'
+}
+
+export enum WebsocketResponseType {
+  EVENT = 'event',
+}
+
+export interface WebsocketEventResponse {
+  event: IEvent;
+  operation: WebsocketResponseOperation;
+  type: WebsocketResponseType;
+}
+
+
 export interface Boundaries {
   timezone: string;
   min_time: string;
