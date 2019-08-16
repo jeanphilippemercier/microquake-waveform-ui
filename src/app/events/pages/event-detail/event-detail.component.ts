@@ -8,7 +8,7 @@ import { MatDialog, MatDialogRef } from '@angular/material';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
-import { IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries } from '@interfaces/event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries, WebsocketResponseOperation } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
@@ -72,8 +72,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     await this._loadEventTypesAndStatuses();
     this._loadCurrentEvent();
     this._loadEvents();
-    // TODO: eventstream
-    // this._eventApiService.getServerUpdatedEvent().subscribe(data => console.log(data));
+    this._watchServerEventUpdates();
   }
 
   ngOnDestroy() {
@@ -82,13 +81,32 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  private _watchServerEventUpdates() {
+    this._eventApiService.onServerEvent().subscribe(data => {
+      if (data.operation === WebsocketResponseOperation.UPDATE) {
+        this._updateEvent(data.event);
+      }
+
+    });
+  }
+
   private async _loadCurrentEvent() {
     this.params$ = this._activatedRoute.params.subscribe(async params => {
       const eventId = params['eventId'];
       if (eventId) {
         try {
           this.loadingCurrentEvent = true;
-          const clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+          let clickedEvent: IEvent;
+
+          // try to find event in catalog events (already loaded events)
+          if (this.events) {
+            clickedEvent = this.events.find(ev => ev.event_resource_id === eventId);
+          }
+
+          // load event from api if not found in catalog events
+          if (!clickedEvent) {
+            clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+          }
           this.currentEvent = clickedEvent;
 
           if (this.initialized.getValue() === false) {
@@ -163,13 +181,33 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.events.some((ev, idx) => {
-      if (ev.event_resource_id === event.event_resource_id) {
-        this.events[idx] = Object.assign(ev, event);
-        return true;
-      }
+    // check if event with same ID already in catalog
+    const idx = this.events.findIndex((ev) => {
+      return ev.event_resource_id === event.event_resource_id;
     });
 
+
+    // event is already in catalog
+    if (idx >= 0) {
+
+      // don't update if already same
+      if (JSON.stringify(this.events[idx]) !== JSON.stringify(event)) {
+        this.events[idx] = Object.assign(this.events[idx], event);
+      }
+
+      if (this.currentEvent === this.events[idx]) {
+        // no need for currentEvent update if currentEvent is same ref as in catalog array
+        return;
+      } else if (this.currentEvent.event_resource_id === this.events[idx].event_resource_id) {
+        // if event with same ID is in catalog array, but currentEvent was previously loaded as standalone.
+        // Assign catalog el ref to currentEvent
+        this.currentEvent = this.events[idx];
+        return;
+      }
+    }
+
+    // currentEvent ID not in catalog array.
+    // currentEvent is standalone without any other ref in catalog array
     if (event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = event;
     }
