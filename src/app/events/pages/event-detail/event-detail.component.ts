@@ -24,7 +24,7 @@ import { InventoryApiService } from '@services/inventory-api.service';
 })
 export class EventDetailComponent implements OnInit, OnDestroy {
 
-  params$: Subscription;
+  paramsSub: Subscription;
   events: IEvent[];
   sites: Site[];
   site: Site;
@@ -58,6 +58,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   boundaries: Boundaries;
 
   changeDetectCatalog = 0;
+  onServerEventSub: Subscription;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -78,22 +79,33 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
+    if (this.paramsSub) {
+      this.paramsSub.unsubscribe();
+    }
+    if (this.onServerEventSub) {
+      this.onServerEventSub.unsubscribe();
     }
   }
 
   private _watchServerEventUpdates() {
-    this._eventApiService.onServerEvent().subscribe(data => {
-      if (data.operation === WebsocketResponseOperation.UPDATE) {
-        this._updateEvent(data.event);
-      }
+    this.onServerEventSub = this._eventApiService.onServerEvent().subscribe(data => {
 
+      switch (data.operation) {
+        case WebsocketResponseOperation.UPDATE:
+          this._updateEvent(data.event);
+          break;
+        case WebsocketResponseOperation.CREATE:
+          this._addEvent(data.event);
+          break;
+        default:
+          console.log(`unknown websocket operation`);
+          break;
+      }
     });
   }
 
   private async _loadCurrentEvent() {
-    this.params$ = this._activatedRoute.params.subscribe(async params => {
+    this.paramsSub = this._activatedRoute.params.subscribe(async params => {
       const eventId = params['eventId'];
       if (eventId) {
         try {
@@ -178,6 +190,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       if (this.site) {
         this.network = this.site.networks[0];
       }
+    }
+  }
+
+  private _addEvent(event: IEvent) {
+    try {
+      const eventDate = moment(event.time_utc);
+      const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
+      if (idx > -1) {
+        this.events.splice(idx, 0, event);
+      } else {
+        this.events.push(event);
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
