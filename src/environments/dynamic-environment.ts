@@ -1,10 +1,10 @@
 export class DynamicEnvironment {
-  private _config: any;
   public _defaultConfig: any;
   public production: boolean;
   public url: string;
   public apiUrl: string;
   public url3dUi: string;
+  public wss: string;
 
   constructor() { }
 
