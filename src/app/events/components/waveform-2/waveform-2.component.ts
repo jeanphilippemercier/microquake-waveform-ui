@@ -46,8 +46,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _event: IEvent;
 
   @Input() timezone = '+00:00';
-  @ViewChild('contextMenuChart') private _menu: ElementRef;
-  @ViewChild('waveformContainer') private _waveformContainer: ElementRef;
+  @ViewChild('contextMenuChart', { static: false }) private _menu: ElementRef;
+  @ViewChild('waveformContainer', { static: false }) private _waveformContainer: ElementRef;
 
   private _passband = filter.BAND_PASS;
   private _bHoldEventTrigger: boolean;

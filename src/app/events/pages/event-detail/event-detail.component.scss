@@ -109,7 +109,7 @@ mat-sidenav-content.mat-drawer-content {
     height: 25px;
     line-height: 25px;
 
-    /deep/ .mat-button-wrapper {
+    ::ng-deep .mat-button-wrapper {
       padding: 0;
     }
   }

@@ -51,7 +51,7 @@ mat-paginator {
   background: transparent;
   color: #fff;
 
-  /deep/ .mat-paginator-range-label {
+  ::ng-deep .mat-paginator-range-label {
     margin: 0px;
   }
 }

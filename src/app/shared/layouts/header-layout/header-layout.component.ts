@@ -9,7 +9,7 @@ import { MatDrawer } from '@angular/material';
 })
 export class HeaderLayoutComponent {
 
-  @ViewChild('drawer') drawer: MatDrawer;
+  @ViewChild('drawer', { static: false }) drawer: MatDrawer;
   today = new Date();
 
   @Input() width = '100%';

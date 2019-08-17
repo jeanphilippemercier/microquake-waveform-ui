@@ -60,10 +60,10 @@ mat-progress-bar {
 }
 
 #waveform-panel {
-  /deep/ & {
+  ::ng-deep & {
     .canvasjs-chart-container {
 
-      /deep/ &.active {
+      ::ng-deep &.active {
         cursor: pointer !important;
       }
     }

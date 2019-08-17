@@ -52,7 +52,7 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
     manufacturer: [],
   });
 
-  @ViewChild('inventoryForm') inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
   submited = false;
 
   constructor(
