@@ -1,6 +1,6 @@
-import { Component, AfterViewInit, ViewChild, Input, EventEmitter, Output } from '@angular/core';
+import { Component, ViewChild, Input, EventEmitter, Output } from '@angular/core';
 import { MenuService } from '@app/core/services/menu.service';
-import { MatDrawer } from '@angular/material';
+import { MatDrawer } from '@angular/material/sidenav';
 
 @Component({
   selector: 'app-header-layout',

@@ -1,5 +1,4 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
-import { MatSelectChange } from '@angular/material';
 
 @Component({
   selector: 'app-event-date-field',

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { PageEvent } from '@angular/material';
+import { PageEvent } from '@angular/material/paginator';
 
 import { PageMode } from '@interfaces/core.interface';
 import { PaginationRequest } from '@interfaces/query.interface';

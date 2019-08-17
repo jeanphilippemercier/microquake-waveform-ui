@@ -1,7 +1,7 @@
 import { Component, Output, EventEmitter, Input } from '@angular/core';
-import { MatSelectChange } from '@angular/material';
+import { MatSelectChange } from '@angular/material/select';
 
-import { Site, Network } from '@interfaces/inventory.interface';
+import { Network } from '@interfaces/inventory.interface';
 
 @Component({
   selector: 'app-site-network-field',
