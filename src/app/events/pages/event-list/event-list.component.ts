@@ -141,6 +141,15 @@ export class EventListComponent implements OnInit {
         this.network = this.site.networks.find(network => network.code === options.network);
       }
     }
+
+    if (!this.site && this.sites && this.sites[0]) {
+      this.site = this.sites[0];
+      this.networks = this.site.networks;
+    }
+
+    if (!this.network && this.site && this.site.networks) {
+      this.network = this.site.networks[0];
+    }
   }
 
   private async _updateEvent(event: IEvent) {
