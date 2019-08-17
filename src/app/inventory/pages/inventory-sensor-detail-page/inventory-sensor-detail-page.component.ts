@@ -8,6 +8,7 @@ import { PageMode } from '@interfaces/core.interface';
 import { Sensor, Site, Station, Borehole } from '@interfaces/inventory.interface';
 import { SensorUpdateInput, SensorCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-inventory-sensor-detail-page',
@@ -58,7 +59,8 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
     private _activatedRoute: ActivatedRoute,
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
-    private _router: Router
+    private _router: Router,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
@@ -172,22 +174,26 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
     if (this.pageMode === PageMode.CREATE) {
       try {
         this.loading = true;
+        this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.createSensor(dto).toPromise();
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
       } finally {
         this.loading = false;
+        this._ngxSpinnerService.hide('loadingCurrentEvent');
       }
     } else if (this.pageMode === PageMode.EDIT) {
       try {
         this.loading = true;
+        this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.updateSensor(this.sensorId, dto).toPromise();
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
       } finally {
         this.loading = false;
+        this._ngxSpinnerService.hide('loadingCurrentEvent');
       }
     }
   }

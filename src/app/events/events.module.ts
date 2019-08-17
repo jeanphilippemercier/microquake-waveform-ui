@@ -4,7 +4,6 @@ import { SharedModule } from '@app/shared/shared.module';
 import { EventDetailComponent } from './pages/event-detail/event-detail.component';
 import { EventListComponent } from './pages/event-list/event-list.component';
 
-import { NgxLoadingModule } from 'ngx-loading';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
@@ -36,7 +35,6 @@ const ROUTES: Routes = [
   imports: [
     RouterModule.forChild(ROUTES),
     SharedModule,
-    NgxLoadingModule,
     NgxPaginationModule
   ],
   exports: [

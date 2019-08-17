@@ -76,7 +76,7 @@
             (eventClick)="openEvent($event)"
           ></app-event-catalog>
         </ng-template>
-        <ngx-loading [show]="loadingEventList"></ngx-loading>
+        <ngx-spinner name="loadingEventList"></ngx-spinner>
       </mat-expansion-panel>
 
       <mat-expansion-panel
@@ -110,9 +110,8 @@
           [event]=currentEvent
           [eventTypes]="eventTypes"
         ></app-event-info>
-        <ngx-loading [show]="loadingCurrentEvent"></ngx-loading>
       </mat-expansion-panel>
-      <ngx-loading [show]="loadingCurrentEventAndList"></ngx-loading>
+      <ngx-spinner name="loadingCurrentEventAndList"></ngx-spinner>
     </mat-accordion>
   </mat-sidenav>
   <mat-sidenav-content>

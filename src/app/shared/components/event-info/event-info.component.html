@@ -1,4 +1,4 @@
-<div>
+<div [style.opacity]="!event ? 0 : 1">
   <table class="table table-extra-condensed">
     <tbody>
       <tr *ngIf='showEventResourceId'>
@@ -113,3 +113,4 @@
     </tbody>
   </table>
 </div>
+<ngx-spinner name="loadingCurrentEvent"></ngx-spinner>

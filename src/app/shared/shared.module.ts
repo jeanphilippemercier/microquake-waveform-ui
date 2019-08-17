@@ -31,6 +31,7 @@ import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 import { OrdinalPipe } from './pipes/ordinal.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
+import { NgxSpinnerModule } from 'ngx-spinner';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -118,6 +119,7 @@ const PIPES = [
     ReactiveFormsModule,
     RouterModule,
     MomentModule,
+    NgxSpinnerModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES,
   ],
@@ -131,6 +133,7 @@ const PIPES = [
     ReactiveFormsModule,
     RouterModule,
     MomentModule,
+    NgxSpinnerModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES
   ],
