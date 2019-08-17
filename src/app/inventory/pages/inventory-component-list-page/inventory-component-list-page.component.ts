@@ -4,6 +4,7 @@ import { PageMode } from '@interfaces/core.interface';
 import { IComponent } from '@interfaces/inventory.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-inventory-component-list-page',
@@ -22,7 +23,8 @@ export class InventoryComponentListPageComponent implements OnInit {
   components: IComponent[];
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService
+    private _inventoryApiSevice: InventoryApiService,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
@@ -33,6 +35,7 @@ export class InventoryComponentListPageComponent implements OnInit {
 
   async loadData(cursor?: string) {
     try {
+      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
       this.loading = true;
 
       const query: PaginationRequest = {
@@ -52,6 +55,7 @@ export class InventoryComponentListPageComponent implements OnInit {
     } catch (err) {
       console.error(err);
     } finally {
+      this._ngxSpinnerService.hide('loadingTable');
       this.loading = false;
     }
   }

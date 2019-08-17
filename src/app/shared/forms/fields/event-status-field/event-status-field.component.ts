@@ -1,5 +1,5 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
-import { MatSelectChange, MatChipListChange } from '@angular/material';
+import { MatSelectChange } from '@angular/material/select';
 
 import { EvaluationStatus } from '@interfaces/event.interface';
 

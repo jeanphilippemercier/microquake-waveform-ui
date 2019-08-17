@@ -3,7 +3,7 @@ import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject } from 'rxjs';
 import { first } from 'rxjs/operators';
-import { MatDialog, MatDialogRef } from '@angular/material';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
@@ -15,6 +15,7 @@ import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dia
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';
 import { InventoryApiService } from '@services/inventory-api.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-event-detail',
@@ -66,7 +67,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
     private _matDialog: MatDialog,
-    private _router: Router
+    private _router: Router,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
@@ -110,6 +112,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       if (eventId) {
         try {
           this.loadingCurrentEvent = true;
+          this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
           let clickedEvent: IEvent;
 
           // try to find event in catalog events (already loaded events)
@@ -134,6 +137,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           console.error(err);
         } finally {
           this.loadingCurrentEvent = false;
+          this._ngxSpinnerService.hide('loadingCurrentEvent');
         }
       }
     });
@@ -147,6 +151,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
     try {
       this.loadingEventList = true;
+      this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
       if (!this.eventListQuery) {
         this.eventListQuery = {
@@ -164,6 +169,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       console.error(err);
     } finally {
       this.loadingEventList = false;
+      this._ngxSpinnerService.hide('loadingEventList');
     }
   }
 
@@ -213,16 +219,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // check if event with same ID already in catalog
-    this.events.some((ev, idx) => {
-      if (ev.event_resource_id === event.event_resource_id) {
-        if (JSON.stringify(ev) !== JSON.stringify(event)) {
-          this.events[idx] = Object.assign(this.events[idx], event);
-          this.changeDetectCatalog = new Date().getTime();
+    // check events in catalog
+    if (this.events && this.events.length > 0) {
+
+      // check if event with same ID already in catalog
+      this.events.some((ev, idx) => {
+        if (ev.event_resource_id === event.event_resource_id) {
+          if (JSON.stringify(ev) !== JSON.stringify(event)) {
+            this.events[idx] = Object.assign(this.events[idx], event);
+            this.changeDetectCatalog = new Date().getTime();
+          }
+          return true;
         }
-        return true;
-      }
-    });
+      });
+    }
 
     if (event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = Object.assign({}, event);
@@ -245,6 +255,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     this.eventFilterDialogOpened = true;
     this.loadingCurrentEventAndList = true;
+    this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
     this.eventFilterDialogRef = this._matDialog.open<EventFilterDialogComponent, EventFilterDialogData>(EventFilterDialogComponent, {
       hasBackdrop: true,
@@ -263,6 +274,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       try {
         this.eventListQuery = data;
         this.eventFilterDialogRef.componentInstance.loading = true;
+        this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         await this._loadEvents();
         this.numberOfChangesInFilter = this.eventFilterDialogRef.componentInstance.getNumberOfChanges(this.eventListQuery);
         this.eventFilterDialogRef.close();
@@ -270,6 +282,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         console.error(err);
       } finally {
         this.eventFilterDialogRef.componentInstance.loading = false;
+        this._ngxSpinnerService.hide('loadingEventFilter');
       }
     });
 
@@ -279,6 +292,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
 
     this.loadingCurrentEventAndList = false;
+    this._ngxSpinnerService.hide('loadingCurrentEventAndList');
   }
 
   async openEventUpdateDialog() {
@@ -287,6 +301,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     this.eventUpdateDialogOpened = true;
     this.loadingCurrentEventAndList = true;
+    this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
     this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
       hasBackdrop: true,
@@ -302,6 +317,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
+        this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
         this._updateEvent(result);
         this.eventUpdateDialogRef.close();
@@ -309,6 +325,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         console.error(err);
       } finally {
         this.eventUpdateDialogRef.componentInstance.loading = false;
+        this._ngxSpinnerService.hide('loadingEventUpdate');
       }
     });
 
@@ -318,6 +335,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
 
     this.loadingCurrentEventAndList = false;
+    this._ngxSpinnerService.hide('loadingCurrentEventAndList');
   }
 
   onCollapseButtonClick() {

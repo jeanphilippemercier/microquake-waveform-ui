@@ -1,5 +1,6 @@
 import { Component, Inject, EventEmitter } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@app/core/interfaces/event.interface';
 import { EventUpdateInput } from '@app/core/interfaces/event-dto.interface';

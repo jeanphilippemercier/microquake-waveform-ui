@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { PageEvent } from '@angular/material';
+import { PageEvent } from '@angular/material/paginator';
 
 import { PageMode } from '@interfaces/core.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 import { Sensor } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-inventory-sensor-list-page',
@@ -25,7 +26,8 @@ export class InventorySensorListPageComponent implements OnInit {
   PageMode = PageMode;
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService
+    private _inventoryApiSevice: InventoryApiService,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
@@ -35,6 +37,7 @@ export class InventorySensorListPageComponent implements OnInit {
   async loadData(cursor?: string) {
     try {
       this.loading = true;
+      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
       const query: PaginationRequest = {
         page_size: this.pageSize,
@@ -54,6 +57,7 @@ export class InventorySensorListPageComponent implements OnInit {
       console.error(err);
     } finally {
       this.loading = false;
+      this._ngxSpinnerService.hide('loadingTable');
     }
   }
 

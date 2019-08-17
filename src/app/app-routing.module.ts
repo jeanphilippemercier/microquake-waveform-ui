@@ -18,11 +18,11 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        loadChildren: './events/events.module#EventsModule',
+        loadChildren: () => import('./events/events.module').then(m => m.EventsModule),
       },
       {
         path: '',
-        loadChildren: './inventory/inventory.module#InventoryModule',
+        loadChildren: () => import('./inventory/inventory.module').then(m => m.InventoryModule),
       }
     ]
   },

@@ -14,6 +14,7 @@ import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
 import { InventoryApiService } from '@services/inventory-api.service.js';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -45,8 +46,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _event: IEvent;
 
   @Input() timezone = '+00:00';
-  @ViewChild('contextMenuChart') private _menu: ElementRef;
-  @ViewChild('waveformContainer') private _waveformContainer: ElementRef;
+  @ViewChild('contextMenuChart', { static: false }) private _menu: ElementRef;
+  @ViewChild('waveformContainer', { static: false }) private _waveformContainer: ElementRef;
 
   private _passband = filter.BAND_PASS;
   private _bHoldEventTrigger: boolean;
@@ -103,10 +104,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
     public waveformService: WaveformService,
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
-    private _renderer: Renderer2
+    private _renderer: Renderer2,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
+    this.waveformService.loading
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val: boolean) => {
+        if (val) {
+          this._ngxSpinnerService.show('loadingWaveform', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+        } else {
+          this._ngxSpinnerService.hide('loadingWaveform');
+        }
+      });
     this.waveformService.loading.next(true);
     await this._loadAllSensors();
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
@@ -136,6 +147,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _subscribeToolbar(): void {
+
     this.waveformService.undoLastZoomOrPanClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this._undoLastZoomOrPan());

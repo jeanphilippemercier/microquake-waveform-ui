@@ -3,7 +3,7 @@ mat-list-item.active {
   font-weight: 400;
 }
 
-/deep/ mat-tab-body {
+::ng-deep mat-tab-body {
   padding-top: 30px;
 }
 

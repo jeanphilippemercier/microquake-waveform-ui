@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { NgxLoadingModule } from 'ngx-loading';
 
 import { SharedModule } from '@app/shared/shared.module';
 import { InventorySiteListPageComponent } from './pages/inventory-site-list-page/inventory-site-list-page.component';
@@ -53,7 +52,6 @@ const ROUTES: Routes = [
   ],
   imports: [
     SharedModule,
-    NgxLoadingModule,
     RouterModule.forChild(ROUTES),
   ],
   exports: [RouterModule]

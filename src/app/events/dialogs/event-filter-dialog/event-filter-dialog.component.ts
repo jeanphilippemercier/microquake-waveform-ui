@@ -1,5 +1,6 @@
 import { Component, Inject, EventEmitter } from '@angular/core';
-import { MAT_DIALOG_DATA, MatRadioChange } from '@angular/material';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatRadioChange } from '@angular/material/radio';
 import * as moment from 'moment';
 
 import { EventType, EvaluationStatus, EvaluationMode } from '@interfaces/event.interface';
