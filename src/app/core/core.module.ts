@@ -25,7 +25,6 @@ export function jwtOptionsFactory() {
 }
 
 export function configInit(configurationService: ConfigurationService) {
-  // return () => configurationService.init();
   return () => configurationService.initAssetsConfig();
 }
 
@@ -41,7 +40,7 @@ export function configInit(configurationService: ConfigurationService) {
     }),
   ],
   providers: [
-    JwtInterceptor, // Providing JwtInterceptor allow to inject JwtInterceptor manually into HttpErrorInterceptor
+    JwtInterceptor,
     {
       provide: APP_INITIALIZER,
       useFactory: configInit,

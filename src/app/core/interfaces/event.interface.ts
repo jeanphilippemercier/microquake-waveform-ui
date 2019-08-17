@@ -68,7 +68,7 @@ export interface EventType {
   id: number;
   identifier: string;
   microquake_type: string;
-  quakeml_type: string;
+  quakeml_type: QuakemlType;
   site: number;
   site_code: string;
 }

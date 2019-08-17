@@ -7,9 +7,10 @@ import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventType, EvaluationStatus, IEvent, EvaluationMode } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
-import { CatalogApiService } from '@services/catalog-api.service';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
+import { EventQuery } from '@interfaces/event-query.interface';
+import { InventoryApiService } from '@services/inventory-api.service';
 
 interface ViewerOptions {
   site?: string;
@@ -41,15 +42,15 @@ export class EventListComponent implements OnInit {
   displayedColumns: string[] = ['date', 'time', 'magnitude', 'status', 'type', 'mode', 'actions'];
   dataSource: MatTableDataSource<any>;
 
-  events: any; // TODO: typings
+  events: IEvent[];
 
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
   eventUpdateDialogOpened = false;
 
   constructor(
-    private _catalogApiService: CatalogApiService,
     private _matDialog: MatDialog,
-    private _eventApiService: EventApiService
+    private _eventApiService: EventApiService,
+    private _inventoryApiService: InventoryApiService
   ) { }
 
   async ngOnInit() {
@@ -64,7 +65,7 @@ export class EventListComponent implements OnInit {
   }
 
   private async _loadEventTypesAndStatuses() {
-    this.eventTypes = await this._catalogApiService.get_microquake_event_types(this.site).toPromise();
+    this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
     this.eventEvaluationModes = Object.values(EvaluationMode);
   }
@@ -72,16 +73,16 @@ export class EventListComponent implements OnInit {
   private async _loadEvents() {
     const startTime = moment(this.eventStartDate).toISOString();
     const endTime = moment(this.eventEndDate).toISOString();
+    const eventListQuery: EventQuery = {
+      start_time: startTime,
+      end_time: endTime,
+      site_code: this.site.code ? this.site.code : null,
+      network_code: this.network.code ? this.network.code : null,
+      type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
+      status: this.selectedEvaluationStatuses ? this.selectedEvaluationStatuses : undefined,
+    };
 
-    this.events = await this._catalogApiService.get_events(
-      this.site ? this.site.code : '',
-      this.network ? this.network.code : '',
-      startTime,
-      endTime,
-      null,
-      // this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.id).toString() : '',
-      this.selectedEvaluationStatuses ? this.selectedEvaluationStatuses.toString() : ''
-    ).toPromise();
+    this.events = await this._eventApiService.getEvents(eventListQuery).toPromise();
 
     // TODO: no order_by time_utc on api?
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
@@ -101,8 +102,6 @@ export class EventListComponent implements OnInit {
   }
 
   siteChanged($event: Site) {
-    console.log($event);
-
     if ($event && $event.networks && $event.networks.length > 0) {
       this.networks = $event.networks;
     } else {
@@ -111,7 +110,6 @@ export class EventListComponent implements OnInit {
     this._saveOptions();
   }
   networkChanged($event) {
-    console.log($event);
     this._saveOptions();
   }
 
@@ -128,7 +126,7 @@ export class EventListComponent implements OnInit {
   }
 
   private async _loadSites() {
-    this.sites = await this._catalogApiService.get_sites().toPromise();
+    this.sites = await this._inventoryApiService.getSites().toPromise();
     this.networks = null;
 
     const options: ViewerOptions = JSON.parse(localStorage.getItem('viewer-options'));
