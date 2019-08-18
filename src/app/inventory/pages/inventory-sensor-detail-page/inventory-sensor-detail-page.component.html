@@ -336,10 +336,15 @@
                         <ng-container *ngIf="pageMode === PageMode.CREATE">
 
                           <button
+                            [routerLink]="['/inventory/sensors']"
+                            class="mr-3"
+                            mat-raised-button
+                          >Cancel</button>
+                          <button
                             type="submit"
                             [color]="'primary'"
                             mat-raised-button
-                          >CREATE</button>
+                          >Create</button>
                         </ng-container>
 
                         <ng-container *ngIf="pageMode === PageMode.VIEW">

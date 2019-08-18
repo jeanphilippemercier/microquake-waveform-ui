@@ -21,7 +21,6 @@ import { NgxSpinnerService } from 'ngx-spinner';
   selector: 'app-event-detail',
   templateUrl: './event-detail.component.html',
   styleUrls: ['./event-detail.component.scss'],
-  encapsulation: ViewEncapsulation.None
 })
 export class EventDetailComponent implements OnInit, OnDestroy {
 
