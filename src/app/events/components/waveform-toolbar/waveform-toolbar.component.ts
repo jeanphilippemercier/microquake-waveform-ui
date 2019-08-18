@@ -23,8 +23,6 @@ export class WaveformToolbarComponent implements OnInit {
   pickingMode: any = 'none'; // TODO: interface
 
   maxFreq = globals.highFreqCorner;
-  rateControl = new FormControl('rateControl', [Validators.max(this.maxFreq)]);
-  minRateControl = new FormControl('minRateControl', [Validators.min(0)]);
 
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;

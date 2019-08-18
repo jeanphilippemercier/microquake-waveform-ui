@@ -104,16 +104,8 @@
         min="0"
         (keydown.enter)="onApplyFilter()"
         [(ngModel)]="lowFreqCorner"
-        [formControl]="minRateControl"
+        #minRateControl="ngModel"
       >
-      <div
-        *ngIf="minRateControl.invalid && (minRateControl.dirty || minRateControl.touched)"
-        class="alert alert-danger"
-      >
-        <div *ngIf="!!minRateControl.errors.min">
-          Min 0
-        </div>
-      </div>
     </mat-form-field>
 
     <mat-form-field class="input-form-width float-left">
@@ -126,16 +118,8 @@
         [max]="maxFreq"
         (keydown.enter)="onApplyFilter()"
         [(ngModel)]="highFreqCorner"
-        [formControl]="rateControl"
+        #rateControl="ngModel"
       >
-      <div
-        *ngIf="rateControl.invalid && (rateControl.dirty || rateControl.touched)"
-        class="alert alert-danger"
-      >
-        <div *ngIf="!!rateControl.errors.max">
-          Max {{maxFreq}}
-        </div>
-      </div>
     </mat-form-field>
 
     <mat-form-field class="input-form-width-less float-left">
