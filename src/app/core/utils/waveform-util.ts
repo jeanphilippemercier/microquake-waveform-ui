@@ -51,14 +51,19 @@ export default class WaveformUtil {
         //   (this.tracesInfo.includes(sg.codes()) ? this.tracesInfo : this.tracesInfo + ', ' + sg.codes()) :
         //   'Zero traces: ' + sg.codes();
       }
-      if (!zTime) {
-        zTime = moment(sg.start());  // starting time (use it up to tenth of second)
-        zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
-      } else {
-        if (!sg.start().isSame(zTime, 'second')) {
-          zTime = moment(moment.min(zTime, sg.start()));
-          changetimeOrigin = true;
+      if (sg.start().isValid()) {
+        if (!zTime) {
+          zTime = moment(sg.start());  // starting time (use it up to tenth of second)
+          zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
+        } else {
+          if (!sg.start().isSame(zTime, 'second')) {
+            zTime = moment(moment.min(zTime, sg.start()));
+            changetimeOrigin = true;
+          }
         }
+      } else {
+        console.error(`Sensor ${sg.stationCode()} channel ${sg.channelCode()} timeOrigin not valid`);
+        console.error(sg.start());
       }
       const seismogram = valid ? filter.rMean(sg) : sg;
       const channel = {};
@@ -168,7 +173,7 @@ export default class WaveformUtil {
         } else {
           console.log('Cannot create 3C composite trace for sensor: '
             + sensor['sensor_code'] + ' different channels start times ' +
-            sensor.channels[0].start.toISOString() + sensor.channels[1].start.toISOString()
+            sensor.channels[0].start.toISOString() + ' ' + sensor.channels[1].start.toISOString() + ' '
             + sensor.channels[2].start.toISOString());
         }
       } else {

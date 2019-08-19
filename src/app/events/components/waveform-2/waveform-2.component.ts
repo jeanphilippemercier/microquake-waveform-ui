@@ -331,6 +331,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this.waveformService.loadedPages.next(1);
         this.timeOrigin = eventData.timeOrigin;
 
+        if (!this.timeOrigin) {
+          console.error(`no timeOrigin`);
+          return;
+        }
+
         this.timeEnd = moment(this.timeOrigin).add(globals.fixedDuration, 'seconds');
 
         if (this.loadedSensors.length > 0) {
