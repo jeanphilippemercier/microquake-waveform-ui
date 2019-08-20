@@ -95,7 +95,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         case WebsocketResponseOperation.UPDATE:
           this._updateEvent(data.event);
           break;
-        case WebsocketResponseOperation.CREATE:
+        case WebsocketResponseOperation.CREATED:
           this._addEvent(data.event);
           break;
         default:

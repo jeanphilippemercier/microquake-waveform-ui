@@ -111,7 +111,7 @@ export interface IEvent {
 }
 
 export enum WebsocketResponseOperation {
-  CREATE = 'create',
+  CREATED = 'created',
   UPDATE = 'update',
 }
 
