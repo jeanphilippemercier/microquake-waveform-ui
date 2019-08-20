@@ -650,16 +650,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
     document.addEventListener('keydown', (e: any) => {
 
       const target = e.target || e.srcElement;
-      if (!/INPUT|TEXTAREA|SELECT|BUTTON/.test(target.nodeName)) {
+      if (!/INPUT|TEXTAREA|SELECT/.test(target.nodeName)) {
+
         if (e.keyCode === 80) {  // p
           this.waveformService.predictedPicks.next(!this.waveformService.predictedPicks.getValue());
         }
+
         if (e.keyCode === 90) {  // z
           this.waveformService.commonTimeScale.next(!this.waveformService.commonTimeScale.getValue());
         }
+
         if (e.keyCode === 88) {   // x
           this.waveformService.commonAmplitudeScale.next(!this.waveformService.commonAmplitudeScale.getValue());
         }
+
         if (e.keyCode === 68) {   // d
           if (this.waveformService.pickingMode.getValue() === 'P') {
             this.waveformService.pickingMode.next('none');
@@ -667,6 +671,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             this.waveformService.pickingMode.next('P');
           }
         }
+
         if (e.keyCode === 70) {   // f
           if (this.waveformService.pickingMode.getValue() === 'S') {
             this.waveformService.pickingMode.next('none');
@@ -674,12 +679,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
             this.waveformService.pickingMode.next('S');
           }
         }
+
         if (e.keyCode === 83) {   // s, undo picking
           this._undoLastPicking();
         }
+
         if (e.keyCode === 72) {   // h, help
-          document.getElementById('helpBtn').click();
+          this.waveformService.openHelpDialog();
         }
+
         if (e.keyCode === 39) {  // right arrow moves pick to right
           if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
@@ -690,6 +698,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             }
           }
         }
+
         if (e.keyCode === 37) {  // left arrow moves pick to left
           if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
@@ -700,18 +709,27 @@ export class Waveform2Component implements OnInit, OnDestroy {
             }
           }
         }
+
         if (e.keyCode === 49 || e.keyCode === 97) {
-          if (this.waveformService.currentPage.getValue() > 1) {
-            this.waveformService.currentPage.next(this.waveformService.currentPage.getValue() - 1);
-            this._changePage(false);
+          if (
+            this.waveformService.currentPage.getValue() - 1 <= 0 ||
+            this.waveformService.loading.getValue()
+          ) {
+            return;
           }
+
+          this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() - 1);
         }
+
         if (e.keyCode === 50 || e.keyCode === 98) {
-          const numPages = this.waveformService.loadedPages.getValue();
-          if (this.waveformService.currentPage.getValue() < numPages) {
-            this.waveformService.currentPage.next(this.waveformService.currentPage.getValue() + 1);
-            this._changePage(false);
+          if (
+            this.waveformService.currentPage.getValue() + 1 > this.waveformService.maxPages.getValue() ||
+            this.waveformService.loading.getValue()
+          ) {
+            return;
           }
+
+          this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() + 1);
         }
       }
     }, false);

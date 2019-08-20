@@ -149,7 +149,7 @@
     aria-label="Picking Mode"
     matTooltip="Select Picking Mode P, S or None"
     #group="matButtonToggleGroup"
-    [ngModel]="pickingMode"
+    [ngModel]="this.waveformService.pickingMode | async"
     (ngModelChange)="onPickingModeChange($event)"
   >
     <mat-button-toggle value="P">
