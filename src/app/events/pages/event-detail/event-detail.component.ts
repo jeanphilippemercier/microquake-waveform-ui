@@ -207,6 +207,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       } else {
         this.events.push(event);
       }
+      this.changeDetectCatalog = new Date().getTime();
     } catch (err) {
       console.error(err);
     }
@@ -309,7 +310,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         event: this.currentEvent,
         evaluationStatuses: this.evaluationStatuses,
         eventTypes: this.eventTypes,
-        eventEvaluationModes: this.eventEvaluationModes
+        eventEvaluationModes: this.eventEvaluationModes,
+        mode: 'updateDialog'
       }
     });
 
@@ -339,5 +341,39 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   onCollapseButtonClick() {
     this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
+  }
+
+
+  async onAcceptClick($event: EventType) {
+    try {
+      this._ngxSpinnerService.show('loadingCurrentEvent');
+      const eventUpdateInput: EventUpdateInput = {
+        event_type: $event.quakeml_type,
+        evaluation_mode: EvaluationMode.MANUAL,
+        // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
+        status: EvaluationStatus.CONFIRMED
+      };
+      await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this._ngxSpinnerService.hide('loadingCurrentEvent');
+    }
+  }
+
+  async onDeclineClick($event: EventType) {
+    try {
+      this._ngxSpinnerService.show('loadingCurrentEvent');
+      const eventUpdateInput: EventUpdateInput = {
+        event_type: $event.quakeml_type,
+        evaluation_mode: EvaluationMode.MANUAL,
+        status: EvaluationStatus.REJECTED
+      };
+      await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this._ngxSpinnerService.hide('loadingCurrentEvent');
+    }
   }
 }

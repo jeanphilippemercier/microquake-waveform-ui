@@ -107,8 +107,12 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <app-event-info
-          [event]=currentEvent
+          [event]="currentEvent"
           [eventTypes]="eventTypes"
+          [evaluationStatuses]="evaluationStatuses"
+          [eventEvaluationModes]="eventEvaluationModes"
+          (acceptClicked)="onAcceptClick($event)"
+          (rejectClicked)="onDeclineClick($event)"
         ></app-event-info>
       </mat-expansion-panel>
       <ngx-spinner name="loadingCurrentEventAndList"></ngx-spinner>
@@ -118,6 +122,7 @@
     <div
       class="collapse-button"
       [ngClass]="{'outside': !(waveformService.sidebarOpened | async)}"
+      matTooltip="Collapse Sidebar"
     >
       <button
         [color]="!(waveformService.sidebarOpened | async) ? 'primary' : 'primary'"
