@@ -76,6 +76,7 @@ export interface EventType {
 export interface IEvent {
   azimuth: any;
   evaluation_mode: string;
+  corner_frequency?: number;
   event_file: string;
   event_resource_id: string;
   event_type: string;

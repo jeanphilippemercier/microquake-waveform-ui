@@ -7,6 +7,7 @@ export interface EventUpdateDialog {
   evaluationStatuses: EvaluationStatus[];
   eventTypes: EventType[];
   eventEvaluationModes: EvaluationMode[];
+  mode: 'updateDialog' | 'eventDetail';
 }
 export interface EventFilterDialogData {
   timezone: string;
