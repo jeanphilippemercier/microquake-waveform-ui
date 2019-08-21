@@ -1,10 +1,10 @@
-<mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>{{label}}</mat-label>
   <input
     matInput
     [(ngModel)]="date"
     (ngModelChange)="onChangeDate($event)"
     [matDatepicker]="picker"
-    [placeholder]="label"
     [min]="minDate"
     [max]="maxDate"
   >

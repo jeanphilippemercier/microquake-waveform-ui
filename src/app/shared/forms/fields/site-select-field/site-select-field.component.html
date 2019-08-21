@@ -1,4 +1,5 @@
-<mat-form-field class='w-100'>
+<mat-form-field class='w-100'
+appearance="outline">
   <mat-label>Site</mat-label>
   <mat-select
     [(ngModel)]="site"
@@ -11,14 +12,4 @@
       {{siteEl.name}}
     </mat-option>
   </mat-select>
-  <button
-    mat-button
-    *ngIf="site"
-    matSuffix
-    mat-icon-button
-    aria-label="Clear"
-    (click)='onClearSelection($event)'
-  >
-    <mat-icon>clear</mat-icon>
-  </button>
 </mat-form-field>
