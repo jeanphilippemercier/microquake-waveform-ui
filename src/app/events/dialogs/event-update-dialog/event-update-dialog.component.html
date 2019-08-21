@@ -3,14 +3,10 @@
   <app-event-info
     [event]="editedEvent"
     (eventChange)="onEventChange($event)"
-    [editEnabled]="true"
     [evaluationStatuses]="evaluationStatuses"
     [eventTypes]="eventTypes"
     [eventEvaluationModes]="eventEvaluationModes"
-    [showEventResourceId]="true"
-    [showPreferredOriginId]="false"
-    [showTimeResidual]="false"
-    [showUncertainty]="false"
+    [mode]="mode"
   ></app-event-info>
 </div>
 

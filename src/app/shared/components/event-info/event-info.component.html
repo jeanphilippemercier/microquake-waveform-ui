@@ -1,116 +1,175 @@
 <div [style.opacity]="!event ? 0 : 1">
   <table class="table table-extra-condensed mb-0">
     <tbody>
-      <tr *ngIf='showEventResourceId'>
-        <th scope="row">Event Id</th>
+      <tr *ngIf="mode === 'updateDialog'">
+        <th>Event Id</th>
         <td>{{event?.event_resource_id}}</td>
       </tr>
+      <tr *ngIf="mode === 'updateDialog'">
+        <th>Preferred Origin Id</th>
+        <td>{{event?.preferred_origin_id}}</td>
+      </tr>
       <tr>
-        <th scope="row">Magnitude</th>
-        <td *ngIf="event?.magnitude">
-          <ng-container *ngIf="event?.magnitude !== -999">
-            {{event?.magnitude | eventMagnitude}}
-          </ng-container>
-
-          <ng-container *ngIf="event?.magnitude === -999">
-            -
-          </ng-container>
+        <th>Magnitude <span *ngIf="event?.magnitude_type">({{event?.magnitude_type}})</span></th>
+        <td>
+          <div class="row">
+            <div class="col-1 p-0"></div>
+            <div
+              class="col-4 p-0 text-right full-line-height"
+              *ngIf="event?.magnitude"
+            >
+              {{event?.magnitude | eventMagnitude}}
+            </div>
+            <div class="col-7">
+              <mat-chip-list>
+                <mat-chip
+                  *ngIf="event?.status !== EvaluationStatus.REJECTED"
+                  [selected]="true"
+                  [selectable]="true"
+                  color="primary"
+                >
+                  Accepted
+                </mat-chip>
+                <mat-chip
+                  *ngIf="event?.status === EvaluationStatus.REJECTED"
+                  [selected]="true"
+                  [selectable]="true"
+                  color="warn"
+                >
+                  Rejected
+                </mat-chip>
+              </mat-chip-list>
+            </div>
+          </div>
         </td>
       </tr>
       <tr>
-        <th scope="row">
-          Location
+        <th>
+          Location (m)
         </th>
         <td *ngIf="event?.x">
-          X {{event?.x}} m East<br>
-          Y {{event?.y}} m North<br>
-          Z {{event?.z}} m
-        </td>
-      </tr>
-      <tr>
-        <th scope="row">Picks</th>
-        <td>{{event?.npick}}</td>
-      </tr>
-      <tr>
-        <th scope="row">
-          Type
-        </th>
-        <td>
-          <ng-container *ngIf="!editEnabled">
-            {{event?.event_type | eventQuakemlToMicroquakeType : eventTypes}}
-          </ng-container>
-          <ng-container *ngIf="editEnabled">
-            <div class="mt-3">
-              <app-event-type-field
-                [label]="''"
-                [multiple]="false"
-                [eventTypes]="eventTypes"
-                [selectedEventType]="selectedEventType"
-                (selectedEventTypeChange)="onEventTypeChange($event)"
-              ></app-event-type-field>
+          <div class="d-flex w-100 flex-column">
+            <div class="row">
+              <div class=" col-1 p-0">X</div>
+              <div class="col-4 p-0 text-right">{{event?.x | number:'.0-0'}}</div>
+              <div class="col-3">East</div>
             </div>
-          </ng-container>
+            <div class="row">
+              <div class=" col-1 p-0">Y</div>
+              <div class="col-4 p-0 text-right">{{event?.y | number:'.0-0'}}</div>
+              <div class="col-3">North</div>
+            </div>
+            <div class="row">
+              <div class=" col-1 p-0">Z</div>
+              <div class="col-4 p-0 text-right">{{event?.z | number:'.0-0'}}</div>
+              <div class="col-3"></div>
+            </div>
+          </div>
         </td>
       </tr>
       <tr>
-        <th scope="row">
-          Evaluation<br>
-          Status
-        </th>
+        <th>Picks</th>
         <td>
-          <ng-container *ngIf="!editEnabled">
-            {{event?.status}}
-          </ng-container>
-          <ng-container *ngIf="editEnabled">
-            <div class="mt-3">
-              <app-event-status-field
-                [label]="''"
-                [multiple]="false"
-                [evaluationStatuses]="evaluationStatuses"
-                [selectedEvaluationStatus]="selectedEvenStatus"
-                (selectedEvaluationStatusChange)="onEvaluationStatusChange($event)"
-              >
-              </app-event-status-field>
-            </div>
-          </ng-container>
+          <div class="row">
+            <div class="col-1 p-0"></div>
+            <div class="col-4 p-0 text-right">{{event?.npick | number:'.0-0'}}</div>
+          </div>
         </td>
       </tr>
       <tr>
-        <th scope="row">
-          Evaluation<br>
-          Mode
-        </th>
+        <th>Time Residual (ms)</th>
         <td>
-          <ng-container *ngIf="!editEnabled">
-            {{event?.evaluation_mode}}
-          </ng-container>
-          <ng-container *ngIf="editEnabled">
-            <div class="mt-3">
-              <app-event-mode-field
-                [label]="''"
-                [multiple]="false"
-                [eventEvaluationModes]="eventEvaluationModes"
-                [selectedEvaluationMode]="selectedEvaluationMode"
-                (selectedEvaluationModeChange)="onEvaluationModeChange($event)"
-              >
-              </app-event-mode-field>
+          <div class="row">
+            <div class=" col-1 p-0"></div>
+            <div class="col-4 p-0 text-right">
+              {{event?.time_residual ? ((event?.time_residual * 1000) | number:'1.0-0') : '-'}}
             </div>
-          </ng-container>
+          </div>
         </td>
       </tr>
-      <tr *ngIf='showTimeResidual'>
-        <th scope="row">Time Residual</th>
-        <td>{{event?.time_residual}}</td>
+      <tr>
+        <th>Uncertainty (m)</th>
+        <td>
+          <div class="row">
+            <div class=" col-1 p-0"></div>
+            <div class="col-4 p-0 text-right">
+              {{event?.uncertainty ? (event?.uncertainty | number:'1.0-0') : '-'}}
+            </div>
+          </div>
+        </td>
       </tr>
-      <tr *ngIf='showUncertainty'>
-        <th scope="row">Uncertainty</th>
-        <td>{{event?.uncertainty}}</td>
-      </tr>
-      <tr *ngIf='showPreferredOriginId'>
-        <th scope="row">Preferred<br>Origin Id</th>
-        <td>{{event?.preferred_origin_id}}</td>
+      <tr>
+        <th>Corner Freq. (Hz)</th>
+        <td>
+          <div class="row">
+            <div class=" col-1 p-0"></div>
+            <div class="col-4 p-0 text-right">
+              {{event?.corner_frequency ? (event?.corner_frequency | number:'1.0-0') : '-'}}
+            </div>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
+
+  <ng-container *ngIf="mode === 'updateDialog'">
+    <div class="row mt-3">
+      <div class="col-6">
+        <app-event-status-field
+          [label]="'Status'"
+          [multiple]="false"
+          [evaluationStatuses]="evaluationStatuses"
+          [selectedEvaluationStatus]="selectedEvenStatus"
+          (selectedEvaluationStatusChange)="onEvaluationStatusChange($event)"
+        >
+        </app-event-status-field>
+      </div>
+      <div class="col-6">
+        <app-event-mode-field
+          [label]="'Mode'"
+          [multiple]="false"
+          [eventEvaluationModes]="eventEvaluationModes"
+          [selectedEvaluationMode]="selectedEvaluationMode"
+          (selectedEvaluationModeChange)="onEvaluationModeChange($event)"
+        >
+        </app-event-mode-field>
+      </div>
+    </div>
+  </ng-container>
+  <div class="row">
+    <div [ngClass]="{'col-12': mode === 'updateDialog', 'col-8' : mode === 'eventDetail'}">
+      <app-event-type-field
+        [label]="'Event type'"
+        [multiple]="false"
+        [eventTypes]="eventTypes"
+        [selectedEventType]="selectedEventType"
+        (selectedEventTypeChange)="onEventTypeChange($event)"
+      ></app-event-type-field>
+    </div>
+    <div
+      class="col-4 px-1 mt-2"
+      *ngIf="mode === 'eventDetail'"
+    >
+      <button
+        mat-mini-fab
+        color="warn"
+        class="mr-3"
+        [disabled]="event?.status === EvaluationStatus.REJECTED"
+        (click)="onRejectClicked(selectedEventType)"
+        matTooltip="Reject Event"
+      >
+        <mat-icon class="mat-18">close</mat-icon>
+      </button>
+      <button
+        mat-mini-fab
+        color="primary"
+        [disabled]="event?.status === EvaluationStatus.CONFIRMED"
+        (click)="onAcceptClicked(selectedEventType)"
+        matTooltip="Confirm Event"
+      >
+        <mat-icon class="mat-18">check</mat-icon>
+      </button>
+    </div>
+  </div>
 </div>
 <ngx-spinner name="loadingCurrentEvent"></ngx-spinner>

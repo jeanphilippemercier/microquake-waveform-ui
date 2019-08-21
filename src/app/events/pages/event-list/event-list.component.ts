@@ -178,7 +178,8 @@ export class EventListComponent implements OnInit {
         event: $event,
         evaluationStatuses: this.evaluationStatuses,
         eventTypes: this.eventTypes,
-        eventEvaluationModes: this.eventEvaluationModes
+        eventEvaluationModes: this.eventEvaluationModes,
+        mode: 'updateDialog'
       }
     });
 

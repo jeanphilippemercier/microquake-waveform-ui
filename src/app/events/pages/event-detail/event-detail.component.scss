@@ -86,10 +86,10 @@ mat-sidenav-content.mat-drawer-content {
   z-index: 10;
   position: absolute;
   // top: 100px;
-  bottom: 8px;
+  top: 8px;
   margin-top: auto;
   margin-bottom: auto;
-  margin-left: -14px;
+  margin-left: 8px;
   height: 25px;
   opacity: 0.5;
   transition: 0.25s opacity;

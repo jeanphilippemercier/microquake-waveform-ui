@@ -20,6 +20,7 @@ export class EventUpdateDialogComponent {
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
   eventEvaluationModes: EvaluationMode[];
+  mode: string;
 
   loading = false;
 
@@ -32,6 +33,7 @@ export class EventUpdateDialogComponent {
     this.eventTypes = dialogData.eventTypes;
     this.evaluationStatuses = dialogData.evaluationStatuses;
     this.eventEvaluationModes = dialogData.eventEvaluationModes;
+    this.mode = dialogData.mode;
   }
 
   async onEventChange(event: IEvent) {

@@ -22,8 +22,7 @@ export class EventCatalogComponent {
   @Input()
   set events(events: IEvent[]) {
     this._events = events || [];
-    this._events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-    [this.days, this.daysMap] = this.mapEventsToDays(this.events);
+    this.sortAndMapEvents();
     return;
   }
 
@@ -32,7 +31,15 @@ export class EventCatalogComponent {
   }
 
   // to force changeDetection
-  @Input() forceCD = 0;
+  private _forceCD = 0;
+  @Input()
+  set forceCD(forceCD: number) {
+    this.sortAndMapEvents();
+    this._forceCD = forceCD;
+  }
+  get forceCD() {
+    return this._forceCD;
+  }
   @Input() currentEvent: IEvent;
   @Input() timezone: string;
 
@@ -42,6 +49,11 @@ export class EventCatalogComponent {
 
   days: EventDay[] = [];
   daysMap: any = {};
+
+  sortAndMapEvents() {
+    this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
+    [this.days, this.daysMap] = this.mapEventsToDays(this.events);
+  }
 
   mapEventsToDays(events: IEvent[]): [EventDay[], {}] {
     const eventDays: EventDay[] = [];

@@ -1,4 +1,7 @@
-<mat-form-field *ngIf="type === 'select'">
+<mat-form-field
+  *ngIf="type === 'select'"
+  appearance="outline"
+>
   <mat-label>{{label}}</mat-label>
   <mat-select
     [(ngModel)]="multiple ? selectedEventTypes : selectedEventType"
@@ -22,7 +25,6 @@
     <mat-option
       *ngFor="let eventTypeEL of eventTypes"
       [value]="eventTypeEL"
-      matTooltip="{{eventTypeEL.identifier}} - {{eventTypeEL.microquake_type}}"
     >
       <mat-icon>
         {{eventTypeEL?.identifier | eventTypeIcon}}
