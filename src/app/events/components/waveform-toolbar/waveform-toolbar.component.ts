@@ -98,6 +98,12 @@ export class WaveformToolbarComponent implements OnInit {
   }
 
   onPageChanged(calcOp: number) {
+    if (
+      this.waveformService.currentPage.getValue() + calcOp <= 0 ||
+      this.waveformService.currentPage.getValue() + calcOp > this.waveformService.maxPages.getValue()
+    ) {
+      return;
+    }
     this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() + calcOp);
   }
 }
