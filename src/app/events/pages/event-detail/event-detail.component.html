@@ -113,6 +113,7 @@
           [eventEvaluationModes]="eventEvaluationModes"
           (acceptClicked)="onAcceptClick($event)"
           (rejectClicked)="onDeclineClick($event)"
+          [loading]="loadingCurrentEvent"
         ></app-event-info>
       </mat-expansion-panel>
       <ngx-spinner name="loadingCurrentEventAndList"></ngx-spinner>

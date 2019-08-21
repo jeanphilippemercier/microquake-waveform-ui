@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject } from 'rxjs';
@@ -85,6 +85,23 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     if (this.onServerEventSub) {
       this.onServerEventSub.unsubscribe();
+    }
+  }
+
+
+  @HostListener('window:keydown', ['$event'])
+  doSomething($event: KeyboardEvent) {
+    if (!$event) {
+      return;
+    }
+
+    switch ($event.key) {
+      case 'e':
+      case 'E':
+        this.openEventUpdateDialog();
+        break;
+      default:
+        break;
     }
   }
 

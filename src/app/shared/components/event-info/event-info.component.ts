@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@interfaces/event.interface';
 
 @Component({
@@ -24,10 +24,7 @@ export class EventInfoComponent implements OnInit {
   @Input() eventTypes: EventType[];
   @Input() evaluationStatuses: EvaluationStatus[];
   @Input() eventEvaluationModes: EvaluationMode[];
-  @Input() showEventResourceId = false;
-  @Input() showTimeResidual = false;
-  @Input() showUncertainty = false;
-  @Input() showPreferredOriginId = false;
+  @Input() loading = false;
   @Output() acceptClicked: EventEmitter<EventType> = new EventEmitter();
   @Output() rejectClicked: EventEmitter<EventType> = new EventEmitter();
 
@@ -35,6 +32,26 @@ export class EventInfoComponent implements OnInit {
   selectedEvenStatus: EvaluationStatus;
   selectedEvaluationMode: EvaluationMode;
   EvaluationStatus = EvaluationStatus;
+
+  @HostListener('window:keydown', ['$event'])
+  doSomething($event: KeyboardEvent) {
+    if (!$event) {
+      return;
+    }
+
+    switch ($event.key) {
+      case 'q':
+      case 'Q':
+        this.onRejectClicked(this.selectedEventType);
+        break;
+      case 'w':
+      case 'W':
+        this.onAcceptClicked(this.selectedEventType);
+        break;
+      default:
+        break;
+    }
+  }
 
   ngOnInit() {
     if (this.mode === 'updateDialog') {
@@ -87,10 +104,26 @@ export class EventInfoComponent implements OnInit {
   }
 
   onAcceptClicked($event: EventType) {
+    if (this.loading) {
+      return;
+    }
+
+    if (this.event.status === EvaluationStatus.CONFIRMED) {
+      return;
+    }
+
     this.acceptClicked.emit($event);
   }
 
   onRejectClicked($event: EventType) {
+    if (this.loading) {
+      return;
+    }
+
+    if (this.event.status === EvaluationStatus.REJECTED) {
+      return;
+    }
+
     this.rejectClicked.emit($event);
   }
 }
