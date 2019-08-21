@@ -13,6 +13,7 @@ import {
   MatMenuModule, MatNativeDateModule, MatPaginatorModule, MatProgressBarModule, MatProgressSpinnerModule, MatRadioModule,
   MatRippleModule, MatSelectModule, MatSidenavModule, MatSliderModule, MatSlideToggleModule, MatSnackBarModule,
   MatSortModule, MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule,
+  MAT_LABEL_GLOBAL_OPTIONS,
 } from '@angular/material';
 import { MomentModule } from 'ngx-moment';
 
@@ -140,6 +141,12 @@ const PIPES = [
   entryComponents: [
     ...DIALOGS,
     ...SHEETS
+  ],
+  providers: [
+    {
+      provide: MAT_LABEL_GLOBAL_OPTIONS,
+      useValue: { float: 'always' }
+    }
   ]
 })
 export class SharedModule { }
