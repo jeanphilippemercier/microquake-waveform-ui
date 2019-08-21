@@ -8,9 +8,19 @@ import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@interfaces
 })
 export class EventInfoComponent implements OnInit {
 
-  @Input() event: IEvent;
+  private _event: IEvent;
+  @Input()
+  set event(v: IEvent) {
+    this._event = v;
+    this.setEventProps(this._event);
+  }
+  get event() {
+    return this._event;
+  }
+
   @Output() eventChange: EventEmitter<IEvent> = new EventEmitter();
   @Input() editEnabled = false;
+  @Input() mode: 'updateDialog' | 'eventDetail' = 'eventDetail';
   @Input() eventTypes: EventType[];
   @Input() evaluationStatuses: EvaluationStatus[];
   @Input() eventEvaluationModes: EvaluationMode[];
@@ -18,23 +28,36 @@ export class EventInfoComponent implements OnInit {
   @Input() showTimeResidual = false;
   @Input() showUncertainty = false;
   @Input() showPreferredOriginId = false;
+  @Output() acceptClicked: EventEmitter<EventType> = new EventEmitter();
+  @Output() rejectClicked: EventEmitter<EventType> = new EventEmitter();
 
   selectedEventType: EventType;
   selectedEvenStatus: EvaluationStatus;
   selectedEvaluationMode: EvaluationMode;
+  EvaluationStatus = EvaluationStatus;
 
   ngOnInit() {
-    if (this.event && this.eventTypes && this.eventTypes.length > 0) {
-      this.selectedEventType = this.eventTypes.find(eventType => eventType.quakeml_type === this.event.event_type);
+    if (this.mode === 'updateDialog') {
+      this.setEventProps(this.event);
+    }
+  }
+
+  setEventProps(event: IEvent) {
+    if (!event) {
+      return;
     }
 
-    if (this.event && this.evaluationStatuses && this.evaluationStatuses.length > 0) {
-      this.selectedEvenStatus = this.evaluationStatuses.find(evaluationStatus => evaluationStatus === this.event.status);
+    if (this.eventTypes && this.eventTypes.length > 0) {
+      this.selectedEventType = this.eventTypes.find(eventType => eventType.quakeml_type === event.event_type);
     }
 
-    if (this.event && this.eventEvaluationModes && this.eventEvaluationModes.length > 0) {
+    if (this.evaluationStatuses && this.evaluationStatuses.length > 0) {
+      this.selectedEvenStatus = this.evaluationStatuses.find(evaluationStatus => evaluationStatus === event.status);
+    }
+
+    if (this.eventEvaluationModes && this.eventEvaluationModes.length > 0) {
       this.selectedEvaluationMode = this.eventEvaluationModes.find(
-        eventEvaluationMode => eventEvaluationMode === this.event.evaluation_mode
+        eventEvaluationMode => eventEvaluationMode === event.evaluation_mode
       );
     }
   }
@@ -61,5 +84,13 @@ export class EventInfoComponent implements OnInit {
     }
 
     this.eventChange.emit(this.event);
+  }
+
+  onAcceptClicked($event: EventType) {
+    this.acceptClicked.emit($event);
+  }
+
+  onRejectClicked($event: EventType) {
+    this.rejectClicked.emit($event);
   }
 }

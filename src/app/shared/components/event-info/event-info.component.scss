@@ -4,9 +4,40 @@
   &>tbody,
   &>tfoot {
     &>tr {
+
+      &>th,
       &>td {
-        padding: 2px;
+        line-height: 20px;
+        padding: 8px 0;
+        font-size: 13px;
       }
     }
+  }
+
+  &>tbody tr:first-child {
+
+    &,
+    &>th,
+    &>td {
+      border-top: 0;
+    }
+  }
+}
+
+::ng-deep .mat-form-field-appearance-outline .mat-form-field-wrapper {
+  padding-bottom: 8px;
+}
+
+.full-line-height {
+  line-height: 28px;
+}
+
+mat-chip {
+  font-size: 10px;
+  min-height: 26px;
+
+  mat-icon {
+    font-size: 16px;
+    margin-top: 6px;
   }
 }
