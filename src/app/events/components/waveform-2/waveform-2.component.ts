@@ -8,7 +8,7 @@ import * as moment from 'moment';
 import { globals } from '@src/globals';
 import WaveformUtil from '@core/utils/waveform-util';
 import { IEvent, Origin, Arrival, Traveltime, EvaluationMode, PickKey } from '@interfaces/event.interface';
-import { Sensor } from '@interfaces/inventory.interface';
+import { Sensor, Station } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface.js';
 import { WaveformService } from '@services/waveform.service';
@@ -73,6 +73,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
   // context sensor
   contextSensor: Sensor[];
 
+  /*
+  * STATIONS
+  */
+  allStations: Station[];
+  allStationsMap: { [key: number]: number } = {};
+
   allArrivals: Arrival[];
   allArrivalsChanged: ArrivalUpdateInput[];
   originTravelTimes: Traveltime[];
@@ -119,7 +125,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       });
     this.waveformService.loading.next(true);
-    await this._loadAllSensors();
+
+    await Promise.all([
+      await this._loadAllSensors(),
+      await this._loadAllStations(),
+    ]);
+
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this._addKeyDownEventListeners();
     this._subscribeToolbar();
@@ -136,11 +147,25 @@ export class Waveform2Component implements OnInit, OnDestroy {
     try {
       // TODO: remove getSensors query once waveformInfo contains information about all active sensors
       const response = await this._inventoryApiService.getSensors({
-        page_size: 200
+        page_size: 1000
       }).toPromise();
 
       this.allSensorsOrig = response.results;
       this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.id] = idx);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  private async _loadAllStations() {
+    try {
+      // TODO: remove getStations query once waveformInfo contains information about all active sensors
+      const response = await this._inventoryApiService.getStations({
+        page_size: 1000
+      }).toPromise();
+
+      this.allStations = response.results;
+      this.allStations.forEach((station, idx) => this.allStationsMap[station.id] = idx);
     } catch (err) {
       console.error(err);
     }
@@ -583,7 +608,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         },
         title: {
-          text: `${this.activeSensors[i].station ? this.activeSensors[i].station.id : '??'}. (${this.activeSensors[i].sensor_code})`,
+          text: this._getSensorTitle(this.activeSensors[i]),
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
@@ -643,6 +668,23 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
+  }
+
+  private _getSensorTitle(sensor: Sensor) {
+    let sensorTitleText = ``;
+    try {
+      const station = this.allStations[this.allStationsMap[sensor.station.id]];
+      sensorTitleText += station ? station.code : `??`;
+    } catch (err) {
+      sensorTitleText += `??`;
+    }
+
+    sensorTitleText += `.`;
+    sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
+    sensorTitleText += ` `;
+    sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : `(??)`;
+
+    return sensorTitleText;
   }
 
   private _addKeyDownEventListeners() {
@@ -773,7 +815,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       zoomEnabled: true,
       animationEnabled: false,
       title: {
-        text: `${this.activeSensors[i].station ? this.activeSensors[i].station.id : '??'}. (${this.activeSensors[i].sensor_code})`,
+        text: this._getSensorTitle(this.activeSensors[i]),
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',

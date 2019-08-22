@@ -74,6 +74,7 @@ export interface SensorBase {
   name: string;
   commissioning_date: string;
   decommissioning_date: string;
+  location_code: string;
   location_x: number;
   location_y: number;
   location_z: number;
