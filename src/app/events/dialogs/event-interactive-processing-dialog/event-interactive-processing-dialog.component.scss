@@ -1,0 +1,52 @@
+table {
+
+  &>thead,
+  &>tbody,
+  &>tfoot {
+    &>tr {
+
+      &>th,
+      &>td {
+        line-height: 20px;
+        padding: 8px 0;
+        font-size: 13px;
+      }
+    }
+  }
+
+  &>tbody tr:first-child {
+
+    &,
+    &>th,
+    &>td {
+      border-top: 0;
+    }
+  }
+
+  &.table-compare {
+
+    &>tbody {
+      &>tr {
+
+        &>th {
+          &:nth-child(0) {
+            width: 33%;
+          }
+        }
+
+        &>td {
+          &:nth-child(2) {
+            width: 33%;
+          }
+
+          &:nth-child(3) {
+            width: 33%;
+          }
+        }
+
+        &>th,
+        &>td {}
+      }
+    }
+  }
+}

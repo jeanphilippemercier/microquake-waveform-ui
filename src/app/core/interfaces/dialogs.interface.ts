@@ -17,3 +17,7 @@ export interface EventFilterDialogData {
   eventEvaluationModes: EvaluationMode[];
   sites: Site[];
 }
+export interface EventInteractiveProcessingDialog {
+  oldEvent: IEvent;
+  newEvent: IEvent;
+}
