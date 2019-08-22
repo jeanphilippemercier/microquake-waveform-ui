@@ -30,6 +30,7 @@ import { EventCatalogComponent } from './components/event-catalog/event-catalog.
 import { EventHelpDialogComponent } from './dialogs/event-help-dialog/event-help-dialog.component';
 import { EventTypeIconPipe } from './pipes/event-type-icon.pipe';
 import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
+import { DiffNumber } from './pipes/diff-number.pipe';
 import { OrdinalPipe } from './pipes/ordinal.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
 import { NgxSpinnerModule } from 'ngx-spinner';
@@ -101,6 +102,7 @@ const SHEETS = [
 ];
 
 const PIPES = [
+  DiffNumber,
   OrdinalPipe,
   EventQuakemlToMicroquakeTypePipe,
   EventTypeIconPipe,
