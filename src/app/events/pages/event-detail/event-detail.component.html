@@ -96,6 +96,18 @@
               *ngIf="currentEvent"
               color="primary"
               mat-button
+              (click)="openInteractiveProcessDialog(currentEvent,events[0]);$event.stopPropagation()"
+            >
+              <mat-icon class="mat-18">new_releases</mat-icon>
+              <small class="align-self-center">
+                IP
+              </small>
+            </button>
+
+            <button
+              *ngIf="currentEvent"
+              color="primary"
+              mat-button
               (click)="openEventUpdateDialog();$event.stopPropagation()"
             >
               <mat-icon class="mat-18">edit</mat-icon>
