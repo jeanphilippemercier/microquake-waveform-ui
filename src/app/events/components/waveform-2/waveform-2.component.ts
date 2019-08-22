@@ -682,7 +682,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += `.`;
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
-    sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : `(??)`;
+    sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
 
     return sensorTitleText;
   }
