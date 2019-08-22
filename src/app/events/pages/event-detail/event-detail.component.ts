@@ -363,7 +363,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   async onAcceptClick($event: EventType) {
     try {
-      this._ngxSpinnerService.show('loadingCurrentEvent');
+      this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
       const eventUpdateInput: EventUpdateInput = {
         event_type: $event.quakeml_type,
         evaluation_mode: EvaluationMode.MANUAL,
@@ -380,7 +380,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   async onDeclineClick($event: EventType) {
     try {
-      this._ngxSpinnerService.show('loadingCurrentEvent');
+      this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
       const eventUpdateInput: EventUpdateInput = {
         event_type: $event.quakeml_type,
         evaluation_mode: EvaluationMode.MANUAL,

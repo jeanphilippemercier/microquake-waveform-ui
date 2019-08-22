@@ -84,6 +84,7 @@ export class EventInfoComponent implements OnInit {
       this.event.event_type = eventType.quakeml_type;
     }
 
+    this.selectedEventType = eventType;
     this.eventChange.emit(this.event);
   }
 
@@ -92,6 +93,7 @@ export class EventInfoComponent implements OnInit {
       this.event.status = evaluationStatus;
     }
 
+    this.selectedEvenStatus = evaluationStatus;
     this.eventChange.emit(this.event);
   }
 
@@ -100,6 +102,7 @@ export class EventInfoComponent implements OnInit {
       this.event.evaluation_mode = eventEvaluationMode;
     }
 
+    this.selectedEvaluationMode = eventEvaluationMode;
     this.eventChange.emit(this.event);
   }
 
@@ -108,19 +111,11 @@ export class EventInfoComponent implements OnInit {
       return;
     }
 
-    if (this.event.status === EvaluationStatus.CONFIRMED) {
-      return;
-    }
-
     this.acceptClicked.emit($event);
   }
 
   onRejectClicked($event: EventType) {
     if (this.loading) {
-      return;
-    }
-
-    if (this.event.status === EvaluationStatus.REJECTED) {
       return;
     }
 

@@ -154,7 +154,6 @@
         mat-mini-fab
         color="warn"
         class="mr-3"
-        [disabled]="event?.status === EvaluationStatus.REJECTED"
         (click)="onRejectClicked(selectedEventType)"
         matTooltip="Reject Event"
       >
@@ -163,7 +162,6 @@
       <button
         mat-mini-fab
         color="primary"
-        [disabled]="event?.status === EvaluationStatus.CONFIRMED"
         (click)="onAcceptClicked(selectedEventType)"
         matTooltip="Confirm Event"
       >
