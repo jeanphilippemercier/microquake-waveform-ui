@@ -7,6 +7,8 @@
     [eventTypes]="eventTypes"
     [eventEvaluationModes]="eventEvaluationModes"
     [mode]="mode"
+    (acceptClicked)="onAcceptClick($event)"
+    (rejectClicked)="onRejectClick($event)"
   ></app-event-info>
 </div>
 
@@ -15,11 +17,5 @@
     mat-raised-button
     mat-dialog-close
   >Cancel</button>
-  <button
-    [disabled]="loading || !editedValues"
-    color="primary"
-    mat-raised-button
-    (click)="onSaveClick(editedValues)"
-  >Save</button>
 </mat-dialog-actions>
 <ngx-spinner name="loadingEventUpdate">

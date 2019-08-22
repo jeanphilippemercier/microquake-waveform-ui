@@ -112,7 +112,7 @@
     </tbody>
   </table>
 
-  <ng-container *ngIf="mode === 'updateDialog'">
+  <ng-container *ngIf="">
     <div class="row mt-3">
       <div class="col-6">
         <app-event-status-field
@@ -137,7 +137,7 @@
     </div>
   </ng-container>
   <div class="row">
-    <div [ngClass]="{'col-12': mode === 'updateDialog', 'col-8' : mode === 'eventDetail'}">
+    <div class="col-8">
       <app-event-type-field
         [label]="'Event type'"
         [multiple]="false"
@@ -146,10 +146,7 @@
         (selectedEventTypeChange)="onEventTypeChange($event)"
       ></app-event-type-field>
     </div>
-    <div
-      class="col-4 px-1 mt-2"
-      *ngIf="mode === 'eventDetail'"
-    >
+    <div class="col-4 px-1 mt-2">
       <button
         mat-mini-fab
         color="warn"

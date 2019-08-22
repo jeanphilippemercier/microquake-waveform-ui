@@ -13,6 +13,8 @@ import { EventUpdateInput } from '@app/core/interfaces/event-dto.interface';
 export class EventUpdateDialogComponent {
 
   onSave: EventEmitter<EventUpdateInput> = new EventEmitter();
+  onAcceptClicked: EventEmitter<EventType> = new EventEmitter();
+  onRejectClicked: EventEmitter<EventType> = new EventEmitter();
 
   event: IEvent;
   editedEvent: IEvent;
@@ -67,5 +69,13 @@ export class EventUpdateDialogComponent {
 
   onSaveClick(event: EventUpdateInput) {
     this.onSave.emit(event);
+  }
+
+  onRejectClick($event: EventType) {
+    this.onRejectClicked.emit($event);
+  }
+
+  onAcceptClick($event: EventType) {
+    this.onAcceptClicked.emit($event);
   }
 }

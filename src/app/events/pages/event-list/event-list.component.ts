@@ -12,6 +12,7 @@ import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dia
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 interface ViewerOptions {
   site?: string;
@@ -51,18 +52,25 @@ export class EventListComponent implements OnInit {
   constructor(
     private _matDialog: MatDialog,
     private _eventApiService: EventApiService,
-    private _inventoryApiService: InventoryApiService
+    private _inventoryApiService: InventoryApiService,
+    private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
-    await this._loadSites();
-    await this._loadEventTypesAndStatuses();
+
+    this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+
+    await Promise.all([
+      await this._loadSites(),
+      await this._loadEventTypesAndStatuses()
+    ]);
 
     // default values
     this.selectedEventTypes = this.eventTypes;
     this.selectedEvaluationStatuses = [EvaluationStatus.REVIEWED];
 
     await this._loadEvents();
+    this._ngxSpinnerService.hide('loading');
   }
 
   private async _loadEventTypesAndStatuses() {
@@ -92,8 +100,10 @@ export class EventListComponent implements OnInit {
 
   }
 
-  filter() {
-    this._loadEvents();
+  async filter() {
+    this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+    await this._loadEvents();
+    this._ngxSpinnerService.hide('loading');
   }
 
   clearSelectionClicked(event) {
@@ -183,7 +193,7 @@ export class EventListComponent implements OnInit {
       }
     });
 
-    this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
+    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
@@ -196,10 +206,76 @@ export class EventListComponent implements OnInit {
       }
     });
 
+
+    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.subscribe(async (data: EventType) => {
+      this.eventUpdateDialogRef.componentInstance.loading = true;
+      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+
+      if (await this.onAcceptClick($event.event_resource_id, data)) {
+        this.eventUpdateDialogRef.close();
+      }
+
+      this.eventUpdateDialogRef.componentInstance.loading = false;
+      this._ngxSpinnerService.hide('loadingEventUpdate');
+    });
+
+    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.subscribe(async (data: EventType) => {
+      this.eventUpdateDialogRef.componentInstance.loading = true;
+      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+
+      if (await this.onDeclineClick($event.event_resource_id, data)) {
+        this.eventUpdateDialogRef.close();
+      }
+
+      this.eventUpdateDialogRef.componentInstance.loading = false;
+      this._ngxSpinnerService.hide('loadingEventUpdate');
+    });
+
     this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
       delete this.eventUpdateDialogRef;
+      updateDialogSaveSub.unsubscribe();
+      updateDialogAcceptSub.unsubscribe();
+      updateDialogRejectSub.unsubscribe();
       this.eventUpdateDialogOpened = false;
     });
+  }
+
+
+  async onAcceptClick(eventId: string, $event: EventType): Promise<boolean> {
+    let repsonse = true;
+    try {
+      const eventUpdateInput: EventUpdateInput = {
+        event_type: $event.quakeml_type,
+        evaluation_mode: EvaluationMode.MANUAL,
+        // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
+        status: EvaluationStatus.CONFIRMED
+      };
+      const result = await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      this._updateEvent(result);
+    } catch (err) {
+      repsonse = false;
+      console.error(err);
+    }
+
+    return repsonse;
+  }
+
+  async onDeclineClick(eventId: string, $event: EventType): Promise<boolean> {
+    let repsonse = true;
+    try {
+      const eventUpdateInput: EventUpdateInput = {
+        event_type: $event.quakeml_type,
+        evaluation_mode: EvaluationMode.MANUAL,
+        status: EvaluationStatus.REJECTED
+      };
+      const result = await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      this._updateEvent(result);
+    } catch (err) {
+      repsonse = false;
+      console.error(err);
+    }
+
+    return repsonse;
   }
 
 }

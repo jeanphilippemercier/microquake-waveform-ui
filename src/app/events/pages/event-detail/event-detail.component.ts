@@ -332,7 +332,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
+    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
@@ -347,8 +347,35 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       }
     });
 
+    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.subscribe(async (data: EventType) => {
+      this.eventUpdateDialogRef.componentInstance.loading = true;
+      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+
+      if (await this.onAcceptClick(data)) {
+        this.eventUpdateDialogRef.close();
+      }
+
+      this.eventUpdateDialogRef.componentInstance.loading = false;
+      this._ngxSpinnerService.hide('loadingEventUpdate');
+    });
+
+    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.subscribe(async (data: EventType) => {
+      this.eventUpdateDialogRef.componentInstance.loading = true;
+      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+
+      if (await this.onDeclineClick(data)) {
+        this.eventUpdateDialogRef.close();
+      }
+
+      this.eventUpdateDialogRef.componentInstance.loading = false;
+      this._ngxSpinnerService.hide('loadingEventUpdate');
+    });
+
     this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
       delete this.eventUpdateDialogRef;
+      updateDialogSaveSub.unsubscribe();
+      updateDialogAcceptSub.unsubscribe();
+      updateDialogRejectSub.unsubscribe();
       this.eventUpdateDialogOpened = false;
     });
 
@@ -360,8 +387,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
   }
 
-
-  async onAcceptClick($event: EventType) {
+  async onAcceptClick($event: EventType): Promise<boolean> {
+    let repsonse = true;
     try {
       this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
       const eventUpdateInput: EventUpdateInput = {
@@ -372,13 +399,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       };
       await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
     } catch (err) {
+      repsonse = false;
       console.error(err);
     } finally {
       this._ngxSpinnerService.hide('loadingCurrentEvent');
     }
+
+    return repsonse;
   }
 
-  async onDeclineClick($event: EventType) {
+  async onDeclineClick($event: EventType): Promise<boolean> {
+    let repsonse = true;
     try {
       this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
       const eventUpdateInput: EventUpdateInput = {
@@ -388,9 +419,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       };
       await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
     } catch (err) {
+      repsonse = false;
       console.error(err);
     } finally {
       this._ngxSpinnerService.hide('loadingCurrentEvent');
     }
+
+    return repsonse;
   }
 }
