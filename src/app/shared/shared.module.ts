@@ -14,6 +14,8 @@ import {
   MatRippleModule, MatSelectModule, MatSidenavModule, MatSliderModule, MatSlideToggleModule, MatSnackBarModule,
   MatSortModule, MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule,
   MAT_LABEL_GLOBAL_OPTIONS,
+  MAT_FORM_FIELD_DEFAULT_OPTIONS,
+  MatFormFieldDefaultOptions,
 } from '@angular/material';
 import { MomentModule } from 'ngx-moment';
 
@@ -107,6 +109,11 @@ const PIPES = [
   EventMagnitudePipe
 ];
 
+
+const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
+  appearance: 'outline'
+};
+
 @NgModule({
   declarations: [
     ...COMPONTENTS,
@@ -146,6 +153,10 @@ const PIPES = [
     {
       provide: MAT_LABEL_GLOBAL_OPTIONS,
       useValue: { float: 'always' }
+    },
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: matFormFieldDefaultOptions
     }
   ]
 })
