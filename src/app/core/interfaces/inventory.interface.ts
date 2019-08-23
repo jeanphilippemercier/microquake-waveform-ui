@@ -118,7 +118,7 @@ export interface SignalQuality {
 
 export interface IComponent {
   id: number;
-  sensor_type: SensorType;
+  sensor_type: ISensorType;
   code: ComponentCode;
   cable_length: number;
   orientation_x: number;
