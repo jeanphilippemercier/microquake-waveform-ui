@@ -692,7 +692,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
     let sensorUnitsText = ``;
 
     sensorUnitsText = sensor && sensor.components && sensor.components[0] &&
-      sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ? sensor.components[0].sensor_type.motion_type : `??`;
+      sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ?
+      sensor.components[0].sensor_type.motion_type : `??`;
     sensorUnitsText = sensorUnitsText.indexOf(' ') > 0 ? sensorUnitsText.substr(0, sensorUnitsText.indexOf(' ')) : sensorUnitsText;
 
     return sensorUnitsText;
