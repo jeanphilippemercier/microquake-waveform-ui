@@ -114,6 +114,7 @@ export interface IEvent {
 export enum WebsocketResponseOperation {
   CREATED = 'created',
   UPDATE = 'update',
+  INTERACTIVE_BATCH_READY = 'interactive_batch_ready'
 }
 
 export enum WebsocketResponseType {

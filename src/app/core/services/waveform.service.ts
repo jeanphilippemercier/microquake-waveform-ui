@@ -57,6 +57,7 @@ export class WaveformService implements OnInit {
   loadedPages: BehaviorSubject<number> = new BehaviorSubject(0);
 
   loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  interactiveProcessLoading: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   waveformComponentInitialized: ReplaySubject<boolean> = new ReplaySubject(1);
   waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();

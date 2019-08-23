@@ -80,6 +80,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this._loadCurrentEvent();
     this._loadEvents();
     this._watchServerEventUpdates();
+
+    this.waveformService.interactiveProcessLoading.subscribe(val => {
+      if (!val) {
+        this._ngxSpinnerService.show('loadingInteractiveProcessing', { fullScreen: true, bdColor: 'rgba(51,51,51,0.5)' });
+      } else {
+        this._ngxSpinnerService.hide('loadingInteractiveProcessing');
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -118,7 +126,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         case WebsocketResponseOperation.CREATED:
           this._addEvent(data.event);
           break;
+        case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
+          console.log(`INTERACTIVE_BATCH_READY`);
+          console.log(data);
+          this.waveformService.interactiveProcessLoading.next(false);
+          this.openInteractiveProcessDialog(this.currentEvent, data.event);
+          break;
         default:
+          console.log(data);
           console.log(`unknown websocket operation`);
           break;
       }
@@ -432,7 +447,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
 
-  openInteractiveProcessDialog(newEvent: IEvent, oldEvent: IEvent) {
+  openInteractiveProcessDialog(oldEvent: IEvent, newEvent: IEvent) {
     if (!event || !oldEvent) {
       return;
     }
