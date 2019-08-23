@@ -1,20 +1,21 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, OnDestroy } from '@angular/core';
 import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { NgxSpinnerService } from 'ngx-spinner';
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 
-import { globals } from '@src/globals';
 import WaveformUtil from '@core/utils/waveform-util';
+import { globals } from '@src/globals';
 import { IEvent, Origin, Arrival, Traveltime, EvaluationMode, PickKey } from '@interfaces/event.interface';
 import { Sensor, Station } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
-import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface.js';
+import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
-import { InventoryApiService } from '@services/inventory-api.service.js';
-import { NgxSpinnerService } from 'ngx-spinner';
+import { InventoryApiService } from '@services/inventory-api.service.ts';
+import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -110,6 +111,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     public waveformService: WaveformService,
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
+    private _toastrNotificationService: ToastrNotificationService,
     private _renderer: Renderer2,
     private _ngxSpinnerService: NgxSpinnerService
   ) { }
@@ -377,7 +379,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
 
           if (!origin) {
-            window.alert('Warning: Event preferred origin from catalog not found');
+            this._toastrNotificationService.warning(`Event preferred origin from catalog not found`, 'Warning');
             console.error('No event preferred origin found');
             origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
             return;
@@ -533,8 +535,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       console.log(response);
     } catch (err) {
       console.error(err);
-      window.alert('Error updating event: ' + err.error.message);
-
+      this._toastrNotificationService.error(`${err.error.message}`, 'Error updating event');
     }
   }
 
@@ -1405,7 +1406,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const data = chart.options.data[0].dataPoints;
     const position = value ? Math.round(value) : Math.round(this.lastSelectedXPosition);
     if (position < data[0].x || position > data[data.length - 1].x) {
-      window.alert('Pick cannot be created outside of the current trace view');
+      this._toastrNotificationService.warning(`Pick cannot be created outside of the current trace view`);
       return;
     }
     sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
@@ -1414,12 +1415,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (otherPick) {
       if (pickType === 'P') {
         if (position > otherPick.value) {
-          window.alert('P Pick cannot be moved past S Pick');
+          this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
           return;
         }
       } else if (pickType === 'S') {
         if (position < otherPick.value) {
-          window.alert('S Pick cannot be moved before P Pick');
+          this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
           return;
         }
       }
@@ -1464,14 +1465,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const pick = WaveformUtil.findValue(sensor.picks, 'label', pickType);
     if (!pick) {
       if (issueWarning) {
-        window.alert('No ' + pickType + ' pick to move');
+        this._toastrNotificationService.warning(`No ${pickType} pick to move`);
       }
       return;
     }
     const data = chart.options.data[0].dataPoints;
     const position = fromCurrentPosition ? Math.round(pick.value + value) : Math.round(value);
     if (position < data[0].x || position > data[data.length - 1].x) {
-      window.alert('Pick cannot be moved outside of the current trace view');
+      this._toastrNotificationService.warning(`Pick cannot be moved outside of the current trace view`);
       return;
     }
     const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
@@ -1479,12 +1480,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (otherPick) {
       if (pickType === 'P') {
         if (position > otherPick.value) {
-          window.alert('P Pick cannot be moved past S Pick');
+          this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
           return;
         }
       } else if (pickType === 'S') {
         if (position < otherPick.value) {
-          window.alert('S Pick cannot be moved before P Pick');
+          this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
           return;
         }
       }

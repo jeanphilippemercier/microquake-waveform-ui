@@ -185,7 +185,7 @@ export default class WaveformUtil {
       }
     }
     if (message) {
-      console.log(message);
+      // console.log(message);
       // window.alert(message);
     }
     return sensors;
