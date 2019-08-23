@@ -655,14 +655,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
         axisY: {
           minimum: -yMax,
           maximum: yMax,
+          title: this._getSensorUnits(this.activeSensors[i]),
+          gridThickness: 0,
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            if (e.value === 0) {
-              return '0 ' + this._getSensorUnits(this.activeSensors[i]);
-            } else {
-              return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
-            }
+            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
           }
         },
         data: data
@@ -697,6 +695,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ?
       sensor.components[0].sensor_type.motion_type : `??`;
     sensorUnitsText = sensorUnitsText.indexOf(' ') > 0 ? sensorUnitsText.substr(0, sensorUnitsText.indexOf(' ')) : sensorUnitsText;
+    sensorUnitsText = sensorUnitsText.replace('^2', '\u00B2');
 
     return sensorUnitsText;
   }
@@ -875,14 +874,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
       axisY: {
         minimum: -yMax,
         maximum: yMax,
+        title: this._getSensorUnits(this.activeSensors[i]),
+        gridThickness: 0,
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          if (e.value === 0) {
-            return '0 ' + this._getSensorUnits(this.activeSensors[i]);
-          } else {
-            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
-          }
+          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
         }
       },
       data: data
