@@ -623,7 +623,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           enabled: false,
           contentFormatter: (e) => {
             const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
+              ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
               '<br/>' +
               '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
             return content;
@@ -656,7 +657,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           includeZero: true,
           labelFormatter: (e) => {
             if (e.value === 0) {
-              return '0 mm/s';
+              return '0 ' + this._getSensorUnits(this.activeSensors[i]);
             } else {
               return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
             }
@@ -685,6 +686,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
 
     return sensorTitleText;
+  }
+
+  private _getSensorUnits(sensor: Sensor) {
+    let sensorUnitsText = ``;
+
+    sensorUnitsText = sensor && sensor.components && sensor.components[0] &&
+      sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ? sensor.components[0].sensor_type.motion_type : `??`;
+    sensorUnitsText = sensorUnitsText.indexOf(' ') > 0 ? sensorUnitsText.substr(0, sensorUnitsText.indexOf(' ')) : sensorUnitsText;
+
+    return sensorUnitsText;
   }
 
   private _addKeyDownEventListeners() {
@@ -830,7 +841,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
         enabled: true,
         contentFormatter: (e) => {
           const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 + ' mm/s</strong>' +
+            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
+            ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
             '<br/>' +
             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
           return content;
@@ -864,7 +876,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         includeZero: true,
         labelFormatter: (e) => {
           if (e.value === 0) {
-            return '0 mm/s';
+            return '0 ' + this._getSensorUnits(this.activeSensors[i]);
           } else {
             return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
           }
