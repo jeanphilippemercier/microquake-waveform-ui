@@ -68,8 +68,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   loadedSensors: Sensor[] = [];
   // currently active sensors (shown on screen)
   activeSensors: Sensor[] = [];
-  // hashMap for all sensors
-  allSensorsMap: { [key: number]: number } = {};
+  // hashMap for all sensors {sensor_code: <position in allSensors array>}
+  allSensorsMap: { [key: string]: number } = {};
   // context sensor
   contextSensor: Sensor[];
 
@@ -151,7 +151,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }).toPromise();
 
       this.allSensorsOrig = response.results;
-      this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.id] = idx);
+      this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.code] = idx);
+
     } catch (err) {
       console.error(err);
     }

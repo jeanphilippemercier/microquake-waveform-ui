@@ -389,10 +389,11 @@ export default class WaveformUtil {
    * @param sensorsToPopulate - sensorsToPopulate
    * @param sensorsWithAllInfo - all parameters from this object will replace sensorsToPopulate
    * @param allSensorsMap - map of all sensors to help quickly navigate through data
+   *                        format: {sensor_code: <position in sensorsWithAllInfo array>}
    * @returns sensors populated with picks.
    *
    */
-  static mapSensorInfoToLoadedSensors(sensorsToPopulate: Sensor[], sensorsWithAllInfo: Sensor[], allSensorsMap: { [key: number]: number }) {
+  static mapSensorInfoToLoadedSensors(sensorsToPopulate: Sensor[], sensorsWithAllInfo: Sensor[], allSensorsMap: { [key: string]: number }) {
     if (sensorsToPopulate) {
       sensorsToPopulate = sensorsToPopulate.map(sensor => {
         const allSensorInfo = sensorsWithAllInfo[allSensorsMap[sensor.sensor_code]];
