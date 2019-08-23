@@ -30,6 +30,7 @@
     "moment": "^2.24.0",
     "ngx-moment": "^3.4.0",
     "ngx-spinner": "^7.2.0",
+    "ngx-toastr": "^10.1.0",
     "node-sass": "^4.12.0",
     "rxjs": "^6.5.2",
     "rxjs-compat": "^6.5.2",

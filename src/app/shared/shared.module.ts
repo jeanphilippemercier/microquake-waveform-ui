@@ -18,6 +18,8 @@ import {
   MatFormFieldDefaultOptions,
 } from '@angular/material';
 import { MomentModule } from 'ngx-moment';
+import { NgxSpinnerModule } from 'ngx-spinner';
+import { ToastrModule } from 'ngx-toastr';
 
 import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
@@ -35,7 +37,6 @@ import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 import { DiffNumber } from './pipes/diff-number.pipe';
 import { OrdinalPipe } from './pipes/ordinal.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
-import { NgxSpinnerModule } from 'ngx-spinner';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -130,6 +131,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     RouterModule,
     MomentModule,
     NgxSpinnerModule,
+    ToastrModule.forRoot(),
     ...MATERIAL_MODULES,
     ...CDK_MODULES,
   ],
@@ -144,6 +146,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     RouterModule,
     MomentModule,
     NgxSpinnerModule,
+    ToastrModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES
   ],
