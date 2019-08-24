@@ -38,11 +38,15 @@ export const globals = {
   },
   // context trace colors
   context: {
-    'linecolor': 'indigo',
+    'linecolor': 'black',
     'highlightColor': 'rgba(83, 223, 128, .2)'
   },
+  axis: {
+    'lineColor': 'rgb(222, 226, 230)',
+    'lineThickness': 1,
+  },
   // thickness of the line in charts
-  lineThickness: 0.8,
+  lineThickness: 0.6,
   // thickness of the pick lines
   picksLineThickness: 2,
   // thickness of the predicted pick lines

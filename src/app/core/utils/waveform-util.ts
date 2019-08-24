@@ -137,9 +137,12 @@ export default class WaveformUtil {
             if (sensor.channels[0].data.length === sensor.channels[1].data.length &&
               sensor.channels[0].data.length === sensor.channels[2].data.length) {
               const compositeTrace = {};
-              compositeTrace['code_id'] = sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
+              compositeTrace['code_id'] = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
+                sensor.channels[0].code_id.slice(0, -11) + globals.compositeChannelCode + '...CONTEXT' :
+                sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
               compositeTrace['sensor_code'] = sensor.sensor_code;
-              compositeTrace['channel_id'] = globals.compositeChannelCode;
+              compositeTrace['channel_id'] = globals.compositeChannelCode +
+                (sensor.channels[0].channel_id.endsWith('...CONTEXT') ? '...CONTEXT' : '');
               compositeTrace['sample_rate'] = sensor.channels[0].sample_rate;
               compositeTrace['start'] = sensor.channels[0].start;  // moment object (good up to milisecond)
               compositeTrace['microsec'] = sensor.channels[0].microsec;
@@ -149,7 +152,8 @@ export default class WaveformUtil {
                 let compositeValue = 0, sign = 1;
                 for (let j = 0; j < 3; j++) {
                   const value = sensor.channels[j].data[k]['y'];
-                  sign = sensor.channels[j].channel_id.toLowerCase() === globals.signComponent.toLowerCase() ?
+                  sign = sensor.channels[j].channel_id.toLowerCase() === globals.signComponent.toLowerCase() ||
+                    sensor.channels[j].channel_id.toLowerCase() === (globals.signComponent + '...CONTEXT').toLowerCase() ?
                     Math.sign(value) : sign;
                   compositeValue += Math.pow(value, 2);
                 }
