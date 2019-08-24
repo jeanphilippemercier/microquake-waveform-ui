@@ -433,7 +433,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             const contextData = WaveformUtil.parseMiniseed(contextFile, true);
 
             if (contextData && contextData.sensors) {
-              this.contextSensor = this._filterData(contextData.sensors);
+              this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(contextData.sensors));
               this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.allSensorsMap);
               this.contextTimeOrigin = contextData.timeOrigin;
             }
@@ -635,6 +635,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
         axisX: {
           minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
           maximum: this._getXmax(i),
+          lineThickness: globals.axis.lineThickness,
+          lineColor: globals.axis.lineColor,
           viewportMinimum: this.waveformService.zoomAll.getValue() && this._xViewPortMinStack.length > 0 ?
             this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : this._getXvpMin(),
           viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
@@ -657,6 +659,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           maximum: yMax,
           title: this._getSensorUnits(this.activeSensors[i]),
           gridThickness: 0,
+          lineThickness: globals.axis.lineThickness,
+          lineColor: globals.axis.lineColor,
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
@@ -809,16 +813,21 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     const data = [];
     for (const channel of this.activeSensors[i].channels) {
-      data.push(
-        {
-          name: channel.code_id,
-          type: 'line',
-          color: globals.context.linecolor,
-          lineThickness: globals.lineThickness,
-          showInLegend: true,
-          // highlightEnabled: true,
-          dataPoints: channel.data
-        });
+      if ((!this.waveformService.displayComposite.getValue()
+        && channel.channel_id !== globals.compositeChannelCode + '...CONTEXT')
+        || (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode + '...CONTEXT')
+        || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
+        data.push(
+          {
+            name: channel.code_id,
+            type: 'line',
+            color: globals.context.linecolor,
+            lineThickness: globals.lineThickness,
+            showInLegend: true,
+            // highlightEnabled: true,
+            dataPoints: channel.data
+          });
+      }
     }
 
     const yMax = this._getYmax(i);
@@ -855,6 +864,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
         maximum: Math.max(
           this.contextSensor[0].channels[0].microsec + this.contextSensor[0].channels[0].duration,
           WaveformUtil.calculateTimeOffset(this.timeEnd, this.contextTimeOrigin)),
+        lineThickness: globals.axis.lineThickness,
+        lineColor: globals.axis.lineColor,
         viewportMinimum: this._xViewPortMinStack.length > 0 ?
           this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : null,
         viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
@@ -875,6 +886,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
         minimum: -yMax,
         maximum: yMax,
         title: this._getSensorUnits(this.activeSensors[i]),
+        lineThickness: globals.axis.lineThickness,
+        lineColor: globals.axis.lineColor,
         gridThickness: 0,
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
@@ -1672,7 +1685,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.waveformService.saveOption('highFreqCorner', this.waveformService.highFreqCorner.getValue());
       this.loadedSensors = WaveformUtil.addCompositeTrace(this._filterData(this.loadedSensors)); // filter and recompute composite traces
       this.waveformService.loadedSensors.next(this.loadedSensors);
-      this.contextSensor = this._filterData(this.contextSensor);
+      this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(this.contextSensor));
       this._changePage(false);
     }
   }
