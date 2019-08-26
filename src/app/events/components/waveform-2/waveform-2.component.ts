@@ -666,7 +666,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            return (e.value * WaveformUtil.convYUnits).toPrecision(1);
+            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
           }
         },
         data: data
@@ -894,7 +894,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          return (e.value * WaveformUtil.convYUnits).toPrecision(1);
+          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
         }
       },
       data: data
