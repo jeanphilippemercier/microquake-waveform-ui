@@ -15,7 +15,8 @@ export default class WaveformUtil {
   }
 
   static findNestedValue(obj, key, subkey, value, otherkey, othervalue) {
-    return obj.find(v => (v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
+    return obj.find(v => (v[key] && v[key][subkey] &&
+      v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
   }
 
   static sortArrayBy(field, reverse, primer) {
