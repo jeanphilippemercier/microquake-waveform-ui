@@ -25,11 +25,12 @@
     [multiple]="true"
   >
     <mat-chip
+      [disabled]="true"
       color="primary"
-      (click)="onNoFilterChipClick()"
+      (click)="false && onNoFilterChipClick()"
       [selected]="!selectedEvaluationStatuses || selectedEvaluationStatuses?.length  === 0"
       [ngClass]="{'faded': selectedEvaluationStatuses?.length  > 0}"
-      [selectable]="true"
+      [selectable]="false"
     >
       No filter
     </mat-chip>

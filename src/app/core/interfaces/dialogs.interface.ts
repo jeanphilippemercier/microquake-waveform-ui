@@ -1,4 +1,4 @@
-import { IEvent, EvaluationStatus, EventType, EvaluationMode } from './event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup } from './event.interface';
 import { EventQuery } from './event-query.interface';
 import { Site } from './inventory.interface';
 
@@ -13,7 +13,7 @@ export interface EventFilterDialogData {
   timezone: string;
   eventQuery: EventQuery;
   eventTypes: EventType[];
-  evaluationStatuses: EvaluationStatus[];
+  evaluationStatuses: EvaluationStatusGroup[];
   eventEvaluationModes: EvaluationMode[];
   sites: Site[];
 }

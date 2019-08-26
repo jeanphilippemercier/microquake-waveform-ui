@@ -3,7 +3,8 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatRadioChange } from '@angular/material/radio';
 import * as moment from 'moment';
 
-import { EventType, EvaluationStatus, EvaluationMode } from '@interfaces/event.interface';
+import EventUtil from '@core/utils/event-util';
+import { EventType, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { Site } from '@interfaces/inventory.interface';
 import { EventFilterDialogData } from '@interfaces/dialogs.interface';
@@ -21,7 +22,7 @@ export class EventFilterDialogComponent {
   eventQuery: EventQuery;
   editedQuery: EventQuery;
   eventTypes: EventType[];
-  evaluationStatuses: EvaluationStatus[];
+  evaluationStatuses: EvaluationStatusGroup[];
   eventEvaluationModes: EvaluationMode[];
   selectedSite: Site;
   timezone: string;
@@ -38,7 +39,7 @@ export class EventFilterDialogComponent {
     this.evaluationStatuses = this._dialogData.evaluationStatuses;
     this.eventEvaluationModes = this._dialogData.eventEvaluationModes;
     this.todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
-    this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
+    this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
 
     if (this.editedQuery.time_range === 0) {
       this.editedQuery.start_time = moment(this.editedQuery.start_time).startOf('day').toISOString();
@@ -48,7 +49,7 @@ export class EventFilterDialogComponent {
 
   async onFilterChange() {
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
-    this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
+    this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }
 
   onFilterClick(event: EventQuery) {
@@ -56,7 +57,7 @@ export class EventFilterDialogComponent {
   }
 
   resetFilter() {
-    this.editedQuery = { ...this.origQuery };
+    this.editedQuery = { ...this.eventQuery };
     this.editedQuery.time_range = 3;
     this.editedQuery.start_time = moment()
       .utcOffset(this.timezone)
@@ -65,7 +66,7 @@ export class EventFilterDialogComponent {
       .toISOString();
     this.editedQuery.end_time = this.todayEnd.toISOString();
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
-    this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
+    this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }
 
   onTimeRangeChange($event: MatRadioChange) {
@@ -77,21 +78,13 @@ export class EventFilterDialogComponent {
       this.editedQuery.end_time = this.todayEnd.toISOString();
     }
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
-    this.numberOfChanges = this.getNumberOfChanges(this.editedQuery);
+    this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }
 
   checkIfSomethingEdited(origQuery: EventQuery, editedQuery: EventQuery): boolean {
     return JSON.stringify(origQuery) !== JSON.stringify(editedQuery) ? true : false;
   }
 
-  getNumberOfChanges(editedQuery: EventQuery): number {
-    let count = 0;
-    count += editedQuery.status ? editedQuery.status.length : 0;
-    count += editedQuery.type ? editedQuery.type.length : 0;
-    count += editedQuery.time_range !== 3 ? 1 : 0;
-
-    return count;
-  }
 
   onCustomDateStartChange($event: Date) {
     this.editedQuery.start_time = moment($event).utcOffset(this.timezone).startOf('day').toISOString();
