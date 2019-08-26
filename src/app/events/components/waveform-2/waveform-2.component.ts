@@ -575,7 +575,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
-              name: channel.code_id,
+              name: channel.channel_id,
               type: 'line',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
@@ -666,7 +666,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+            return (e.value * WaveformUtil.convYUnits).toPrecision(1);
           }
         },
         data: data
@@ -821,7 +821,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
         data.push(
           {
-            name: channel.code_id,
+            name: channel.channel_id,
             type: 'line',
             color: globals.context.linecolor,
             lineThickness: globals.lineThickness,
@@ -894,7 +894,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+          return (e.value * WaveformUtil.convYUnits).toPrecision(1);
         }
       },
       data: data
