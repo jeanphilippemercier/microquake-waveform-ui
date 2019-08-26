@@ -92,8 +92,9 @@
           <mat-panel-title>
             <strong class="text-uppercase align-self-center">Event detail</strong>
             <div class="mr-auto"></div>
+            <!-- TODO: REMOVE -->
             <button
-              *ngIf="currentEvent"
+              *ngIf="false && currentEvent"
               color="primary"
               mat-button
               (click)="openInteractiveProcessDialog(currentEvent,events[0]);$event.stopPropagation()"

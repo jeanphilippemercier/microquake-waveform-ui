@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject } from 'rxjs';
-import { first } from 'rxjs/operators';
+import { first, distinctUntilChanged, skip } from 'rxjs/operators';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { EventApiService } from '@services/event-api.service';
@@ -62,6 +62,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   changeDetectCatalog = 0;
   onServerEventSub: Subscription;
+  interactiveProcessingSub: Subscription;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -81,13 +82,21 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this._loadEvents();
     this._watchServerEventUpdates();
 
-    this.waveformService.interactiveProcessLoading.subscribe(val => {
-      if (!val) {
-        this._ngxSpinnerService.show('loadingInteractiveProcessing', { fullScreen: true, bdColor: 'rgba(51,51,51,0.5)' });
-      } else {
-        this._ngxSpinnerService.hide('loadingInteractiveProcessing');
-      }
-    });
+    // TODO:finish when API's fixed
+    this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
+      .pipe(
+        distinctUntilChanged(),
+        skip(1)
+      )
+      .subscribe(val => {
+        if (val) {
+          console.log(`interactive processing started`);
+          this._ngxSpinnerService.show('loadingInteractiveProcessing', { fullScreen: true, bdColor: 'rgba(51,51,51,0.5)' });
+        } else {
+          console.log(`interactive processing finished`);
+          this._ngxSpinnerService.hide('loadingInteractiveProcessing');
+        }
+      });
   }
 
   ngOnDestroy() {
@@ -96,6 +105,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
     if (this.onServerEventSub) {
       this.onServerEventSub.unsubscribe();
+    }
+    if (this.interactiveProcessingSub) {
+      this.interactiveProcessingSub.unsubscribe();
     }
   }
 
@@ -127,6 +139,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           this._addEvent(data.event);
           break;
         case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
+          // TODO:finish when API's fixed
           console.log(`INTERACTIVE_BATCH_READY`);
           console.log(data);
           this.waveformService.interactiveProcessLoading.next(false);
@@ -269,7 +282,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (event.event_resource_id === this.currentEvent.event_resource_id) {
+    if (this.currentEvent && event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = Object.assign({}, event);
     }
 
@@ -459,6 +472,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       data: {
         newEvent,
         oldEvent,
+      }
+    });
+
+    // TODO: finish when API's fixed
+    this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
+      try {
+        const response = await this._eventApiService.acceptEventPicksById(newEvent.event_resource_id).toPromise();
+        console.log(response);
+      } catch (err) {
+        console.error(err);
       }
     });
   }
