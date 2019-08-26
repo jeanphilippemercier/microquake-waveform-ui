@@ -6,7 +6,7 @@ import { first } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/inventory.interface';
-import { EventType, EvaluationStatus, IEvent, EvaluationMode } from '@interfaces/event.interface';
+import { EventType, EvaluationStatus, IEvent, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -35,7 +35,11 @@ export class EventListComponent implements OnInit {
   selectedEventTypes: EventType[];
 
   evaluationStatuses: EvaluationStatus[];
-  selectedEvaluationStatuses: EvaluationStatus[];
+
+  evaluationStatusGroups: EvaluationStatusGroup[];
+  selectedEvaluationStatusGroups: EvaluationStatusGroup[];
+
+
   eventEvaluationModes: EvaluationMode[];
 
   eventStartDate: Date = moment().startOf('day').subtract(15, 'days').toDate();
@@ -67,7 +71,7 @@ export class EventListComponent implements OnInit {
 
     // default values
     this.selectedEventTypes = this.eventTypes;
-    this.selectedEvaluationStatuses = [EvaluationStatus.REVIEWED];
+    this.selectedEvaluationStatusGroups = [EvaluationStatusGroup.ACCEPTED];
 
     await this._loadEvents();
     this._ngxSpinnerService.hide('loading');
@@ -76,6 +80,7 @@ export class EventListComponent implements OnInit {
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
+    this.evaluationStatusGroups = Object.values(EvaluationStatusGroup);
     this.eventEvaluationModes = Object.values(EvaluationMode);
   }
 
@@ -88,7 +93,7 @@ export class EventListComponent implements OnInit {
       site_code: this.site.code ? this.site.code : null,
       network_code: this.network.code ? this.network.code : null,
       type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
-      status: this.selectedEvaluationStatuses ? this.selectedEvaluationStatuses : undefined,
+      status: this.selectedEvaluationStatusGroups ? this.selectedEvaluationStatusGroups : undefined,
     };
 
     this.events = await this._eventApiService.getEvents(eventListQuery).toPromise();

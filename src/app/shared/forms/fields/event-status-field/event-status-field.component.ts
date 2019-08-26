@@ -1,7 +1,7 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 
-import { EvaluationStatus } from '@interfaces/event.interface';
+import { EvaluationStatus, EvaluationStatusGroup } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-status-field',
@@ -13,17 +13,17 @@ export class EventStatusFieldComponent {
   @Input() label = `Event Status`;
   @Input() multiple = true;
   @Input() type: 'select' | 'chip' = 'select';
-  @Input() evaluationStatuses: EvaluationStatus[];
+  @Input() evaluationStatuses: EvaluationStatusGroup[];
 
   // for multiple === false
-  @Input() selectedEvaluationStatus: EvaluationStatus;
-  @Output() selectedEvaluationStatusChange: EventEmitter<EvaluationStatus> = new EventEmitter();
+  @Input() selectedEvaluationStatus: EvaluationStatusGroup;
+  @Output() selectedEvaluationStatusChange: EventEmitter<EvaluationStatusGroup> = new EventEmitter();
 
   // for multiple === true
-  @Input() selectedEvaluationStatuses: EvaluationStatus[] = [];
-  @Output() selectedEvaluationStatusesChange: EventEmitter<EvaluationStatus[]> = new EventEmitter();
+  @Input() selectedEvaluationStatuses: EvaluationStatusGroup[] = [];
+  @Output() selectedEvaluationStatusesChange: EventEmitter<EvaluationStatusGroup[]> = new EventEmitter();
 
-  previousSelectedEvaluationStatuses: EvaluationStatus[] = [];
+  previousSelectedEvaluationStatuses: EvaluationStatusGroup[] = [];
 
   onChangeEvaluationStatus(event: MatSelectChange) {
     this.selectedEvaluationStatusChange.emit(event.value);
@@ -33,11 +33,15 @@ export class EventStatusFieldComponent {
     this.selectedEvaluationStatusesChange.emit(event.value);
   }
 
-  onChipClick(evaluationStatus: EvaluationStatus) {
+  onChipClick(evaluationStatus: EvaluationStatusGroup) {
     if (!this.selectedEvaluationStatuses) {
       this.selectedEvaluationStatuses = [];
     }
     const position = this.selectedEvaluationStatuses.indexOf(evaluationStatus);
+
+    if (this.selectedEvaluationStatuses.length === 1 && position > -1) {
+      return;
+    }
 
     if (position > -1) {
       this.selectedEvaluationStatuses.splice(position, 1);

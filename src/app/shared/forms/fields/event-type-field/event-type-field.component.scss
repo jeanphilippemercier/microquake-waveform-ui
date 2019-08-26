@@ -6,13 +6,19 @@ mat-chip {
   opacity: 0.4;
 }
 
-.no-underline ::ng-deep .mat-form-field-underline {
-  display: none;
-}
-
 mat-chip {
   mat-icon {
     font-size: 18px;
     margin-top: 6px;
   }
+}
+
+
+.no-underline ::ng-deep .mat-form-field-underline {
+  display: none;
+}
+
+
+.no-infix ::ng-deep .mat-form-field-infix {
+  border-top: 0;
 }

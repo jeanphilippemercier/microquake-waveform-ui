@@ -1,6 +1,4 @@
-<mat-form-field
-  *ngIf="type === 'select'"
->
+<mat-form-field *ngIf="type === 'select'">
   <mat-label>{{label}}</mat-label>
   <mat-select
     [(ngModel)]="multiple ? selectedEventTypes : selectedEventType"
@@ -36,7 +34,8 @@
 </mat-form-field>
 <mat-form-field
   *ngIf="type === 'chip'"
-  class="no-underline"
+  class="no-underline no-infix"
+  appearance="standard"
 >
   <mat-chip-list
     #chipList

@@ -4,20 +4,24 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject } from 'rxjs';
 import { first, distinctUntilChanged, skip } from 'rxjs/operators';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { NgxSpinnerService } from 'ngx-spinner';
 
+import EventUtil from '@core/utils/event-util';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData, EventInteractiveProcessingDialog } from '@interfaces/dialogs.interface';
-import { IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries, WebsocketResponseOperation } from '@interfaces/event.interface';
+import {
+  IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries, WebsocketResponseOperation, EvaluationStatusGroup
+} from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';
 import { InventoryApiService } from '@services/inventory-api.service';
-import { NgxSpinnerService } from 'ngx-spinner';
 // tslint:disable-next-line:max-line-length
 import { EventInteractiveProcessingDialogComponent } from '@app/events/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+
 
 @Component({
   selector: 'app-event-detail',
@@ -44,6 +48,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
+  EvaluationStatusGroups: EvaluationStatusGroup[];
   eventEvaluationModes: EvaluationMode[];
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
@@ -204,10 +209,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.eventListQuery = {
           start_time: moment().utc().utcOffset(this.boundaries.timezone).startOf('day').subtract(2, 'days').toISOString(),
           end_time: moment().utc().utcOffset(this.boundaries.timezone).endOf('day').toISOString(),
+          status: [EvaluationStatusGroup.ACCEPTED],
           site_code: this.site.code ? this.site.code : '',
           network_code: this.network.code ? this.network.code : '',
           time_range: 3
         };
+
+        this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
       }
 
       this.events = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
@@ -223,6 +231,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
     this.evaluationStatuses = Object.values(EvaluationStatus);
+    this.EvaluationStatusGroups = Object.values(EvaluationStatusGroup);
     this.eventEvaluationModes = Object.values(EvaluationMode);
   }
 
@@ -312,7 +321,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         timezone: this.boundaries.timezone,
         sites: this.sites,
         eventQuery: this.eventListQuery,
-        evaluationStatuses: this.evaluationStatuses,
+        evaluationStatuses: this.EvaluationStatusGroups,
         eventTypes: this.eventTypes,
         eventEvaluationModes: this.eventEvaluationModes
       }
@@ -324,7 +333,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.eventFilterDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         await this._loadEvents();
-        this.numberOfChangesInFilter = this.eventFilterDialogRef.componentInstance.getNumberOfChanges(this.eventListQuery);
+        this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
         this.eventFilterDialogRef.close();
       } catch (err) {
         console.error(err);

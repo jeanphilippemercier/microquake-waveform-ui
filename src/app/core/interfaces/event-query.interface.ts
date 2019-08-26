@@ -1,4 +1,4 @@
-import { QuakemlType, EvaluationStatus } from './event.interface';
+import { QuakemlType, EvaluationStatus, EvaluationStatusGroup } from './event.interface';
 
 // QUERIES
 export interface EventQuery {
@@ -8,7 +8,7 @@ export interface EventQuery {
   network_code: string;
   time_range?: number; // TODO: add to API ?
   type?: QuakemlType[];
-  status?: EvaluationStatus[];
+  status?: EvaluationStatusGroup[];
 }
 
 export interface BoundariesQuery {
