@@ -16,7 +16,7 @@ export const globals = {
   // Arrivals API endpoint
   apiArrivals: 'arrivals',
   // Picks interactive API endpoint relative to events API path
-  apiPicksInteractive: 'interactive/accept',
+  apiPicksInteractive: 'batch',
   // Microquake event types API endpoint
   apiMicroquakeEventTypes: 'inventory/microquake_event_types',
   // Reprocess events API endpoint

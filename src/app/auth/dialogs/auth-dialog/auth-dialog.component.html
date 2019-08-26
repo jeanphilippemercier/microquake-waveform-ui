@@ -20,11 +20,14 @@
 
     <div class="row">
       <div class="col-12 col-sm-6">
-        <mat-form-field class="w-100">
+        <mat-form-field
+          class="w-100"
+          appearance="standard"
+        >
+          <mat-label>Username</mat-label>
           <input
             matInput
             name="username"
-            placeholder="Username"
             [disabled]="loading"
             [required]="true"
             [(ngModel)]="authLoginInput.username"
@@ -37,11 +40,14 @@
         </mat-form-field>
       </div>
       <div class="col-12 col-sm-6">
-        <mat-form-field class="w-100">
+        <mat-form-field
+          class="w-100"
+          appearance="standard"
+        >
+          <mat-label>Password</mat-label>
           <input
             matInput
             name="password"
-            placeholder="Password"
             type="password"
             [disabled]="loading"
             [required]="true"

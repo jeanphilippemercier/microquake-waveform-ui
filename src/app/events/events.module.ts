@@ -9,6 +9,8 @@ import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 import { RouterModule, Routes } from '@angular/router';
 import { WaveformToolbarComponent } from './components/waveform-toolbar/waveform-toolbar.component';
+// tslint:disable-next-line:max-line-length
+import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -29,7 +31,8 @@ const ROUTES: Routes = [
     Waveform2Component,
     WaveformToolbarComponent,
     EventFilterDialogComponent,
-    EventUpdateDialogComponent
+    EventUpdateDialogComponent,
+    EventInteractiveProcessingDialogComponent
   ],
   imports: [
     RouterModule.forChild(ROUTES),
@@ -40,7 +43,8 @@ const ROUTES: Routes = [
   ],
   entryComponents: [
     EventFilterDialogComponent,
-    EventUpdateDialogComponent
+    EventUpdateDialogComponent,
+    EventInteractiveProcessingDialogComponent
   ]
 })
 export class EventsModule { }

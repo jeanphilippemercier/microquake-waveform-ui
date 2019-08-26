@@ -13,7 +13,10 @@ const ordinals: string[] = ['th', 'st', 'nd', 'rd'];
  *   {{ 23 |  ordinal:false}}
  *   formats to: 'rd'
 */
-@Pipe({ name: 'ordinal' })
+@Pipe({
+  name: 'ordinal',
+  pure: true
+})
 export class OrdinalPipe implements PipeTransform {
 
   transform(n: number, keepNumber: boolean = true) {

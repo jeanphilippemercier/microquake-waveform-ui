@@ -89,7 +89,17 @@ export class EventApiService {
       'event_resource_id': eventId,
       'data': dataObj
     });
-    return this._http.post(API_URL, data, _httpOptions);
+    return this._http.put(API_URL, data, _httpOptions);
+  }
+
+  acceptEventPicksById(eventId): any {
+    const _httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    };
+    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.post(API_URL, {}, _httpOptions);
   }
 
 

@@ -527,15 +527,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._renderPage();
   }
 
-  private _onInteractiveProcess() {
+   private async _onInteractiveProcess() {
 
-    this._updateArrivalWithPickData();
     try {
-      const response = this._eventApiService.updateEventPicksById(this.currentEventId, this.allArrivalsChanged).toPromise();
+      this.waveformService.interactiveProcessLoading.next(true);
+      this._updateArrivalWithPickData();
+      const response = await this._eventApiService.updateEventPicksById(this.currentEventId, this.allArrivalsChanged).toPromise();
       console.log(response);
     } catch (err) {
       console.error(err);
-      this._toastrNotificationService.error(`${err.error.message}`, 'Error updating event');
+      this._toastrNotificationService.error(`${err.error.message}`, 'Error on Interactive Processing');
+      this.waveformService.interactiveProcessLoading.next(false);
     }
   }
 
