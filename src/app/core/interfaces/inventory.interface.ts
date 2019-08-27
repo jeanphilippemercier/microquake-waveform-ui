@@ -183,3 +183,14 @@ export interface Station {
   communication: string;
   power: string;
 }
+
+export interface Cable {
+  code: string;
+  manufacturer: string;
+  part_number: number;
+  r: number;
+  l: number;
+  g: number;
+  c: number;
+  description: string;
+}

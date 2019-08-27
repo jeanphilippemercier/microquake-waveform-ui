@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, Cable } from '@interfaces/inventory.interface';
 import { Sensor, IComponent, SensorType } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
@@ -21,10 +21,10 @@ export class InventoryApiService {
     private _http: HttpClient,
   ) { }
 
+
   /**
    * SITES
   */
-
   getSites(): Observable<Site[]> {
     const url = `${environment.apiUrl}${globals.apiSites}`;
     return this._http.get<Site[]>(url);
@@ -49,7 +49,6 @@ export class InventoryApiService {
   /**
    * SENSORS
   */
-
   getSensors(query: PaginationRequest = {}): Observable<PaginationResponse<Sensor>> {
     const url = `${environment.apiUrl}inventory/sensors`;
     const params = ApiUtil.getHttpParams(query);
@@ -77,10 +76,10 @@ export class InventoryApiService {
     return this._http.delete<Sensor>(url);
   }
 
+
   /**
    * SENSOR TYPES
   */
-
   getSensorTypes(query: any = {}): Observable<SensorType> {
     const url = `${environment.apiUrl}inventory/sensors`;
     const params = ApiUtil.getHttpParams(query);
@@ -88,7 +87,8 @@ export class InventoryApiService {
     return this._http.get<SensorType>(url, { params });
   }
 
-  /**ƒ
+
+  /**
    * COMPONENTS
   */
   getComponents(query: PaginationRequest = {}): Observable<PaginationResponse<IComponent>> {
@@ -98,11 +98,25 @@ export class InventoryApiService {
     return this._http.get<PaginationResponse<IComponent>>(url, { params });
   }
 
+  getComponent(id: number): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${id}`;
+    return this._http.get<IComponent>(url);
+  }
+
+  createComponent(body: any): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components`;
+    return this._http.post<IComponent>(url, body);
+  }
+
+  deleteComponent(id: number): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${id}`;
+    return this._http.delete<IComponent>(url);
+  }
+
 
   /**
    * STATIONS
   */
-
   getStations(query: PaginationRequest = {}): Observable<PaginationResponse<Station>> {
     const url = `${environment.apiUrl}inventory/stations`;
     const params = ApiUtil.getHttpParams(query);
@@ -126,11 +140,9 @@ export class InventoryApiService {
   }
 
 
-
   /**
    * BOREHOLES
   */
-
   getBoreholes(query: PaginationRequest = {}): Observable<PaginationResponse<Borehole>> {
     const url = `${environment.apiUrl}inventory/boreholes`;
     const params = ApiUtil.getHttpParams(query);
@@ -151,5 +163,31 @@ export class InventoryApiService {
   deleteBorehole(boreholeId: number): Observable<Borehole> {
     const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
     return this._http.delete<Borehole>(url);
+  }
+
+
+  /**
+   * Cables
+  */
+  getCables(query: PaginationRequest = {}): Observable<PaginationResponse<Cable>> {
+    const url = `${environment.apiUrl}inventory/cables`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<PaginationResponse<Cable>>(url, { params });
+  }
+
+  getcable(id: number): Observable<Cable> {
+    const url = `${environment.apiUrl}inventory/cables/${id}`;
+    return this._http.get<Cable>(url);
+  }
+
+  createCable(body: any): Observable<Cable> {
+    const url = `${environment.apiUrl}inventory/cables`;
+    return this._http.post<Cable>(url, body);
+  }
+
+  deleteCable(id: number): Observable<Cable> {
+    const url = `${environment.apiUrl}inventory/cables/${id}`;
+    return this._http.delete<Cable>(url);
   }
 }

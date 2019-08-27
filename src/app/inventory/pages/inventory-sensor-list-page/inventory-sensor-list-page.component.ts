@@ -6,6 +6,7 @@ import { PaginationRequest } from '@interfaces/query.interface';
 import { Sensor } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { Params, Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-inventory-sensor-list-page',
@@ -27,11 +28,25 @@ export class InventorySensorListPageComponent implements OnInit {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
+    private _router: Router,
+    private _activatedRoute: ActivatedRoute
   ) { }
 
   async ngOnInit() {
-    await this.loadData();
+    this._activatedRoute.queryParams.subscribe(async (params) => {
+      let cursor: string;
+      if (params) {
+        if (params.cursor) {
+          cursor = params.cursor;
+        }
+        if (params.page_size) {
+          this.pageSize = params.page_size;
+        }
+      }
+
+      await this.loadData(cursor);
+    });
   }
 
   async loadData(cursor?: string) {
@@ -40,12 +55,16 @@ export class InventorySensorListPageComponent implements OnInit {
       this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
       const query: PaginationRequest = {
-        page_size: this.pageSize,
+        cursor,
+        page_size: this.pageSize
       };
 
-      if (cursor) {
-        query.cursor = cursor;
-      }
+      // if (cursor) {
+      //   query.cursor = cursor;
+      // }
+      // if (page_size) {
+      //   query.page_size = page_size;
+      // }
 
       const response = await this._inventoryApiSevice.getSensors(query).toPromise();
 
@@ -67,7 +86,19 @@ export class InventorySensorListPageComponent implements OnInit {
     if ($event.previousPageIndex > $event.pageIndex) {
       cursor = this.previous;
     }
-    await this.loadData(cursor);
+    await this.changePage(cursor);
+  }
+
+  async changePage(cursor: string) {
+    const queryParams: Params = { page_size: this.pageSize, cursor };
+
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: queryParams,
+        queryParamsHandling: 'merge',
+      });
   }
 
 }

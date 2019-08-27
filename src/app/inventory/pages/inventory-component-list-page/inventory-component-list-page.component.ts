@@ -5,6 +5,7 @@ import { IComponent } from '@interfaces/inventory.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { Params, Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-inventory-component-list-page',
@@ -24,12 +25,23 @@ export class InventoryComponentListPageComponent implements OnInit {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
+    private _activatedRoute: ActivatedRoute,
+    private _router: Router
   ) { }
 
   async ngOnInit() {
-    await this.loadData();
-    console.log(this.components);
+
+    this._activatedRoute.queryParams.subscribe(async (params) => {
+      let cursor: string;
+      if (params) {
+        if (params.cursor) {
+          cursor = params.cursor;
+        }
+      }
+
+      await this.loadData(cursor);
+    });
 
   }
 
@@ -61,10 +73,23 @@ export class InventoryComponentListPageComponent implements OnInit {
   }
 
   async onNextPage() {
-    await this.loadData(this.next);
+    await this.changePage(this.next);
   }
 
   async onPreviousPage() {
-    await this.loadData(this.previous);
+    await this.changePage(this.previous);
+  }
+
+
+  async changePage(cursor: string) {
+    const queryParams: Params = { page_size: this.pageSize, cursor };
+
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: queryParams,
+        queryParamsHandling: 'merge',
+      });
   }
 }

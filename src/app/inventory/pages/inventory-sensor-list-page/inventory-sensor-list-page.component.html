@@ -59,7 +59,7 @@
           <a
             matTooltip="Show sensor detail"
             color="primary"
-            [routerLink]="['/inventory/sensors', element?.id]"
+            [routerLink]="['/inventory/sensors', element?.id, PageMode.EDIT]"
             mat-button
           >{{element?.name}}</a>
         </td>
@@ -173,6 +173,7 @@
           </button>
           <mat-menu #menu="matMenu">
             <button
+              *ngIf=""
               mat-menu-item
               color="primary"
               [routerLink]="['/inventory/sensors', element.id]"

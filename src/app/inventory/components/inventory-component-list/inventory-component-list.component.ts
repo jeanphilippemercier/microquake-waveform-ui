@@ -2,11 +2,19 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
 import { IComponent } from '@interfaces/inventory.interface';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-inventory-component-list',
   templateUrl: './inventory-component-list.component.html',
-  styleUrls: ['./inventory-component-list.component.scss']
+  styleUrls: ['./inventory-component-list.component.scss'],
+  animations: [
+    trigger('detailExpand', [
+      state('collapsed', style({ height: '0px', minHeight: '0' })),
+      state('expanded', style({ height: '*' })),
+      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class InventoryComponentListComponent implements OnInit {
 
@@ -18,9 +26,9 @@ export class InventoryComponentListComponent implements OnInit {
   @Output() previousPage = new EventEmitter();
 
   // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['id', 'sensor', 'cableLength', 'code', 'sensorType', 'motionType', 'enabled', 'actions'];
+  displayedColumns: string[] = ['detail', 'id', 'sensor', 'cableLength', 'code', 'sensorType', 'motionType', 'enabled', 'actions'];
   dataSource: IComponent[];
-
+  expandedElement: IComponent | null;
   pageSize = 15;
 
   constructor() { }
