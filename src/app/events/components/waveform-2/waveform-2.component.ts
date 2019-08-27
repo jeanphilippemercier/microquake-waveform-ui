@@ -357,7 +357,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         this.waveformService.loadedSensors.next(this.loadedSensors);
         this.waveformService.loadedPages.next(1);
-        this.timeOrigin = eventData.timeOrigin;
+        this.timeOrigin = eventData.timeOrigin === '+8:00' ? '+08:00' : eventData.timeOrigin;
 
         if (!this.timeOrigin) {
           console.error(`no timeOrigin`);
@@ -616,7 +616,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
-          fontColor: 'blue',
+          fontColor: 'black',
           horizontalAlign: 'left'
         },
         legend: {
@@ -666,12 +666,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+            const val = e.value * WaveformUtil.convYUnits;
+            return val === 0 ? val :
+              Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
+              Number(val.toPrecision(2)).toFixed(2);
           }
         },
         data: data
       };
-
+      if (i === 0) {
+        options.data[0].dataPoints[0]['indexLabel'] =
+          moment(this.timeOrigin).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
+      }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
@@ -843,7 +849,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
-        fontColor: 'blue',
+        fontColor: 'black',
         horizontalAlign: 'left'
       },
       legend: {
@@ -894,7 +900,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+          const val = e.value * WaveformUtil.convYUnits;
+          return val === 0 ? val :
+            Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
+            Number(val.toPrecision(2)).toFixed(2);
         }
       },
       data: data
