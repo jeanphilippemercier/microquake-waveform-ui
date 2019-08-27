@@ -45,6 +45,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   currentEvent: IEvent;
   currentEventChart: IEvent;
+  currentEventInfo: IEvent;
 
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
@@ -182,7 +183,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           this.currentEvent = clickedEvent;
 
           if (this.initialized.getValue() === false) {
-            this.currentEventChart = clickedEvent;
+            this.currentEventInfo = clickedEvent;
             this.initialized.next(true);
           }
         } catch (err) {
@@ -298,11 +299,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openChart(event: IEvent) {
-    this.currentEventChart = event;
+    this._router.navigate(['/events', event.event_resource_id]);
   }
 
   async openEvent(event: IEvent) {
-    this._router.navigate(['/events', event.event_resource_id]);
+    this.currentEventInfo = event;
   }
 
   async openEventFilterDialog() {

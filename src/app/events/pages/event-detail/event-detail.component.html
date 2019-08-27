@@ -71,7 +71,7 @@
             [forceCD]="changeDetectCatalog"
             [events]="events"
             [timezone]="boundaries?.timezone"
-            [currentEvent]="currentEvent"
+            [currentEvent]="currentEventInfo"
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
           ></app-event-catalog>
@@ -97,7 +97,7 @@
               *ngIf="false && currentEvent"
               color="primary"
               mat-button
-              (click)="openInteractiveProcessDialog(currentEvent,events[0]);$event.stopPropagation()"
+              (click)="openInteractiveProcessDialog(currentEventInfo,events[0]);$event.stopPropagation()"
             >
               <mat-icon class="mat-18">new_releases</mat-icon>
               <small class="align-self-center">
@@ -106,7 +106,7 @@
             </button>
 
             <button
-              *ngIf="currentEvent"
+              *ngIf="currentEventInfo"
               color="primary"
               mat-button
               (click)="openEventUpdateDialog();$event.stopPropagation()"
@@ -120,7 +120,7 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <app-event-info
-          [event]="currentEvent"
+          [event]="currentEventInfo"
           [eventTypes]="eventTypes"
           [evaluationStatuses]="evaluationStatuses"
           [eventEvaluationModes]="eventEvaluationModes"
@@ -157,7 +157,7 @@
     </div>
     <app-waveform-2
       *ngIf="true"
-      [event]="currentEventChart"
+      [event]="currentEvent"
       [timezone]="boundaries?.timezone"
     ></app-waveform-2>
   </mat-sidenav-content>
