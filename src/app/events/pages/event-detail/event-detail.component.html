@@ -71,7 +71,8 @@
             [forceCD]="changeDetectCatalog"
             [events]="events"
             [timezone]="boundaries?.timezone"
-            [currentEvent]="currentEventInfo"
+            [currentEvent]="currentEvent"
+            [currentEventInfo]="currentEventInfo"
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
           ></app-event-catalog>

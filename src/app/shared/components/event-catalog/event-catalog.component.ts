@@ -40,6 +40,7 @@ export class EventCatalogComponent {
   get forceCD() {
     return this._forceCD;
   }
+  @Input() currentEventInfo: IEvent;
   @Input() currentEvent: IEvent;
   @Input() timezone: string;
 

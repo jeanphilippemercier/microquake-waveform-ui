@@ -47,29 +47,109 @@ mat-expansion-panel-header {
 }
 
 .mat-list-base .mat-list-item {
+  position: relative;
+  font-weight: 400;
+
+  &:after,
+  &:before {
+    font-family: 'Material Icons';
+    -webkit-font-feature-settings: 'liga';
+    color: #333;
+    position: absolute;
+    top: 0;
+    left: -5px;
+    bottom: 0;
+    margin: auto;
+    width: 23px;
+    height: 23px;
+    font-size: 25px;
+    border: 1px solid transparent;
+    border-radius: 50%;
+  }
+
+  &:after {
+    right: -5px;
+    left: unset;
+  }
+
+  .event-icon .mat-badge-content {
+    right: -6px;
+    left: unset;
+    top: 0px;
+    bottom: auto;
+    margin: auto;
+    font-size: 5px;
+    width: 10px;
+    height: 10px;
+    line-height: 10px;
+  }
 
   &.active {
 
     &,
     & small {
-      font-weight: 800;
+      // font-weight: 800;
+    }
+
+    &:before {
+      content: "arrow_right";
+    }
+
+
+    .chart-button {
+      // color: blue;
+    }
+
+  }
+
+  &.active-chart {
+    &:after {
+      content: "arrow_left";
     }
   }
 
   &.event-accepted-manual {
-    color: green;
+    &:before {
+      // background: green;
+    }
+
+    .event-icon .mat-badge-content {
+      background: green;
+      color: green;
+    }
   }
 
   &.event-accepted-automatic {
-    color: blue;
+    &:before {
+      // background: blue;
+    }
+
+    .event-icon .mat-badge-content {
+      background: blue;
+      color: blue;
+    }
   }
 
   &.event-rejected-manual {
-    color: red;
+    &:before {
+      // background: red;
+    }
+
+    .event-icon .mat-badge-content {
+      background: red;
+      color: red;
+    }
   }
 
   &.event-rejected-automatic {
-    color: purple;
+    &:before {
+      // background: purple;
+    }
+
+    .event-icon .mat-badge-content {
+      background: purple;
+      color: purple;
+    }
   }
 
   button.chart-button {
