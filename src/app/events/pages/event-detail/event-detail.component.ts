@@ -389,7 +389,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           {
             relativeTo: this._activatedRoute,
             queryParams: this._buildEventListParams(this.eventListQuery),
-            queryParamsHandling: 'merge',
           });
 
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
