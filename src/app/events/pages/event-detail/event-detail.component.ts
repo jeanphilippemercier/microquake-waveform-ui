@@ -211,7 +211,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           end_time: moment().utc().utcOffset(this.boundaries.timezone).endOf('day').toISOString(),
           status: [EvaluationStatusGroup.ACCEPTED],
           site_code: this.site.code ? this.site.code : '',
-          network_code: this.network.code ? this.network.code : '',
+          network_code: this.network ? this.network.code ? this.network.code : '' : '',
           time_range: 3
         };
 

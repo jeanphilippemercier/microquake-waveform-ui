@@ -7,8 +7,9 @@ import { PickKey, Arrival, Traveltime, PredictedPickKey } from '@interfaces/even
 
 export default class WaveformUtil {
 
-  // factor to convert input units from m to mmm
+  // default data units conversion factor is from m to defaultUnits (mm)
   static convYUnits = 1000;
+  static defaultUnits = 'mm';
 
   static findValue(obj, key, value) {
     return obj.find(v => v[key] === value);
