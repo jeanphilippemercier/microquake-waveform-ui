@@ -61,7 +61,8 @@ export class EventCatalogComponent {
     const daysMap = {};
 
     events.forEach((event, idx) => {
-      const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
+      // TODO: use timezone from event.timezone not this.timezone (when timezone's fixed on API)
+      const day = moment(event.time_utc).utcOffset(this.timezone).startOf('day').toString();
       if (typeof daysMap[day] === 'undefined') {
         eventDays.push({
           dayDate: new Date(event.time_utc),

@@ -5,12 +5,13 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType } from '@interfaces/event.interface';
 import {
-  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery
+  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery
 } from '@interfaces/event-query.interface';
 import ApiUtil from '../utils/api-util';
 import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
 import { WebSocketService } from './websocket.service';
 import { filter, retry } from 'rxjs/operators';
+import { PaginationResponse } from '@interfaces/dto.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -47,11 +48,20 @@ export class EventApiService {
     return this._http.get<WaveformQueryResponse>(url, { params });
   }
 
-  getEvents(query: EventQuery): Observable<IEvent[]> {
-    const url = `${environment.apiUrl}${globals.apiCatalog}`;
-    const params = ApiUtil.getHttpParams(query);
+  getEvents(query: EventQuery): Observable<PaginationResponse<IEvent>> {
+    const url = `${environment.apiUrl}events`;
+    let params = ApiUtil.getHttpParams(query);
 
-    return this._http.get<IEvent[]>(url, { params });
+
+    if (query.event_type && query.event_type.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
+    }
+
+    if (query.status && query.status.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
+    }
+
+    return this._http.get<PaginationResponse<IEvent>>(url, { params });
   }
 
   getBoundaries(query?: BoundariesQuery): Observable<Boundaries[]> {
@@ -91,6 +101,14 @@ export class EventApiService {
     });
     return this._http.put(API_URL, data, _httpOptions);
   }
+
+  getEventDailySummary(query?: EventDailySummaryQuery) {
+    const url = `${environment.apiUrl}events/daily_summary`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<PaginationResponse<IEvent>>(url, { params });
+  }
+
 
   acceptEventPicksById(eventId): any {
     const _httpOptions = {

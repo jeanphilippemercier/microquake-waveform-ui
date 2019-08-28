@@ -66,6 +66,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   boundaries: Boundaries;
 
+  timezone = '+08:00';
+
   changeDetectCatalog = 0;
   onServerEventSub: Subscription;
   interactiveProcessingSub: Subscription;
@@ -81,6 +83,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+
+    const res = await this._eventApiService.getEventDailySummary().toPromise();
+
     await this._loadBoundaries();
     await this._loadSites();
     await this._loadEventTypesAndStatuses();
@@ -200,26 +205,48 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
   }
 
+  private async _buildEventListQuery(queryParams: any) {
+    const eventListQuery: EventQuery = {};
+
+    if (queryParams.time_utc_before && queryParams.time_utc_after) {
+      eventListQuery.time_utc_before = queryParams.time_utc_before;
+      eventListQuery.time_utc_after = queryParams.time_utc_after;
+    } else {
+      if (queryParams.time_range && [3, 7, 31].indexOf(queryParams.time_range) > -1) {
+        eventListQuery.time_range = queryParams.time_range;
+      } else {
+        eventListQuery.time_range = 3;
+      }
+
+      eventListQuery.time_utc_after = moment().utc().utcOffset(this.timezone).startOf('day').subtract(2, 'days').toISOString();
+      eventListQuery.time_utc_before = moment().utc().utcOffset(this.timezone).endOf('day').toISOString();
+    }
+
+    if (queryParams.status) {
+      eventListQuery.status = queryParams.status.split(',');
+    } else {
+      eventListQuery.status = [EvaluationStatusGroup.ACCEPTED];
+    }
+
+    return eventListQuery;
+  }
+
   private async _loadEvents() {
 
     try {
       this.loadingEventList = true;
       this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
-      if (!this.eventListQuery) {
-        this.eventListQuery = {
-          start_time: moment().utc().utcOffset(this.boundaries.timezone).startOf('day').subtract(2, 'days').toISOString(),
-          end_time: moment().utc().utcOffset(this.boundaries.timezone).endOf('day').toISOString(),
-          status: [EvaluationStatusGroup.ACCEPTED],
-          site_code: this.site.code ? this.site.code : '',
-          network_code: this.network.code ? this.network.code : '',
-          time_range: 3
-        };
+      const queryParams = this._activatedRoute.snapshot.queryParams;
 
+
+      if (!this.eventListQuery) {
+        this.eventListQuery = await this._buildEventListQuery(queryParams);
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
       }
 
-      this.events = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      this.events = response.results;
 
     } catch (err) {
       console.error(err);
@@ -319,7 +346,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       hasBackdrop: true,
       width: '750px',
       data: {
-        timezone: this.boundaries.timezone,
+        timezone: this.timezone,
         sites: this.sites,
         eventQuery: this.eventListQuery,
         evaluationStatuses: this.EvaluationStatusGroups,

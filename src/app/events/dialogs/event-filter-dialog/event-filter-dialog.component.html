@@ -64,8 +64,8 @@
             <div class="col-6">
               <app-event-date-field
                 [label]="'Start date'"
-                [date]="editedQuery.start_time"
-                [maxDate]="editedQuery.end_time"
+                [date]="editedQuery.time_utc_after"
+                [maxDate]="editedQuery.time_utc_before"
                 (dateChange)="onCustomDateStartChange($event)"
               >
               </app-event-date-field>
@@ -73,8 +73,8 @@
             <div class="col-6">
               <app-event-date-field
                 [label]="'End date'"
-                [date]="editedQuery.end_time"
-                [minDate]="editedQuery.start_time"
+                [date]="editedQuery.time_utc_before"
+                [minDate]="editedQuery.time_utc_after"
                 (dateChange)="onCustomDateEndChange($event)"
               >
               </app-event-date-field>
@@ -94,8 +94,8 @@
             [label]="''"
             [type]="'chip'"
             [eventTypes]="eventTypes"
-            [(selectedEventTypes)]="editedQuery.type"
-            (selectedEventTypesChange)="onFilterChange()"
+            [(selectedEventTypes)]="selectedEventTypes"
+            (selectedEventTypesChange)="onEventTypesChange($event)"
           ></app-event-type-field>
         </div>
       </div>

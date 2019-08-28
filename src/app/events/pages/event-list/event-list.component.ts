@@ -88,15 +88,14 @@ export class EventListComponent implements OnInit {
     const startTime = moment(this.eventStartDate).toISOString();
     const endTime = moment(this.eventEndDate).toISOString();
     const eventListQuery: EventQuery = {
-      start_time: startTime,
-      end_time: endTime,
-      site_code: this.site.code ? this.site.code : null,
-      network_code: this.network.code ? this.network.code : null,
-      type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
+      time_utc_after: startTime,
+      time_utc_before: endTime,
+      event_type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
       status: this.selectedEvaluationStatusGroups ? this.selectedEvaluationStatusGroups : undefined,
     };
 
-    this.events = await this._eventApiService.getEvents(eventListQuery).toPromise();
+    const response = await this._eventApiService.getEvents(eventListQuery).toPromise();
+    this.events = response.results;
 
     // TODO: no order_by time_utc on api?
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);

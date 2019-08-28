@@ -6,7 +6,6 @@ import * as moment from 'moment';
 import EventUtil from '@core/utils/event-util';
 import { EventType, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
-import { Site } from '@interfaces/inventory.interface';
 import { EventFilterDialogData } from '@interfaces/dialogs.interface';
 
 @Component({
@@ -24,10 +23,10 @@ export class EventFilterDialogComponent {
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatusGroup[];
   eventEvaluationModes: EvaluationMode[];
-  selectedSite: Site;
   timezone: string;
   todayEnd: Date;
   numberOfChanges = 0;
+  selectedEventTypes: EventType[];
 
   constructor(
     @Inject(MAT_DIALOG_DATA) private _dialogData: EventFilterDialogData
@@ -40,10 +39,13 @@ export class EventFilterDialogComponent {
     this.eventEvaluationModes = this._dialogData.eventEvaluationModes;
     this.todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
+    this.selectedEventTypes = this.eventQuery.event_type ?
+      this.eventQuery.event_type.map(event_type => (this.eventTypes.find(et => et.quakeml_type === event_type))) :
+      undefined;
 
     if (this.editedQuery.time_range === 0) {
-      this.editedQuery.start_time = moment(this.editedQuery.start_time).startOf('day').toISOString();
-      this.editedQuery.end_time = moment(this.editedQuery.end_time).endOf('day').toISOString();
+      this.editedQuery.time_utc_after = moment(this.editedQuery.time_utc_after).startOf('day').toISOString();
+      this.editedQuery.time_utc_before = moment(this.editedQuery.time_utc_before).endOf('day').toISOString();
     }
   }
 
@@ -59,23 +61,23 @@ export class EventFilterDialogComponent {
   resetFilter() {
     this.editedQuery = { ...this.eventQuery };
     this.editedQuery.time_range = 3;
-    this.editedQuery.start_time = moment()
+    this.editedQuery.time_utc_after = moment()
       .utcOffset(this.timezone)
       .startOf('day')
       .subtract(this.editedQuery.time_range - 1, 'days')
       .toISOString();
-    this.editedQuery.end_time = this.todayEnd.toISOString();
+    this.editedQuery.time_utc_before = this.todayEnd.toISOString();
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }
 
   onTimeRangeChange($event: MatRadioChange) {
     if ($event.value !== 0) {
-      this.editedQuery.start_time = moment().utcOffset(this.timezone).startOf('day').subtract($event.value - 1, 'days').toISOString();
-      this.editedQuery.end_time = this.todayEnd.toISOString();
+      this.editedQuery.time_utc_after = moment().utcOffset(this.timezone).startOf('day').subtract($event.value - 1, 'days').toISOString();
+      this.editedQuery.time_utc_before = this.todayEnd.toISOString();
     } else {
-      this.editedQuery.start_time = moment().utcOffset(this.timezone).startOf('day').toISOString();
-      this.editedQuery.end_time = this.todayEnd.toISOString();
+      this.editedQuery.time_utc_after = moment().utcOffset(this.timezone).startOf('day').toISOString();
+      this.editedQuery.time_utc_before = this.todayEnd.toISOString();
     }
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
@@ -87,10 +89,17 @@ export class EventFilterDialogComponent {
 
 
   onCustomDateStartChange($event: Date) {
-    this.editedQuery.start_time = moment($event).utcOffset(this.timezone).startOf('day').toISOString();
+    this.editedQuery.time_utc_after = moment($event).utcOffset(this.timezone).startOf('day').toISOString();
   }
 
   onCustomDateEndChange($event: Date) {
-    this.editedQuery.end_time = moment($event).utcOffset(this.timezone).endOf('day').toISOString();
+    this.editedQuery.time_utc_before = moment($event).utcOffset(this.timezone).endOf('day').toISOString();
+  }
+
+  onEventTypesChange($event: EventType[]) {
+    this.selectedEventTypes = $event;
+    // tslint:disable-next-line:max-line-length
+    this.editedQuery.event_type = this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined;
+
   }
 }

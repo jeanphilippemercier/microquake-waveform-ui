@@ -1,14 +1,18 @@
 import { QuakemlType, EvaluationStatus, EvaluationStatusGroup } from './event.interface';
+import { PaginationRequest } from './query.interface';
 
 // QUERIES
-export interface EventQuery {
-  start_time: string;
-  end_time: string;
-  site_code: string;
-  network_code: string;
+export interface EventQuery extends PaginationRequest {
+  time_utc_after?: string;
+  time_utc_before?: string;
   time_range?: number; // TODO: add to API ?
-  type?: QuakemlType[];
+  event_type?: QuakemlType[];
   status?: EvaluationStatusGroup[];
+  ordering?: string;
+}
+
+export interface EventDailySummaryQuery extends EventQuery {
+  tz_offset?: string;
 }
 
 export interface BoundariesQuery {
