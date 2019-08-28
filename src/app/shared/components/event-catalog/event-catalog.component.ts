@@ -6,7 +6,6 @@ import { IEvent } from '@interfaces/event.interface';
 interface EventDay {
   dayDate: moment.Moment;
   dayDateStr: string;
-  dayOutsideFiterRange: boolean;
   dayEvents: IEvent[];
 }
 
@@ -75,6 +74,7 @@ export class EventCatalogComponent {
   daysMap: any = {};
   openedDay: moment.Moment;
   currentEventDayInList = false;
+  eventOutsideFiter: string;
 
   sortAndMapEvents() {
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
@@ -87,6 +87,7 @@ export class EventCatalogComponent {
       this.events &&
       this.events.findIndex(event => event.event_resource_id === this.currentEvent.event_resource_id) === -1
     ) {
+      this.eventOutsideFiter = this.currentEvent.event_resource_id;
       this.events.push(this.currentEvent);
     }
   }
@@ -113,7 +114,6 @@ export class EventCatalogComponent {
       if (typeof daysMap[day] === 'undefined') {
         eventDays.push({
           dayDate: moment(event.time_utc).utcOffset(this.timezone).startOf('day'),
-          dayOutsideFiterRange,
           dayDateStr: day,
           dayEvents: []
         });

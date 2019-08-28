@@ -54,7 +54,7 @@
                 ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
               </ng-container>
             </div>
-            <ng-container *ngIf="day?.dayOutsideFiterRange">
+            <ng-container *ngIf="event?.event_resource_id === eventOutsideFiter">
               <mat-icon
                 matTooltip="Event is outside of the event filter. "
                 style="font-size: 18px; line-height: 22px;"
