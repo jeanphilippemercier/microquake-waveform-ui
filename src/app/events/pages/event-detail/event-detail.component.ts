@@ -83,9 +83,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-
-    const res = await this._eventApiService.getEventDailySummary().toPromise();
-
     await this._loadBoundaries();
     await this._loadSites();
     await this._loadEventTypesAndStatuses();

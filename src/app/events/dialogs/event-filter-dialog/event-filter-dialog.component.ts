@@ -67,6 +67,9 @@ export class EventFilterDialogComponent {
       .subtract(this.editedQuery.time_range - 1, 'days')
       .toISOString();
     this.editedQuery.time_utc_before = this.todayEnd.toISOString();
+    this.editedQuery.status = [EvaluationStatusGroup.ACCEPTED];
+    this.editedQuery.event_type = undefined;
+    this.selectedEventTypes = undefined;
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }
@@ -99,7 +102,7 @@ export class EventFilterDialogComponent {
   onEventTypesChange($event: EventType[]) {
     this.selectedEventTypes = $event;
     // tslint:disable-next-line:max-line-length
-    this.editedQuery.event_type = this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined;
+    this.editedQuery.event_type = this.selectedEventTypes && this.selectedEventTypes.length > 0 ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined;
 
   }
 }
