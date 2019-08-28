@@ -5,7 +5,7 @@
   <mat-expansion-panel
     *ngFor="let day of days; let i = index; trackBy: trackDay"
     class="mat-elevation-z day"
-    [expanded]="i === 0"
+    [expanded]="currentEventDayInList ? day?.dayDate.isSame(openedDay) : (i === 0)"
     hideToggle
   >
     <mat-expansion-panel-header
@@ -54,6 +54,13 @@
                 ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
               </ng-container>
             </div>
+            <ng-container *ngIf="day?.dayOutsideFiterRange">
+              <mat-icon
+                matTooltip="Event is outside of the event filter. "
+                style="font-size: 18px; line-height: 22px;"
+                color="warn"
+              >warning</mat-icon>
+            </ng-container>
             <div class="mr-auto"></div>
             <button
               class="chart-button"

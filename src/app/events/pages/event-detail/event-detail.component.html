@@ -61,8 +61,8 @@
                   matBadgeColor="warn"
                 >filter_list</mat-icon>
                 <small>
-                  ({{eventListQuery.time_utc_after | date:' MMM dd': timezone}} -
-                  {{eventListQuery.time_utc_before | date:' dd yyyy': timezone}})
+                  ({{eventListQuery?.time_utc_after | date:' MMM dd': timezone}} -
+                  {{eventListQuery?.time_utc_before | date:' dd yyyy': timezone}})
                 </small>
               </button>
             </p>
@@ -73,6 +73,8 @@
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
+            [filterTimeAfter]="eventListQuery?.time_utc_after"
+            [filterTimeBefore]="eventListQuery?.time_utc_before"
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
           ></app-event-catalog>
