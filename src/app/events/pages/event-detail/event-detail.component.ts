@@ -202,7 +202,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
   }
 
-  private async _buildEventListQuery(queryParams: any) {
+  private _buildEventListQuery(queryParams: any) {
     const eventListQuery: EventQuery = {};
 
     if (queryParams.time_utc_before && queryParams.time_utc_after) {
@@ -225,7 +225,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       eventListQuery.status = [EvaluationStatusGroup.ACCEPTED];
     }
 
+
+    if (queryParams.event_type) {
+      eventListQuery.event_type = queryParams.event_type.split(',');
+    } else {
+      eventListQuery.event_type = undefined;
+    }
+
+
     return eventListQuery;
+  }
+
+  private _buildEventListParams(eventListQuery: EventQuery) {
+    const params: any = {};
+
+    if (eventListQuery.status && eventListQuery.status.length > 0) {
+      params.status = eventListQuery.status.toString();
+    }
+
+    if (eventListQuery.event_type && eventListQuery.event_type.length > 0) {
+      params.event_type = eventListQuery.event_type.toString();
+    }
+
+    return params;
   }
 
   private async _loadEvents() {
@@ -238,7 +260,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
 
       if (!this.eventListQuery) {
-        this.eventListQuery = await this._buildEventListQuery(queryParams);
+        this.eventListQuery = this._buildEventListQuery(queryParams);
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
       }
 
@@ -323,7 +345,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openChart(event: IEvent) {
-    this._router.navigate(['/events', event.event_resource_id]);
+    this._router.navigate(['/events', event.event_resource_id], {
+      relativeTo: this._activatedRoute,
+      queryParamsHandling: 'merge',
+    });
   }
 
   async openEvent(event: IEvent) {
@@ -358,6 +383,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.eventFilterDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         await this._loadEvents();
+
+        this._router.navigate(
+          [],
+          {
+            relativeTo: this._activatedRoute,
+            queryParams: this._buildEventListParams(this.eventListQuery),
+            queryParamsHandling: 'merge',
+          });
+
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
         this.eventFilterDialogRef.close();
       } catch (err) {
