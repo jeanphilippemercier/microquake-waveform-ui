@@ -234,6 +234,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       eventListQuery.event_type = undefined;
     }
 
+    // TODO: remove after pagination
+    eventListQuery.page_size = 1000;
+
 
     return eventListQuery;
   }
@@ -251,6 +254,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
     if (eventListQuery.time_range > 0) {
       params.time_range = eventListQuery.time_range;
+    } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
+      params.time_utc_before = eventListQuery.time_utc_before;
+      params.time_utc_after = eventListQuery.time_utc_after;
+
     }
 
     return params;
