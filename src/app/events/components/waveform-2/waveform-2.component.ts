@@ -133,6 +133,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
       await this._loadAllStations(),
     ]);
 
+    // TODO remove this when api issue is fixed
+    this.timezone = this.timezone === '+8:00' ? '+08:00' : this.timezone;
+
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this._addKeyDownEventListeners();
     this._subscribeToolbar();
@@ -587,6 +590,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
 
       const yMax = this._getYmax(i);
+      // check range decide UOM and y scaling factor
+      const motionType = this._getSensorMotionType(this.activeSensors[i]);
+      let scaleY = WaveformUtil.convYUnits;
+      let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
+        motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+      if (yMax * scaleY < 0.002) {
+        scaleY = scaleY * 1000;
+        uom = uom.replace(WaveformUtil.defaultUnits, 'um');
+      }
+      if (yMax * scaleY > 99.) {
+        scaleY = scaleY / 1000;
+        uom = uom.replace(WaveformUtil.defaultUnits, 'm');
+      }
+
       const options = {
         zoomEnabled: true,
         zoomType: 'x',
@@ -616,7 +633,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
-          fontColor: 'blue',
+          fontColor: 'black',
           horizontalAlign: 'left'
         },
         legend: {
@@ -627,8 +644,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           enabled: false,
           contentFormatter: (e) => {
             const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
-              ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
+              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
               '<br/>' +
               '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
             return content;
@@ -647,31 +663,32 @@ export class Waveform2Component implements OnInit, OnDestroy {
           labelAutoFit: false,
           labelWrap: false,
           labelFormatter: (e) => {
-            if (e.value === 0) {
-              const d = moment(this.timeOrigin).utc().utcOffset(this.timezone);
-              return d.format('HH:mm:ss.S');
-            } else {
-              return e.value / 1000000 + ' s';
-            }
+            return e.value / 1000000 + ' s';
           },
           stripLines: this.activeSensors[i].picks
         },
         axisY: {
           minimum: -yMax,
           maximum: yMax,
-          title: this._getSensorUnits(this.activeSensors[i]),
+          title: uom,
           gridThickness: 0,
           lineThickness: globals.axis.lineThickness,
           lineColor: globals.axis.lineColor,
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+            const val = e.value * scaleY;
+            return val === 0 ? val :
+              Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
+              Number(val.toPrecision(2)).toFixed(2);
           }
         },
         data: data
       };
-
+      if (i === 0) {
+        options.data[0].dataPoints[0]['indexLabel'] =
+          moment(this.timeOrigin).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
+      }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
@@ -692,6 +709,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
 
     return sensorTitleText;
+  }
+
+  private _getSensorMotionType(sensor: Sensor) {
+    let sensorMotionType = ``;
+
+    sensorMotionType = sensor && sensor.components && sensor.components[0] &&
+      sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ?
+      sensor.components[0].sensor_type.motion_type : `??`;
+    sensorMotionType = sensorMotionType.indexOf(')') > 1 ?
+      sensorMotionType.substring(sensorMotionType.indexOf('(') + 1, sensorMotionType.indexOf(')')) : sensorMotionType;
+
+    return sensorMotionType;
   }
 
   private _getSensorUnits(sensor: Sensor) {
@@ -833,6 +862,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const yMax = this._getYmax(i);
+    // check range decide UOM and y scaling factor
+    const motionType = this._getSensorMotionType(this.activeSensors[i]);
+    let scaleY = WaveformUtil.convYUnits;
+    let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
+      motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+    if (yMax * scaleY < 0.002) {
+      scaleY = scaleY * 1000;
+      uom = uom.replace(WaveformUtil.defaultUnits, 'um');
+    }
+    if (yMax * scaleY > 99.) {
+      scaleY = scaleY / 1000;
+      uom = uom.replace(WaveformUtil.defaultUnits, 'm');
+    }
 
     const timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
     const optionsContext = {
@@ -843,7 +885,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
-        fontColor: 'blue',
+        fontColor: 'black',
         horizontalAlign: 'left'
       },
       legend: {
@@ -854,8 +896,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         enabled: true,
         contentFormatter: (e) => {
           const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
-            ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
+            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
             '<br/>' +
             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
           return content;
@@ -887,14 +928,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
       axisY: {
         minimum: -yMax,
         maximum: yMax,
-        title: this._getSensorUnits(this.activeSensors[i]),
+        title: uom,
         lineThickness: globals.axis.lineThickness,
         lineColor: globals.axis.lineColor,
         gridThickness: 0,
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+          const val = e.value * scaleY;
+          return val === 0 ? val :
+            Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
+            Number(val.toPrecision(2)).toFixed(2);
         }
       },
       data: data
