@@ -11,7 +11,7 @@ import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData, EventInteractiveProcessingDialog } from '@interfaces/dialogs.interface';
 import {
-  IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries, WebsocketResponseOperation, EvaluationStatusGroup
+  IEvent, EvaluationStatus, EventType, EvaluationMode, WebsocketResponseOperation, EvaluationStatusGroup
 } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -45,6 +45,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   currentEvent: IEvent;
   currentEventChart: IEvent;
+  currentEventInfo: IEvent;
 
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
@@ -63,7 +64,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   numberOfChangesInFilter = 0;
 
-  boundaries: Boundaries;
+  // TODO: fix when resolved on API
+  timezone = '+08:00';
 
   changeDetectCatalog = 0;
   onServerEventSub: Subscription;
@@ -80,12 +82,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    await this._loadBoundaries();
     await this._loadSites();
-    await this._loadEventTypesAndStatuses();
-    this._loadCurrentEvent();
-    this._loadEvents();
-    this._watchServerEventUpdates();
+    await this._loadEventTypesAndStatuses(),
+    await Promise.all([
+      this._loadCurrentEvent(),
+      this._loadEvents(),
+      this._watchServerEventUpdates()
+    ]);
 
     // TODO:finish when API's fixed
     this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
@@ -182,7 +185,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           this.currentEvent = clickedEvent;
 
           if (this.initialized.getValue() === false) {
-            this.currentEventChart = clickedEvent;
+            this.currentEventInfo = clickedEvent;
             this.initialized.next(true);
           }
         } catch (err) {
@@ -195,8 +198,64 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async _loadBoundaries() {
-    [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
+  private _buildEventListQuery(queryParams: any) {
+    const eventListQuery: EventQuery = {};
+
+    if (queryParams.time_utc_before && queryParams.time_utc_after) {
+      eventListQuery.time_utc_before = queryParams.time_utc_before;
+      eventListQuery.time_utc_after = queryParams.time_utc_after;
+    } else {
+      if (queryParams.time_range) {
+        eventListQuery.time_range = parseInt(queryParams.time_range, 10);
+      }
+      if (!eventListQuery.time_range || [3, 7, 31].indexOf(eventListQuery.time_range) === -1) {
+        eventListQuery.time_range = 3;
+      }
+
+      // tslint:disable-next-line:max-line-length
+      eventListQuery.time_utc_after = moment().utc().utcOffset(this.timezone).startOf('day').subtract(eventListQuery.time_range - 1, 'days').toISOString();
+      eventListQuery.time_utc_before = moment().utc().utcOffset(this.timezone).endOf('day').toISOString();
+    }
+
+    if (queryParams.status) {
+      eventListQuery.status = queryParams.status.split(',');
+    } else {
+      eventListQuery.status = [EvaluationStatusGroup.ACCEPTED];
+    }
+
+
+    if (queryParams.event_type) {
+      eventListQuery.event_type = queryParams.event_type.split(',');
+    } else {
+      eventListQuery.event_type = undefined;
+    }
+
+    // TODO: remove after pagination
+    eventListQuery.page_size = 1000;
+
+
+    return eventListQuery;
+  }
+
+  private _buildEventListParams(eventListQuery: EventQuery) {
+    const params: any = {};
+
+    if (eventListQuery.status && eventListQuery.status.length > 0) {
+      params.status = eventListQuery.status.toString();
+    }
+
+    if (eventListQuery.event_type && eventListQuery.event_type.length > 0) {
+      params.event_type = eventListQuery.event_type.toString();
+    }
+
+    if (eventListQuery.time_range > 0) {
+      params.time_range = eventListQuery.time_range;
+    } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
+      params.time_utc_before = eventListQuery.time_utc_before;
+      params.time_utc_after = eventListQuery.time_utc_after;
+    }
+
+    return params;
   }
 
   private async _loadEvents() {
@@ -205,20 +264,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       this.loadingEventList = true;
       this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
-      if (!this.eventListQuery) {
-        this.eventListQuery = {
-          start_time: moment().utc().utcOffset(this.boundaries.timezone).startOf('day').subtract(2, 'days').toISOString(),
-          end_time: moment().utc().utcOffset(this.boundaries.timezone).endOf('day').toISOString(),
-          status: [EvaluationStatusGroup.ACCEPTED],
-          site_code: this.site.code ? this.site.code : '',
-          network_code: this.network ? this.network.code ? this.network.code : '' : '',
-          time_range: 3
-        };
+      const queryParams = this._activatedRoute.snapshot.queryParams;
 
+
+      if (!this.eventListQuery) {
+        this.eventListQuery = this._buildEventListQuery(queryParams);
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
       }
 
-      this.events = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      this.events = response.results;
 
     } catch (err) {
       console.error(err);
@@ -298,11 +353,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openChart(event: IEvent) {
-    this.currentEventChart = event;
+    this._router.navigate(['/events', event.event_resource_id], {
+      relativeTo: this._activatedRoute,
+      queryParamsHandling: 'merge',
+    });
   }
 
   async openEvent(event: IEvent) {
-    this._router.navigate(['/events', event.event_resource_id]);
+    this.currentEventInfo = event;
   }
 
   async openEventFilterDialog() {
@@ -318,7 +376,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       hasBackdrop: true,
       width: '750px',
       data: {
-        timezone: this.boundaries.timezone,
+        timezone: this.timezone,
         sites: this.sites,
         eventQuery: this.eventListQuery,
         evaluationStatuses: this.EvaluationStatusGroups,
@@ -333,6 +391,14 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.eventFilterDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         await this._loadEvents();
+
+        this._router.navigate(
+          [],
+          {
+            relativeTo: this._activatedRoute,
+            queryParams: this._buildEventListParams(this.eventListQuery),
+          });
+
         this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
         this.eventFilterDialogRef.close();
       } catch (err) {
