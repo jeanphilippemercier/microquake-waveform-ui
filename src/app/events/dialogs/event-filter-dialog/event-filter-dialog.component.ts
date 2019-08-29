@@ -43,7 +43,12 @@ export class EventFilterDialogComponent {
       this.eventQuery.event_type.map(event_type => (this.eventTypes.find(et => et.quakeml_type === event_type))) :
       undefined;
 
-    if (this.editedQuery.time_range === 0) {
+
+    if (this.editedQuery.time_range !== 0) {
+      // tslint:disable-next-line:max-line-length
+      this.editedQuery.time_utc_after = moment().utcOffset(this.timezone).startOf('day').subtract(this.editedQuery.time_range - 1, 'days').toISOString();
+      this.editedQuery.time_utc_before = this.todayEnd.toISOString();
+    } else {
       this.editedQuery.time_utc_after = moment(this.editedQuery.time_utc_after).startOf('day').toISOString();
       this.editedQuery.time_utc_before = moment(this.editedQuery.time_utc_before).endOf('day').toISOString();
     }

@@ -209,13 +209,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       eventListQuery.time_utc_before = queryParams.time_utc_before;
       eventListQuery.time_utc_after = queryParams.time_utc_after;
     } else {
-      if (queryParams.time_range && [3, 7, 31].indexOf(queryParams.time_range) > -1) {
-        eventListQuery.time_range = queryParams.time_range;
-      } else {
+      if (queryParams.time_range) {
+        eventListQuery.time_range = parseInt(queryParams.time_range, 10);
+      }
+      if (!eventListQuery.time_range || [3, 7, 31].indexOf(eventListQuery.time_range) === -1) {
         eventListQuery.time_range = 3;
       }
 
-      eventListQuery.time_utc_after = moment().utc().utcOffset(this.timezone).startOf('day').subtract(2, 'days').toISOString();
+      // tslint:disable-next-line:max-line-length
+      eventListQuery.time_utc_after = moment().utc().utcOffset(this.timezone).startOf('day').subtract(eventListQuery.time_range - 1, 'days').toISOString();
       eventListQuery.time_utc_before = moment().utc().utcOffset(this.timezone).endOf('day').toISOString();
     }
 
@@ -245,6 +247,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
     if (eventListQuery.event_type && eventListQuery.event_type.length > 0) {
       params.event_type = eventListQuery.event_type.toString();
+    }
+
+    if (eventListQuery.time_range > 0) {
+      params.time_range = eventListQuery.time_range;
     }
 
     return params;
