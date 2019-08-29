@@ -11,7 +11,7 @@ import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData, EventInteractiveProcessingDialog } from '@interfaces/dialogs.interface';
 import {
-  IEvent, EvaluationStatus, EventType, EvaluationMode, Boundaries, WebsocketResponseOperation, EvaluationStatusGroup
+  IEvent, EvaluationStatus, EventType, EvaluationMode, WebsocketResponseOperation, EvaluationStatusGroup
 } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -64,8 +64,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   numberOfChangesInFilter = 0;
 
-  boundaries: Boundaries;
-
+  // TODO: fix when resolved on API
   timezone = '+08:00';
 
   changeDetectCatalog = 0;
@@ -83,12 +82,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    await this._loadBoundaries();
     await this._loadSites();
-    await this._loadEventTypesAndStatuses();
-    this._loadCurrentEvent();
-    this._loadEvents();
-    this._watchServerEventUpdates();
+    await this._loadEventTypesAndStatuses(),
+    await Promise.all([
+      this._loadCurrentEvent(),
+      this._loadEvents(),
+      this._watchServerEventUpdates()
+    ]);
 
     // TODO:finish when API's fixed
     this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
@@ -198,10 +198,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async _loadBoundaries() {
-    [this.boundaries] = await this._eventApiService.getBoundaries().toPromise();
-  }
-
   private _buildEventListQuery(queryParams: any) {
     const eventListQuery: EventQuery = {};
 
@@ -257,7 +253,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
       params.time_utc_before = eventListQuery.time_utc_before;
       params.time_utc_after = eventListQuery.time_utc_after;
-
     }
 
     return params;
