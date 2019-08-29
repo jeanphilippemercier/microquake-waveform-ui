@@ -93,6 +93,7 @@ export interface Sensor extends SensorBase {
   P_pick_time_utc?: string;
   container?: any;
   channels?: any;
+  distance?: number;
 
   id: number;
   station: {
