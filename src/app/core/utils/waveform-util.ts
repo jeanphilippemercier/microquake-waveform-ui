@@ -339,6 +339,8 @@ export default class WaveformUtil {
         label: arrival.phase,
         labelAlign: 'far',
       });
+
+      sensor.distance = arrival.distance;
     }
 
     if (missingSensors.length > 0) {

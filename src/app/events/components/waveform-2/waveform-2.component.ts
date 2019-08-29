@@ -687,7 +687,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       };
       if (i === 0) {
         options.data[0].dataPoints[0]['indexLabel'] =
-          moment(this.timeOrigin).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
+          moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S');
       }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
@@ -707,6 +707,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
+    sensorTitleText += sensor && sensor.distance ? ' ' + sensor.distance.toFixed(0) + 'm' : ``;
 
     return sensorTitleText;
   }
