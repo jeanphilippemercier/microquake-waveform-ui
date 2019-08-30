@@ -430,7 +430,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       hasBackdrop: true,
       width: '600px',
       data: {
-        event: this.currentEvent,
+        event: this.currentEventInfo,
         evaluationStatuses: this.evaluationStatuses,
         eventTypes: this.eventTypes,
         eventEvaluationModes: this.eventEvaluationModes,
@@ -503,7 +503,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
         status: EvaluationStatus.CONFIRMED
       };
-      await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEventById(this.currentEventInfo.event_resource_id, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);
@@ -523,7 +523,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         evaluation_mode: EvaluationMode.MANUAL,
         status: EvaluationStatus.REJECTED
       };
-      await this._eventApiService.updateEventById(this.currentEvent.event_resource_id, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEventById(this.currentEventInfo.event_resource_id, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);
