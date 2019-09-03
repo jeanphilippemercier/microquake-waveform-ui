@@ -133,9 +133,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       await this._loadAllStations(),
     ]);
 
-    // TODO remove this when api issue is fixed
-    this.timezone = this.timezone === '+8:00' ? '+08:00' : this.timezone;
-
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this._addKeyDownEventListeners();
     this._subscribeToolbar();
@@ -469,7 +466,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
-      if (!this.timeOrigin.isSame(eventData.timeOrigin)) {
+      if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
       // filter and recompute composite traces
@@ -636,6 +633,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
           fontColor: 'black',
           horizontalAlign: 'left'
         },
+        subtitles: [{
+          text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S') : '',
+          dockInsidePlotArea: true,
+          fontSize: 10,
+          fontFamily: 'tahoma',
+          fontColor: 'black',
+          horizontalAlign: 'left'
+        }],
         legend: {
           dockInsidePlotArea: true,
           horizontalAlign: 'left'
@@ -685,10 +690,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
         },
         data: data
       };
-      if (i === 0) {
-        options.data[0].dataPoints[0]['indexLabel'] =
-          moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S');
-      }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
@@ -707,7 +708,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
-    sensorTitleText += sensor && sensor.distance ? ' ' + sensor.distance.toFixed(0) + 'm' : ``;
+    sensorTitleText += sensor && sensor.distance ? ' -- ' + sensor.distance.toFixed(0) + 'm' : ``;
 
     return sensorTitleText;
   }
@@ -889,6 +890,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
         fontColor: 'black',
         horizontalAlign: 'left'
       },
+      subtitles: [{
+        text: moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S'),
+        dockInsidePlotArea: true,
+        fontSize: 10,
+        fontFamily: 'tahoma',
+        fontColor: 'black',
+        horizontalAlign: 'left'
+      }],
       legend: {
         dockInsidePlotArea: true,
         horizontalAlign: 'left'
@@ -944,8 +953,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       },
       data: data
     };
-    optionsContext.data[0].dataPoints[0]['indexLabel'] =
-      moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
     this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, optionsContext);
 
     this.activeSensors[i].chart.render();
@@ -1621,13 +1628,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _updateSensorPicks(sensor: Sensor, picktype: PickKey) {
     const pick = sensor.picks ? WaveformUtil.findValue(sensor.picks, 'label', picktype) : undefined;
-    const arrpick = WaveformUtil.findNestedValue(this.allArrivalsChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
+    const arrpick = WaveformUtil.findNestedValue(this.allArrivalsChanged, 'pick', 'sensor', sensor.id, 'phase', picktype);
 
     if (pick) {
       const pick_time = WaveformUtil.addTimeOffsetMicro(this.timeOrigin, pick.value);
       if (arrpick) {  // existing pick
         if (arrpick.pick.time_utc !== pick_time) {
-          console.log(sensor.sensor_code, picktype);
+          console.log(sensor.sensor_code, sensor.id, picktype);
           console.log('replace pick');
           console.log(arrpick.pick.time_utc);
           console.log(pick_time);
@@ -1660,7 +1667,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           pick: {
             evaluation_mode: EvaluationMode.MANUAL,
             phase_hint: picktype,
-            sensor: sensor.sensor_code,
+            sensor: sensor.id,
             time_utc: pick_time,
             evaluation_status: null,
             time_errors: null,
@@ -1673,14 +1680,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
           time_residual: null,
           takeoff_angle: null,
         };
-        console.log(sensor.sensor_code, picktype);
+        console.log(sensor.sensor_code, sensor.id, picktype);
         console.log('add pick');
         console.log(newpick);
         this.allArrivalsChanged.push(newpick);
       }
     } else {
       if (arrpick) {  // delete pick
-        console.log(sensor.sensor_code, picktype);
+        console.log(sensor.sensor_code, sensor.id, picktype);
         console.log('delete pick');
         console.log(arrpick);
         this.allArrivalsChanged = this.allArrivalsChanged.filter(item => item !== arrpick);
