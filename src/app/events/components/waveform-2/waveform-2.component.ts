@@ -341,10 +341,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.waveformService.maxPages.next(this.waveformInfo.num_of_pages);
 
       const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
+      const contextUrl = this.waveformInfo.context;
       const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
 
       if (!eventFile) {
         console.error(`no eventFile`);
+        return;
+      }
+
+      if (this.currentEventId !== event.event_resource_id) {
+        console.log(`changed event during loading`);
         return;
       }
 
@@ -405,6 +411,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
           // get arrivals, picks for preferred origin
           const arrivals = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
 
+          if (this.currentEventId !== event.event_resource_id) {
+            console.log(`changed event during loading`);
+            return;
+          }
+
           this.allArrivals = arrivals;
           this.allArrivalsChanged = JSON.parse(JSON.stringify(this.allArrivals));
 
@@ -427,7 +438,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this.loadedSensors = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.allSensorsMap);
 
           this.picksBias = 0;
-          const contextFile = await this._eventApiService.getWaveformFile(this.waveformInfo.context).toPromise();
+          const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
+
+          if (this.currentEventId !== event.event_resource_id) {
+            console.log(`changed event during loading`);
+            return;
+          }
 
           if (contextFile) {
             const contextData = WaveformUtil.parseMiniseed(contextFile, true);
@@ -451,7 +467,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     } finally {
-      this.waveformService.loading.next(false);
+      if (this.currentEventId === event.event_resource_id) {
+        this.waveformService.loading.next(false);
+      }
     }
   }
 
@@ -1107,7 +1125,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           e.preventDefault();
           this._menu.nativeElement.style.left = `${e.offsetX}px`;
-          this._menu.nativeElement.style.top = `${e.y}px`;
+          this._menu.nativeElement.style.top = `${e.y - 40}px`;
           this._toggleContextMenuChart('show');
           this.selectedContextMenu = j;
           return false;

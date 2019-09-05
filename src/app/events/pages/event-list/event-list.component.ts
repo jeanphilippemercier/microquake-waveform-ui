@@ -94,8 +94,15 @@ export class EventListComponent implements OnInit {
       status: this.selectedEvaluationStatusGroups ? this.selectedEvaluationStatusGroups : undefined,
     };
 
-    const response = await this._eventApiService.getEvents(eventListQuery).toPromise();
-    this.events = response.results;
+    try {
+      const response = await this._eventApiService.getEvents(eventListQuery).toPromise();
+      this.events = response.results;
+    } catch (err) {
+      console.error(err);
+      if (err.error.text) {
+        this.events = JSON.parse(err.error.text.replace(/\bNaN\b/g, 'null')).results;
+      }
+    }
 
     // TODO: no order_by time_utc on api?
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
