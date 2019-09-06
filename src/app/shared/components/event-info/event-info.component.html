@@ -10,6 +10,27 @@
         <td>{{event?.preferred_origin_id}}</td>
       </tr>
       <tr>
+        <th>Date and Time</th>
+        <td>
+          <div class="row">
+            <div
+              class="col-5 p-0"
+              *ngIf="event?.time_utc"
+            >
+              {{event?.time_utc | date:' MMM dd': event?.timezone}} <small class="pl-1">
+              {{event?.time_utc | date:'yyyy': event?.timezone}}</small>
+            </div>
+            <div
+              class="col-7"
+              *ngIf="event?.time_utc"
+            >
+              {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
+              <small>{{event?.time_utc | date:'.SSS'}}</small>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
         <th>Magnitude <span *ngIf="event?.magnitude_type">({{event?.magnitude_type}})</span></th>
         <td>
           <div class="row">
