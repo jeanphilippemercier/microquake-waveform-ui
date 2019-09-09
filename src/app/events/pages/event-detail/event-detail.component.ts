@@ -83,7 +83,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this._loadSites();
-    await this._loadEventTypesAndStatuses(),
+    await this._loadEventTypesAndStatuses();
     await Promise.all([
       this._loadCurrentEvent(),
       this._loadEvents(),
@@ -277,9 +277,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
     } catch (err) {
       console.error(err);
-      if (err.error.text) {
-        this.events = JSON.parse(err.error.text.replace(/\bNaN\b/g, 'null')).results;
-      }
     } finally {
       this.loadingEventList = false;
       this._ngxSpinnerService.hide('loadingEventList');
