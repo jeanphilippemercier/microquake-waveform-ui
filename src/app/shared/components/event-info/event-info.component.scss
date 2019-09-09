@@ -24,6 +24,20 @@
   }
 }
 
+table {
+  &.update-dialog {
+    th {
+      width: 155px;
+    }
+  }
+
+  &.event-detail {
+    th {
+      width: 135px;
+    }
+  }
+}
+
 ::ng-deep .mat-form-field-appearance-outline .mat-form-field-wrapper {
   padding-bottom: 8px;
 }

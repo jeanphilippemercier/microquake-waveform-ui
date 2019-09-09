@@ -1,5 +1,8 @@
 <div [style.opacity]="!event ? 0 : 1">
-  <table class="table table-extra-condensed mb-0">
+  <table
+    class="table table-extra-condensed mb-0"
+    [ngClass]="{'update-dialog': mode === 'updateDialog', 'event-detail' : mode === 'eventDetail'}"
+  >
     <tbody>
       <tr *ngIf="mode === 'updateDialog'">
         <th>Event Id</th>
@@ -9,23 +12,49 @@
         <th>Preferred Origin Id</th>
         <td>{{event?.preferred_origin_id}}</td>
       </tr>
-      <tr>
-        <th>Date and Time</th>
+      <tr *ngIf="mode === 'updateDialog'">
+        <th>Files</th>
         <td>
           <div class="row">
-            <div
-              class="col-5 p-0"
-              *ngIf="event?.time_utc"
-            >
-              {{event?.time_utc | date:' MMM dd': event?.timezone}} <small class="pl-1">
-              {{event?.time_utc | date:'yyyy': event?.timezone}}</small>
+            <div class="col-3">
+              <a
+                mat-button
+                [href]="event?.event_file"
+                color="primary"
+                download
+                target="_blank"
+              >QuakeML</a>
             </div>
-            <div
-              class="col-7"
-              *ngIf="event?.time_utc"
-            >
+            <div class="col-5 text-center">
+              <a
+                [href]="event?.waveform_file"
+                color="primary"
+                mat-button
+                download
+              >Waveform trace</a>
+            </div>
+            <div class="col-4">
+              <a
+                [href]="event?.waveform_context_file"
+                color="primary"
+                mat-button
+                download
+              >Context trace</a>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>Time</th>
+        <td>
+          <div class="row">
+            <div class="col-5 p-0 text-right">
               {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
               <small>{{event?.time_utc | date:'.SSS'}}</small>
+            </div>
+            <div class="col-7"><small class="">
+                {{event?.time_utc | date:' MMM dd': event?.timezone}}
+                {{event?.time_utc | date:'yyyy': event?.timezone}}</small>
             </div>
           </div>
         </td>
@@ -71,17 +100,17 @@
         <td *ngIf="event?.x">
           <div class="d-flex w-100 flex-column">
             <div class="row">
-              <div class=" col-1 p-0">X</div>
+              <div class=" col-1 p-0"><small>X</small></div>
               <div class="col-4 p-0 text-right">{{event?.x | number:'.0-0'}}</div>
-              <div class="col-3">East</div>
+              <div class="col-3"><small>East</small></div>
             </div>
             <div class="row">
-              <div class=" col-1 p-0">Y</div>
+              <div class=" col-1 p-0"><small>Y</small></div>
               <div class="col-4 p-0 text-right">{{event?.y | number:'.0-0'}}</div>
-              <div class="col-3">North</div>
+              <div class="col-3"><small>North</small></div>
             </div>
             <div class="row">
-              <div class=" col-1 p-0">Z</div>
+              <div class=" col-1 p-0"><small>Z</small></div>
               <div class="col-4 p-0 text-right">{{event?.z | number:'.0-0'}}</div>
               <div class="col-3"></div>
             </div>
