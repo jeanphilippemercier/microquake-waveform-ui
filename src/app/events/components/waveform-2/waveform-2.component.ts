@@ -36,7 +36,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   @Input()
   set event(event: IEvent) {
-    if (event !== this._event) {
+    const newEventId = event ? event.event_resource_id : null;
+    const oldEventId = this._event ? this._event.event_resource_id : null;
+    if (newEventId !== oldEventId) {
       this._event = event;
       this._handleEvent(this._event);
     }
@@ -545,7 +547,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._renderPage();
   }
 
-   private async _onInteractiveProcess() {
+  private async _onInteractiveProcess() {
 
     try {
       this.waveformService.interactiveProcessLoading.next(true);
@@ -701,9 +703,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
           includeZero: true,
           labelFormatter: (e) => {
             const val = e.value * scaleY;
-            return val === 0 ? val :
-              Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
-              Number(val.toPrecision(2)).toFixed(2);
+
+            if (val === 0) {
+              return val;
+            }
+
+            if (Math.abs(Number(val.toPrecision(1))) < 10) {
+              return Number(val.toPrecision(1)).toFixed(3);
+            }
+
+            return Number(val.toPrecision(2)).toFixed(2);
           }
         },
         data: data
@@ -964,9 +973,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
         includeZero: true,
         labelFormatter: (e) => {
           const val = e.value * scaleY;
-          return val === 0 ? val :
-            Math.abs(Number(val.toPrecision(1))) < 10 ? Number(val.toPrecision(1)).toFixed(3) :
-            Number(val.toPrecision(2)).toFixed(2);
+
+          if (val === 0) {
+            return val;
+          }
+
+          if (Math.abs(Number(val.toPrecision(1))) < 10) {
+            return Number(val.toPrecision(1)).toFixed(3);
+          }
+
+          return Number(val.toPrecision(2)).toFixed(2);
         }
       },
       data: data
