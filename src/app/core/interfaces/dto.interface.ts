@@ -5,4 +5,6 @@ export interface PaginationResponse<T> {
   cursor_previous?: string;
   count: number;
   results: T[];
+  current_page: number;
+  total_pages: number;
 }

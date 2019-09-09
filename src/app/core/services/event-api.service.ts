@@ -8,7 +8,7 @@ import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery
 } from '@interfaces/event-query.interface';
 import ApiUtil from '../utils/api-util';
-import { EventUpdateInput, WaveformQueryResponse } from '@interfaces/event-dto.interface';
+import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse } from '@interfaces/event-dto.interface';
 import { WebSocketService } from './websocket.service';
 import { filter, retry } from 'rxjs/operators';
 import { PaginationResponse } from '@interfaces/dto.interface';
@@ -48,7 +48,7 @@ export class EventApiService {
     return this._http.get<WaveformQueryResponse>(url, { params });
   }
 
-  getEvents(query: EventQuery): Observable<PaginationResponse<IEvent>> {
+  getEvents(query: EventQuery): Observable<EventPaginationResponse<IEvent>> {
     const url = `${environment.apiUrl}events`;
     let params = ApiUtil.getHttpParams(query);
 
@@ -61,7 +61,7 @@ export class EventApiService {
       params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
     }
 
-    return this._http.get<PaginationResponse<IEvent>>(url, { params });
+    return this._http.get<EventPaginationResponse<IEvent>>(url, { params });
   }
 
   getBoundaries(query?: BoundariesQuery): Observable<Boundaries[]> {
