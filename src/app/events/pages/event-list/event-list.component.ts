@@ -88,6 +88,7 @@ export class EventListComponent implements OnInit {
     const startTime = moment(this.eventStartDate).toISOString();
     const endTime = moment(this.eventEndDate).toISOString();
     const eventListQuery: EventQuery = {
+      page_size: 30,
       time_utc_after: startTime,
       time_utc_before: endTime,
       event_type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
@@ -99,13 +100,7 @@ export class EventListComponent implements OnInit {
       this.events = response.results;
     } catch (err) {
       console.error(err);
-      if (err.error.text) {
-        this.events = JSON.parse(err.error.text.replace(/\bNaN\b/g, 'null')).results;
-      }
     }
-
-    // TODO: no order_by time_utc on api?
-    this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
 
     this.dataSource = new MatTableDataSource(this.events);
 
