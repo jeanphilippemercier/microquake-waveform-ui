@@ -539,7 +539,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
 
   openInteractiveProcessDialog(oldEvent: IEvent, newEvent: IEvent) {
-    if (!event || !oldEvent) {
+    if (!oldEvent || !newEvent) {
       return;
     }
 
