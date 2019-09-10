@@ -5,7 +5,7 @@
   <mat-expansion-panel
     *ngFor="let day of days; let i = index; trackBy: trackDay"
     class="mat-elevation-z day"
-    [expanded]="i === 0"
+    [expanded]="currentEventDayInList ? day?.dayDate.isSame(openedDay) : (i === 0)"
     hideToggle
   >
     <mat-expansion-panel-header
@@ -29,23 +29,38 @@
             mat-list-item
             (click)="onEventClick(event)"
             [ngClass]="{
-                      'active': event?.event_resource_id === currentEvent?.event_resource_id,
+                      'active': event?.event_resource_id === currentEventInfo?.event_resource_id,
+                      'active-chart': event?.event_resource_id === currentEvent?.event_resource_id,
                       'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
                       'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
                       'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
                       'event-rejected-automatic': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic'
                   }"
           >
-            <mat-icon>
+            <mat-icon
+              class="event-icon"
+              matBadgeSize="small"
+              matBadge="."
+              matBadgeOverlap="true"
+              matBadgePosition="before"
+            >
               {{event?.event_type | eventTypeIcon}}
             </mat-icon>
             <div class="px-3">
+
               {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
               <small>{{event?.time_utc | date:'.SSS'}}</small>
               <ng-container *ngIf="event?.magnitude !== -999">
                 ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
               </ng-container>
             </div>
+            <ng-container *ngIf="event?.event_resource_id === eventOutsideFiter">
+              <mat-icon
+                matTooltip="Event is outside of the event filter. "
+                style="font-size: 18px; line-height: 22px;"
+                color="warn"
+              >warning</mat-icon>
+            </ng-container>
             <div class="mr-auto"></div>
             <button
               class="chart-button"

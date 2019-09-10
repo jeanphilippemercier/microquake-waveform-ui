@@ -7,15 +7,17 @@ import { PickKey, Arrival, Traveltime, PredictedPickKey } from '@interfaces/even
 
 export default class WaveformUtil {
 
-  // factor to convert input units from m to mmm
+  // default data units conversion factor is from m to defaultUnits (mm)
   static convYUnits = 1000;
+  static defaultUnits = 'mm';
 
   static findValue(obj, key, value) {
     return obj.find(v => v[key] === value);
   }
 
   static findNestedValue(obj, key, subkey, value, otherkey, othervalue) {
-    return obj.find(v => (v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
+    return obj.find(v => (v[key] && v[key][subkey] &&
+      v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
   }
 
   static sortArrayBy(field, reverse, primer) {
@@ -58,6 +60,7 @@ export default class WaveformUtil {
         } else {
           if (!sg.start().isSame(zTime, 'second')) {
             zTime = moment(moment.min(zTime, sg.start()));
+            zTime.millisecond(Math.floor(zTime.millisecond() / 100) * 100);
             changetimeOrigin = true;
           }
         }
@@ -102,11 +105,11 @@ export default class WaveformUtil {
     if (zTime && zTime.isValid()) {
       timeOrigin = moment(zTime);
       if (changetimeOrigin) {
-        console.log('***changetimeOrigin channels change in earliest time second detected');
         zTime.millisecond(0);
         for (const sensor of sensors) {
           for (const channel of sensor.channels) {
             if (!channel.start.isSame(zTime, 'second')) {
+              console.log('***adjust time origin for sensor: ' + sensor.sensor_code + ' channel: ' + channel.channel_id);
               const offset = channel.start.diff(zTime, 'seconds') * 1000000;
               channel.microsec += offset;
               for (const datasample of channel.data) { // microsecond offset from new zeroTime
@@ -310,7 +313,8 @@ export default class WaveformUtil {
         continue;
       }
 
-      const sensor = WaveformUtil.findValue(sensors, 'code', arrival.pick.sensor.toString());
+      // pick.sensor contains the sensor ID (not sensor code)
+      const sensor = WaveformUtil.findValue(sensors, 'id', arrival.pick.sensor);
 
       if (!sensor) {
         if (!missingSensors.includes(arrival.pick.sensor)) {
@@ -337,6 +341,8 @@ export default class WaveformUtil {
         label: arrival.phase,
         labelAlign: 'far',
       });
+
+      sensor.distance = arrival.distance;
     }
 
     if (missingSensors.length > 0) {

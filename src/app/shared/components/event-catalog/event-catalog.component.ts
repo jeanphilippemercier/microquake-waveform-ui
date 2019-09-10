@@ -4,7 +4,7 @@ import * as moment from 'moment';
 import { IEvent } from '@interfaces/event.interface';
 
 interface EventDay {
-  dayDate: Date;
+  dayDate: moment.Moment;
   dayDateStr: string;
   dayEvents: IEvent[];
 }
@@ -22,7 +22,9 @@ export class EventCatalogComponent {
   @Input()
   set events(events: IEvent[]) {
     this._events = events || [];
+    this.addCurrentEventToList();
     this.sortAndMapEvents();
+    this.currentEventDayInList = this.isCurrentEventDayInList();
     return;
   }
 
@@ -35,24 +37,59 @@ export class EventCatalogComponent {
   @Input()
   set forceCD(forceCD: number) {
     this.sortAndMapEvents();
+    this.currentEventDayInList = this.isCurrentEventDayInList();
     this._forceCD = forceCD;
   }
   get forceCD() {
     return this._forceCD;
   }
-  @Input() currentEvent: IEvent;
+
+  @Input() currentEventInfo: IEvent;
+
+  _currentEvent: IEvent;
+  @Input()
+  set currentEvent(event: IEvent) {
+    this._currentEvent = event;
+    if (event && event.time_utc) {
+      this.openedDay = moment(event.time_utc).utcOffset(this.timezone).startOf('day');
+      this.currentEventDayInList = this.isCurrentEventDayInList();
+    }
+    return;
+  }
+
+  get currentEvent(): IEvent {
+    return this._currentEvent;
+  }
+
   @Input() timezone: string;
 
   @Output() eventClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
   @Output() chartClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
 
 
+  @Input() filterTimeAfter: moment.Moment;
+  @Input() filterTimeBefore: moment.Moment;
+
   days: EventDay[] = [];
   daysMap: any = {};
+  openedDay: moment.Moment;
+  currentEventDayInList = false;
+  eventOutsideFiter: string;
 
   sortAndMapEvents() {
     this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
     [this.days, this.daysMap] = this.mapEventsToDays(this.events);
+  }
+
+  addCurrentEventToList() {
+    if (
+      this.currentEvent &&
+      this.events &&
+      this.events.findIndex(event => event.event_resource_id === this.currentEvent.event_resource_id) === -1
+    ) {
+      this.eventOutsideFiter = this.currentEvent.event_resource_id;
+      this.events.push(this.currentEvent);
+    }
   }
 
   mapEventsToDays(events: IEvent[]): [EventDay[], {}] {
@@ -60,10 +97,23 @@ export class EventCatalogComponent {
     const daysMap = {};
 
     events.forEach((event, idx) => {
-      const day = moment(event.time_utc).utcOffset(event.timezone).startOf('day').toString();
+
+      // TODO: use timezone from event.timezone not this.timezone (when timezone's fixed on API)
+      const dayMoment = moment(event.time_utc).utcOffset(this.timezone).startOf('day');
+      const day = dayMoment.toString();
+      let dayOutsideFiterRange = false;
+
+      if (this.filterTimeBefore && dayMoment.isAfter(this.filterTimeBefore)) {
+        dayOutsideFiterRange = true;
+      }
+
+      if (this.filterTimeBefore && dayMoment.isBefore(this.filterTimeAfter)) {
+        dayOutsideFiterRange = true;
+      }
+
       if (typeof daysMap[day] === 'undefined') {
         eventDays.push({
-          dayDate: new Date(event.time_utc),
+          dayDate: moment(event.time_utc).utcOffset(this.timezone).startOf('day'),
           dayDateStr: day,
           dayEvents: []
         });
@@ -73,6 +123,16 @@ export class EventCatalogComponent {
     });
 
     return [eventDays, daysMap];
+  }
+
+  isCurrentEventDayInList() {
+    if (this.events && this.currentEvent) {
+      if (this.events.findIndex(event => event.event_resource_id === this.currentEvent.event_resource_id) > -1) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   trackDay(index: number, item: EventDay) {

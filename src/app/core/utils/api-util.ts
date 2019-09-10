@@ -13,6 +13,15 @@ export default class ApiUtil {
     }
     return params;
   }
+
+  static parseArrayHttpParams(params: HttpParams, arr: any[], key: string): HttpParams {
+    if (arr && arr.length > 1) {
+      params = params.delete(key);
+      arr.forEach(el => params = params.append(key, el));
+    }
+
+    return params;
+  }
 }
 
 

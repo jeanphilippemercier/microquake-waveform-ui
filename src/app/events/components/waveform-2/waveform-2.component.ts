@@ -36,7 +36,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   @Input()
   set event(event: IEvent) {
-    if (event !== this._event) {
+    const newEventId = event ? event.event_resource_id : null;
+    const oldEventId = this._event ? this._event.event_resource_id : null;
+    if (newEventId !== oldEventId) {
       this._event = event;
       this._handleEvent(this._event);
     }
@@ -341,10 +343,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.waveformService.maxPages.next(this.waveformInfo.num_of_pages);
 
       const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
+      const contextUrl = this.waveformInfo.context;
       const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
 
       if (!eventFile) {
         console.error(`no eventFile`);
+        return;
+      }
+
+      if (this.currentEventId !== event.event_resource_id) {
+        console.log(`changed event during loading`);
         return;
       }
 
@@ -405,6 +413,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
           // get arrivals, picks for preferred origin
           const arrivals = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
 
+          if (this.currentEventId !== event.event_resource_id) {
+            console.log(`changed event during loading`);
+            return;
+          }
+
           this.allArrivals = arrivals;
           this.allArrivalsChanged = JSON.parse(JSON.stringify(this.allArrivals));
 
@@ -427,7 +440,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this.loadedSensors = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.allSensorsMap);
 
           this.picksBias = 0;
-          const contextFile = await this._eventApiService.getWaveformFile(this.waveformInfo.context).toPromise();
+          const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
+
+          if (this.currentEventId !== event.event_resource_id) {
+            console.log(`changed event during loading`);
+            return;
+          }
 
           if (contextFile) {
             const contextData = WaveformUtil.parseMiniseed(contextFile, true);
@@ -451,7 +469,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     } finally {
-      this.waveformService.loading.next(false);
+      if (this.currentEventId === event.event_resource_id) {
+        this.waveformService.loading.next(false);
+      }
     }
   }
 
@@ -466,7 +486,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
-      if (!this.timeOrigin.isSame(eventData.timeOrigin)) {
+      if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
       // filter and recompute composite traces
@@ -527,7 +547,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._renderPage();
   }
 
-   private async _onInteractiveProcess() {
+  private async _onInteractiveProcess() {
 
     try {
       this.waveformService.interactiveProcessLoading.next(true);
@@ -575,7 +595,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
-              name: channel.code_id,
+              name: channel.channel_id,
               type: 'line',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
@@ -587,6 +607,20 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
 
       const yMax = this._getYmax(i);
+      // check range decide UOM and y scaling factor
+      const motionType = this._getSensorMotionType(this.activeSensors[i]);
+      let scaleY = WaveformUtil.convYUnits;
+      let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
+        motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+      if (yMax * scaleY < 0.002) {
+        scaleY = scaleY * 1000;
+        uom = uom.replace(WaveformUtil.defaultUnits, 'um');
+      }
+      if (yMax * scaleY > 99.) {
+        scaleY = scaleY / 1000;
+        uom = uom.replace(WaveformUtil.defaultUnits, 'm');
+      }
+
       const options = {
         zoomEnabled: true,
         zoomType: 'x',
@@ -616,9 +650,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
           dockInsidePlotArea: true,
           fontSize: 12,
           fontFamily: 'tahoma',
-          fontColor: 'blue',
+          fontColor: 'black',
           horizontalAlign: 'left'
         },
+        subtitles: [{
+          text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S') : '',
+          dockInsidePlotArea: true,
+          fontSize: 10,
+          fontFamily: 'tahoma',
+          fontColor: 'black',
+          horizontalAlign: 'left'
+        }],
         legend: {
           dockInsidePlotArea: true,
           horizontalAlign: 'left'
@@ -627,8 +669,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           enabled: false,
           contentFormatter: (e) => {
             const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
-              ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
+              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
               '<br/>' +
               '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
             return content;
@@ -647,31 +688,35 @@ export class Waveform2Component implements OnInit, OnDestroy {
           labelAutoFit: false,
           labelWrap: false,
           labelFormatter: (e) => {
-            if (e.value === 0) {
-              const d = moment(this.timeOrigin).utc().utcOffset(this.timezone);
-              return d.format('HH:mm:ss.S');
-            } else {
-              return e.value / 1000000 + ' s';
-            }
+            return e.value / 1000000 + ' s';
           },
           stripLines: this.activeSensors[i].picks
         },
         axisY: {
           minimum: -yMax,
           maximum: yMax,
-          title: this._getSensorUnits(this.activeSensors[i]),
+          title: uom,
           gridThickness: 0,
           lineThickness: globals.axis.lineThickness,
           lineColor: globals.axis.lineColor,
           interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
-            return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+            const val = e.value * scaleY;
+
+            if (val === 0) {
+              return val;
+            }
+
+            if (Math.abs(Number(val.toPrecision(1))) < 10) {
+              return Number(val.toPrecision(1)).toFixed(3);
+            }
+
+            return Number(val.toPrecision(2)).toFixed(2);
           }
         },
         data: data
       };
-
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
@@ -690,8 +735,21 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
+    sensorTitleText += sensor && sensor.distance ? ' -- ' + sensor.distance.toFixed(0) + 'm' : ``;
 
     return sensorTitleText;
+  }
+
+  private _getSensorMotionType(sensor: Sensor) {
+    let sensorMotionType = ``;
+
+    sensorMotionType = sensor && sensor.components && sensor.components[0] &&
+      sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ?
+      sensor.components[0].sensor_type.motion_type : `??`;
+    sensorMotionType = sensorMotionType.indexOf(')') > 1 ?
+      sensorMotionType.substring(sensorMotionType.indexOf('(') + 1, sensorMotionType.indexOf(')')) : sensorMotionType;
+
+    return sensorMotionType;
   }
 
   private _getSensorUnits(sensor: Sensor) {
@@ -821,7 +879,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
         data.push(
           {
-            name: channel.code_id,
+            name: channel.channel_id,
             type: 'line',
             color: globals.context.linecolor,
             lineThickness: globals.lineThickness,
@@ -833,6 +891,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const yMax = this._getYmax(i);
+    // check range decide UOM and y scaling factor
+    const motionType = this._getSensorMotionType(this.activeSensors[i]);
+    let scaleY = WaveformUtil.convYUnits;
+    let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
+      motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+    if (yMax * scaleY < 0.002) {
+      scaleY = scaleY * 1000;
+      uom = uom.replace(WaveformUtil.defaultUnits, 'um');
+    }
+    if (yMax * scaleY > 99.) {
+      scaleY = scaleY / 1000;
+      uom = uom.replace(WaveformUtil.defaultUnits, 'm');
+    }
 
     const timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
     const optionsContext = {
@@ -843,9 +914,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
-        fontColor: 'blue',
+        fontColor: 'black',
         horizontalAlign: 'left'
       },
+      subtitles: [{
+        text: moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S'),
+        dockInsidePlotArea: true,
+        fontSize: 10,
+        fontFamily: 'tahoma',
+        fontColor: 'black',
+        horizontalAlign: 'left'
+      }],
       legend: {
         dockInsidePlotArea: true,
         horizontalAlign: 'left'
@@ -854,8 +933,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         enabled: true,
         contentFormatter: (e) => {
           const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * WaveformUtil.convYUnits * 1000000) / 1000000 +
-            ' ' + this._getSensorUnits(this.activeSensors[i]) + '</strong>' +
+            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
             '<br/>' +
             '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
           return content;
@@ -887,20 +965,28 @@ export class Waveform2Component implements OnInit, OnDestroy {
       axisY: {
         minimum: -yMax,
         maximum: yMax,
-        title: this._getSensorUnits(this.activeSensors[i]),
+        title: uom,
         lineThickness: globals.axis.lineThickness,
         lineColor: globals.axis.lineColor,
         gridThickness: 0,
         interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
-          return Math.ceil(e.value * WaveformUtil.convYUnits * 1000) / 1000;
+          const val = e.value * scaleY;
+
+          if (val === 0) {
+            return val;
+          }
+
+          if (Math.abs(Number(val.toPrecision(1))) < 10) {
+            return Number(val.toPrecision(1)).toFixed(3);
+          }
+
+          return Number(val.toPrecision(2)).toFixed(2);
         }
       },
       data: data
     };
-    optionsContext.data[0].dataPoints[0]['indexLabel'] =
-      moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('HH:mm:ss.S');
     this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, optionsContext);
 
     this.activeSensors[i].chart.render();
@@ -1055,7 +1141,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           e.preventDefault();
           this._menu.nativeElement.style.left = `${e.offsetX}px`;
-          this._menu.nativeElement.style.top = `${e.y}px`;
+          this._menu.nativeElement.style.top = `${e.y - 40}px`;
           this._toggleContextMenuChart('show');
           this.selectedContextMenu = j;
           return false;
@@ -1576,13 +1662,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _updateSensorPicks(sensor: Sensor, picktype: PickKey) {
     const pick = sensor.picks ? WaveformUtil.findValue(sensor.picks, 'label', picktype) : undefined;
-    const arrpick = WaveformUtil.findNestedValue(this.allArrivalsChanged, 'pick', 'sensor', sensor.sensor_code, 'phase', picktype);
+    const arrpick = WaveformUtil.findNestedValue(this.allArrivalsChanged, 'pick', 'sensor', sensor.id, 'phase', picktype);
 
     if (pick) {
       const pick_time = WaveformUtil.addTimeOffsetMicro(this.timeOrigin, pick.value);
       if (arrpick) {  // existing pick
         if (arrpick.pick.time_utc !== pick_time) {
-          console.log(sensor.sensor_code, picktype);
+          console.log(sensor.sensor_code, sensor.id, picktype);
           console.log('replace pick');
           console.log(arrpick.pick.time_utc);
           console.log(pick_time);
@@ -1615,7 +1701,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           pick: {
             evaluation_mode: EvaluationMode.MANUAL,
             phase_hint: picktype,
-            sensor: sensor.sensor_code,
+            sensor: sensor.id,
             time_utc: pick_time,
             evaluation_status: null,
             time_errors: null,
@@ -1628,14 +1714,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
           time_residual: null,
           takeoff_angle: null,
         };
-        console.log(sensor.sensor_code, picktype);
+        console.log(sensor.sensor_code, sensor.id, picktype);
         console.log('add pick');
         console.log(newpick);
         this.allArrivalsChanged.push(newpick);
       }
     } else {
       if (arrpick) {  // delete pick
-        console.log(sensor.sensor_code, picktype);
+        console.log(sensor.sensor_code, sensor.id, picktype);
         console.log('delete pick');
         console.log(arrpick);
         this.allArrivalsChanged = this.allArrivalsChanged.filter(item => item !== arrpick);
