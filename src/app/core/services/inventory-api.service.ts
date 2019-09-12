@@ -5,11 +5,12 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole, Cable } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, Cable, ISensorType } from '@interfaces/inventory.interface';
 import { Sensor, IComponent, SensorType } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 import { SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput } from '@interfaces/inventory-dto.interface';
+import { share } from 'rxjs/operators';
 
 
 @Injectable({
@@ -80,11 +81,11 @@ export class InventoryApiService {
   /**
    * SENSOR TYPES
   */
-  getSensorTypes(query: any = {}): Observable<SensorType> {
-    const url = `${environment.apiUrl}inventory/sensors`;
+  getSensorTypes(query: any = {}): Observable<ISensorType[]> {
+    const url = `${environment.apiUrl}inventory/sensor_types`;
     const params = ApiUtil.getHttpParams(query);
 
-    return this._http.get<SensorType>(url, { params });
+    return this._http.get<ISensorType[]>(url, { params });
   }
 
 
@@ -169,25 +170,23 @@ export class InventoryApiService {
   /**
    * Cables
   */
-  getCables(query: PaginationRequest = {}): Observable<PaginationResponse<Cable>> {
-    const url = `${environment.apiUrl}inventory/cables`;
-    const params = ApiUtil.getHttpParams(query);
-
-    return this._http.get<PaginationResponse<Cable>>(url, { params });
+  getCables(): Observable<Cable[]> {
+    const url = `${environment.apiUrl}cables`;
+    return this._http.get<Cable[]>(url);
   }
 
   getcable(id: number): Observable<Cable> {
-    const url = `${environment.apiUrl}inventory/cables/${id}`;
+    const url = `${environment.apiUrl}cables/${id}`;
     return this._http.get<Cable>(url);
   }
 
   createCable(body: any): Observable<Cable> {
-    const url = `${environment.apiUrl}inventory/cables`;
+    const url = `${environment.apiUrl}cables`;
     return this._http.post<Cable>(url, body);
   }
 
   deleteCable(id: number): Observable<Cable> {
-    const url = `${environment.apiUrl}inventory/cables/${id}`;
+    const url = `${environment.apiUrl}cables/${id}`;
     return this._http.delete<Cable>(url);
   }
 }
