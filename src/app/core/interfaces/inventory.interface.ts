@@ -99,6 +99,7 @@ export interface Sensor extends SensorBase {
   station: {
     id: number;
     name: string;
+    code: string;
   } | null;
   borehole?: {
     id: number;
@@ -117,17 +118,20 @@ export interface SignalQuality {
   sensor: number;
 }
 
-export interface IComponent {
-  id: number;
-  sensor_type: ISensorType;
+
+export interface IComponentBase {
   code: ComponentCode;
-  cable_length: number;
   orientation_x: number;
   orientation_y: number;
   orientation_z: number;
   damping: number;
   enabled: boolean;
-  sensor: number;
+  cable_length: number;
+}
+export interface IComponent extends IComponentBase {
+  id: number;
+  sensor_type: ISensorType;
+  sensor: Sensor;
   cable: number;
 }
 
@@ -138,9 +142,9 @@ export interface ISensorType {
 }
 
 export enum ComponentCode {
-  Z = 'z',
-  Y = 'y',
-  X = 'x',
+  Z = 'Z',
+  Y = 'Y',
+  X = 'X',
 }
 
 export enum SensorType {
