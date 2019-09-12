@@ -153,6 +153,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           this.waveformService.interactiveProcessLoading.next(false);
           this.openInteractiveProcessDialog(this.currentEvent, data.event);
           break;
+        case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
+          // TODO:finish when API's fixed
+          console.log(`INTERACTIVE_BATCH_FAILED`);
+          console.log(data);
+          // TODO:OMG OMG what now what now?! maybe this! what else? AAAAAAaaaa...... . .   .   .    puff!
+          this.waveformService.interactiveProcessLoading.next(false);
+          break;
         default:
           console.log(data);
           console.log(`unknown websocket operation`);

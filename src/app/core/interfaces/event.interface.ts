@@ -114,19 +114,38 @@ export interface IEvent {
 export enum WebsocketResponseOperation {
   CREATED = 'created',
   UPDATE = 'update',
-  INTERACTIVE_BATCH_READY = 'interactive_batch_ready'
+  INTERACTIVE_BATCH_READY = 'interactive_batch_ready',
+  INTERACTIVE_BATCH_FAILED = 'interactive_batch_failed',
 }
 
 export enum WebsocketResponseType {
   EVENT = 'event',
 }
 
-export interface WebsocketEventResponse {
-  event: IEvent;
-  operation: WebsocketResponseOperation;
-  type: WebsocketResponseType;
+export enum BatchStatus {
+  NEW = 'new',
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  ERROR = 'error',
+  READY = 'ready',
 }
 
+export interface BatchResponse {
+  id: number;
+  status: BatchStatus;
+}
+
+export interface EventExtra {
+  batch: BatchResponse;
+  error: Object;
+}
+
+export interface WebsocketEventResponse {
+  type: WebsocketResponseType;
+  operation: WebsocketResponseOperation;
+  event: IEvent;
+  extra: EventExtra;
+}
 
 export interface Boundaries {
   timezone: string;
