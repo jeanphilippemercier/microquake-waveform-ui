@@ -137,14 +137,22 @@ export interface IComponent extends IComponentBase {
 
 export interface ISensorType {
   id: number;
+  model: string;
+  manufacturer: string;
   sensor_type: SensorType;
+  resonance_frequency: number;
+  coil_resistance: number;
+  shunt_resistance: number;
+  gain: number;
+  response_file: string;
+  description: string;
   motion_type: MotionType;
 }
 
 export enum ComponentCode {
-  Z = 'Z',
-  Y = 'Y',
   X = 'X',
+  Y = 'Y',
+  Z = 'Z',
 }
 
 export enum SensorType {
