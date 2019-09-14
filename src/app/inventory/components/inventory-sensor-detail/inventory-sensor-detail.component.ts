@@ -23,31 +23,22 @@ export class InventorySensorDetailComponent implements OnInit {
   @Input()
   public set sensorId(v: number) {
     this._sensorId = v;
-    this._loadSensor();
+    if (this._sensorId) {
+      this._loadSensor(this._sensorId);
+    }
   }
 
   public get sensorId() {
     return this._sensorId;
   }
 
-  private _mode: PageMode;
 
-  @Input()
-  public set mode(v: PageMode) {
-    this._mode = v;
-    this._initPageMode();
-  }
-
-  public get mode(): PageMode {
-    return this._mode;
-  }
-
+  @Input() mode: PageMode = PageMode.CREATE;
   @Output() sensorChange: EventEmitter<Sensor> = new EventEmitter();
 
   sensor: Sensor;
 
   editDisabled = false;
-  pageMode: PageMode = PageMode.VIEW;
   PageMode = PageMode;
   loading = false;
 
@@ -61,6 +52,8 @@ export class InventorySensorDetailComponent implements OnInit {
     enabled: [false],
     name: [, [Validators.required]],
     code: [, [Validators.required]],
+    alternate_code: [],
+    location_code: [],
     station: [, Validators.required],
     borehole: [],
     commissioning_date: [],
@@ -68,6 +61,8 @@ export class InventorySensorDetailComponent implements OnInit {
     location_x: [],
     location_y: [],
     location_z: [],
+    orientation_valid: [],
+    along_hole_z: [],
     part_number: [],
     manufacturer: [],
   });
@@ -83,21 +78,12 @@ export class InventorySensorDetailComponent implements OnInit {
     private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
-  async ngOnInit() {
-
+  ngOnInit() {
+    this._initEditableForm();
   }
 
-  private async _initPageMode() {
-
-    if (this.mode === PageMode.VIEW) {
-      this.myForm.disable();
-    } else {
-      this._initEditableForm();
-    }
-  }
-
-  private async _loadSensor() {
-    this.sensor = await this._inventoryApiService.getSensor(this.sensorId).toPromise();
+  private async _loadSensor(sensorId: number) {
+    this.sensor = await this._inventoryApiService.getSensor(sensorId).toPromise();
     this.sensorChange.emit(this.sensor);
     this.myForm.patchValue(Object.assign(this.myForm.value, this.sensor));
   }
@@ -158,10 +144,12 @@ export class InventorySensorDetailComponent implements OnInit {
 
     this.submited = true;
     if (this.myForm.invalid) {
+      console.log(`invalid`);
+
       return;
     }
 
-    if (this.pageMode === PageMode.CREATE) {
+    if (this.mode === PageMode.CREATE) {
       try {
         this.loading = true;
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
@@ -173,7 +161,7 @@ export class InventorySensorDetailComponent implements OnInit {
         this.loading = false;
         this._ngxSpinnerService.hide('loadingCurrentEvent');
       }
-    } else if (this.pageMode === PageMode.EDIT) {
+    } else if (this.mode === PageMode.EDIT) {
       try {
         this.loading = true;
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });

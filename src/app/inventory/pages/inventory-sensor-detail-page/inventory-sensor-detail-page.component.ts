@@ -5,9 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
 import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
-import { SensorUpdateInput, SensorCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { MatDialog } from '@angular/material';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { first } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inventory-sensor-detail-page',
@@ -19,10 +22,10 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
 
   params$: Subscription;
   sensorId: number;
-  sensor: Sensor | SensorUpdateInput | SensorCreateInput = {};
+  sensor: Partial<Sensor> = {};
 
   editDisabled = false;
-  pageMode: PageMode = PageMode.VIEW;
+  pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
   loading = false;
 
@@ -55,7 +58,8 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
+    private _matDialog: MatDialog
   ) { }
 
   async ngOnInit() {
@@ -64,11 +68,7 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
       if (params['sensorId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
         this.pageMode = PageMode.CREATE;
       } else {
-        if (params['pageMode'] === PageMode.EDIT) {
-          this.pageMode = PageMode.EDIT;
-        } else {
-          this.pageMode = PageMode.VIEW;
-        }
+        this.pageMode = PageMode.EDIT;
         this.sensorId = params['sensorId'];
       }
     });
@@ -90,4 +90,31 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
       });
   }
 
+
+  delete(sensorId: number) {
+    if (!sensorId) {
+      console.error(`No sensorId`);
+    }
+
+    const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
+      ConfirmationDialogComponent, {
+        hasBackdrop: true,
+        width: '350px',
+        data: {
+          header: `Are you sure?`,
+          text: `Do you want to proceed and delete this sensor?`
+        }
+      });
+
+    deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      if (val) {
+        try {
+          const response = await this._inventoryApiService.deleteSensor(sensorId).toPromise();
+
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
+  }
 }

@@ -6,193 +6,230 @@
   <div class="row">
     <div class="col-12 px-3 ">
       <div class="row pb-1">
-        <div class="col-2 pb-1 ">
+        <div class="col-sm-1 pb-1 ">
           <mat-slide-toggle
             class="mt-4"
             formControlName="enabled"
           >
-            Enabled?
           </mat-slide-toggle>
         </div>
-        <div
-          class="col pb-1"
-          *ngIf="mode !== PageMode.CREATE"
-        >
-          <mat-form-field>
-            <mat-label>Id</mat-label>
-            <input
-              matInput
-              [(ngModel)]="sensorId"
-              [ngModelOptions]="{standalone: true}"
-              placeholder="Id"
-              [disabled]="true"
-            >
-          </mat-form-field>
-        </div>
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Name</mat-label>
-            <input
-              matInput
-              formControlName="name"
-            >
-            <mat-error *ngIf="myForm['name']?.invalid">This field is required</mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Code</mat-label>
-            <input
-              matInput
-              formControlName="code"
-            >
-          </mat-form-field>
-        </div>
-
-      </div>
-
-      <div class="row py-1">
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Station</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="station"
-              [matAutocomplete]="autoSensor"
-            >
-            <mat-autocomplete
-              #autoSensor="matAutocomplete"
-              [displayWith]="stationDisplayFn"
-            >
-              <mat-option
-                *ngFor="let option of (filteredStations | async)"
-                [value]="option"
-              >{{option.name}}</mat-option>
-            </mat-autocomplete>
-          </mat-form-field>
-        </div>
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Borehole</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="borehole"
-              [matAutocomplete]="autoBorehole"
-            >
-            <mat-autocomplete
-              #autoBorehole="matAutocomplete"
-              [displayWith]="stationDisplayFn"
-            >
-              <mat-option
-                *ngFor="let option of (filteredBoreholes | async)"
-                [value]="option"
-              >{{option.name}}</mat-option>
-            </mat-autocomplete>
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="row py-1">
-        <div class="col">
+        <div class="col-sm-11">
           <div class="row">
-            <div class="col-4">
-              <mat-form-field>
-                <mat-label>Location X</mat-label>
-                <input
-                  type="number"
-                  matInput
-                  formControlName="location_x"
-                >
-              </mat-form-field>
+            <div class="col-sm-6">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Station</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="station"
+                      [matAutocomplete]="autoSensor"
+                    >
+                    <mat-autocomplete
+                      #autoSensor="matAutocomplete"
+                      [displayWith]="stationDisplayFn"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredStations | async)"
+                        [value]="option"
+                      >{{option.name}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Borehole</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="borehole"
+                      [matAutocomplete]="autoBorehole"
+                    >
+                    <mat-autocomplete
+                      #autoBorehole="matAutocomplete"
+                      [displayWith]="stationDisplayFn"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredBoreholes | async)"
+                        [value]="option"
+                      >{{option.name}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Name</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      formControlName="name"
+                    >
+                    <mat-error *ngIf="myForm['name']?.invalid">This field is required</mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <div class="row">
+                    <div class="col-6">
+                      <mat-form-field>
+                        <mat-label>Code</mat-label>
+                        <input
+                          [required]="true"
+                          matInput
+                          formControlName="code"
+                        >
+                      </mat-form-field>
+                    </div>
+
+                    <div class="col-6">
+                      <mat-form-field>
+                        <mat-label>Location code</mat-label>
+                        <input
+                          matInput
+                          formControlName="location_code"
+                        >
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Along hole z</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="along_hole_z"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Alternate code</mat-label>
+                    <input
+                      matInput
+                      formControlName="alternate_code"
+                    >
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
-            <div class="col-4">
-              <mat-form-field>
-                <mat-label>Location Y</mat-label>
-                <input
-                  type="number"
-                  matInput
-                  formControlName="location_y"
-                >
-              </mat-form-field>
-            </div>
-            <div class="col-4">
-              <mat-form-field>
-                <mat-label>Location Z</mat-label>
-                <input
-                  type="number"
-                  matInput
-                  formControlName="location_z"
-                >
-              </mat-form-field>
+            <div class="col-sm-6">
+              <div class="row">
+
+                <div class="col-sm-12">
+                  <div class="row">
+                    <div class="col-sm-4">
+                      <mat-form-field>
+                        <mat-label>Location X</mat-label>
+                        <input
+                          type="number"
+                          matInput
+                          formControlName="location_x"
+                        >
+                      </mat-form-field>
+                    </div>
+                    <div class="col-sm-4">
+                      <mat-form-field>
+                        <mat-label>Location Y</mat-label>
+                        <input
+                          type="number"
+                          matInput
+                          formControlName="location_y"
+                        >
+                      </mat-form-field>
+                    </div>
+                    <div class="col-sm-4">
+                      <mat-form-field>
+                        <mat-label>Location Z</mat-label>
+                        <input
+                          type="number"
+                          matInput
+                          formControlName="location_z"
+                        >
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-sm-4">
+                  <mat-form-field>
+                    <mat-label>Orientation valid</mat-label>
+                    <mat-select formControlName="orientation_valid">
+                      <mat-option [value]="false">
+                        No
+                      </mat-option>
+                      <mat-option [value]="true">
+                        Yes
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-slide-toggle
+                    *ngIf=""
+                    class="mt-4 float-right"
+                  >
+                    Orientation valid?
+                  </mat-slide-toggle>
+                </div>
+                <div class="col-sm-4">
+                  <mat-form-field>
+                    <mat-label>Part number</mat-label>
+                    <input
+                      matInput
+                      formControlName="part_number"
+                    >
+                  </mat-form-field>
+                </div>
+
+                <div class="col-sm-4">
+                  <mat-form-field>
+                    <mat-label>Manufacturer</mat-label>
+                    <input
+                      matInput
+                      formControlName="manufacturer"
+                    >
+                  </mat-form-field>
+                </div>
+
+                <div class="col-sm-6">
+                  <mat-form-field>
+                    <mat-label>Commissioning Date</mat-label>
+                    <input
+                      matInput
+                      formControlName="commissioning_date"
+                      [matDatepicker]="pickerCommissioning"
+                    >
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="pickerCommissioning"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #pickerCommissioning></mat-datepicker>
+                  </mat-form-field>
+                </div>
+
+                <div class="col-sm-6">
+                  <mat-form-field>
+                    <mat-label>Decommissioning Date</mat-label>
+                    <input
+                      matInput
+                      formControlName="decommissioning_date"
+                      [matDatepicker]="pickerDecommissioning"
+                    >
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="pickerDecommissioning"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #pickerDecommissioning></mat-datepicker>
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col">
-          <div class="row">
-            <div class="col-6">
-              <mat-form-field>
-                <mat-label>Commissioning Date</mat-label>
-                <input
-                  matInput
-                  formControlName="commissioning_date"
-                  [matDatepicker]="pickerCommissioning"
-                >
-                <mat-datepicker-toggle
-                  matSuffix
-                  [for]="pickerCommissioning"
-                ></mat-datepicker-toggle>
-                <mat-datepicker #pickerCommissioning></mat-datepicker>
-              </mat-form-field>
-            </div>
 
-            <div class="col-6">
-              <mat-form-field>
-                <mat-label>Decommissioning Date</mat-label>
-                <input
-                  matInput
-                  formControlName="decommissioning_date"
-                  [matDatepicker]="pickerDecommissioning"
-                >
-                <mat-datepicker-toggle
-                  matSuffix
-                  [for]="pickerDecommissioning"
-                ></mat-datepicker-toggle>
-                <mat-datepicker #pickerDecommissioning></mat-datepicker>
-              </mat-form-field>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="row py-1">
-
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Part number</mat-label>
-            <input
-              matInput
-              formControlName="part_number"
-            >
-          </mat-form-field>
-        </div>
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Manufacturer</mat-label>
-            <input
-              matInput
-              formControlName="manufacturer"
-            >
-          </mat-form-field>
-        </div>
       </div>
 
       <div class="row">
@@ -225,15 +262,6 @@
                 [color]="'primary'"
                 mat-raised-button
               >Create</button>
-            </ng-container>
-
-            <ng-container *ngIf="mode === PageMode.VIEW">
-              <button
-                [routerLink]="['/inventory/sensors',sensorId,PageMode.EDIT]"
-                type="submit"
-                [color]="'primary'"
-                mat-raised-button
-              >Edit sensor</button>
             </ng-container>
           </div>
         </div>
