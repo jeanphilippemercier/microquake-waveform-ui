@@ -6,11 +6,12 @@ import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
 import { Site, Station, Borehole, Cable, ISensorType } from '@interfaces/inventory.interface';
-import { Sensor, IComponent, SensorType } from '@interfaces/inventory.interface';
+import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
-import { SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput } from '@interfaces/inventory-dto.interface';
-import { share } from 'rxjs/operators';
+import {
+  SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput, ComponentUpdateInput
+} from '@interfaces/inventory-dto.interface';
 
 
 @Injectable({
@@ -107,6 +108,11 @@ export class InventoryApiService {
   createComponent(body: any): Observable<IComponent> {
     const url = `${environment.apiUrl}inventory/components`;
     return this._http.post<IComponent>(url, body);
+  }
+
+  updateComponent(componentId: number, body: ComponentUpdateInput): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${componentId}`;
+    return this._http.patch<IComponent>(url, body);
   }
 
   deleteComponent(id: number): Observable<IComponent> {
