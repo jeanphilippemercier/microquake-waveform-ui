@@ -10,6 +10,7 @@ import { MatDialogRef, MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { first } from 'rxjs/operators';
 import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-inventory-component-list',
@@ -56,7 +57,7 @@ export class InventoryComponentListComponent implements OnInit {
   cables: Cable[] = [];
 
   // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['detail', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'id', 'enabled', 'actions'];
+  displayedColumns: string[] = ['detail', 'enabled', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'id', 'actions'];
   dataSource: IComponent[];
   expandedElement: IComponent | null = null;
   pageSize = 15;
@@ -69,7 +70,8 @@ export class InventoryComponentListComponent implements OnInit {
 
   constructor(
     private _inventoryApiService: InventoryApiService,
-    private _matDialog: MatDialog
+    private _matDialog: MatDialog,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   async ngOnInit() {
@@ -115,11 +117,23 @@ export class InventoryComponentListComponent implements OnInit {
       if (val) {
         try {
           const response = await this._inventoryApiService.deleteComponent(componentId).toPromise();
+          this._toastrNotificationService.success('Component deleted');
         } catch (err) {
           console.error(err);
+          this._toastrNotificationService.error(err);
         }
       }
     });
   }
 
+  componentEdited(currentComponent: IComponent, $event: IComponent) {
+    this.expandedElement = null;
+    currentComponent = Object.assign(currentComponent, $event);
+  }
+
+  componentCreated($event: IComponent) {
+    this.expandedElement = null;
+    this.addingNewComponent = false;
+    this.data.push($event);
+  }
 }

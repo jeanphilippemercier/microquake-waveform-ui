@@ -75,12 +75,7 @@
           mat-cell
           *matCellDef="let element"
         >
-          <a
-            matTooltip="Show sensor detail"
-            color="primary"
-            [routerLink]="['/inventory/sensors', element?.id]"
-            mat-button
-          >{{element?.name}}</a>
+          {{element?.name}}
         </td>
       </ng-container>
 

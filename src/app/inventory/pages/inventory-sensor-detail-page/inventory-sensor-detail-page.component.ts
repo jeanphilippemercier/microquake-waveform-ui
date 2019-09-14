@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-inventory-sensor-detail-page',
@@ -59,7 +60,8 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
     private _fb: FormBuilder,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
-    private _matDialog: MatDialog
+    private _matDialog: MatDialog,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   async ngOnInit() {
@@ -94,6 +96,7 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
   delete(sensorId: number) {
     if (!sensorId) {
       console.error(`No sensorId`);
+      this._toastrNotificationService.error('No sensor is defined');
     }
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
@@ -110,8 +113,9 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
       if (val) {
         try {
           const response = await this._inventoryApiService.deleteSensor(sensorId).toPromise();
-
+          await this._toastrNotificationService.success('Sensor deleted');
         } catch (err) {
+          this._toastrNotificationService.error(err);
           console.error(err);
         }
       }

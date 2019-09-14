@@ -9,6 +9,7 @@ import { Sensor, Site, Station, Borehole } from '@interfaces/inventory.interface
 import { SensorCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-inventory-sensor-detail',
@@ -75,7 +76,8 @@ export class InventorySensorDetailComponent implements OnInit {
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   ngOnInit() {
@@ -154,9 +156,11 @@ export class InventorySensorDetailComponent implements OnInit {
         this.loading = true;
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.createSensor(dto).toPromise();
+        await this._toastrNotificationService.success('Sensor created');
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
+        await this._toastrNotificationService.error(err);
       } finally {
         this.loading = false;
         this._ngxSpinnerService.hide('loadingCurrentEvent');
@@ -166,9 +170,11 @@ export class InventorySensorDetailComponent implements OnInit {
         this.loading = true;
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.updateSensor(this.sensorId, dto).toPromise();
+        await this._toastrNotificationService.success('Sensor updated');
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
+        await this._toastrNotificationService.error(err);
       } finally {
         this.loading = false;
         this._ngxSpinnerService.hide('loadingCurrentEvent');

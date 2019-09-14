@@ -12,6 +12,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-inventory-component-detail',
@@ -44,7 +45,9 @@ export class InventoryComponentDetailComponent implements OnInit {
     return this._model;
   }
   private _model: Partial<IComponent> = {};
-
+  @Output() modelChange: EventEmitter<Partial<IComponent>> = new EventEmitter();
+  @Output() modelCreated: EventEmitter<Partial<IComponent>> = new EventEmitter();
+  @Output() modelEdited: EventEmitter<Partial<IComponent>> = new EventEmitter();
 
   @Input()
   public set mode(v: PageMode) {
@@ -63,7 +66,6 @@ export class InventoryComponentDetailComponent implements OnInit {
 
   @Input() availableComponentCodes: ComponentCode[] = [];
 
-  @Output() modelChange: EventEmitter<Partial<IComponent>> = new EventEmitter();
   @Output() cancel: EventEmitter<void> = new EventEmitter();
 
   editDisabled = false;
@@ -97,7 +99,8 @@ export class InventoryComponentDetailComponent implements OnInit {
     private _fb: FormBuilder,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
-    private _matDialog: MatDialog
+    private _matDialog: MatDialog,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   async ngOnInit() {
@@ -138,6 +141,7 @@ export class InventoryComponentDetailComponent implements OnInit {
 
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err);
     }
   }
 
@@ -211,6 +215,7 @@ export class InventoryComponentDetailComponent implements OnInit {
 
     this.submited = true;
     if (this.myForm.invalid) {
+      this._toastrNotificationService.error('Form is not valid');
       return;
     }
 
@@ -223,15 +228,21 @@ export class InventoryComponentDetailComponent implements OnInit {
       if (this.mode === PageMode.CREATE) {
         const dto = this._buildCreateDtoObject(this.myForm.value);
         response = await this._inventoryApiService.createComponent(dto).toPromise();
+        this._toastrNotificationService.success('Component created');
+        this.modelCreated.emit(response);
+
       } else if (this.mode === PageMode.EDIT) {
         const dto = this._buildUpdateDtoObject(this.myForm.value);
         response = await this._inventoryApiService.updateComponent(this.model.id, dto).toPromise();
+        this._toastrNotificationService.success('Component updated');
+        this.modelEdited.emit(response);
       }
       console.log(response);
       // this._router.navigate(['/inventory/sensors', response.id]);
 
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
       this._ngxSpinnerService.hide('loadingForm');

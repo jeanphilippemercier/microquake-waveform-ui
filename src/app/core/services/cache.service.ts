@@ -7,9 +7,9 @@ export interface CacheEntry {
   response: HttpResponse<any>;
   lastRead: number;
 }
-// maximum cache age in ms
-// 5 min
-const maxAge = 5 * 60 * 1000;
+// maximum default cache age in ms
+// 0.5 min
+const maxAge = 0.5 * 60 * 1000;
 
 @Injectable({
   providedIn: 'root'

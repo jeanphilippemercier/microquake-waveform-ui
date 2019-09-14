@@ -216,6 +216,7 @@
             [sensorTypes]="sensorTypes"
             [cables]="cables"
             [availableComponentCodes]="missingComponentCodes"
+            (modelEdited)="componentEdited(element, $event)"
           >
           </app-inventory-component-detail>
         </div>
@@ -272,6 +273,7 @@
       [sensorTypes]="sensorTypes"
       [cables]="cables"
       [availableComponentCodes]="missingComponentCodes"
+      (modelCreated)="componentCreated($event)"
     >
     </app-inventory-component-detail>
   </div>
