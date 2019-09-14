@@ -54,9 +54,13 @@
             </ng-template>
           </mat-tab>
 
-          <mat-tab label="Components ({{sensor?.components?.length > 0 ? sensor?.components?.length : 0}})" [disabled]="pageMode === PageMode.CREATE">
+          <mat-tab
+            label="Components ({{sensor?.components?.length > 0 ? sensor?.components?.length : 0}})"
+            [disabled]="pageMode === PageMode.CREATE"
+          >
             <ng-template matTabContent>
               <app-inventory-component-list
+                *ngIf="sensor?.components"
                 [data]="sensor?.components"
                 [showPagination]="false"
                 [sensorId]="sensor?.id"
