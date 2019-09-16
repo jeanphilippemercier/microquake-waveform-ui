@@ -73,6 +73,16 @@
           >
             {{element?.model}}
           </button>
+          <ng-template #sensorTypeUpdate>
+            <h2 matDialogTitle>Sensor type {{element?.model}}</h2>
+            <mat-dialog-content>
+              <app-inventory-sensor-type-detail
+                (cancel)="closeDialog()"
+                [mode]="PageMode.EDIT"
+                [id]="element?.id"
+              ></app-inventory-sensor-type-detail>
+            </mat-dialog-content>
+          </ng-template>
         </td>
       </ng-container>
 
@@ -174,6 +184,16 @@
               <span>Delete</span>
             </button>
           </mat-menu>
+          <ng-template #sensorTypeUpdate>
+            <h2 matDialogTitle>Sensor type {{element?.model}}</h2>
+            <mat-dialog-content>
+              <app-inventory-sensor-type-detail
+                (cancel)="closeDialog()"
+                [mode]="PageMode.EDIT"
+                [id]="element?.id"
+              ></app-inventory-sensor-type-detail>
+            </mat-dialog-content>
+          </ng-template>
         </td>
 
       </ng-container>
@@ -186,17 +206,6 @@
         mat-row
         *matRowDef="let row; columns: displayedColumns;"
       >
-      {{row}}
-        <ng-template #sensorTypeUpdate>
-          <h2 matDialogTitle>Sensor type {{row?.model}}</h2>
-          <mat-dialog-content>
-            <app-inventory-sensor-type-detail
-              (cancel)="closeDialog()"
-              [mode]="PageMode.EDIT"
-              [id]="row?.id"
-            ></app-inventory-sensor-type-detail>
-          </mat-dialog-content>
-        </ng-template>
       </tr>
     </table>
     <ngx-spinner name="loadingTable"></ngx-spinner>

@@ -185,12 +185,24 @@
             <button
               mat-menu-item
               color="primary"
-              [routerLink]="['/inventory/stations', element.id]"
+              (click)="openDialog(cableTypeUpdate)"
             >
               <mat-icon>edit</mat-icon>
               <span>Edit</span>
             </button>
           </mat-menu>
+
+          <ng-template #cableTypeUpdate>
+            <h2 matDialogTitle>Cable type {{element?.code}}</h2>
+            <mat-dialog-content>
+              <app-inventory-cable-type-detail
+                (modelUpdated)="onModelCreated($event)"
+                (cancel)="closeDialog()"
+                [mode]="PageMode.EDIT"
+                [id]="element?.id"
+              ></app-inventory-cable-type-detail>
+            </mat-dialog-content>
+          </ng-template>
         </td>
       </ng-container>
 
