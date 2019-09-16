@@ -9,7 +9,13 @@ import { InventorySensorDetailPageComponent } from './pages/inventory-sensor-det
 import { InventoryComponentListComponent } from './components/inventory-component-list/inventory-component-list.component';
 import { InventorySensorDetailComponent } from './components/inventory-sensor-detail/inventory-sensor-detail.component';
 import { InventoryComponentDetailComponent } from './components/inventory-component-detail/inventory-component-detail.component';
-
+import { InventoryStationListPageComponent } from './pages/inventory-station-list-page/inventory-station-list-page.component';
+import { InventoryStationDetailPageComponent } from './pages/inventory-station-detail-page/inventory-station-detail-page.component';
+import { InventoryStationDetailComponent } from './components/inventory-station-detail/inventory-station-detail.component';
+import { InventorySensorTypeListPageComponent } from './pages/inventory-sensor-type-list-page/inventory-sensor-type-list-page.component';
+import { InventorySensorTypeDetailComponent } from './components/inventory-sensor-type-detail/inventory-sensor-type-detail.component';
+import { InventoryCableTypeListPageComponent } from './pages/inventory-cable-type-list-page/inventory-cable-type-list-page.component';
+import { InventoryCableTypeDetailComponent } from './components/inventory-cable-type-detail/inventory-cable-type-detail.component';
 
 const ROUTES: Routes = [
   {
@@ -26,6 +32,14 @@ const ROUTES: Routes = [
     component: InventorySiteDetailPageComponent,
   },
   {
+    path: 'inventory/stations',
+    component: InventoryStationListPageComponent,
+  },
+  {
+    path: 'inventory/stations/:stationId',
+    component: InventoryStationDetailPageComponent,
+  },
+  {
     path: 'inventory/sensors',
     component: InventorySensorListPageComponent,
   },
@@ -37,16 +51,31 @@ const ROUTES: Routes = [
     path: 'inventory/sensors/:sensorId/:pageMode',
     component: InventorySensorDetailPageComponent,
   },
+  {
+    path: 'inventory/sensor-types',
+    component: InventorySensorTypeListPageComponent,
+  },
+  {
+    path: 'inventory/cable-types',
+    component: InventoryCableTypeListPageComponent,
+  },
 ];
 @NgModule({
   declarations: [
     InventorySiteListPageComponent,
     InventorySiteDetailPageComponent,
+    InventoryStationListPageComponent,
+    InventoryStationDetailPageComponent,
+    InventoryStationDetailComponent,
     InventorySensorListPageComponent,
     InventorySensorDetailPageComponent,
     InventorySensorDetailComponent,
+    InventorySensorTypeListPageComponent,
     InventoryComponentListComponent,
-    InventoryComponentDetailComponent
+    InventoryComponentDetailComponent,
+    InventorySensorTypeDetailComponent,
+    InventoryCableTypeListPageComponent,
+    InventoryCableTypeDetailComponent
   ],
   imports: [
     SharedModule,
