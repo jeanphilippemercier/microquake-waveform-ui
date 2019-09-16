@@ -50,7 +50,7 @@
 
               {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
               <small>{{event?.time_utc | date:'.SSS'}}</small>
-              <ng-container *ngIf="event?.magnitude !== -999">
+              <ng-container *ngIf="event?.magnitude !== -999 && event?.magnitude">
                 ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
               </ng-container>
             </div>

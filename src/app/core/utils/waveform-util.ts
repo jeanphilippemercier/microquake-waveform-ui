@@ -3,7 +3,7 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
-import { PickKey, Arrival, Traveltime, PredictedPickKey } from '@interfaces/event.interface';
+import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
 
@@ -245,15 +245,21 @@ export default class WaveformUtil {
   }
 
   // tslint:disable-next-line:max-line-length
-  static addPredictedPicksDataToSensors(sensors: Sensor[], originTravelTimes: Traveltime[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
+  static addPredictedPicksDataToSensors(sensors: Sensor[], waveformSensors: WaveformSensor[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
 
-    for (const sensor of sensors) {
+    for (const waveSensor of waveformSensors) {
 
-      const sensorOrigin = originTravelTimes.find(travelTime => travelTime.station_id === sensor.code);
+      const sensor = sensors.find(el => el.code === waveSensor.code);
 
-      if (!sensorOrigin) {
-        console.error(`no sensorOrigin on addPredictedPicksData for sensor`);
-        console.error(sensor);
+      if (!sensor) {
+        console.error(`no sensor on addPredictedPicksData for waveform api sensor`);
+        console.error(waveSensor);
+        continue;
+      }
+
+      if (!waveSensor.preferred_ray.P || !waveSensor.preferred_ray.S) {
+        // console.error(`no preferred ray for sensor`);
+        // console.error(waveSensor);
         continue;
       }
 
@@ -261,11 +267,14 @@ export default class WaveformUtil {
 
       for (const pickKey of Object.values(PredictedPickKey)) {
         let picktime_utc: string;
+        const phase = pickKey.toUpperCase();
+        const ray = waveSensor.preferred_ray[phase];
 
-        if (pickKey === PredictedPickKey.p) {
-          picktime_utc = WaveformUtil.addSecondsToUtc(waveformOriginTimeUtc, sensorOrigin.travel_time_p);
-        } else if (pickKey === PredictedPickKey.s) {
-          picktime_utc = WaveformUtil.addSecondsToUtc(waveformOriginTimeUtc, sensorOrigin.travel_time_s);
+        if (pickKey === PredictedPickKey.p || pickKey === PredictedPickKey.s) {
+          if (ray) {
+            picktime_utc = WaveformUtil.addSecondsToUtc
+              (waveformOriginTimeUtc, ray.travel_time);
+          }
         } else {
           console.error(`wrong predictedPickKey`);
           continue;
@@ -276,6 +285,7 @@ export default class WaveformUtil {
           console.error(`Predicted picks outside the display time window`);
         }
 
+        sensor[pickKey + '_ray_length'] = ray.ray_length;
         sensor[pickKey + '_predicted_time_utc'] = picktime_utc;
         sensor.picks.push({
           value: WaveformUtil.calculateTimeOffsetMicro(picktime_utc, timeStart),  // relative to timeOrigin's full second
@@ -342,7 +352,6 @@ export default class WaveformUtil {
         labelAlign: 'far',
       });
 
-      sensor.distance = arrival.distance;
     }
 
     if (missingSensors.length > 0) {
