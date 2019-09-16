@@ -4,7 +4,7 @@ import { Subscription, Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
+import { Sensor, Station, Borehole, Network } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog } from '@angular/material';
@@ -14,45 +14,20 @@ import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
-  selector: 'app-inventory-sensor-detail-page',
-  templateUrl: './inventory-sensor-detail-page.component.html',
-  styleUrls: ['./inventory-sensor-detail-page.component.scss']
+  selector: 'app-inventory-station-detail-page',
+  templateUrl: './inventory-station-detail-page.component.html',
+  styleUrls: ['./inventory-station-detail-page.component.scss']
 })
 
-export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
+export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
   params$: Subscription;
-  sensorId: number;
-  sensor: Partial<Sensor> = {};
+  stationId: number;
+  station: Partial<Station>;
 
-  editDisabled = false;
   pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
   loading = false;
-
-  stations: Station[];
-  filteredStations: Observable<Station[]>;
-
-  boreholes: Borehole[];
-  filteredBoreholes: Observable<Borehole[]>;
-
-  myForm = this._fb.group({
-    enabled: [false],
-    name: [, [Validators.required]],
-    code: [, [Validators.required]],
-    station: [, Validators.required],
-    borehole: [],
-    commissioning_date: [],
-    decommissioning_date: [],
-    location_x: [],
-    location_y: [],
-    location_z: [],
-    part_number: [],
-    manufacturer: [],
-  });
-
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
-  submited = false;
 
   constructor(
     private _activatedRoute: ActivatedRoute,
@@ -67,11 +42,11 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
   async ngOnInit() {
 
     this.params$ = this._activatedRoute.params.subscribe(async params => {
-      if (params['sensorId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
+      if (params['stationId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
         this.pageMode = PageMode.CREATE;
       } else {
         this.pageMode = PageMode.EDIT;
-        this.sensorId = params['sensorId'];
+        this.stationId = params['stationId'];
       }
     });
   }
@@ -88,15 +63,14 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
       {
         relativeTo: this._activatedRoute,
         queryParams: { pageMode: PageMode.EDIT },
-        queryParamsHandling: 'merge', // remove to replace all query params by provided
+        queryParamsHandling: 'merge'
       });
   }
 
-
-  delete(sensorId: number) {
-    if (!sensorId) {
-      console.error(`No sensorId`);
-      this._toastrNotificationService.error('No sensor is defined');
+  delete(stationId: number) {
+    if (!stationId) {
+      console.error(`No stationId`);
+      this._toastrNotificationService.error('No station is defined');
     }
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
@@ -105,18 +79,19 @@ export class InventorySensorDetailPageComponent implements OnInit, OnDestroy {
         width: '350px',
         data: {
           header: `Are you sure?`,
-          text: `Do you want to proceed and delete this sensor?`
+          text: `Do you want to proceed and delete this station?`
         }
       });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          const response = await this._inventoryApiService.deleteSensor(sensorId).toPromise();
-          await this._toastrNotificationService.success('Sensor deleted');
+          await this._toastrNotificationService.error('Station deletion is not active');
+          // const response = await this._inventoryApiService.deleteStation(stationId).toPromise();
+          // await this._toastrNotificationService.success('Station deleted');
         } catch (err) {
-          this._toastrNotificationService.error(err);
           console.error(err);
+          this._toastrNotificationService.error(err);
         }
       }
     });

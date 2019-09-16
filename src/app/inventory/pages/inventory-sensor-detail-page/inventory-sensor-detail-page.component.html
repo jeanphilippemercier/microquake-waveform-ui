@@ -1,352 +1,126 @@
 <mat-toolbar color="primary">
   <app-header-layout></app-header-layout>
 </mat-toolbar>
-<form
-  class="container-fluid px-4"
-  [formGroup]="myForm"
-  (ngSubmit)="onSubmit()"
->
-  <div class="row header">
-    <div class="col-12 m-4">
-      <h1>Sensor {{sensorId}}</h1>
-      <small>
-        Home > Inventory >
-        <a [routerLink]="['/inventory/sensors']">Sensors</a> >
-        {{sensorId ? 'Sensor' + sensorId + ' Detail' : 'Creating new sensor'}}
-      </small>
+<form class="container-fluid">
+  <div class="row ">
+    <div class="col-12">
+      <div class="header mb-3">
+        <div class="row">
+          <div class="col-10 px-5 py-4">
+            <h1>Sensor {{sensor?.station?.code}}.{{sensor?.location_code}}</h1>
+            <small>
+              Inventory > Oyu Tolgoi > Hugo North Underground Network >
+              <a
+                *ngIf="sensor?.station?.id"
+                [routerLink]="['/inventory/stations',sensor?.station?.id]"
+              >Station {{sensor?.station?.code}}</a> >
+              <a [routerLink]="['/inventory/sensors']">Sensors</a> >
+              {{sensorId ? '' + sensor?.station?.code +'.'+ sensor?.location_code + '' : 'Creating new sensor'}}
+            </small>
+          </div>
+          <div class="col-2 pr-4 py-4">
+            <button
+              class="float-right mt-3"
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              aria-label="Sensor menu"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button
+                *ngIf="sensorId"
+                mat-menu-item
+                color="primary"
+                (click)="delete(sensorId)"
+              >
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="row ">
     <div class="col ">
       <div class=" content">
 
-        <div class="row">
-          <!-- <div
-            class="col-3 pr-5 border-right"
-            *ngIf=""
+        <mat-tab-group class="w-100  px-5 py-4">
+          <mat-tab label="Details">
+            <ng-template matTabContent>
+              <app-inventory-sensor-detail
+                [sensorId]="sensorId"
+                (sensorChange)="sensor = $event"
+                [mode]="pageMode"
+              ></app-inventory-sensor-detail>
+            </ng-template>
+          </mat-tab>
+
+          <mat-tab
+            label="Components ({{sensor?.components?.length > 0 ? sensor?.components?.length : 0}})"
+            [disabled]="pageMode === PageMode.CREATE"
           >
-            <mat-list>
-              <mat-list-item [routerLink]="['/inventory/sensors']">
-                <mat-icon mat-list-icon>arrow_back</mat-icon>
-                <h4 matLine>back to list</h4>
-              </mat-list-item>
-              <ng-container *ngIf="pageMode !== PageMode.CREATE">
-                <h3 mat-subheader>Sensor's submenu</h3>
-                <mat-list-item class="active">
-                  <mat-icon mat-list-icon>visibility</mat-icon>
-                  <h4 matLine>Details</h4>
-                </mat-list-item>
-                <mat-divider></mat-divider>
-                <mat-list-item>
-                  <mat-icon mat-list-icon>view_comfy</mat-icon>
-                  <h4 matLine>Components</h4>
-                </mat-list-item>
-              </ng-container>
-            </mat-list>
-          </div> -->
+            <ng-template matTabContent>
+              <app-inventory-component-list
+                *ngIf="sensor?.components"
+                [data]="sensor?.components"
+                [showPagination]="false"
+                [sensorId]="sensor?.id"
+              >
+              </app-inventory-component-list>
+            </ng-template>
+          </mat-tab>
 
-          <div class="col-12 px-3 ">
-            <div class="row">
-              <mat-tab-group class="w-100  p-5">
-                <mat-tab label="Details">
+          <mat-tab
+            label="Signal quality"
+            [disabled]="!sensor?.signal_quality"
+          >
+            <ng-template matTabContent>
+              <div class="row">
+                <div class="col-2"></div>
+                <div class="col-8">
 
-                  <ng-template matTabContent>
-                    <div class="col pb-1">
-                      <div class="row">
-                        <div class="col-2 pb-1 ">
-                          <mat-slide-toggle
-                            class="mt-4"
-                            formControlName="enabled"
-                          >
-                            Enabled?
-                          </mat-slide-toggle>
-                        </div>
-                        <div
-                          class="col pb-1"
-                          *ngIf="pageMode !== PageMode.CREATE"
-                        >
-                          <mat-form-field>
-                            <mat-label>Id</mat-label>
-                            <input
-                              matInput
-                              [(ngModel)]="sensorId"
-                              [ngModelOptions]="{standalone: true}"
-                              placeholder="Id"
-                              [disabled]="true"
-                            >
-                          </mat-form-field>
-                        </div>
+                  <table class="w-100 table">
+                    <tbody>
+                      <tr>
+                        <th>Id</th>
+                        <td>{{sensor?.signal_quality?.id}}</td>
+                      </tr>
+                      <tr>
+                        <th>Update timestamp</th>
+                        <td>{{sensor?.signal_quality?.update_timestamp}}</td>
+                      </tr>
+                      <tr>
+                        <th>Energy</th>
+                        <td>{{sensor?.signal_quality?.energy}}</td>
+                      </tr>
+                      <tr>
+                        <th>Integrity</th>
+                        <td>{{sensor?.signal_quality?.integrity}}</td>
+                      </tr>
+                      <tr>
+                        <th>Sampling rate</th>
+                        <td>{{sensor?.signal_quality?.sampling_rate}}</td>
+                      </tr>
+                      <tr>
+                        <th>Number of samples</th>
+                        <td>{{sensor?.signal_quality?.num_samples}}</td>
+                      </tr>
+                      <tr>
+                        <th>Amplitude</th>
+                        <td>{{sensor?.signal_quality?.amplitude}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
 
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Name</mat-label>
-                            <input
-                              matInput
-                              formControlName="name"
-                            >
-                            <mat-error *ngIf="myForm['name']?.invalid">This field is required</mat-error>
-                          </mat-form-field>
-                        </div>
-
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Code</mat-label>
-                            <input
-                              matInput
-                              formControlName="code"
-                            >
-                          </mat-form-field>
-                        </div>
-
-                      </div>
-                    </div>
-
-
-                    <div class="col-12 py-1">
-                      <div class="row">
-                        <div
-                          class="col"
-                          *ngIf=""
-                        >
-                          <!-- <mat-form-field
-
-
-                          >
-                            <mat-label>Site</mat-label>
-                            <input
-                              matInput
-                              type="text"
-                              formControlName="site"
-                              [matAutocomplete]="autoSite"
-                            >
-                            <mat-autocomplete
-                              #autoSite="matAutocomplete"
-                              [displayWith]="siteDisplayFn"
-                            >
-                              <mat-option
-                                *ngFor="let option of (filteredSites | async)"
-                                [value]="option"
-                              >{{option.name}}</mat-option>
-                            </mat-autocomplete>
-                          </mat-form-field> -->
-                        </div>
-
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Station</mat-label>
-                            <input
-                              matInput
-                              type="text"
-                              formControlName="station"
-                              [matAutocomplete]="autoSensor"
-                            >
-                            <mat-autocomplete
-                              #autoSensor="matAutocomplete"
-                              [displayWith]="stationDisplayFn"
-                            >
-                              <mat-option
-                                *ngFor="let option of (filteredStations | async)"
-                                [value]="option"
-                              >{{option.name}}</mat-option>
-                            </mat-autocomplete>
-                          </mat-form-field>
-                        </div>
-
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Borehole</mat-label>
-                            <input
-                              matInput
-                              type="text"
-                              formControlName="borehole"
-                              [matAutocomplete]="autoBorehole"
-                            >
-                            <mat-autocomplete
-                              #autoBorehole="matAutocomplete"
-                              [displayWith]="stationDisplayFn"
-                            >
-                              <mat-option
-                                *ngFor="let option of (filteredBoreholes | async)"
-                                [value]="option"
-                              >{{option.name}}</mat-option>
-                            </mat-autocomplete>
-                          </mat-form-field>
-                        </div>
-                      </div>
-                    </div>
-
-
-                    <div class="col py-1">
-                      <div class="row">
-                        <div class="col">
-                          <div class="row">
-                            <div class="col-4">
-                              <mat-form-field>
-                                <mat-label>Location X</mat-label>
-                                <input
-                                  type="number"
-                                  matInput
-                                  formControlName="location_x"
-                                >
-                              </mat-form-field>
-                            </div>
-                            <div class="col-4">
-                              <mat-form-field>
-                                <mat-label>Location Y</mat-label>
-                                <input
-                                  type="number"
-                                  matInput
-                                  formControlName="location_y"
-                                >
-                              </mat-form-field>
-                            </div>
-                            <div class="col-4">
-                              <mat-form-field>
-                                <mat-label>Location Z</mat-label>
-                                <input
-                                  type="number"
-                                  matInput
-                                  formControlName="location_z"
-                                >
-                              </mat-form-field>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col">
-                          <div class="row">
-                            <div class="col">
-                              <mat-form-field>
-                                <mat-label>Commissioning Date</mat-label>
-                                <input
-                                  matInput
-                                  formControlName="commissioning_date"
-                                  [matDatepicker]="pickerCommissioning"
-                                >
-                                <mat-datepicker-toggle
-                                  matSuffix
-                                  [for]="pickerCommissioning"
-                                ></mat-datepicker-toggle>
-                                <mat-datepicker #pickerCommissioning></mat-datepicker>
-                              </mat-form-field>
-                            </div>
-
-                            <div class="col">
-                              <mat-form-field>
-                                <mat-label>Decommissioning Date</mat-label>
-                                <input
-                                  matInput
-                                  formControlName="decommissioning_date"
-                                  [matDatepicker]="pickerDecommissioning"
-                                >
-                                <mat-datepicker-toggle
-                                  matSuffix
-                                  [for]="pickerDecommissioning"
-                                ></mat-datepicker-toggle>
-                                <mat-datepicker #pickerDecommissioning></mat-datepicker>
-                              </mat-form-field>
-                            </div>
-                          </div>
-                        </div>
-
-
-
-
-                      </div>
-                    </div>
-
-                    <div class="col py-1">
-                      <div class="row">
-
-
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Part number</mat-label>
-                            <input
-                              matInput
-                              formControlName="part_number"
-                            >
-                          </mat-form-field>
-                        </div>
-
-                        <div class="col">
-                          <mat-form-field>
-                            <mat-label>Manufacturer</mat-label>
-                            <input
-                              matInput
-                              formControlName="manufacturer"
-                            >
-                          </mat-form-field>
-                        </div>
-                      </div>
-                    </div>
-
-
-                    <div class="col-12 py-1">
-                      <div class="d-flex">
-                        <div class="mr-auto"></div>
-                        <ng-container *ngIf="pageMode === PageMode.EDIT">
-                          <button
-                            [routerLink]="['/inventory/sensors',sensorId]"
-                            class="mr-3"
-                            mat-raised-button
-                          >Cancel</button>
-                          <button
-                            type="submit"
-                            [color]="'primary'"
-                            mat-raised-button
-                          >Save</button>
-                        </ng-container>
-
-                        <ng-container *ngIf="pageMode === PageMode.CREATE">
-
-                          <button
-                            [routerLink]="['/inventory/sensors']"
-                            class="mr-3"
-                            mat-raised-button
-                          >Cancel</button>
-                          <button
-                            type="submit"
-                            [color]="'primary'"
-                            mat-raised-button
-                          >Create</button>
-                        </ng-container>
-
-                        <ng-container *ngIf="pageMode === PageMode.VIEW">
-                          <button
-                            [routerLink]="['/inventory/sensors',sensorId,PageMode.EDIT]"
-                            type="submit"
-                            [color]="'primary'"
-                            mat-raised-button
-                          >Edit sensor</button>
-                        </ng-container>
-                      </div>
-                    </div>
-                  </ng-template>
-                </mat-tab>
-                <mat-tab
-                  [disabled]="pageMode !== PageMode.VIEW"
-                  label="Components"
-                >
-                  <ng-template matTabContent>
-                    <app-inventory-component-list
-                      [data]="sensor?.components"
-                      [showPagination]="false"
-                    >
-                    </app-inventory-component-list>
-                  </ng-template>
-                </mat-tab>
-              </mat-tab-group>
-            </div>
-          </div>
-
-
-
-        </div>
       </div>
-
-
-
     </div>
   </div>
-  <ngx-spinner name="loadingPage"></ngx-spinner>
 </form>

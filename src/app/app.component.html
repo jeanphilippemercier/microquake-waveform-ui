@@ -53,19 +53,46 @@
         <a
           (click)="closeMenu()"
           mat-list-item
-          [routerLink]="['/inventory/sensors']"
+          [routerLink]="['/inventory/stations']"
         >
           <mat-icon mat-list-icon>satellite</mat-icon>
+          <h4 matLine>Stations</h4>
+        </a>
+        <a
+          [ngStyle]="{'pointer-events':'none'}"
+          [style.opacity]="0.5"
+          (click)="closeMenu()"
+          mat-list-item
+          [routerLink]="['/inventory/sensor-types']"
+        >
+          <mat-icon mat-list-icon>group_work</mat-icon>
+          <h4 matLine>Boreholes</h4>
+        </a>
+        <a
+          (click)="closeMenu()"
+          mat-list-item
+          [routerLink]="['/inventory/sensors']"
+        >
+          <mat-icon mat-list-icon>settings_input_antenna</mat-icon>
           <h4 matLine>Sensors</h4>
         </a>
         <a
           (click)="closeMenu()"
           mat-list-item
-          [routerLink]="['/inventory/components']"
+          [routerLink]="['/inventory/sensor-types']"
         >
-          <mat-icon mat-list-icon>settings_input_composite</mat-icon>
-          <h4 matLine>Components</h4>
+          <mat-icon mat-list-icon>category</mat-icon>
+          <h4 matLine>Sensor types</h4>
         </a>
+        <a
+          (click)="closeMenu()"
+          mat-list-item
+          [routerLink]="['/inventory/cable-types']"
+        >
+          <mat-icon mat-list-icon>line_weight</mat-icon>
+          <h4 matLine>Cable types</h4>
+        </a>
+        <h3 mat-subheader>Account</h3>
         <a
           mat-list-item
           (click)="logoutClick()"

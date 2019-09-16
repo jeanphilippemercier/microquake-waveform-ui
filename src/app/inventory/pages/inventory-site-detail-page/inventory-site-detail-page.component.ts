@@ -1,16 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
+
 import { Site, Timezone, CoordinateSystem } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { SiteCreateInput } from '@interfaces/inventory-dto.interface';
-
-
-enum PageMode {
-  VIEW = 'view',
-  EDIT = 'edit',
-  CREATE = 'create'
-}
+import { PageMode } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-inventory-site-detail-page',
@@ -26,7 +21,7 @@ export class InventorySiteDetailPageComponent implements OnInit, OnDestroy {
   timezones: Timezone[] = Object.values(Timezone);
   coordinateSystems: CoordinateSystem[] = Object.values(CoordinateSystem);
   editDisabled = true;
-  pageMode: PageMode = PageMode.VIEW;
+  pageMode: PageMode = PageMode.CREATE;
   PageMode = PageMode;
 
   constructor(
@@ -41,7 +36,7 @@ export class InventorySiteDetailPageComponent implements OnInit, OnDestroy {
       if (params['siteId'] !== 'create') {
         this.siteId = params['siteId'];
         this.site = await this._inventoryApiService.getSite(this.siteId).toPromise();
-        this.pageMode = PageMode.VIEW;
+        this.pageMode = PageMode.EDIT;
       } else if (params['siteId'] === 'create') {
         this.pageMode = PageMode.CREATE;
       }

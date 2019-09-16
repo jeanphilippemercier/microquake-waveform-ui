@@ -7,6 +7,7 @@ import { environment } from '@env/environment';
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { AuthService } from '@services/auth.service';
 import { ConfigurationService } from '@services/configuration.service';
+import { HttpCacheInterceptor } from './interceptors/http-cache.interceptor';
 
 export function jwtOptionsFactory() {
   return {
@@ -55,6 +56,11 @@ export function configInit(configurationService: ConfigurationService) {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpErrorInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpCacheInterceptor,
       multi: true
     }
   ],

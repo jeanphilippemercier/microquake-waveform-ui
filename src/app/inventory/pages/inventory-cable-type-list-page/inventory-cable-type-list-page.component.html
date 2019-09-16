@@ -1,15 +1,15 @@
 <mat-toolbar color="primary">
   <app-header-layout></app-header-layout>
 </mat-toolbar>
-<div class="container-fluid">
+<div class="container-fluid px-4">
 
   <div class="row header">
     <div class="col m-4">
       <div class="row">
         <div class="col">
-          <h1>Sensors</h1>
+          <h1>Cable types</h1>
           <small>
-            Home > Inventory > Sensors
+            Inventory > Cable types
           </small>
         </div>
         <div class="col d-flex">
@@ -17,11 +17,21 @@
           <div class="d-flex flex-column">
             <div class="mb-auto"></div>
             <button
-              [routerLink]="['/inventory/sensors', PageMode.CREATE]"
+              (click)="openDialog(cableTypeCreate)"
               mat-raised-button
               color="primary"
             >Create</button>
           </div>
+          <ng-template #cableTypeCreate>
+            <h2 matDialogTitle>Creating cable type</h2>
+            <mat-dialog-content>
+              <app-inventory-cable-type-detail
+                (modelCreated)="onModelCreated($event)"
+                (cancel)="closeDialog()"
+                [mode]="PageMode.CREATE"
+              ></app-inventory-cable-type-detail>
+            </mat-dialog-content>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -47,120 +57,107 @@
         > {{element.id}} </td>
       </ng-container>
 
-      <ng-container matColumnDef="sensor">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class="pl-3"> Sensor </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          <a
-            matTooltip="Show sensor detail"
-            color="primary"
-            [routerLink]="['/inventory/sensors', element?.id]"
-            mat-button
-          >{{element?.station?.code + '.' + element?.location_code}}</a>
-        </td>
-      </ng-container>
-
-
-      <ng-container matColumnDef="name">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class=""> Name </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          {{element?.name}}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="station">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class="pl-3"> Station </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          <a
-            matTooltip="Show station detail"
-            [matTooltipDisabled]="!element?.station"
-            color="primary"
-            mat-button
-            [routerLink]="['/inventory/stations', element?.station?.id]"
-          >{{element?.station?.name}}</a>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="borehole">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class="pl-3"> Borehole </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          <a
-            matTooltip="Show borehole detail"
-            [matTooltipDisabled]="!element?.borehole"
-            color="primary"
-            href="#"
-            [disabled]="true"
-            mat-button
-          >{{element?.borehole ? element?.borehole?.name : 'none'}}</a>
-        </td>
-      </ng-container>
-
       <ng-container matColumnDef="code">
         <th
           mat-header-cell
           *matHeaderCellDef
-        > Code</th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        > {{element?.code}}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="components">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        > Components</th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        > {{element?.components?.length}}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="enabled">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        > Enabled</th>
+        ><span class="pl-3"> Code </span></th>
         <td
           mat-cell
           *matCellDef="let element"
         >
-          <mat-icon
-            class="mat-18"
-            [color]="'primary'"
-            *ngIf="element?.enabled"
-          >check_circle_outline</mat-icon>
-          <mat-icon
-            class="mat-18"
-            [color]="'warn'"
-            *ngIf="!element?.enabled"
-          >highlight_off</mat-icon>
+          <button
+            mat-button
+            matTooltip="Show cable type detail"
+            color="primary"
+            (click)="openDialog(cableTypeUpdate)"
+          >
+            {{element?.code}}
+          </button>
+          <ng-template #cableTypeUpdate>
+            <h2 matDialogTitle>Cable type {{element?.code}}</h2>
+            <mat-dialog-content>
+              <app-inventory-cable-type-detail
+                (modelUpdated)="onModelCreated($event)"
+                (cancel)="closeDialog()"
+                [mode]="PageMode.EDIT"
+                [id]="element?.id"
+              ></app-inventory-cable-type-detail>
+            </mat-dialog-content>
+          </ng-template>
+
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="manufacturer">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        ><span class=""> Manufacturer </span></th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        >{{element?.manufacturer}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="part_number">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > Part no.</th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.part_number}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="r">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > r</th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.r}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="l">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > l</th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.l}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="g">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > g</th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.g}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="c">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > c </th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.c}}
         </td>
       </ng-container>
 
@@ -180,24 +177,15 @@
           <button
             mat-icon-button
             [matMenuTriggerFor]="menu"
-            aria-label="Sensor menu"
+            aria-label="Sensor type menu"
           >
             <mat-icon>more_vert</mat-icon>
           </button>
           <mat-menu #menu="matMenu">
             <button
-              *ngIf=""
               mat-menu-item
               color="primary"
-              [routerLink]="['/inventory/sensors', element.id]"
-            >
-              <mat-icon>visibility</mat-icon>
-              <span>Detail</span>
-            </button>
-            <button
-              mat-menu-item
-              color="primary"
-              [routerLink]="['/inventory/sensors', element.id]"
+              [routerLink]="['/inventory/stations', element.id]"
             >
               <mat-icon>edit</mat-icon>
               <span>Edit</span>
@@ -215,12 +203,6 @@
         *matRowDef="let row; columns: displayedColumns;"
       ></tr>
     </table>
-    <mat-paginator
-      [pageSizeOptions]="[15]"
-      [pageSize]="pageSize"
-      [length]="count"
-      (page)="pageChange($event)"
-    ></mat-paginator>
     <ngx-spinner name="loadingTable"></ngx-spinner>
   </div>
 </div>

@@ -1,15 +1,15 @@
 <mat-toolbar color="primary">
   <app-header-layout></app-header-layout>
 </mat-toolbar>
-<div class="container-fluid">
+<div class="container-fluid px-4">
 
   <div class="row header">
     <div class="col m-4">
       <div class="row">
         <div class="col">
-          <h1>Sensors</h1>
+          <h1>Sensor types</h1>
           <small>
-            Home > Inventory > Sensors
+            Inventory > Sensor types
           </small>
         </div>
         <div class="col d-flex">
@@ -17,11 +17,20 @@
           <div class="d-flex flex-column">
             <div class="mb-auto"></div>
             <button
-              [routerLink]="['/inventory/sensors', PageMode.CREATE]"
+              (click)="openDialog(sensorTypeCreate)"
               mat-raised-button
               color="primary"
             >Create</button>
           </div>
+          <ng-template #sensorTypeCreate>
+            <h2 matDialogTitle>Creating sensor type</h2>
+            <mat-dialog-content>
+              <app-inventory-sensor-type-detail
+                (cancel)="closeDialog()"
+                [mode]="PageMode.CREATE"
+              ></app-inventory-sensor-type-detail>
+            </mat-dialog-content>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -47,120 +56,83 @@
         > {{element.id}} </td>
       </ng-container>
 
-      <ng-container matColumnDef="sensor">
+      <ng-container matColumnDef="model">
         <th
           mat-header-cell
           *matHeaderCellDef
-        ><span class="pl-3"> Sensor </span></th>
+        ><span class="pl-3"> Model </span></th>
         <td
           mat-cell
           *matCellDef="let element"
         >
-          <a
-            matTooltip="Show sensor detail"
-            color="primary"
-            [routerLink]="['/inventory/sensors', element?.id]"
+          <button
             mat-button
-          >{{element?.station?.code + '.' + element?.location_code}}</a>
-        </td>
-      </ng-container>
-
-
-      <ng-container matColumnDef="name">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class=""> Name </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          {{element?.name}}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="station">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-        ><span class="pl-3"> Station </span></th>
-        <td
-          mat-cell
-          *matCellDef="let element"
-        >
-          <a
-            matTooltip="Show station detail"
-            [matTooltipDisabled]="!element?.station"
+            matTooltip="Show sensor type detail"
             color="primary"
-            mat-button
-            [routerLink]="['/inventory/stations', element?.station?.id]"
-          >{{element?.station?.name}}</a>
+            (click)="openDialog(sensorTypeUpdate)"
+          >
+            {{element?.model}}
+          </button>
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="borehole">
+      <ng-container matColumnDef="manufacturer">
         <th
           mat-header-cell
           *matHeaderCellDef
-        ><span class="pl-3"> Borehole </span></th>
+        ><span class=""> Manufacturer </span></th>
         <td
           mat-cell
           *matCellDef="let element"
-        >
-          <a
-            matTooltip="Show borehole detail"
-            [matTooltipDisabled]="!element?.borehole"
-            color="primary"
-            href="#"
-            [disabled]="true"
-            mat-button
-          >{{element?.borehole ? element?.borehole?.name : 'none'}}</a>
+        >{{element?.manufacturer}}
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="code">
+      <ng-container matColumnDef="sensorType">
         <th
           mat-header-cell
           *matHeaderCellDef
-        > Code</th>
+        > Type</th>
         <td
           mat-cell
           *matCellDef="let element"
-        > {{element?.code}}
+        > {{element?.sensor_type}}
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="components">
+      <ng-container matColumnDef="motionType">
         <th
           mat-header-cell
           *matHeaderCellDef
-        > Components</th>
+        > Motion type</th>
         <td
           mat-cell
           *matCellDef="let element"
-        > {{element?.components?.length}}
+        > {{element?.motion_type}}
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="enabled">
+      <ng-container matColumnDef="resonanceFrequency">
         <th
           mat-header-cell
           *matHeaderCellDef
-        > Enabled</th>
+        > Resonance freq.</th>
         <td
           mat-cell
           *matCellDef="let element"
-        >
-          <mat-icon
-            class="mat-18"
-            [color]="'primary'"
-            *ngIf="element?.enabled"
-          >check_circle_outline</mat-icon>
-          <mat-icon
-            class="mat-18"
-            [color]="'warn'"
-            *ngIf="!element?.enabled"
-          >highlight_off</mat-icon>
+        > {{element?.resonance_frequency}}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="shuntResistance">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+        > Shunt resistance</th>
+        <td
+          mat-cell
+          *matCellDef="let element"
+        > {{element?.shunt_resistance}}
         </td>
       </ng-container>
 
@@ -180,30 +152,30 @@
           <button
             mat-icon-button
             [matMenuTriggerFor]="menu"
-            aria-label="Sensor menu"
+            aria-label="Sensor type menu"
           >
             <mat-icon>more_vert</mat-icon>
           </button>
           <mat-menu #menu="matMenu">
             <button
-              *ngIf=""
               mat-menu-item
               color="primary"
-              [routerLink]="['/inventory/sensors', element.id]"
-            >
-              <mat-icon>visibility</mat-icon>
-              <span>Detail</span>
-            </button>
-            <button
-              mat-menu-item
-              color="primary"
-              [routerLink]="['/inventory/sensors', element.id]"
+              (click)="openDialog(sensorTypeUpdate)"
             >
               <mat-icon>edit</mat-icon>
               <span>Edit</span>
             </button>
+            <button
+              mat-menu-item
+              color="primary"
+              (click)="delete(element?.id)"
+            >
+              <mat-icon>delete</mat-icon>
+              <span>Delete</span>
+            </button>
           </mat-menu>
         </td>
+
       </ng-container>
 
       <tr
@@ -213,14 +185,20 @@
       <tr
         mat-row
         *matRowDef="let row; columns: displayedColumns;"
-      ></tr>
+      >
+      {{row}}
+        <ng-template #sensorTypeUpdate>
+          <h2 matDialogTitle>Sensor type {{row?.model}}</h2>
+          <mat-dialog-content>
+            <app-inventory-sensor-type-detail
+              (cancel)="closeDialog()"
+              [mode]="PageMode.EDIT"
+              [id]="row?.id"
+            ></app-inventory-sensor-type-detail>
+          </mat-dialog-content>
+        </ng-template>
+      </tr>
     </table>
-    <mat-paginator
-      [pageSizeOptions]="[15]"
-      [pageSize]="pageSize"
-      [length]="count"
-      (page)="pageChange($event)"
-    ></mat-paginator>
     <ngx-spinner name="loadingTable"></ngx-spinner>
   </div>
 </div>
