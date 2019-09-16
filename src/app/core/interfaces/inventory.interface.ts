@@ -135,8 +135,7 @@ export interface IComponent extends IComponentBase {
   cable: number;
 }
 
-export interface ISensorType {
-  id: number;
+export interface ISensorTypeBase {
   model: string;
   manufacturer: string;
   sensor_type: SensorType;
@@ -144,9 +143,12 @@ export interface ISensorType {
   coil_resistance: number;
   shunt_resistance: number;
   gain: number;
-  response_file: string;
   description: string;
   motion_type: MotionType;
+}
+export interface ISensorType extends ISensorTypeBase {
+  id: number;
+  response_file: string;
 }
 
 export enum ComponentCode {
@@ -183,13 +185,10 @@ export interface Borehole {
   vtp_file_url: string;
   dfx_file_url: string;
 }
-
-export interface Station {
-  id: number;
+export interface StationBase {
   code: string;
   name: string;
   description?: string;
-  network: Network;
   location_x: number;
   location_y: number;
   location_z: number;
@@ -197,7 +196,12 @@ export interface Station {
   power: string;
 }
 
-export interface Cable {
+export interface Station extends StationBase {
+  id: number;
+  network: Network;
+}
+
+export interface CableTypeBase {
   code: string;
   manufacturer: string;
   part_number: number;
@@ -206,4 +210,9 @@ export interface Cable {
   g: number;
   c: number;
   description: string;
+}
+
+export interface CableType extends CableTypeBase {
+  id: number;
+  upload_time: string;
 }
