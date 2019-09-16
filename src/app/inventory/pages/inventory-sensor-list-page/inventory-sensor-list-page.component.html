@@ -1,7 +1,7 @@
 <mat-toolbar color="primary">
   <app-header-layout></app-header-layout>
 </mat-toolbar>
-<div class="container-fluid px-4">
+<div class="container-fluid">
 
   <div class="row header">
     <div class="col m-4">
@@ -70,7 +70,7 @@
         <th
           mat-header-cell
           *matHeaderCellDef
-        ><span class="pl-3"> Name </span></th>
+        ><span class=""> Name </span></th>
         <td
           mat-cell
           *matCellDef="let element"
@@ -91,10 +91,9 @@
           <a
             matTooltip="Show station detail"
             [matTooltipDisabled]="!element?.station"
-            href="#"
-            [disabled]="true"
             color="primary"
             mat-button
+            [routerLink]="['/inventory/stations', element?.station?.id]"
           >{{element?.station?.name}}</a>
         </td>
       </ng-container>

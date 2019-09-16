@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
 import { startWith, map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
@@ -10,6 +10,7 @@ import { SensorCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { MatDialog } from '@angular/material';
 
 @Component({
   selector: 'app-inventory-sensor-detail',
@@ -77,7 +78,8 @@ export class InventorySensorDetailComponent implements OnInit {
     private _fb: FormBuilder,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
-    private _toastrNotificationService: ToastrNotificationService
+    private _toastrNotificationService: ToastrNotificationService,
+    private _matDialog: MatDialog
   ) { }
 
   ngOnInit() {
@@ -202,4 +204,7 @@ export class InventorySensorDetailComponent implements OnInit {
     return dto;
   }
 
+  openDialog(templateRef: TemplateRef<any>) {
+    this._matDialog.open(templateRef);
+  }
 }

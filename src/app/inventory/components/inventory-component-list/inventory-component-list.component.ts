@@ -1,9 +1,8 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
-import { IComponent, SensorType, Cable, ISensorType, ComponentCode } from '@interfaces/inventory.interface';
+import { IComponent, ISensorType, ComponentCode, CableType } from '@interfaces/inventory.interface';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { ComponentCreateInput } from '@interfaces/inventory-dto.interface';
 import { forkJoin } from 'rxjs';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { MatDialogRef, MatDialog } from '@angular/material';
@@ -54,7 +53,7 @@ export class InventoryComponentListComponent implements OnInit {
   @Output() previousPage = new EventEmitter();
 
   sensorTypes: ISensorType[] = [];
-  cables: Cable[] = [];
+  cables: CableType[] = [];
 
   // tslint:disable-next-line:max-line-length
   displayedColumns: string[] = ['detail', 'enabled', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'id', 'actions'];
@@ -78,7 +77,7 @@ export class InventoryComponentListComponent implements OnInit {
 
     forkJoin([
       this._inventoryApiService.getSensorTypes(),
-      this._inventoryApiService.getCables()
+      this._inventoryApiService.getCableTypes()
     ]).subscribe(
       result => {
         this.sensorTypes = result[0];

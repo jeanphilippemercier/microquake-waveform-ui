@@ -5,14 +5,14 @@ import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Sensor, Cable, IComponent, ComponentCode, ISensorType } from '@interfaces/inventory.interface';
+import { Sensor, IComponent, ComponentCode, ISensorType, CableType } from '@interfaces/inventory.interface';
 import { ComponentCreateInput, ComponentUpdateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { DetailPage } from '@app/inventory/classes/detail-page.class';
 
 @Component({
   selector: 'app-inventory-component-detail',
@@ -20,62 +20,20 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
   styleUrls: ['./inventory-component-detail.component.scss']
 })
 
-export class InventoryComponentDetailComponent implements OnInit {
-
-
-  @Input()
-  public set id(v: number) {
-    this._id = v;
-    this._loadData();
-  }
-
-  public get id() {
-    return this._id;
-  }
-  private _id: number;
-
-
-  @Input()
-  public set model(v: Partial<IComponent>) {
-    this._model = v;
-    this.myForm.patchValue(Object.assign(this.myForm.value, this.model));
-  }
-
-  public get model() {
-    return this._model;
-  }
-  private _model: Partial<IComponent> = {};
-  @Output() modelChange: EventEmitter<Partial<IComponent>> = new EventEmitter();
-  @Output() modelCreated: EventEmitter<Partial<IComponent>> = new EventEmitter();
-  @Output() modelEdited: EventEmitter<Partial<IComponent>> = new EventEmitter();
-
-  @Input()
-  public set mode(v: PageMode) {
-    this._mode = v;
-    this._initPageMode();
-  }
-
-  public get mode(): PageMode {
-    return this._mode;
-  }
-  private _mode: PageMode;
+export class InventoryComponentDetailComponent extends DetailPage<IComponent> implements OnInit {
 
   @Input() sensorId: number;
   @Input() sensorTypes: ISensorType[] = [];
-  @Input() cables: Cable[] = [];
-
+  @Input() cables: CableType[] = [];
   @Input() availableComponentCodes: ComponentCode[] = [];
 
-  @Output() cancel: EventEmitter<void> = new EventEmitter();
-
   editDisabled = false;
-  PageMode = PageMode;
-  loading = false;
   ComponentCode = ComponentCode;
+
   allComponentCodes: ComponentCode[] = Object.values(ComponentCode);
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
 
-  filteredCables: Observable<Cable[]>;
+  filteredCables: Observable<CableType[]>;
   filteredSensorTypes: Observable<ISensorType[]>;
 
   myForm = this._fb.group({
@@ -99,22 +57,18 @@ export class InventoryComponentDetailComponent implements OnInit {
     private _fb: FormBuilder,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
-    private _matDialog: MatDialog,
+    protected _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
-  ) { }
-
-  async ngOnInit() {
-
+  ) {
+    super(_matDialog);
   }
 
-  private async _initPageMode() {
+  async ngOnInit() {
     this._initEditableForm();
   }
 
-  private async _loadData() {
+  protected async _loadData() {
     this.model = await this._inventoryApiService.getComponent(this.id).toPromise();
-    this.modelChange.emit(this.model);
-    this.myForm.patchValue(Object.assign(this.myForm.value, this.model));
   }
 
   private async _initEditableForm() {
@@ -136,7 +90,7 @@ export class InventoryComponentDetailComponent implements OnInit {
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.code),
-          map(input => input ? this._filter<Cable>(input, this.cables, 'code') : this.cables.slice())
+          map(input => input ? this._filter<CableType>(input, this.cables, 'code') : this.cables.slice())
         );
 
     } catch (err) {
@@ -155,16 +109,11 @@ export class InventoryComponentDetailComponent implements OnInit {
       });
   }
 
-  private _filter<T>(input: string, array: T[], name: string): T[] {
-    const filterValue = input.toLowerCase();
-    return array.filter(option => option[name] && option[name].toLowerCase().indexOf(filterValue) === 0);
-  }
-
   sensorDisplayFn(sensor?: Sensor): string | undefined {
     return sensor ? sensor.name : undefined;
   }
 
-  cableDisplayFn(cable?: Cable): string | undefined {
+  cableDisplayFn(cable?: CableType): string | undefined {
     return cable ? cable.code : undefined;
   }
 
@@ -248,10 +197,5 @@ export class InventoryComponentDetailComponent implements OnInit {
       this._ngxSpinnerService.hide('loadingForm');
     }
   }
-
-  onCancel() {
-    this.cancel.emit();
-  }
-
 
 }

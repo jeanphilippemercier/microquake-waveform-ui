@@ -1,7 +1,7 @@
 <mat-toolbar color="primary">
   <app-header-layout></app-header-layout>
 </mat-toolbar>
-<form class="container-fluid px-4">
+<form class="container-fluid">
   <div class="row ">
     <div class="col-12">
       <div class="header mb-3">
@@ -9,7 +9,11 @@
           <div class="col-10 px-5 py-4">
             <h1>Sensor {{sensor?.station?.code}}.{{sensor?.location_code}}</h1>
             <small>
-              Inventory > Oyu Tolgoi > Hugo North Underground Network > {{sensor?.station?.name}} >
+              Inventory > Oyu Tolgoi > Hugo North Underground Network >
+              <a
+                *ngIf="sensor?.station?.id"
+                [routerLink]="['/inventory/stations',sensor?.station?.id]"
+              >Station {{sensor?.station?.code}}</a> >
               <a [routerLink]="['/inventory/sensors']">Sensors</a> >
               {{sensorId ? '' + sensor?.station?.code +'.'+ sensor?.location_code + '' : 'Creating new sensor'}}
             </small>
