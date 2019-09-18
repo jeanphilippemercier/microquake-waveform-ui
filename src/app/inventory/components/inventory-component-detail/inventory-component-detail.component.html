@@ -1,0 +1,211 @@
+<form
+  class="px-2"
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+    <div class="col-12 px-3 ">
+      <div class="row pb-1">
+        <div class="col-sm-12">
+          <div class="row">
+
+            <div class="col-sm-3 pr-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-slide-toggle
+                    class="mt-4 mb-4"
+                    formControlName="enabled"
+                  > Enabled?
+                  </mat-slide-toggle>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Code</mat-label>
+                    <mat-select
+                      formControlName="code"
+                      [required]="true"
+                    >
+                      <mat-option
+                        *ngFor="let code of allComponentCodes"
+                        [value]="code"
+                        [disabled]="availableComponentCodes.indexOf(code) === -1 && code !== model?.code"
+                      >{{code}}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Sensor type</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="sensor_type"
+                      [matAutocomplete]="autoSensorType"
+                    >
+                    <button
+                      (click)="openDialog(sensorTypeUpdate);$event.stopPropagation();$event.preventDefault()"
+                      matSuffix
+                      mat-icon-button
+                    >
+                      <mat-icon>info_outlined</mat-icon>
+                    </button>
+                    <ng-template #sensorTypeUpdate>
+                      <h2 matDialogTitle>Sensor type {{myForm?.value?.sensor_type?.model}}</h2>
+                      <mat-dialog-content>
+                        <app-inventory-sensor-type-detail
+                          [mode]="PageMode.EDIT"
+                          [id]="myForm?.value?.sensor_type?.id"
+                        ></app-inventory-sensor-type-detail>
+                      </mat-dialog-content>
+                    </ng-template>
+                    <mat-autocomplete
+                      #autoSensorType="matAutocomplete"
+                      [displayWith]="sensorTypeDisplayFn"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredSensorTypes | async)"
+                        [value]="option"
+                      >{{option.model}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="col-sm-3 px-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Cable</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="cable"
+                      [matAutocomplete]="autoCable"
+                    >
+                    <mat-autocomplete
+                      #autoCable="matAutocomplete"
+                      [displayWith]="cableDisplayFn"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredCables | async)"
+                        [value]="option"
+                      >{{option.code}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Cable length (m)</mat-label>
+                    <input
+                      matInput
+                      formControlName="cable_length"
+                    >
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-3 px-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Damping</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      formControlName="damping"
+                    >
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Sample rate</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      formControlName="sample_rate"
+                    >
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-3 pl-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Orientation X</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="orientation_x"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Orientation Y</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="orientation_y"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Orientation Z</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="orientation_z"
+                    >
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 py-1">
+          <div class="d-flex">
+            <div class="mr-auto"></div>
+            <ng-container *ngIf="mode === PageMode.EDIT">
+              <button
+                type="submit"
+                [color]="'primary'"
+                mat-raised-button
+              >Save</button>
+            </ng-container>
+
+            <ng-container *ngIf="mode === PageMode.CREATE">
+
+              <button
+                (click)="onCancel()"
+                class="mr-3"
+                mat-raised-button
+              >Cancel</button>
+              <button
+                type="submit"
+                [color]="'primary'"
+                mat-raised-button
+              >Create</button>
+            </ng-container>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <ngx-spinner name="loadingForm"></ngx-spinner>
+</form>

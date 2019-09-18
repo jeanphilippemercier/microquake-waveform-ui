@@ -5,11 +5,14 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole } from '@interfaces/inventory.interface';
-import { Sensor, IComponent, SensorType } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, ISensorType, CableType } from '@interfaces/inventory.interface';
+import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
-import { SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput } from '@interfaces/inventory-dto.interface';
+import {
+  SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput,
+  ComponentUpdateInput, StationUpdateInput, ISensorTypeCreateInput, ISensorTypeUpdateInput, CableTypeCreateInput, CableTypeUpdateInput
+} from '@interfaces/inventory-dto.interface';
 
 
 @Injectable({
@@ -21,10 +24,10 @@ export class InventoryApiService {
     private _http: HttpClient,
   ) { }
 
+
   /**
    * SITES
   */
-
   getSites(): Observable<Site[]> {
     const url = `${environment.apiUrl}${globals.apiSites}`;
     return this._http.get<Site[]>(url);
@@ -49,7 +52,6 @@ export class InventoryApiService {
   /**
    * SENSORS
   */
-
   getSensors(query: PaginationRequest = {}): Observable<PaginationResponse<Sensor>> {
     const url = `${environment.apiUrl}inventory/sensors`;
     const params = ApiUtil.getHttpParams(query);
@@ -77,18 +79,36 @@ export class InventoryApiService {
     return this._http.delete<Sensor>(url);
   }
 
+
   /**
    * SENSOR TYPES
   */
-
-  getSensorTypes(query: any = {}): Observable<SensorType> {
-    const url = `${environment.apiUrl}inventory/sensors`;
-    const params = ApiUtil.getHttpParams(query);
-
-    return this._http.get<SensorType>(url, { params });
+  getSensorTypes(): Observable<ISensorType[]> {
+    const url = `${environment.apiUrl}inventory/sensor_types`;
+    return this._http.get<ISensorType[]>(url);
   }
 
-  /**ƒ
+  getSensorType(id: number): Observable<ISensorType> {
+    const url = `${environment.apiUrl}inventory/sensor_types/${id}`;
+    return this._http.get<ISensorType>(url);
+  }
+
+  createSensorType(body: ISensorTypeCreateInput): Observable<ISensorType> {
+    const url = `${environment.apiUrl}inventory/sensor_types`;
+    return this._http.post<ISensorType>(url, body);
+  }
+
+  updateSensorType(id: number, body: ISensorTypeUpdateInput): Observable<ISensorType> {
+    const url = `${environment.apiUrl}inventory/sensor_types/${id}`;
+    return this._http.patch<ISensorType>(url, body);
+  }
+
+  deleteSensorType(id: number): Observable<void> {
+    const url = `${environment.apiUrl}inventory/sensor_types/${id}`;
+    return this._http.delete<void>(url);
+  }
+
+  /**
    * COMPONENTS
   */
   getComponents(query: PaginationRequest = {}): Observable<PaginationResponse<IComponent>> {
@@ -98,15 +118,33 @@ export class InventoryApiService {
     return this._http.get<PaginationResponse<IComponent>>(url, { params });
   }
 
+  getComponent(id: number): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${id}`;
+    return this._http.get<IComponent>(url);
+  }
+
+  createComponent(body: any): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components`;
+    return this._http.post<IComponent>(url, body);
+  }
+
+  updateComponent(componentId: number, body: ComponentUpdateInput): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${componentId}`;
+    return this._http.patch<IComponent>(url, body);
+  }
+
+  deleteComponent(id: number): Observable<IComponent> {
+    const url = `${environment.apiUrl}inventory/components/${id}`;
+    return this._http.delete<IComponent>(url);
+  }
+
 
   /**
    * STATIONS
   */
-
   getStations(query: PaginationRequest = {}): Observable<PaginationResponse<Station>> {
     const url = `${environment.apiUrl}inventory/stations`;
     const params = ApiUtil.getHttpParams(query);
-
     return this._http.get<PaginationResponse<Station>>(url, { params });
   }
 
@@ -120,21 +158,23 @@ export class InventoryApiService {
     return this._http.post<Station>(url, body);
   }
 
+  updateStation(stationId: number, body: StationUpdateInput): Observable<Station> {
+    const url = `${environment.apiUrl}inventory/stations/${stationId}`;
+    return this._http.patch<Station>(url, body);
+  }
+
   deleteStation(stationId: number): Observable<Station> {
     const url = `${environment.apiUrl}inventory/stations/${stationId}`;
     return this._http.delete<Station>(url);
   }
 
 
-
   /**
    * BOREHOLES
   */
-
   getBoreholes(query: PaginationRequest = {}): Observable<PaginationResponse<Borehole>> {
     const url = `${environment.apiUrl}inventory/boreholes`;
     const params = ApiUtil.getHttpParams(query);
-
     return this._http.get<PaginationResponse<Borehole>>(url, { params });
   }
 
@@ -151,5 +191,34 @@ export class InventoryApiService {
   deleteBorehole(boreholeId: number): Observable<Borehole> {
     const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
     return this._http.delete<Borehole>(url);
+  }
+
+
+  /**
+   * Cables ~ CableTypes
+  */
+  getCableTypes(): Observable<CableType[]> {
+    const url = `${environment.apiUrl}cables`;
+    return this._http.get<CableType[]>(url);
+  }
+
+  getCableType(id: number): Observable<CableType> {
+    const url = `${environment.apiUrl}cables/${id}`;
+    return this._http.get<CableType>(url);
+  }
+
+  createCableType(body: CableTypeCreateInput): Observable<CableType> {
+    const url = `${environment.apiUrl}cables`;
+    return this._http.post<CableType>(url, body);
+  }
+
+  updateCableType(id: number, body: CableTypeUpdateInput): Observable<CableType> {
+    const url = `${environment.apiUrl}cables/${id}`;
+    return this._http.patch<CableType>(url, body);
+  }
+
+  deleteCableType(id: number): Observable<CableType> {
+    const url = `${environment.apiUrl}cables/${id}`;
+    return this._http.delete<CableType>(url);
   }
 }

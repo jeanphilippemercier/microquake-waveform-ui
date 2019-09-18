@@ -8,7 +8,7 @@ import * as moment from 'moment';
 
 import WaveformUtil from '@core/utils/waveform-util';
 import { globals } from '@src/globals';
-import { IEvent, Origin, Arrival, Traveltime, EvaluationMode, PickKey } from '@interfaces/event.interface';
+import { IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor } from '@interfaces/event.interface';
 import { Sensor, Station } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface.ts';
@@ -84,7 +84,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   allArrivals: Arrival[];
   allArrivalsChanged: ArrivalUpdateInput[];
-  originTravelTimes: Traveltime[];
+  waveformSensors: WaveformSensor[];
   lastPicksState: any = null;
   timeOrigin: moment.Moment;
   contextTimeOrigin: moment.Moment;
@@ -345,6 +345,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
       const contextUrl = this.waveformInfo.context;
       const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+      this.waveformSensors = this.waveformInfo.sensors;
 
       if (!eventFile) {
         console.error(`no eventFile`);
@@ -395,14 +396,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           this.waveformOrigin = origin;
 
-          // get travel times for preferred origin
-          const traveltimes = await this._eventApiService.getEventOriginTraveltimes(
-            event.event_resource_id,
-            origin.origin_resource_id
-          ).toPromise();
-
-          this.originTravelTimes = traveltimes;
-
           const arrivalsQuery: EventArrivalsQuery = {
             site_code: this.waveformService.site.getValue(),
             network_code: this.waveformService.network.getValue(),
@@ -424,7 +417,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           // load predicted
           this.allSensors = WaveformUtil.addPredictedPicksDataToSensors(
             this.allSensors,
-            this.originTravelTimes,
+            this.waveformSensors,
             this.timeOrigin,
             this.timeEnd,
             this.waveformOrigin.time_utc
@@ -731,11 +724,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
       sensorTitleText += `??`;
     }
 
+    const pkey = PredictedPickKey.p + '_ray_length';
+    const skey = PredictedPickKey.s + '_ray_length';
+    const distance = sensor[pkey] ? sensor[pkey] : sensor[skey] ? sensor[skey] : null;
+
     sensorTitleText += `.`;
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
-    sensorTitleText += sensor && sensor.distance ? ' -- ' + sensor.distance.toFixed(0) + 'm' : ``;
+    sensorTitleText += sensor && distance ? ' -- ' + distance.toFixed(0) + 'm' : ``;
 
     return sensorTitleText;
   }

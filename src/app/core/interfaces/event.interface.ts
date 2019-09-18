@@ -176,6 +176,31 @@ export interface Traveltime {
   travel_time_s: number;
 }
 
+export interface WaveformSensor {
+  code: string;
+  enabled: boolean;
+  id: number;
+  location_code: string;
+  name: string;
+  orientation_valid: boolean;
+  preferred_ray: {
+    P: PreferredRay | null;
+    S: PreferredRay | null;
+  };
+  station: {
+    id: number;
+    name: string;
+    code: string;
+  } | null;
+}
+
+export interface PreferredRay {
+  id: number;
+  phase: string;
+  ray_length: number;
+  travel_time: number;
+}
+
 export interface ArrivalBase<T> {
   pick: T;
   arrival_resource_id: string;

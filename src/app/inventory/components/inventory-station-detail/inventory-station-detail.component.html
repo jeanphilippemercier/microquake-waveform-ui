@@ -1,0 +1,168 @@
+<form
+  class="px-4"
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+    <div class="col-12 px-3 ">
+      <div class="row pb-1">
+        <div class="col-sm-12">
+          <div class="row">
+            <div class="col-sm-3 pr-sm-4">
+              <div class="row">
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Network</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="network"
+                      [matAutocomplete]="autoNetwork"
+                    >
+                    <mat-autocomplete
+                      #autoNetwork="matAutocomplete"
+                      [displayWith]="networkDisplayFn"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredNetworks | async)"
+                        [value]="option"
+                      >{{option.name}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Name</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      formControlName="name"
+                    >
+                    <mat-error *ngIf="myForm['name']?.invalid">This field is required</mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Code</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      formControlName="code"
+                    >
+                  </mat-form-field>
+                </div>
+
+              </div>
+            </div>
+            <div class="col-sm-3 px-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Communication</mat-label>
+                    <input
+                      matInput
+                      formControlName="communication"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Power</mat-label>
+                    <input
+                      matInput
+                      formControlName="power"
+                    >
+                  </mat-form-field>
+                </div>
+
+              </div>
+            </div>
+            <div class="col-sm-3 pl-sm-4">
+              <div class="row">
+                <div class="col">
+
+                  <mat-form-field>
+                    <mat-label>Description</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="description"
+                    >
+                          </textarea>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-3 pl-sm-4">
+              <div class="row">
+                <div class="col-sm-12">
+                  <mat-form-field>
+                    <mat-label>Location X</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="location_x"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col-sm-12">
+                  <mat-form-field>
+                    <mat-label>Location Y</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="location_y"
+                    >
+                  </mat-form-field>
+                </div>
+                <div class="col-sm-12">
+                  <mat-form-field>
+                    <mat-label>Location Z</mat-label>
+                    <input
+                      type="number"
+                      matInput
+                      formControlName="location_z"
+                    >
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 py-1">
+      <div class="d-flex">
+        <div class="mr-auto"></div>
+        <ng-container *ngIf="mode === PageMode.EDIT">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Save</button>
+        </ng-container>
+
+        <ng-container *ngIf="mode === PageMode.CREATE">
+
+          <button
+            [routerLink]="['/inventory/stations']"
+            class="mr-3"
+            mat-raised-button
+          >Cancel</button>
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Create</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+  <ngx-spinner name="loadingPage"></ngx-spinner>
+</form>

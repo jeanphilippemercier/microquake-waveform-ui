@@ -21,3 +21,8 @@ export interface EventInteractiveProcessingDialog {
   oldEvent: IEvent;
   newEvent: IEvent;
 }
+
+export interface ConfirmationDialogData {
+  header: string;
+  text: string;
+}

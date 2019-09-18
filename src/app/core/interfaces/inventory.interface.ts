@@ -93,12 +93,16 @@ export interface Sensor extends SensorBase {
   P_pick_time_utc?: string;
   container?: any;
   channels?: any;
-  distance?: number;
+  p_ray_length?: number;
+  s_ray_length?: number;
+  p_predicted_time_utc?: number;
+  s_predicted_time_utc?: number;
 
   id: number;
   station: {
     id: number;
     name: string;
+    code: string;
   } | null;
   borehole?: {
     id: number;
@@ -117,30 +121,43 @@ export interface SignalQuality {
   sensor: number;
 }
 
-export interface IComponent {
-  id: number;
-  sensor_type: ISensorType;
+
+export interface IComponentBase {
   code: ComponentCode;
-  cable_length: number;
   orientation_x: number;
   orientation_y: number;
   orientation_z: number;
   damping: number;
   enabled: boolean;
-  sensor: number;
+  cable_length: number;
+}
+export interface IComponent extends IComponentBase {
+  id: number;
+  sensor_type: ISensorType;
+  sensor: Sensor;
   cable: number;
 }
 
-export interface ISensorType {
-  id: number;
+export interface ISensorTypeBase {
+  model: string;
+  manufacturer: string;
   sensor_type: SensorType;
+  resonance_frequency: number;
+  coil_resistance: number;
+  shunt_resistance: number;
+  gain: number;
+  description: string;
   motion_type: MotionType;
+}
+export interface ISensorType extends ISensorTypeBase {
+  id: number;
+  response_file: string;
 }
 
 export enum ComponentCode {
-  Z = 'z',
-  Y = 'y',
-  X = 'x',
+  X = 'X',
+  Y = 'Y',
+  Z = 'Z',
 }
 
 export enum SensorType {
@@ -171,16 +188,34 @@ export interface Borehole {
   vtp_file_url: string;
   dfx_file_url: string;
 }
-
-export interface Station {
-  id: number;
+export interface StationBase {
   code: string;
   name: string;
   description?: string;
-  network: Network;
   location_x: number;
   location_y: number;
   location_z: number;
   communication: string;
   power: string;
+}
+
+export interface Station extends StationBase {
+  id: number;
+  network: Network;
+}
+
+export interface CableTypeBase {
+  code: string;
+  manufacturer: string;
+  part_number: number;
+  r: number;
+  l: number;
+  g: number;
+  c: number;
+  description: string;
+}
+
+export interface CableType extends CableTypeBase {
+  id: number;
+  upload_time: string;
 }

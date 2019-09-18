@@ -3,21 +3,21 @@ import { PageEvent } from '@angular/material/paginator';
 
 import { PageMode } from '@interfaces/core.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
-import { Sensor } from '@interfaces/inventory.interface';
+import { Sensor, Station } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Params, Router, ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-inventory-sensor-list-page',
-  templateUrl: './inventory-sensor-list-page.component.html',
-  styleUrls: ['./inventory-sensor-list-page.component.scss']
+  selector: 'app-inventory-station-list-page',
+  templateUrl: './inventory-station-list-page.component.html',
+  styleUrls: ['./inventory-station-list-page.component.scss']
 })
-export class InventorySensorListPageComponent implements OnInit {
+export class InventoryStationListPageComponent implements OnInit {
 
   // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['enabled', 'sensor', 'name', 'station', 'borehole', 'code', 'components', 'id', 'actions'];
-  dataSource: Sensor[];
+  displayedColumns: string[] = ['name', 'network', 'code', 'communication', 'power', 'id', 'actions'];
+  dataSource: Station[];
   loading = false;
 
   pageSize = 15;
@@ -66,7 +66,7 @@ export class InventorySensorListPageComponent implements OnInit {
       //   query.page_size = page_size;
       // }
 
-      const response = await this._inventoryApiSevice.getSensors(query).toPromise();
+      const response = await this._inventoryApiSevice.getStations(query).toPromise();
 
       this.dataSource = response.results;
       this.count = response.count;

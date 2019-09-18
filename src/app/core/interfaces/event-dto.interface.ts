@@ -1,4 +1,4 @@
-import { IEvent, Pick, ArrivalBase } from './event.interface';
+import { IEvent, Pick, ArrivalBase, WaveformSensor } from './event.interface';
 import { PaginationResponse } from './dto.interface';
 
 export interface EventUpdateInput extends Partial<IEvent> {
@@ -16,6 +16,7 @@ export interface WaveformQueryResponse {
   pages: string[];
   context: string;
   complete_stations: string[];
+  sensors: WaveformSensor[];
 }
 
 export interface EventPaginationResponse<T> extends PaginationResponse<T> {
