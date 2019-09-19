@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { Validators, FormControl } from '@angular/forms';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
 import { WaveformService } from '@services/waveform.service';
+import { Subject, combineLatest } from 'rxjs';
+import { takeUntil, skip, distinctUntilChanged } from 'rxjs/operators';
 
 
 @Component({
@@ -13,7 +14,7 @@ import { WaveformService } from '@services/waveform.service';
   styleUrls: ['./waveform-toolbar.component.scss']
 })
 
-export class WaveformToolbarComponent implements OnInit {
+export class WaveformToolbarComponent implements OnInit, OnDestroy {
 
   // FILTER
   lowFreqCorner: number;
@@ -26,6 +27,8 @@ export class WaveformToolbarComponent implements OnInit {
 
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
+  private _unsubscribe = new Subject<void>();
+  interactiveProcessingDisabled = false;
 
   constructor(
     public waveformService: WaveformService
@@ -35,6 +38,24 @@ export class WaveformToolbarComponent implements OnInit {
     this.lowFreqCorner = this.waveformService.lowFreqCorner.getValue();
     this.highFreqCorner = this.waveformService.highFreqCorner.getValue();
     this.numPoles = this.waveformService.numPoles.getValue();
+
+    combineLatest(this.waveformService.interactiveProcessActiveList, this.waveformService.currentEvent).pipe(
+      takeUntil(this._unsubscribe)
+    ).subscribe(([val, currentEvent]) => {
+      this.interactiveProcessingDisabled = val.some(v => {
+        if (v && v.event && v.event.event_resource_id) {
+          if (currentEvent && v.event.event_resource_id === currentEvent.event_resource_id) {
+            return true;
+          }
+          return false;
+        }
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
   }
 
   onCommonTimeScaleClick() {
