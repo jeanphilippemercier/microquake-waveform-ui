@@ -8,10 +8,12 @@ import * as moment from 'moment';
 
 import WaveformUtil from '@core/utils/waveform-util';
 import { globals } from '@src/globals';
-import { IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor } from '@interfaces/event.interface';
+import {
+  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap
+} from '@interfaces/event.interface';
 import { Sensor, Station } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
-import { WaveformQueryResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface.ts';
+import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
 import { InventoryApiService } from '@services/inventory-api.service.ts';
@@ -33,8 +35,6 @@ enum ContextMenuChartAction {
 
 export class Waveform2Component implements OnInit, OnDestroy {
 
-
-  @Input()
   set event(event: IEvent) {
     const newEventId = event ? event.event_resource_id : null;
     const oldEventId = this._event ? this._event.event_resource_id : null;
@@ -83,7 +83,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   allStationsMap: { [key: number]: number } = {};
 
   allArrivals: Arrival[];
-  allArrivalsChanged: ArrivalUpdateInput[];
+  allArrivalsChanged: ArrivalPartial[];
   waveformSensors: WaveformSensor[];
   lastPicksState: any = null;
   timeOrigin: moment.Moment;
@@ -119,6 +119,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
+
+    this.waveformService.currentEvent
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe((val: IEvent) => {
+        this.event = val;
+      });
+
     this.waveformService.loading
       .pipe(takeUntil(this._unsubscribe))
       .subscribe((val: boolean) => {
@@ -132,7 +143,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     await Promise.all([
       await this._loadAllSensors(),
-      await this._loadAllStations(),
+      await this._loadAllStations()
     ]);
 
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
@@ -145,6 +156,23 @@ export class Waveform2Component implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this._unsubscribe.next();
     this._unsubscribe.complete();
+  }
+
+  private async _getInteractiveProcessingStatus() {
+    try {
+      const ip = await this._eventApiService.getInteractiveProcessing(this.event.event_resource_id).toPromise();
+      if ([BatchStatus.PENDING, BatchStatus.PROCESSING].indexOf(ip.status) > -1) {
+        const currentList = this.waveformService.interactiveProcessActiveList.getValue();
+        const newData: EventBatchMap = {
+          batchId: ip.id,
+          event: this.event
+        };
+
+        this.waveformService.interactiveProcessActiveList.next([...currentList, newData]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   private async _loadAllSensors() {
@@ -301,6 +329,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private async _handleEvent(event: IEvent) {
+
+    this.waveformService.interactiveProcessingEnabled.next(false);
+    this._getInteractiveProcessingStatus();
 
     await new Promise(resolve => {
       this.waveformService.waveformComponentInitialized.pipe(
@@ -541,11 +572,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private async _onInteractiveProcess() {
-
     try {
       this.waveformService.interactiveProcessLoading.next(true);
       this._updateArrivalWithPickData();
-      const response = await this._eventApiService.updateEventPicksById(this.currentEventId, this.allArrivalsChanged).toPromise();
+      this.waveformService.interactiveProcessingEnabled.next(false);
+      const response = await this._eventApiService.startInteractiveProcessing(this.currentEventId, { data: this.allArrivalsChanged }).toPromise();
+      const newData: EventBatchMap = {
+        batchId: response.id,
+        event: this.event
+      };
+
+      const interactiveProcessActiveList = this.waveformService.interactiveProcessActiveList.getValue();
+      this.waveformService.interactiveProcessActiveList.next([...interactiveProcessActiveList, newData]);
+
+      const interactiveProcessCurrentList = this.waveformService.interactiveProcessCurrentList.getValue();
+      this.waveformService.interactiveProcessCurrentList.next([...interactiveProcessCurrentList, newData]);
+
       console.log(response);
     } catch (err) {
       console.error(err);
@@ -1690,7 +1732,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           delete arrpick.pick.pick_resource_id;
         }
       } else {  // add pick
-        const newpick: ArrivalUpdateInput = {
+        const newpick: ArrivalPartial = {
           azimuth: null,
           distance: null,
           earth_model: null,

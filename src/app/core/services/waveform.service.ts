@@ -5,11 +5,14 @@ import { first } from 'rxjs/operators';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
+import { IEvent, EventBatchMap } from '@interfaces/event.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WaveformService implements OnInit {
+
+  currentEvent: BehaviorSubject<IEvent> = new BehaviorSubject(null);
 
   commonTimeScale: BehaviorSubject<boolean> = new BehaviorSubject(true);
   commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject(false);
@@ -61,6 +64,10 @@ export class WaveformService implements OnInit {
 
   waveformComponentInitialized: ReplaySubject<boolean> = new ReplaySubject(1);
   waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();
+
+  interactiveProcessingEnabled: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  interactiveProcessActiveList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject([]);
+  interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject([]);
 
   constructor(
     private _matDialog: MatDialog

@@ -19,7 +19,7 @@ export interface EventFilterDialogData {
 }
 export interface EventInteractiveProcessingDialog {
   oldEvent: IEvent;
-  newEvent: IEvent;
+  newEvent?: IEvent;
 }
 
 export interface ConfirmationDialogData {

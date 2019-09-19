@@ -21,6 +21,7 @@ import { WaveformService } from '@services/waveform.service';
 import { InventoryApiService } from '@services/inventory-api.service';
 // tslint:disable-next-line:max-line-length
 import { EventInteractiveProcessingDialogComponent } from '@app/events/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 
 @Component({
@@ -43,7 +44,17 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   eventStartDate: Date;
   eventEndDate: Date;
 
-  currentEvent: IEvent;
+
+  public set currentEvent(v: IEvent) {
+    this._currentEvent = v;
+    this.waveformService.currentEvent.next(this._currentEvent);
+  }
+
+  public get currentEvent(): IEvent {
+    return this._currentEvent;
+  }
+
+  private _currentEvent: IEvent;
   currentEventChart: IEvent;
   currentEventInfo: IEvent;
 
@@ -78,6 +89,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     private _activatedRoute: ActivatedRoute,
     private _matDialog: MatDialog,
     private _router: Router,
+    private _toastrNotificationService: ToastrNotificationService,
     private _ngxSpinnerService: NgxSpinnerService
   ) { }
 
@@ -90,7 +102,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       this._watchServerEventUpdates()
     ]);
 
-    // TODO:finish when API's fixed
     this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
       .pipe(
         distinctUntilChanged(),
@@ -98,10 +109,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       )
       .subscribe(val => {
         if (val) {
-          console.log(`interactive processing started`);
-          this._ngxSpinnerService.show('loadingInteractiveProcessing', { fullScreen: true, bdColor: 'rgba(51,51,51,0.5)' });
+          this._ngxSpinnerService.show('loadingInteractiveProcessing', { fullScreen: true, bdColor: 'rgba(51,51,51,0.75)' });
         } else {
-          console.log(`interactive processing finished`);
           this._ngxSpinnerService.hide('loadingInteractiveProcessing');
         }
       });
@@ -136,27 +145,89 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  async cancelLastInteractiveProcess() {
+    try {
+      this.waveformService.interactiveProcessLoading.next(false);
+
+      // IP triggered by current user instance
+      const ipCurrentList = this.waveformService.interactiveProcessCurrentList.getValue();
+      const removedBatch = ipCurrentList.pop();
+      this.waveformService.interactiveProcessCurrentList.next(ipCurrentList);
+
+      const response = await this._eventApiService.cancelInteractiveProcessing(removedBatch.event.event_resource_id).toPromise();
+      console.log(response);
+
+      // IP triggered by other than current user instance
+      // there may be case, where user clicks on some other event that is being reprocessed (triggered by some other instance)
+      // and last element of ipActiveList is not same as last element of ipCurrentList.
+      // We need to find exact position to be sure we remove right batch.
+      const ipActiveList = this.waveformService.interactiveProcessActiveList.getValue();
+      const idx = ipActiveList.findIndex(val => val.batchId === removedBatch.batchId);
+      if (idx > -1) {
+        ipActiveList.splice(idx, 1);
+        this.waveformService.interactiveProcessActiveList.next(ipActiveList);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  runInteractiveProcessInBg() {
+    this.waveformService.interactiveProcessLoading.next(false);
+  }
+
   private _watchServerEventUpdates() {
     this.onServerEventSub = this._eventApiService.onServerEvent().subscribe(data => {
+      try {
+        console.log(data.type);
+        console.log(data.operation);
+        console.log(data);
 
-      switch (data.operation) {
-        case WebsocketResponseOperation.UPDATE:
-          this._updateEvent(data.event);
-          break;
-        case WebsocketResponseOperation.CREATED:
-          this._addEvent(data.event);
-          break;
-        case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
-          // TODO:finish when API's fixed
-          console.log(`INTERACTIVE_BATCH_READY`);
-          console.log(data);
-          this.waveformService.interactiveProcessLoading.next(false);
-          this.openInteractiveProcessDialog(this.currentEvent, data.event);
-          break;
-        default:
-          console.log(data);
-          console.log(`unknown websocket operation`);
-          break;
+        switch (data.operation) {
+          case WebsocketResponseOperation.UPDATE:
+            this._updateEvent(data.event);
+            break;
+          case WebsocketResponseOperation.CREATED:
+            this._addEvent(data.event);
+            break;
+          case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
+          case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
+            let activeList = this.waveformService.interactiveProcessActiveList.getValue();
+            let currentList = this.waveformService.interactiveProcessCurrentList.getValue();
+            let previousEventVer: IEvent = null;
+
+            // EVENT Reprocessing triggered on other instances
+            activeList = activeList.filter(val => val.batchId !== data.extra.batch.id);
+            this.waveformService.interactiveProcessActiveList.next(activeList);
+
+            // EVENT Reprocessing triggered on current instance
+            currentList = currentList.filter(val => {
+              if (val.batchId !== data.extra.batch.id) {
+                return true;
+              }
+              previousEventVer = val.event;
+              return false;
+            });
+            this.waveformService.interactiveProcessCurrentList.next(currentList);
+
+            if (previousEventVer) {
+              this.waveformService.interactiveProcessLoading.next(false);
+
+              if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
+                this._toastrNotificationService.success('Interactive processing is ready');
+                this.openInteractiveProcessDialog(previousEventVer, data.event);
+              } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
+                this.openInteractiveProcessDialog(previousEventVer, null);
+                this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
+              }
+            }
+            break;
+          default:
+            console.log(`unknown websocket operation`);
+            break;
+        }
+      } catch (err) {
+        console.error(err);
       }
     });
   }
@@ -535,8 +606,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
 
-  openInteractiveProcessDialog(oldEvent: IEvent, newEvent: IEvent) {
-    if (!oldEvent || !newEvent) {
+  openInteractiveProcessDialog(oldEvent: IEvent, newEvent?: IEvent) {
+    if (!oldEvent) {
       return;
     }
 
@@ -545,15 +616,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       hasBackdrop: true,
       width: '600px',
       data: {
-        newEvent,
         oldEvent,
+        newEvent
       }
     });
 
     // TODO: finish when API's fixed
     this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
       try {
-        const response = await this._eventApiService.acceptEventPicksById(newEvent.event_resource_id).toPromise();
+        const response = await this._eventApiService.acceptInteractiveProcessing(newEvent.event_resource_id).toPromise();
         console.log(response);
       } catch (err) {
         console.error(err);

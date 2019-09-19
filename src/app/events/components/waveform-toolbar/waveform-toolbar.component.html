@@ -180,13 +180,17 @@
     <mat-icon>cached</mat-icon>
   </button>
 
-  <button
-    mat-icon-button
-    matTooltip="Interactive Process"
-    (click)="onInteractiveProcessClick()"
+  <div
+    [matTooltip]="'Interactive processing' + (interactiveProcessingDisabled ? '. Currently DISABLED, because another reprocessing is already running.' : '')"
   >
-    <mat-icon>launch</mat-icon>
-  </button>
+    <button
+      mat-icon-button
+      (click)="onInteractiveProcessClick()"
+      [disabled]="interactiveProcessingDisabled"
+    >
+      <mat-icon>launch</mat-icon>
+    </button>
+  </div>
   <div class="mr-auto"></div>
   <button
     mat-icon-button

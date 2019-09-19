@@ -114,7 +114,8 @@ export interface IEvent {
 export enum WebsocketResponseOperation {
   CREATED = 'created',
   UPDATE = 'update',
-  INTERACTIVE_BATCH_READY = 'interactive_batch_ready'
+  INTERACTIVE_BATCH_READY = 'interactive_batch_ready',
+  INTERACTIVE_BATCH_FAILED = 'interactive_batch_failed',
 }
 
 export enum WebsocketResponseType {
@@ -122,11 +123,39 @@ export enum WebsocketResponseType {
 }
 
 export interface WebsocketEventResponse {
-  event: IEvent;
-  operation: WebsocketResponseOperation;
   type: WebsocketResponseType;
+  operation: WebsocketResponseOperation;
+  event: IEvent;
+  extra: EventExtra;
 }
 
+export interface EventExtra {
+  batch?: {
+    id: number;
+    status: BatchStatus;
+  };
+  error: string | null;
+}
+
+export enum BatchStatus {
+  NEW = 'new',
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  ERROR = 'error',
+  READY = 'ready',
+}
+
+export interface EventBatchMap {
+  batchId: number;
+  event: IEvent;
+}
+
+export interface InteractiveProcessing {
+  data: any;
+  id: number;
+  new_catalog: any;
+  status: BatchStatus;
+}
 
 export interface Boundaries {
   timezone: string;
@@ -200,6 +229,9 @@ export interface ArrivalBase<T> {
 
 export interface Arrival extends ArrivalBase<Pick> {
   pick: Pick;
+}
+
+export interface ArrivalPartial extends Partial<ArrivalBase<Partial<Pick>>> {
 }
 
 export interface Pick {

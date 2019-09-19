@@ -3,12 +3,16 @@ import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType } from '@interfaces/event.interface';
+import {
+  IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing,
+} from '@interfaces/event.interface';
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery
 } from '@interfaces/event-query.interface';
 import ApiUtil from '../utils/api-util';
-import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse } from '@interfaces/event-dto.interface';
+import {
+  EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput
+} from '@interfaces/event-dto.interface';
 import { WebSocketService } from './websocket.service';
 import { filter, retry } from 'rxjs/operators';
 import { PaginationResponse } from '@interfaces/dto.interface';
@@ -88,18 +92,24 @@ export class EventApiService {
     return this._http.patch(url, body);
   }
 
-  updateEventPicksById(eventId, dataObj): any {
-    const _httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    const data = JSON.stringify({
-      'event_resource_id': eventId,
-      'data': dataObj
-    });
-    return this._http.put(API_URL, data, _httpOptions);
+  getInteractiveProcessing(eventId: string): Observable<InteractiveProcessing> {
+    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.get<InteractiveProcessing>(url);
+  }
+
+  startInteractiveProcessing(eventId: string, body: ArrivalUpdateInput): Observable<InteractiveProcessing> {
+    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.put<InteractiveProcessing>(url, body);
+  }
+
+  acceptInteractiveProcessing(eventId: string): any {
+    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.post(url, {});
+  }
+
+  cancelInteractiveProcessing(eventId: string): any {
+    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.delete(url);
   }
 
   getEventDailySummary(query?: EventDailySummaryQuery) {
@@ -108,18 +118,6 @@ export class EventApiService {
 
     return this._http.get<PaginationResponse<IEvent>>(url, { params });
   }
-
-
-  acceptEventPicksById(eventId): any {
-    const _httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    return this._http.post(API_URL, {}, _httpOptions);
-  }
-
 
   getOriginById(originId: string): Observable<Origin> {
     const url = `${environment.apiUrl}${globals.apiOrigins}/${originId}`;

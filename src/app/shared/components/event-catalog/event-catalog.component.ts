@@ -70,6 +70,24 @@ export class EventCatalogComponent {
   @Input() filterTimeAfter: moment.Moment;
   @Input() filterTimeBefore: moment.Moment;
 
+  @Input()
+  public set interactiveProcessingEvents(v: { id: number; event: IEvent }[]) {
+    this.interactiveProcessingEventsIds = [];
+    if (v) {
+      this.interactiveProcessingEventsIds = v.map(val => {
+        return val.event.event_resource_id;
+      });
+    }
+    this._interactiveProcessingEvents = v;
+  }
+
+  public get interactiveProcessingEvents(): { id: number; event: IEvent }[] {
+    return this._interactiveProcessingEvents;
+  }
+
+  private _interactiveProcessingEvents: { id: number; event: IEvent }[];
+  interactiveProcessingEventsIds: string[] = [];
+
   days: EventDay[] = [];
   daysMap: any = {};
   openedDay: moment.Moment;
