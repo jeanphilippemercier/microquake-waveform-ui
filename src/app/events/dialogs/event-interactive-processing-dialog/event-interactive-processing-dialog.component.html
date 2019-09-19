@@ -4,13 +4,24 @@
     <tbody>
       <tr>
         <th>Event Id</th>
-        <td>{{newEvent?.event_resource_id}}</td>
+        <td>
+          <div class="row">
+            <div class="col-10 pr-4 text-right">
+              {{oldEvent?.event_resource_id}}
+            </div>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
-
-
-  <table class="table table-extra-condensed mt-3 table-compare">
+  <h4
+    *ngIf="!newEvent"
+    class="text-center m-5"
+  >Processing failed</h4>
+  <table
+    *ngIf="newEvent"
+    class="table table-extra-condensed mt-3 table-compare"
+  >
     <tbody>
       <tr>
         <th></th>
@@ -44,17 +55,17 @@
           <div class="d-flex w-100 flex-column">
             <div class="row">
               <div class=" col-2 p-0 text-right">X</div>
-              <div class="col-6 p-0 text-right">{{newEvent?.x | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{oldEvent?.x | number:'.0-0'}}</div>
               <div class="col-4"></div>
             </div>
             <div class="row">
               <div class=" col-2 p-0 text-right">Y</div>
-              <div class="col-6 p-0 text-right">{{newEvent?.y | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{oldEvent?.y | number:'.0-0'}}</div>
               <div class="col-4"></div>
             </div>
             <div class="row">
               <div class=" col-2 p-0 text-right">Z</div>
-              <div class="col-6 p-0 text-right">{{newEvent?.z | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{oldEvent?.z | number:'.0-0'}}</div>
               <div class="col-4"></div>
             </div>
           </div>
@@ -63,31 +74,31 @@
         <td *ngIf="oldEvent?.x">
           <div class="d-flex w-100 flex-column">
             <div class="row">
-              <div class="col-6 p-0 text-right">{{oldEvent?.x | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{newEvent?.x | number:'.0-0'}}</div>
               <div class="col-6">
                 <div
                   class="px-3 text-right font-weight-bold"
-                  [innerHTML]="(oldEvent?.x - newEvent?.x) | number:'.0-0' | diffNumber"
+                  [innerHTML]="(newEvent?.x - oldEvent?.x) | number:'.0-0' | diffNumber"
                 >
                 </div>
               </div>
             </div>
             <div class="row">
-              <div class="col-6 p-0 text-right">{{oldEvent?.y | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{newEvent?.y | number:'.0-0'}}</div>
               <div class="col-6">
                 <div
                   class="px-3 text-right font-weight-bold"
-                  [innerHTML]="(oldEvent?.y - newEvent?.y) | number:'.0-0' | diffNumber"
+                  [innerHTML]="(newEvent?.y - oldEvent?.y) | number:'.0-0' | diffNumber"
                 >
                 </div>
               </div>
             </div>
             <div class="row">
-              <div class="col-6 p-0 text-right">{{oldEvent?.z | number:'.0-0'}}</div>
+              <div class="col-6 p-0 text-right">{{newEvent?.z | number:'.0-0'}}</div>
               <div class="col-6">
                 <div
                   class="px-3 text-right font-weight-bold"
-                  [innerHTML]="(oldEvent?.z - newEvent?.z) | number:'.0-0' | diffNumber"
+                  [innerHTML]="(newEvent?.z - oldEvent?.z) | number:'.0-0' | diffNumber"
                 ></div>
               </div>
             </div>
@@ -100,14 +111,14 @@
           <div class="row">
             <div class=" col-2 p-0"></div>
             <div class="col-6 p-0 text-right">
-              {{newEvent?.time_residual ? ((newEvent?.time_residual * 1000) | number:'1.0-0') : '-'}}
+              {{oldEvent?.time_residual ? ((oldEvent?.time_residual * 1000) | number:'1.0-0') : '-'}}
             </div>
           </div>
         </td>
         <td>
           <div class="row">
             <div class="col-6 p-0 text-right">
-              {{oldEvent?.time_residual ? ((oldEvent?.time_residual * 1000) | number:'1.0-0') : '-'}}
+              {{newEvent?.time_residual ? ((newEvent?.time_residual * 1000) | number:'1.0-0') : '-'}}
             </div>
             <div class="col-6"></div>
           </div>
@@ -119,14 +130,14 @@
           <div class="row">
             <div class=" col-2 p-0"></div>
             <div class="col-6 p-0 text-right">
-              {{newEvent?.uncertainty ? (newEvent?.uncertainty | number:'1.0-0') : '-'}}
+              {{oldEvent?.uncertainty ? (oldEvent?.uncertainty | number:'1.0-0') : '-'}}
             </div>
           </div>
         </td>
         <td>
           <div class="row">
             <div class="col-6 p-0 text-right">
-              {{oldEvent?.uncertainty ? (oldEvent?.uncertainty | number:'1.0-0') : '-'}}
+              {{newEvent?.uncertainty ? (newEvent?.uncertainty | number:'1.0-0') : '-'}}
             </div>
             <div class="col-6"></div>
           </div>
@@ -137,18 +148,27 @@
 </div>
 
 <mat-dialog-actions align="end">
-  <button
-    color="warn"
-    class="mr-3"
-    mat-raised-button
-    mat-dialog-close
-    (click)="onRejectClick()"
-  >Reject</button>
-  <button
-    color="primary"
-    mat-flat-button
-    mat-dialog-close
-    (click)="onAcceptClick()"
-  >Accept</button>
+  <ng-container *ngIf="newEvent">
+    <button
+      color="warn"
+      class="mr-3"
+      mat-raised-button
+      mat-dialog-close
+      (click)="onRejectClick()"
+    >Reject</button>
+    <button
+      color="primary"
+      mat-flat-button
+      mat-dialog-close
+      (click)="onAcceptClick()"
+    >Accept</button>
+  </ng-container>
+  <ng-container *ngIf="!newEvent">
+    <button
+      mat-raised-button
+      mat-dialog-close
+    >Close</button>
+  </ng-container>
+
 </mat-dialog-actions>
 <ngx-spinner name="loadingEventInteractiveProcess">

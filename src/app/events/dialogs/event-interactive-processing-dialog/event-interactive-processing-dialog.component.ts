@@ -24,7 +24,10 @@ export class EventInteractiveProcessingDialogComponent {
     private _matDialogRef: MatDialogRef<EventInteractiveProcessingDialogComponent>
   ) {
     this.oldEvent = { ...dialogData.oldEvent };
-    this.newEvent = { ...dialogData.newEvent };
+
+    if (dialogData.newEvent) {
+      this.newEvent = { ...dialogData.newEvent };
+    }
   }
 
   onRejectClick() {
