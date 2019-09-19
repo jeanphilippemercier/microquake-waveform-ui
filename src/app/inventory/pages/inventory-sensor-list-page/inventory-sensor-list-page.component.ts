@@ -16,7 +16,7 @@ import { Params, Router, ActivatedRoute } from '@angular/router';
 export class InventorySensorListPageComponent implements OnInit {
 
   // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['enabled', 'sensor', 'name', 'station', 'borehole', 'code', 'components', 'id', 'actions'];
+  displayedColumns: string[] = ['enabled', 'sensor', 'station', 'borehole', 'components', 'actions'];
   dataSource: Sensor[];
   loading = false;
 
