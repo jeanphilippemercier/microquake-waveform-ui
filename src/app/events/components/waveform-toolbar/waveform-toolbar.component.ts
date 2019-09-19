@@ -39,7 +39,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.highFreqCorner = this.waveformService.highFreqCorner.getValue();
     this.numPoles = this.waveformService.numPoles.getValue();
 
-    combineLatest(this.waveformService.interactiveProcessActiveList, this.waveformService.currentEvent).pipe(
+    combineLatest([this.waveformService.interactiveProcessActiveList, this.waveformService.currentEvent]).pipe(
       takeUntil(this._unsubscribe)
     ).subscribe(([val, currentEvent]) => {
       this.interactiveProcessingDisabled = val.some(v => {
