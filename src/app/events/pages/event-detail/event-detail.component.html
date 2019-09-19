@@ -73,6 +73,7 @@
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
+            [interactiveProcessingEvents]="waveformService?.interactiveProcessActiveList | async"
             [filterTimeAfter]="eventListQuery?.time_utc_after"
             [filterTimeBefore]="eventListQuery?.time_utc_before"
             (chartClick)="openChart($event)"
@@ -100,7 +101,7 @@
               *ngIf="false && currentEvent"
               color="primary"
               mat-button
-              (click)="openInteractiveProcessDialog(currentEventInfo,events[0]);$event.stopPropagation()"
+              (click)="openInteractiveProcessDialog(currentEventInfo);$event.stopPropagation()"
             >
               <mat-icon class="mat-18">new_releases</mat-icon>
               <small class="align-self-center">
@@ -160,11 +161,33 @@
     </div>
     <app-waveform-2
       *ngIf="true"
-      [event]="currentEvent"
       [timezone]="timezone"
     ></app-waveform-2>
   </mat-sidenav-content>
 </mat-sidenav-container>
 <ngx-spinner name="loadingInteractiveProcessing">
-  <p style="font-size: 20px; font-weight: 600; color: #fff">Interactive Processing...</p>
+  <div>
+    <p
+      class="text-center"
+      style="font-size: 27px; font-weight: 600; color: #fff; padding-top: 180px;"
+    >
+      Interactive processing
+    </p>
+    <div
+      style="width: 100%; margin: 45px auto 0;"
+      class="d-flex justify-content-around"
+    >
+      <button
+        [disabled]="true"
+        mat-raised-button
+        (click)="cancelLastInteractiveProcess()"
+      >Cancel</button>
+      <button
+        (click)="runInteractiveProcessInBg()"
+        class=""
+        color="primary"
+        mat-raised-button
+      >Run in background</button>
+    </div>
+  </div>
 </ngx-spinner>

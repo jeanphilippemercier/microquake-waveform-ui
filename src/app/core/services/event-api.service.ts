@@ -107,6 +107,11 @@ export class EventApiService {
     return this._http.post(url, {});
   }
 
+  cancelInteractiveProcessing(eventId: string): any {
+    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
+    return this._http.delete(url);
+  }
+
   getEventDailySummary(query?: EventDailySummaryQuery) {
     const url = `${environment.apiUrl}events/daily_summary`;
     const params = ApiUtil.getHttpParams(query);
