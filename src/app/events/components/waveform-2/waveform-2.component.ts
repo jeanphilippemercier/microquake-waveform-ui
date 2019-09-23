@@ -11,12 +11,11 @@ import { globals } from '@src/globals';
 import {
   IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap
 } from '@interfaces/event.interface';
-import { Sensor, Station } from '@interfaces/inventory.interface';
+import { Sensor } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
-import { InventoryApiService } from '@services/inventory-api.service.ts';
 import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
 
 enum ContextMenuChartAction {
@@ -64,7 +63,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   */
 
   // sensors loaded from api - don't mutate this!
-  allSensorsOrig: Sensor[] = [];
+  // allSensorsOrig: Sensor[] = [];
   // duplicated allSensorsOrig for current chart
   allSensors: Sensor[] = [];
   // currently loaded sensors with waveform data
@@ -72,15 +71,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
   // currently active sensors (shown on screen)
   activeSensors: Sensor[] = [];
   // hashMap for all sensors {sensor_code: <position in allSensors array>}
-  allSensorsMap: { [key: string]: number } = {};
+  // allSensorsMap: { [key: string]: number } = {};
   // context sensor
   contextSensor: Sensor[];
 
   /*
   * STATIONS
   */
-  allStations: Station[];
-  allStationsMap: { [key: number]: number } = {};
+  // allStations: Station[];
+  // allStationsMap: { [key: number]: number } = {};
 
   allArrivals: Arrival[];
   allArrivalsChanged: ArrivalPartial[];
@@ -108,11 +107,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   waveformShow = true;
   waveformInfo: WaveformQueryResponse;
 
-
   constructor(
     public waveformService: WaveformService,
     private _eventApiService: EventApiService,
-    private _inventoryApiService: InventoryApiService,
     private _toastrNotificationService: ToastrNotificationService,
     private _renderer: Renderer2,
     private _ngxSpinnerService: NgxSpinnerService
@@ -141,11 +138,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       });
     this.waveformService.loading.next(true);
 
-    await Promise.all([
-      await this._loadAllSensors(),
-      await this._loadAllStations()
-    ]);
-
     this.chartHeight = Math.floor((window.innerHeight - this.pageOffsetY - 30) / globals.chartsPerPage);
     this._addKeyDownEventListeners();
     this._subscribeToolbar();
@@ -170,35 +162,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         this.waveformService.interactiveProcessActiveList.next([...currentList, newData]);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private async _loadAllSensors() {
-    try {
-      // TODO: remove getSensors query once waveformInfo contains information about all active sensors
-      const response = await this._inventoryApiService.getSensors({
-        page_size: 1000
-      }).toPromise();
-
-      this.allSensorsOrig = response.results;
-      this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.code] = idx);
-
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private async _loadAllStations() {
-    try {
-      // TODO: remove getStations query once waveformInfo contains information about all active sensors
-      const response = await this._inventoryApiService.getStations({
-        page_size: 1000
-      }).toPromise();
-
-      this.allStations = response.results;
-      this.allStations.forEach((station, idx) => this.allStationsMap[station.id] = idx);
     } catch (err) {
       console.error(err);
     }
@@ -334,13 +297,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._getInteractiveProcessingStatus();
 
     await new Promise(resolve => {
-      this.waveformService.waveformComponentInitialized.pipe(
+      this.waveformService.initialized.pipe(
         take(1),
         skipWhile(val => val !== true)
       ).subscribe(val => resolve());
     });
 
-    this.allSensors = JSON.parse(JSON.stringify(this.allSensorsOrig));
+    this.allSensors = JSON.parse(JSON.stringify(this.waveformService.allSensorsOrig));
     this.currentEventId = event.event_resource_id;
     this._destroyCharts();
     this._loadEventFirstPage(event);
@@ -461,9 +424,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
             this.timeOrigin
           );
 
-          this.loadedSensors = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.allSensorsMap);
+          this.loadedSensors = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.waveformService.allSensorsMap);
 
           this.picksBias = 0;
+
           const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
 
           if (this.currentEventId !== event.event_resource_id) {
@@ -476,7 +440,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
             if (contextData && contextData.sensors) {
               this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(contextData.sensors));
-              this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.allSensorsMap);
+              this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
               this.contextTimeOrigin = contextData.timeOrigin;
             }
           }
@@ -515,7 +479,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
       // filter and recompute composite traces
       let sensors = WaveformUtil.addCompositeTrace(this._filterData(eventData.sensors));
-      sensors = WaveformUtil.mapSensorInfoToLoadedSensors(sensors, this.allSensors, this.allSensorsMap);
+      sensors = WaveformUtil.mapSensorInfoToLoadedSensors(sensors, this.allSensors, this.waveformService.allSensorsMap);
 
       for (let j = 0; j < sensors.length; j++) {
         this.loadedSensors[(this.waveformService.pageSize.getValue() - 1) * (idx - 1) + j] = sensors[j];
@@ -760,7 +724,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _getSensorTitle(sensor: Sensor) {
     let sensorTitleText = ``;
     try {
-      const station = this.allStations[this.allStationsMap[sensor.station.id]];
+      const station = this.waveformService.allStations[this.waveformService.allStationsMap[sensor.station.id]];
       sensorTitleText += station ? station.code : `??`;
     } catch (err) {
       sensorTitleText += `??`;
