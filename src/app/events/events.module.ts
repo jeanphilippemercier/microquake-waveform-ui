@@ -9,6 +9,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { WaveformToolbarComponent } from './components/waveform-toolbar/waveform-toolbar.component';
 // tslint:disable-next-line:max-line-length
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+import { EventSitePickerComponent } from './components/events-site-picker/event-site-picker.component';
+import { EventSitePickerDialogComponent } from './dialogs/event-site-picker-dialog/event-site-picker-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -29,6 +31,8 @@ const ROUTES: Routes = [
     Waveform2Component,
     WaveformToolbarComponent,
     EventInteractiveProcessingDialogComponent,
+    EventSitePickerComponent,
+    EventSitePickerDialogComponent
   ],
   imports: [
     RouterModule.forChild(ROUTES),
@@ -39,6 +43,7 @@ const ROUTES: Routes = [
   ],
   entryComponents: [
     EventInteractiveProcessingDialogComponent,
+    EventSitePickerDialogComponent
   ]
 })
 export class EventsModule { }

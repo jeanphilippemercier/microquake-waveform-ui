@@ -1,0 +1,33 @@
+<h1 mat-dialog-title>Site and network picker</h1>
+<div mat-dialog-content>
+  <div class="row">
+    <div class="col-12">
+      <app-site-select-field
+        [sites]="sites"
+        [(site)]="currentSite"
+        (siteChange)="siteChanged($event)"
+      ></app-site-select-field>
+    </div>
+    <div class="col-12">
+      <app-site-network-field
+        [(networks)]="networks"
+        [(network)]="currentNetwork"
+        (networkChange)="networkChanged($event)"
+      ></app-site-network-field>
+    </div>
+  </div>
+</div>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Cancel</button>
+  <button
+    color="primary"
+    mat-raised-button
+    [disabled]="!currentSite || !currentNetwork"
+    (click)="onAcceptClick()"
+  >Accpet</button>
+</mat-dialog-actions>
+<ngx-spinner name="loadingEventFilter">
