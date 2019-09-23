@@ -4,6 +4,7 @@
     [(ngModel)]="multiple ? selectedEventTypes : selectedEventType"
     (selectionChange)="multiple ? onChangeEventTypes($event) : onChangeEventType($event)"
     [multiple]="multiple"
+    placeholder="Click to choose"
   >
     <mat-select-trigger>
       <ng-container *ngIf="multiple">
