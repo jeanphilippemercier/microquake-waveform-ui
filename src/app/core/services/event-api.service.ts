@@ -75,7 +75,7 @@ export class EventApiService {
     return this._http.get<Boundaries[]>(url, { params });
   }
 
-  getMicroquakeEventTypes(query: MicroquakeEventTypesQuery): Observable<any> {
+  getMicroquakeEventTypes(query?: MicroquakeEventTypesQuery): Observable<any> {
     const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get(url, { params });
