@@ -70,13 +70,13 @@
             >
               {{event?.magnitude | eventMagnitude}}
             </div>
-            <div class="col-7">
-              <mat-chip-list>
+            <div class="col-7 d-flex">
+              <mat-chip-list class=" my-auto">
                 <mat-chip
                   *ngIf="event?.status !== EvaluationStatus.REJECTED"
                   [selected]="true"
                   [selectable]="true"
-                  color="primary"
+                  [color]="event?.evaluation_mode === 'manual' ? 'success' : 'primary'"
                 >
                   Accepted
                 </mat-chip>
