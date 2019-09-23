@@ -1,18 +1,21 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import * as moment from 'moment';
-import { first } from 'rxjs/operators';
+import { takeUntil, take } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventType, EvaluationStatus, IEvent, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
-import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
-import { EventUpdateInput } from '@interfaces/event-dto.interface';
+import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { ActivatedRoute, Router } from '@angular/router';
+import EventUtil from '@core/utils/event-util';
+import { WaveformService } from '@services/waveform.service';
+import { Subject } from 'rxjs';
 
 interface ViewerOptions {
   site?: string;
@@ -24,7 +27,7 @@ interface ViewerOptions {
   templateUrl: './event-list.component.html',
   styleUrls: ['./event-list.component.scss']
 })
-export class EventListComponent implements OnInit {
+export class EventListComponent implements OnInit, OnDestroy {
 
   sites: Site[];
   site: Site;
@@ -39,25 +42,39 @@ export class EventListComponent implements OnInit {
   evaluationStatusGroups: EvaluationStatusGroup[];
   selectedEvaluationStatusGroups: EvaluationStatusGroup[];
 
-
+  EvaluationStatus = EvaluationStatus;
   eventEvaluationModes: EvaluationMode[];
 
   eventStartDate: Date = moment().startOf('day').subtract(15, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
 
-  displayedColumns: string[] = ['date', 'time', 'magnitude', 'status', 'type', 'mode', 'actions'];
+  displayedColumns: string[] = ['time', 'type', 'magnitude', 'picks', 'time_residual', 'corner_frequency', 'uncertainty', 'actions'];
   dataSource: MatTableDataSource<any>;
 
   events: IEvent[];
 
+  eventListQuery: EventQuery = {};
+
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
   eventUpdateDialogOpened = false;
+  timezone = '+08:00';
+
+  todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
+  timeRange = 3;
+
+  eventsCount = 0;
+  cursorPrevious: string;
+  cursorNext: string;
+
+  private _unsubscribe = new Subject<void>();
 
   constructor(
-    private _matDialog: MatDialog,
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
+    private _activatedRoute: ActivatedRoute,
+    public waveformService: WaveformService,
+    private _router: Router
   ) { }
 
   async ngOnInit() {
@@ -70,12 +87,46 @@ export class EventListComponent implements OnInit {
     ]);
 
     // default values
-    this.selectedEventTypes = this.eventTypes;
+    this.selectedEventTypes = []; // this.eventTypes;
     this.selectedEvaluationStatusGroups = [EvaluationStatusGroup.ACCEPTED];
 
-    await this._loadEvents();
     this._ngxSpinnerService.hide('loading');
+
+    this._activatedRoute.queryParams.subscribe(val => {
+      console.log(`val`);
+      console.log(val);
+      const queryParams = { ...val };
+      queryParams.page_size = 15;
+      queryParams.site = this.waveformService.currentSite && this.waveformService.currentSite.id ? this.waveformService.currentSite.id : undefined;
+      // TODO: finish when API is ready
+      // queryParams.network = this.waveformService.currentNetwork.id;
+      if (Object.values(val).length === 0) {
+        this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+        this.defaultNavigate();
+        return;
+      }
+      this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+      this._loadEvents();
+    });
+
+    this.waveformService.wsEventCreatedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(val => {
+        this._addEvent(val);
+      });
+
+    this.waveformService.wsEventUpdatedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(val => {
+        this._updateEvent(val);
+      });
   }
+
+  ngOnDestroy() {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
+  }
+
 
   private async _loadEventTypesAndStatuses() {
     this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
@@ -85,19 +136,30 @@ export class EventListComponent implements OnInit {
   }
 
   private async _loadEvents() {
-    const startTime = moment(this.eventStartDate).toISOString();
-    const endTime = moment(this.eventEndDate).toISOString();
-    const eventListQuery: EventQuery = {
-      page_size: 30,
-      time_utc_after: startTime,
-      time_utc_before: endTime,
-      event_type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
-      status: this.selectedEvaluationStatusGroups ? this.selectedEvaluationStatusGroups : undefined,
-    };
+    // const startTime = moment(this.eventStartDate).toISOString();
+    // const endTime = moment(this.eventEndDate).toISOString();
+    // const eventListQuery: EventQuery = {
+    //   page_size: 30,
+    //   time_utc_after: startTime,
+    //   time_utc_before: endTime,
+    //   event_type: this.selectedEventTypes ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined,
+    //   status: this.selectedEvaluationStatusGroups ? this.selectedEvaluationStatusGroups : undefined,
+    // };
+
+    // if (!this.eventListQuery) {
+    //   const queryParams = this._activatedRoute.snapshot.queryParams;
+    //   this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+    //   this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
+    // }
 
     try {
-      const response = await this._eventApiService.getEvents(eventListQuery).toPromise();
+      this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+      const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      this.eventsCount = response.count;
+      this.cursorPrevious = response.cursor_previous;
+      this.cursorNext = response.cursor_next;
       this.events = response.results;
+      this._ngxSpinnerService.hide('loading');
     } catch (err) {
       console.error(err);
     }
@@ -106,10 +168,22 @@ export class EventListComponent implements OnInit {
 
   }
 
+  async defaultNavigate() {
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: EventUtil.buildEventListParams(this.eventListQuery),
+      });
+  }
+
   async filter() {
-    this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
-    await this._loadEvents();
-    this._ngxSpinnerService.hide('loading');
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: EventUtil.buildEventListParams(this.eventListQuery),
+      });
   }
 
   clearSelectionClicked(event) {
@@ -168,6 +242,9 @@ export class EventListComponent implements OnInit {
     }
   }
 
+  private async _addEvent(event: IEvent) {
+
+  }
   private async _updateEvent(event: IEvent) {
     if (!event) {
       return;
@@ -181,107 +258,38 @@ export class EventListComponent implements OnInit {
     });
   }
 
-  async openEventUpdateDialog($event: IEvent) {
-    if (this.eventUpdateDialogRef || this.eventUpdateDialogOpened) {
-      return;
-    }
-    this.eventUpdateDialogOpened = true;
-
-    this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
-      hasBackdrop: true,
-      width: '600px',
-      data: {
-        event: $event,
-        evaluationStatuses: this.evaluationStatuses,
-        eventTypes: this.eventTypes,
-        eventEvaluationModes: this.eventEvaluationModes,
-        mode: 'updateDialog'
-      }
-    });
-
-    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
-      try {
-        this.eventUpdateDialogRef.componentInstance.loading = true;
-        const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
-        this._updateEvent(result);
-        this.eventUpdateDialogRef.close();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        this.eventUpdateDialogRef.componentInstance.loading = false;
-      }
-    });
-
-
-    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      if (await this.onAcceptClick($event.event_resource_id, data)) {
-        this.eventUpdateDialogRef.close();
-      }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
-    });
-
-    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      if (await this.onDeclineClick($event.event_resource_id, data)) {
-        this.eventUpdateDialogRef.close();
-      }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
-    });
-
-    this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
-      delete this.eventUpdateDialogRef;
-      updateDialogSaveSub.unsubscribe();
-      updateDialogAcceptSub.unsubscribe();
-      updateDialogRejectSub.unsubscribe();
-      this.eventUpdateDialogOpened = false;
-    });
+  onEventTypesChange($event: EventType[]) {
+    this.selectedEventTypes = $event;
+    this.eventListQuery.event_type = this.selectedEventTypes && this.selectedEventTypes.length > 0 ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined;
   }
 
-
-  async onAcceptClick(eventId: string, $event: EventType): Promise<boolean> {
-    let repsonse = true;
-    try {
-      const eventUpdateInput: EventUpdateInput = {
-        event_type: $event.quakeml_type,
-        evaluation_mode: EvaluationMode.MANUAL,
-        // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
-        status: EvaluationStatus.CONFIRMED
-      };
-      const result = await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
-      this._updateEvent(result);
-    } catch (err) {
-      repsonse = false;
-      console.error(err);
+  pageChange($event) {
+    if ($event.pageIndex === 0) {
+      delete this.eventListQuery.cursor;
+    } else {
+      let cursor = this.cursorNext;
+      if ($event.previousPageIndex > $event.pageIndex) {
+        cursor = this.cursorPrevious;
+      }
+      this.eventListQuery.cursor = cursor;
     }
 
-    return repsonse;
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: EventUtil.buildEventListParams(this.eventListQuery),
+      });
   }
 
-  async onDeclineClick(eventId: string, $event: EventType): Promise<boolean> {
-    let repsonse = true;
-    try {
-      const eventUpdateInput: EventUpdateInput = {
-        event_type: $event.quakeml_type,
-        evaluation_mode: EvaluationMode.MANUAL,
-        status: EvaluationStatus.REJECTED
-      };
-      const result = await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
-      this._updateEvent(result);
-    } catch (err) {
-      repsonse = false;
-      console.error(err);
-    }
+  async openChart(event: IEvent) {
+    const qp = await this._activatedRoute.queryParams.pipe(take(1)).toPromise();
+    const queryParams = { ...qp };
+    delete queryParams.cursor;
+    delete queryParams.page_size;
 
-    return repsonse;
+    this._router.navigate(['/events', event.event_resource_id], {
+      queryParams
+    });
   }
-
 }
