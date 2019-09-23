@@ -3,8 +3,10 @@
     [showEventSidebarButton]="false"
     [eventSidebarOpened]="waveformService.sidebarOpened | async"
     (eventSidebarOpenedChange)="onEventSidebarCollapseClick()"
-    [width]="'350px'"
-  ></app-header-layout>
+    [width]="'335px'"
+  >
+    <app-event-site-picker></app-event-site-picker>
+  </app-header-layout>
 
   <button
     mat-icon-button
