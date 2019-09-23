@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, BehaviorSubject } from 'rxjs';
-import { first, distinctUntilChanged, skip } from 'rxjs/operators';
+import { Subscription, BehaviorSubject, Subject } from 'rxjs';
+import { distinctUntilChanged, skip, takeUntil } from 'rxjs/operators';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { NgxSpinnerService } from 'ngx-spinner';
 
@@ -11,12 +11,11 @@ import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { EventUpdateDialog, EventFilterDialogData, EventInteractiveProcessingDialog } from '@interfaces/dialogs.interface';
 import {
-  IEvent, EvaluationStatus, EventType, EvaluationMode, WebsocketResponseOperation, EvaluationStatusGroup
+  IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup
 } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
-import { EventUpdateInput } from '@interfaces/event-dto.interface';
-import { EventUpdateDialogComponent } from '@app/events/dialogs/event-update-dialog/event-update-dialog.component';
-import { EventFilterDialogComponent } from '@app/events/dialogs/event-filter-dialog/event-filter-dialog.component';
+import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
+import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';
 import { InventoryApiService } from '@services/inventory-api.service';
 // tslint:disable-next-line:max-line-length
@@ -79,8 +78,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   timezone = '+08:00';
 
   changeDetectCatalog = 0;
-  onServerEventSub: Subscription;
   interactiveProcessingSub: Subscription;
+
+  private _unsubscribe = new Subject<void>();
 
   constructor(
     private _eventApiService: EventApiService,
@@ -90,7 +90,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     private _matDialog: MatDialog,
     private _router: Router,
     private _toastrNotificationService: ToastrNotificationService,
-    private _ngxSpinnerService: NgxSpinnerService
+    private _ngxSpinnerService: NgxSpinnerService,
   ) { }
 
   async ngOnInit() {
@@ -98,12 +98,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     await this._loadEventTypesAndStatuses();
     await Promise.all([
       this._loadCurrentEvent(),
-      this._loadEvents(),
-      this._watchServerEventUpdates()
+      this._loadCurrentEventCatalog(),
     ]);
 
     this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
       .pipe(
+        takeUntil(this._unsubscribe),
         distinctUntilChanged(),
         skip(1)
       )
@@ -114,18 +114,23 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           this._ngxSpinnerService.hide('loadingInteractiveProcessing');
         }
       });
+
+    this.waveformService.wsEventCreatedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(val => {
+        this._addEvent(val);
+      });
+
+    this.waveformService.wsEventUpdatedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(val => {
+        this._updateEvent(val);
+      });
   }
 
   ngOnDestroy() {
-    if (this.paramsSub) {
-      this.paramsSub.unsubscribe();
-    }
-    if (this.onServerEventSub) {
-      this.onServerEventSub.unsubscribe();
-    }
-    if (this.interactiveProcessingSub) {
-      this.interactiveProcessingSub.unsubscribe();
-    }
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
   }
 
 
@@ -138,212 +143,75 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     switch ($event.key) {
       case 'e':
       case 'E':
-        this.openEventUpdateDialog();
+        this.waveformService.openEventUpdateDialog(this.currentEventInfo);
         break;
       default:
         break;
     }
   }
 
-  async cancelLastInteractiveProcess() {
-    try {
-      this.waveformService.interactiveProcessLoading.next(false);
-
-      // IP triggered by current user instance
-      const ipCurrentList = this.waveformService.interactiveProcessCurrentList.getValue();
-      const removedBatch = ipCurrentList.pop();
-      this.waveformService.interactiveProcessCurrentList.next(ipCurrentList);
-
-      const response = await this._eventApiService.cancelInteractiveProcessing(removedBatch.event.event_resource_id).toPromise();
-      console.log(response);
-
-      // IP triggered by other than current user instance
-      // there may be case, where user clicks on some other event that is being reprocessed (triggered by some other instance)
-      // and last element of ipActiveList is not same as last element of ipCurrentList.
-      // We need to find exact position to be sure we remove right batch.
-      const ipActiveList = this.waveformService.interactiveProcessActiveList.getValue();
-      const idx = ipActiveList.findIndex(val => val.batchId === removedBatch.batchId);
-      if (idx > -1) {
-        ipActiveList.splice(idx, 1);
-        this.waveformService.interactiveProcessActiveList.next(ipActiveList);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  runInteractiveProcessInBg() {
-    this.waveformService.interactiveProcessLoading.next(false);
-  }
-
-  private _watchServerEventUpdates() {
-    this.onServerEventSub = this._eventApiService.onServerEvent().subscribe(data => {
-      try {
-        console.log(data.type);
-        console.log(data.operation);
-        console.log(data);
-
-        switch (data.operation) {
-          case WebsocketResponseOperation.UPDATE:
-            this._updateEvent(data.event);
-            break;
-          case WebsocketResponseOperation.CREATED:
-            this._addEvent(data.event);
-            break;
-          case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
-          case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
-            let activeList = this.waveformService.interactiveProcessActiveList.getValue();
-            let currentList = this.waveformService.interactiveProcessCurrentList.getValue();
-            let previousEventVer: IEvent = null;
-
-            // EVENT Reprocessing triggered on other instances
-            activeList = activeList.filter(val => val.batchId !== data.extra.batch.id);
-            this.waveformService.interactiveProcessActiveList.next(activeList);
-
-            // EVENT Reprocessing triggered on current instance
-            currentList = currentList.filter(val => {
-              if (val.batchId !== data.extra.batch.id) {
-                return true;
-              }
-              previousEventVer = val.event;
-              return false;
-            });
-            this.waveformService.interactiveProcessCurrentList.next(currentList);
-
-            if (previousEventVer) {
-              this.waveformService.interactiveProcessLoading.next(false);
-
-              if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
-                this._toastrNotificationService.success('Interactive processing is ready');
-                this.openInteractiveProcessDialog(previousEventVer, data.event);
-              } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
-                this.openInteractiveProcessDialog(previousEventVer, null);
-                this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
-              }
-            }
-            break;
-          default:
-            console.log(`unknown websocket operation`);
-            break;
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
-
   private async _loadCurrentEvent() {
-    this.paramsSub = this._activatedRoute.params.subscribe(async params => {
-      const eventId = params['eventId'];
-      if (eventId) {
-        try {
-          this.loadingCurrentEvent = true;
-          this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-          let clickedEvent: IEvent;
+    this.paramsSub = this._activatedRoute.params
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(async params => {
+        const eventId = params['eventId'];
+        if (eventId) {
+          try {
+            this.loadingCurrentEvent = true;
+            this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+            let clickedEvent: IEvent;
 
-          // try to find event in catalog events (already loaded events)
-          if (this.events) {
-            const idx = this.events.findIndex(ev => ev.event_resource_id === eventId);
-            if (idx > -1) {
-              clickedEvent = Object.assign({}, this.events[idx]);
+            // try to find event in catalog events (already loaded events)
+            if (this.events) {
+              const idx = this.events.findIndex(ev => ev.event_resource_id === eventId);
+              if (idx > -1) {
+                clickedEvent = Object.assign({}, this.events[idx]);
+              }
             }
-          }
 
-          // load event from api if not found in catalog events
-          if (!clickedEvent) {
-            clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
-          }
-          this.currentEvent = clickedEvent;
+            // load event from api if not found in catalog events
+            if (!clickedEvent) {
+              clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+            }
+            this.currentEvent = clickedEvent;
 
-          if (this.initialized.getValue() === false) {
-            this.currentEventInfo = clickedEvent;
-            this.initialized.next(true);
+            if (this.initialized.getValue() === false) {
+              this.currentEventInfo = clickedEvent;
+              this.initialized.next(true);
+            }
+          } catch (err) {
+            console.error(err);
+          } finally {
+            this.loadingCurrentEvent = false;
+            this._ngxSpinnerService.hide('loadingCurrentEvent');
           }
-        } catch (err) {
-          console.error(err);
-        } finally {
-          this.loadingCurrentEvent = false;
-          this._ngxSpinnerService.hide('loadingCurrentEvent');
         }
-      }
-    });
+      });
   }
 
-  private _buildEventListQuery(queryParams: any) {
-    const eventListQuery: EventQuery = {};
+  private async _loadCurrentEventCatalog() {
 
-    if (queryParams.time_utc_before && queryParams.time_utc_after) {
-      eventListQuery.time_utc_before = queryParams.time_utc_before;
-      eventListQuery.time_utc_after = queryParams.time_utc_after;
-    } else {
-      if (queryParams.time_range) {
-        eventListQuery.time_range = parseInt(queryParams.time_range, 10);
-      }
-      if (!eventListQuery.time_range || [3, 7, 31].indexOf(eventListQuery.time_range) === -1) {
-        eventListQuery.time_range = 3;
-      }
-
-      // tslint:disable-next-line:max-line-length
-      eventListQuery.time_utc_after = moment().utc().utcOffset(this.timezone).startOf('day').subtract(eventListQuery.time_range - 1, 'days').toISOString();
-      eventListQuery.time_utc_before = moment().utc().utcOffset(this.timezone).endOf('day').toISOString();
-    }
-
-    if (queryParams.status) {
-      eventListQuery.status = queryParams.status.split(',');
-    } else {
-      eventListQuery.status = [EvaluationStatusGroup.ACCEPTED];
-    }
-
-
-    if (queryParams.event_type) {
-      eventListQuery.event_type = queryParams.event_type.split(',');
-    } else {
-      eventListQuery.event_type = undefined;
-    }
-
-    // TODO: remove after pagination
-    eventListQuery.page_size = 1000;
-
-
-    return eventListQuery;
-  }
-
-  private _buildEventListParams(eventListQuery: EventQuery) {
-    const params: any = {};
-
-    if (eventListQuery.status && eventListQuery.status.length > 0) {
-      params.status = eventListQuery.status.toString();
-    }
-
-    if (eventListQuery.event_type && eventListQuery.event_type.length > 0) {
-      params.event_type = eventListQuery.event_type.toString();
-    }
-
-    if (eventListQuery.time_range > 0) {
-      params.time_range = eventListQuery.time_range;
-    } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
-      params.time_utc_before = eventListQuery.time_utc_before;
-      params.time_utc_after = eventListQuery.time_utc_after;
-    }
-
-    return params;
+    this.paramsSub = this._activatedRoute.queryParams
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(async queryParams => {
+        this.waveformService.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+        this.waveformService.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.waveformService.eventListQuery);
+        this._loadEvents();
+      });
   }
 
   private async _loadEvents() {
-
     try {
       this.loadingEventList = true;
       this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
-      const queryParams = this._activatedRoute.snapshot.queryParams;
+      // if (!this.eventListQuery) {
+      //   const queryParams = this._activatedRoute.snapshot.queryParams;
+      //   this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+      //   this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
+      // }
 
-
-      if (!this.eventListQuery) {
-        this.eventListQuery = this._buildEventListQuery(queryParams);
-        this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
-      }
-
-      const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+      const response = await this._eventApiService.getEvents(this.waveformService.eventListQuery).toPromise();
       this.events = response.results;
 
     } catch (err) {
@@ -397,7 +265,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private async _updateEvent(event: IEvent) {
-
     if (!event) {
       return;
     }
@@ -420,7 +287,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     if (this.currentEvent && event.event_resource_id === this.currentEvent.event_resource_id) {
       this.currentEvent = Object.assign({}, event);
     }
-
   }
 
   async openChart(event: IEvent) {
@@ -434,202 +300,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.currentEventInfo = event;
   }
 
-  async openEventFilterDialog() {
-
-    if (this.eventFilterDialogRef || this.eventFilterDialogOpened) {
-      return;
-    }
-    this.eventFilterDialogOpened = true;
-    this.loadingCurrentEventAndList = true;
-    this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-    this.eventFilterDialogRef = this._matDialog.open<EventFilterDialogComponent, EventFilterDialogData>(EventFilterDialogComponent, {
-      hasBackdrop: true,
-      width: '750px',
-      data: {
-        timezone: this.timezone,
-        sites: this.sites,
-        eventQuery: this.eventListQuery,
-        evaluationStatuses: this.EvaluationStatusGroups,
-        eventTypes: this.eventTypes,
-        eventEvaluationModes: this.eventEvaluationModes
-      }
-    });
-
-    this.eventFilterDialogRef.componentInstance.onFilter.subscribe(async (data: EventQuery) => {
-      try {
-        this.eventListQuery = data;
-        this.eventFilterDialogRef.componentInstance.loading = true;
-        this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-        await this._loadEvents();
-
-        this._router.navigate(
-          [],
-          {
-            relativeTo: this._activatedRoute,
-            queryParams: this._buildEventListParams(this.eventListQuery),
-          });
-
-        this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
-        this.eventFilterDialogRef.close();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        this.eventFilterDialogRef.componentInstance.loading = false;
-        this._ngxSpinnerService.hide('loadingEventFilter');
-      }
-    });
-
-    this.eventFilterDialogRef.afterClosed().pipe(first()).subscribe(val => {
-      delete this.eventFilterDialogRef;
-      this.eventFilterDialogOpened = false;
-    });
-
-    this.loadingCurrentEventAndList = false;
-    this._ngxSpinnerService.hide('loadingCurrentEventAndList');
-  }
-
-  async openEventUpdateDialog() {
-    if (this.eventUpdateDialogRef || this.eventUpdateDialogOpened) {
-      return;
-    }
-    this.eventUpdateDialogOpened = true;
-    this.loadingCurrentEventAndList = true;
-    this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-    this.eventUpdateDialogRef = this._matDialog.open<EventUpdateDialogComponent, EventUpdateDialog>(EventUpdateDialogComponent, {
-      hasBackdrop: true,
-      width: '600px',
-      data: {
-        event: this.currentEventInfo,
-        evaluationStatuses: this.evaluationStatuses,
-        eventTypes: this.eventTypes,
-        eventEvaluationModes: this.eventEvaluationModes,
-        mode: 'updateDialog'
-      }
-    });
-
-    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
-      try {
-        this.eventUpdateDialogRef.componentInstance.loading = true;
-        this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-        const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
-        this._updateEvent(result);
-        this.eventUpdateDialogRef.close();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        this.eventUpdateDialogRef.componentInstance.loading = false;
-        this._ngxSpinnerService.hide('loadingEventUpdate');
-      }
-    });
-
-    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      if (await this.onAcceptClick(data)) {
-        this.eventUpdateDialogRef.close();
-      }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
-    });
-
-    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      if (await this.onDeclineClick(data)) {
-        this.eventUpdateDialogRef.close();
-      }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
-    });
-
-    this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
-      delete this.eventUpdateDialogRef;
-      updateDialogSaveSub.unsubscribe();
-      updateDialogAcceptSub.unsubscribe();
-      updateDialogRejectSub.unsubscribe();
-      this.eventUpdateDialogOpened = false;
-    });
-
-    this.loadingCurrentEventAndList = false;
-    this._ngxSpinnerService.hide('loadingCurrentEventAndList');
-  }
-
   onCollapseButtonClick() {
     this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
-  }
-
-  async onAcceptClick($event: EventType): Promise<boolean> {
-    let repsonse = true;
-    try {
-      this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-      const eventUpdateInput: EventUpdateInput = {
-        event_type: $event.quakeml_type,
-        evaluation_mode: EvaluationMode.MANUAL,
-        // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
-        status: EvaluationStatus.CONFIRMED
-      };
-      await this._eventApiService.updateEventById(this.currentEventInfo.event_resource_id, eventUpdateInput).toPromise();
-    } catch (err) {
-      repsonse = false;
-      console.error(err);
-    } finally {
-      this._ngxSpinnerService.hide('loadingCurrentEvent');
-    }
-
-    return repsonse;
-  }
-
-  async onDeclineClick($event: EventType): Promise<boolean> {
-    let repsonse = true;
-    try {
-      this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-      const eventUpdateInput: EventUpdateInput = {
-        event_type: $event.quakeml_type,
-        evaluation_mode: EvaluationMode.MANUAL,
-        status: EvaluationStatus.REJECTED
-      };
-      await this._eventApiService.updateEventById(this.currentEventInfo.event_resource_id, eventUpdateInput).toPromise();
-    } catch (err) {
-      repsonse = false;
-      console.error(err);
-    } finally {
-      this._ngxSpinnerService.hide('loadingCurrentEvent');
-    }
-
-    return repsonse;
-  }
-
-
-  openInteractiveProcessDialog(oldEvent: IEvent, newEvent?: IEvent) {
-    if (!oldEvent) {
-      return;
-    }
-
-    // tslint:disable-next-line:max-line-length
-    this.eventInteractiveProcessDialogRef = this._matDialog.open<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>(EventInteractiveProcessingDialogComponent, {
-      hasBackdrop: true,
-      width: '600px',
-      data: {
-        oldEvent,
-        newEvent
-      }
-    });
-
-    // TODO: finish when API's fixed
-    this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
-      try {
-        const response = await this._eventApiService.acceptInteractiveProcessing(newEvent.event_resource_id).toPromise();
-        console.log(response);
-      } catch (err) {
-        console.error(err);
-      }
-    });
   }
 
 }

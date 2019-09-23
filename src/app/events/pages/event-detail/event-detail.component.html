@@ -21,24 +21,35 @@
         >
           <mat-panel-title>
             <strong class="text-uppercase align-self-center">Event list</strong>
+
+            <button
+              class="ml-1"
+              mat-button
+              color="primary"
+              [routerLink]="['/events']"
+              queryParamsHandling="merge"
+            >
+              <mat-icon class="mat-18">reorder</mat-icon>
+              <small>List</small>
+            </button>
             <div class="mr-auto"></div>
             <button
               class="filter-button"
-              *ngIf="eventListQuery"
+              *ngIf="waveformService.eventListQuery"
               color="primary"
               mat-button
-              (click)="openEventFilterDialog();$event.stopPropagation()"
+              (click)="waveformService.openEventFilterDialog();$event.stopPropagation()"
             >
               <mat-icon
                 class="mat-18"
-                [matBadge]="numberOfChangesInFilter"
-                [matBadgeHidden]="numberOfChangesInFilter === 0"
+                [matBadge]="waveformService.numberOfChangesInFilter"
+                [matBadgeHidden]="waveformService.numberOfChangesInFilter === 0"
                 matBadgePosition="after"
                 matBadgeColor="warn"
               >filter_list</mat-icon>
               <small>
-                {{eventListQuery.time_utc_after | date:' MMM dd': timezone}} -
-                {{eventListQuery.time_utc_before | date:' dd yyyy': timezone}}
+                {{waveformService.eventListQuery.time_utc_after | date:' MMM dd': timezone}} -
+                {{waveformService.eventListQuery.time_utc_before | date:' dd yyyy': timezone}}
               </small>
             </button>
           </mat-panel-title>
@@ -48,10 +59,10 @@
             <h5 class="text-center pt-4 pb-2">No events found</h5>
             <p class="text-center">Try to change filter: <button
                 class="filter-button"
-                *ngIf="eventListQuery"
+                *ngIf="waveformService.eventListQuery"
                 color="primary"
                 mat-button
-                (click)="openEventFilterDialog();$event.stopPropagation()"
+                (click)="waveformService.openEventFilterDialog();$event.stopPropagation()"
               >
                 <mat-icon
                   class="mat-18"
@@ -61,8 +72,8 @@
                   matBadgeColor="warn"
                 >filter_list</mat-icon>
                 <small>
-                  ({{eventListQuery?.time_utc_after | date:' MMM dd': timezone}} -
-                  {{eventListQuery?.time_utc_before | date:' dd yyyy': timezone}})
+                  ({{waveformService.eventListQuery?.time_utc_after | date:' MMM dd': timezone}} -
+                  {{waveformService.eventListQuery?.time_utc_before | date:' dd yyyy': timezone}})
                 </small>
               </button>
             </p>
@@ -74,8 +85,8 @@
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
             [interactiveProcessingEvents]="waveformService?.interactiveProcessActiveList | async"
-            [filterTimeAfter]="eventListQuery?.time_utc_after"
-            [filterTimeBefore]="eventListQuery?.time_utc_before"
+            [filterTimeAfter]="waveformService.eventListQuery?.time_utc_after"
+            [filterTimeBefore]="waveformService.eventListQuery?.time_utc_before"
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
           ></app-event-catalog>
@@ -101,7 +112,7 @@
               *ngIf="false && currentEvent"
               color="primary"
               mat-button
-              (click)="openInteractiveProcessDialog(currentEventInfo);$event.stopPropagation()"
+              (click)="waveformService.openInteractiveProcessDialog(currentEventInfo);$event.stopPropagation()"
             >
               <mat-icon class="mat-18">new_releases</mat-icon>
               <small class="align-self-center">
@@ -113,7 +124,7 @@
               *ngIf="currentEventInfo"
               color="primary"
               mat-button
-              (click)="openEventUpdateDialog();$event.stopPropagation()"
+              (click)="waveformService.openEventUpdateDialog(currentEventInfo);$event.stopPropagation()"
             >
               <mat-icon class="mat-18">edit</mat-icon>
               <small class="align-self-center">
@@ -128,8 +139,8 @@
           [eventTypes]="eventTypes"
           [evaluationStatuses]="evaluationStatuses"
           [eventEvaluationModes]="eventEvaluationModes"
-          (acceptClicked)="onAcceptClick($event)"
-          (rejectClicked)="onDeclineClick($event)"
+          (acceptClicked)="waveformService.onAcceptClick(currentEventInfo?.event_resource_id,$event)"
+          (rejectClicked)="waveformService.onDeclineClick(currentEventInfo?.event_resource_id,$event)"
           [loading]="loadingCurrentEvent"
         ></app-event-info>
       </mat-expansion-panel>
@@ -180,10 +191,10 @@
       <button
         [disabled]="true"
         mat-raised-button
-        (click)="cancelLastInteractiveProcess()"
+        (click)="waveformService.cancelLastInteractiveProcess()"
       >Cancel</button>
       <button
-        (click)="runInteractiveProcessInBg()"
+        (click)="waveformService.runInteractiveProcessInBg()"
         class=""
         color="primary"
         mat-raised-button

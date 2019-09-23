@@ -4,6 +4,7 @@
 @import '~ngx-toastr/toastr';
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
 
+
 body {
   margin: 0;
 }
@@ -133,4 +134,9 @@ h2.title {
 
 .negative {
   color: red;
+}
+
+
+.mat-form-field {
+  font-size: 14px;
 }

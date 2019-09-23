@@ -48,10 +48,10 @@ table {
 
 mat-chip {
   font-size: 10px;
-  min-height: 26px;
+  min-height: 22px;
+}
 
-  mat-icon {
-    font-size: 16px;
-    margin-top: 6px;
-  }
+.mat-success {
+  background-color: green;
+  color: #fff;
 }

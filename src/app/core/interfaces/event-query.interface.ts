@@ -3,6 +3,8 @@ import { PaginationRequest } from './query.interface';
 
 // QUERIES
 export interface EventQuery extends PaginationRequest {
+  site?: number;
+  network?: number;
   time_utc_after?: string;
   time_utc_before?: string;
   time_range?: number; // TODO: add to API ?
@@ -21,7 +23,7 @@ export interface BoundariesQuery {
 }
 
 export interface MicroquakeEventTypesQuery {
-  site_code: string;
+  site_code?: string;
 }
 
 export interface EventOriginsQuery {

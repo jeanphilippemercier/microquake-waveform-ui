@@ -1,6 +1,6 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site } from './inventory.interface';
+import { Site, Network } from './inventory.interface';
 
 export interface EventUpdateDialog {
   event: IEvent;
@@ -15,7 +15,6 @@ export interface EventFilterDialogData {
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatusGroup[];
   eventEvaluationModes: EvaluationMode[];
-  sites: Site[];
 }
 export interface EventInteractiveProcessingDialog {
   oldEvent: IEvent;
@@ -25,4 +24,11 @@ export interface EventInteractiveProcessingDialog {
 export interface ConfirmationDialogData {
   header: string;
   text: string;
+}
+
+export interface EventSitePickerDialogData {
+  sites: Site[];
+  networks: Network[];
+  currentSite: Site;
+  currentNetwork: Network;
 }

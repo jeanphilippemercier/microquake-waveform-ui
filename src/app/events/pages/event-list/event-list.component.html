@@ -1,232 +1,425 @@
 <mat-toolbar color="primary">
-  <app-header-layout></app-header-layout>
+  <app-header-layout [width]="'335px'">
+    <app-event-site-picker></app-event-site-picker>
+  </app-header-layout>
 </mat-toolbar>
-<div class="container-fluid px-4 py-3">
-  <h1>Events</h1>
-
-  <div class="filter-area mat-elevation-z mb-5">
-    <div class="row">
-
-      <div class="col-4">
-        <div class="row">
-          <div class="col-12">
-            <app-site-select-field
-              [sites]="sites"
-              [(site)]="site"
-              (siteChange)="siteChanged($event)"
-              (clearSelection)="clearSelectionClicked($event)"
-            ></app-site-select-field>
-          </div>
-          <div class="col-12">
-            <app-site-network-field
-              [(networks)]="networks"
-              [(network)]="network"
-              (networkChange)="networkChanged($event)"
-            ></app-site-network-field>
-          </div>
+<div class="container-fluid">
+  <div class="row header">
+    <div class="col m-4">
+      <div class="row">
+        <div class="col">
+          <h1>Events</h1>
+          <small>
+            Home > Events
+          </small>
         </div>
       </div>
-
-      <div class="col-4">
-        <div class="row">
-          <div class="col-12">
+    </div>
+  </div>
+  <div class="row mt-3 ">
+    <div class="col">
+      <div class="filter px-4">
+        <div class="row pt-3">
+          <div class="col-2">
             <app-event-type-field
               [eventTypes]="eventTypes"
               [(selectedEventTypes)]="selectedEventTypes"
+              (selectedEventTypesChange)="onEventTypesChange($event)"
             ></app-event-type-field>
           </div>
-          <div class="col-12">
+          <div class="col-2">
             <app-event-status-field
               [evaluationStatuses]="evaluationStatusGroups"
-              [(selectedEvaluationStatuses)]="selectedEvaluationStatusGroups"
+              [(selectedEvaluationStatuses)]="eventListQuery.status"
             ></app-event-status-field>
           </div>
-        </div>
-      </div>
+          <div class="col-2">
+            <mat-form-field>
+              <mat-label>Time range</mat-label>
+              <mat-select
+                [(ngModel)]="eventListQuery.time_range"
+                placeholder="Click to choose"
+              >
+                <mat-select-trigger>
+                  <ng-container *ngIf="eventListQuery.time_range !== 0">
+                    last {{eventListQuery.time_range}} days
+                  </ng-container>
+                  <ng-container *ngIf="!eventListQuery.time_range">
+                    custom
+                  </ng-container>
+                </mat-select-trigger>
+                <mat-option [value]="3">
+                  last 3 days
+                </mat-option>
+                <mat-option [value]="7">
+                  last 7 days
+                </mat-option>
+                <mat-option [value]="31">
+                  last 31 days
+                </mat-option>
+                <mat-option [value]="0">
+                  custom
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
 
-      <div class="col-4">
-        <div class="row">
-          <div class="col-12">
-            <app-event-date-field
-              [label]="'Start date'"
-              [(date)]="eventStartDate"
-              [maxDate]="eventEndDate"
-            >
-            </app-event-date-field>
-          </div>
-          <div class="col-12">
-            <app-event-date-field
-              [label]="'End date'"
-              [(date)]="eventEndDate"
-              [minDate]="eventStartDate"
-            >
-            </app-event-date-field>
+          <ng-container *ngIf="!eventListQuery.time_range || eventListQuery.time_range === 0">
+            <div class="col-2">
+              <app-event-date-field
+                [label]="'Start date'"
+                [(date)]="eventStartDate"
+                [maxDate]="eventEndDate"
+              >
+              </app-event-date-field>
+            </div>
+            <div class="col-2">
+              <app-event-date-field
+                [label]="'End date'"
+                [(date)]="eventEndDate"
+                [minDate]="eventStartDate"
+              >
+              </app-event-date-field>
+            </div>
+          </ng-container>
+          <div class="col-2">
+            <button
+              class="mt-3"
+              mat-raised-button
+              color="primary"
+              (click)='filter()'
+            >Filter</button>
           </div>
         </div>
-      </div>
-      <div class="col-12">
-        <button
-          class="float-right"
-          mat-raised-button
-          [disabled]="!site || !network"
-          color="accent"
-          (click)='filter()'
-        >filter</button>
       </div>
     </div>
-
   </div>
-  <div class="row">
+  <div class="row mt-1">
     <div class="col-12">
+      <div class="position-relative content p-4">
 
-      <table
-        mat-table
-        [dataSource]="dataSource"
-        class="mat-elevation-z8 w-100"
-      >
+        <table
+          mat-table
+          [dataSource]="dataSource"
+          class="w-100"
+        >
 
-        <ng-container matColumnDef="date">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Date </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            {{element.time_utc | date:'MMM dd':element.timezone}}
-            <small>{{element.time_utc | date:'yyyy':element.timezone}}</small>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="time">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Time </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            {{element.time_utc | date:'HH:mm:ss':element.timezone}}
-            <small>{{element.time_utc | date:'.SSS'}}</small>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="magnitude">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Magnitude </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            <ng-container *ngIf="element?.magnitude !== -999">
-              {{element?.magnitude?.toFixed(1)}}
-              <small>({{element?.magnitude_type}})</small>
-            </ng-container>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="type">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Type </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            <mat-icon>
-              {{element.event_type | eventTypeIcon}}
-            </mat-icon>
-            {{element.event_type | eventQuakemlToMicroquakeType : eventTypes}}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Status </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            {{element.status}}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="mode">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Mode </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            {{element.evaluation_mode}}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="location">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Location </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-            <small>X {{element.x}} m East</small><br>
-            <small>Y {{element.y}} m North</small><br>
-            <small>Z {{element.z}} m </small>
-          </td>
-        </ng-container>
-
-
-        <ng-container matColumnDef="actions">
-          <th
-            mat-header-cell
-            *matHeaderCellDef
-          > Actions </th>
-          <td
-            mat-cell
-            *matCellDef="let element"
-          >
-
-            <button
-              mat-icon-button
-              matTooltip="Show detail"
-              color="primary"
-              [routerLink]="['/events',element.event_resource_id]"
+          <ng-container matColumnDef="badge">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            ></th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              [ngClass]="{
+                'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(element?.status) > -1 && element?.evaluation_mode === 'manual',
+                'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(element?.status) > -1 && element?.evaluation_mode === 'automatic',
+                'event-rejected-manual': ['rejected'].indexOf(element?.status) > -1 && element?.evaluation_mode === 'manual',
+                'event-rejected-automatic': ['rejected'].indexOf(element?.status) > -1 && element?.evaluation_mode === 'automatic'
+                }"
             >
-              <mat-icon>insert_chart_outlined</mat-icon>
-            </button>
+              <div
+                class="event-icon"
+                matBadgeSize="small"
+                matBadge="."
+                matBadgeOverlap="true"
+                matBadgePosition="before"
+              >
+              </div>
+            </td>
+          </ng-container>
 
-            <button
-              mat-icon-button
-              matTooltip="Edit"
-              color="primary"
-              (click)="openEventUpdateDialog(element)"
+
+
+          <ng-container matColumnDef="time">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            ><span class="pl-3">Time</span></th>
+            <td
+              mat-cell
+              (click)="openChart(element)"
+              *matCellDef="let element"
             >
-              <mat-icon>edit</mat-icon>
-            </button>
+              <button
+                mat-button
+                color="primary"
+              >
+                {{element.time_utc | date:'HH:mm:ss':element.timezone}}
+                <small>{{element.time_utc | date:'.SSS'}}</small>
+                <small class="pl-2">
+                  {{element.time_utc | date:'MMM dd':element.timezone}}
+                  {{element.time_utc | date:'yyyy':element.timezone}}
+                </small>
+              </button>
+            </td>
+          </ng-container>
 
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="date">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            ><span class="pl-3">Date</span></th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              <small>
+                {{element.time_utc | date:'MMM dd':element.timezone}}
+                {{element.time_utc | date:'yyyy':element.timezone}}
+              </small>
+            </td>
+          </ng-container>
 
-        <tr
-          mat-header-row
-          *matHeaderRowDef="displayedColumns"
-        ></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns;"
-        ></tr>
-      </table>
+          <ng-container matColumnDef="magnitude">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-center"
+            > Magnitude (Mw)</th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-center"
+            >
+              <ng-container *ngIf="element?.magnitude !== -999">
+                {{element?.magnitude?.toFixed(1)}}
+              </ng-container>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="picks">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-center"
+            > Picks </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-center"
+            >
+              {{element?.npick | number:'.0-0'}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="time_residual">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-center"
+            >
+              RMS residual (ms)
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-center"
+            >
+              {{element?.time_residual ? ((element?.time_residual * 1000) | number:'1.0-0') : '-'}}
+            </td>
+          </ng-container>
+
+
+          <ng-container matColumnDef="uncertainty">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-center"
+            >
+              Uncertainty (m)
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-center"
+            >
+              {{element?.uncertainty ? (element?.uncertainty | number:'1.0-0') : '-'}}
+            </td>
+          </ng-container>
+
+
+          <ng-container matColumnDef="corner_frequency">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="text-center"
+            >
+              Corner freq. (Hz)
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              class="text-center"
+            >
+              {{element?.corner_frequency ? (element?.corner_frequency | number:'1.0-0') : '-'}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="type">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            > <span class="pl-2">Status and Type </span></th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              <button
+                mat-button
+                color="primary"
+                (click)="waveformService.openEventUpdateDialog(element)"
+              >
+                <div class="d-flex">
+                  <mat-chip-list class="mr-4 my-auto">
+                    <mat-chip
+                      (click)="waveformService.openEventUpdateDialog(element)"
+                      *ngIf="element?.status !== EvaluationStatus.REJECTED"
+                      [selected]="true"
+                      [selectable]="true"
+                      [color]="element?.evaluation_mode === 'manual' ? 'success' : 'primary'"
+                    >
+                      Accepted
+                    </mat-chip>
+                    <mat-chip
+                      (click)="waveformService.openEventUpdateDialog(element)"
+                      *ngIf="element?.status === EvaluationStatus.REJECTED"
+                      [selected]="true"
+                      [selectable]="true"
+                      color="warn"
+                    >
+                      Rejected
+                    </mat-chip>
+                  </mat-chip-list>
+                  <mat-icon
+                    class="pr-2"
+                    [inline]="true"
+                  >
+                    {{element.event_type | eventTypeIcon}}
+                  </mat-icon>
+                  {{element.event_type | eventQuakemlToMicroquakeType : eventTypes}}
+                </div>
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            > Status </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              <mat-chip-list>
+                <mat-chip
+                  *ngIf="element?.status !== EvaluationStatus.REJECTED"
+                  [selected]="true"
+                  [selectable]="true"
+                  [color]="element?.evaluation_mode === 'manual' ? 'success' : 'primary'"
+                >
+                  Accepted
+                </mat-chip>
+                <mat-chip
+                  *ngIf="element?.status === EvaluationStatus.REJECTED"
+                  [selected]="true"
+                  [selectable]="true"
+                  color="warn"
+                >
+                  Rejected
+                </mat-chip>
+              </mat-chip-list>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="mode">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            > Mode </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              {{element.evaluation_mode}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="location">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            > Location </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              <small>X {{element.x}} m East</small><br>
+              <small>Y {{element.y}} m North</small><br>
+              <small>Z {{element.z}} m </small>
+            </td>
+          </ng-container>
+
+
+          <ng-container
+            matColumnDef="actions"
+            stickyEnd
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            > </th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+            >
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="menu"
+                aria-label="Event menu"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button
+                  mat-menu-item
+                  color="primary"
+                  (click)="openChart(element)"
+                >
+                  <mat-icon>insert_chart_outlined</mat-icon>
+                  <span>Charts</span>
+                </button>
+                <button
+                  mat-menu-item
+                  color="primary"
+                  (click)="waveformService.openEventUpdateDialog(element)"
+                >
+                  <mat-icon>edit</mat-icon>
+                  <span>Edit</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+          ></tr>
+        </table>
+
+        <mat-paginator
+          [pageSizeOptions]="[15]"
+          [pageSize]="eventListQuery.page_size"
+          [length]="eventsCount"
+          (page)="pageChange($event)"
+        ></mat-paginator>
+      </div>
     </div>
   </div>
 

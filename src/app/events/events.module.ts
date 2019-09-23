@@ -5,12 +5,12 @@ import { EventDetailComponent } from './pages/event-detail/event-detail.componen
 import { EventListComponent } from './pages/event-list/event-list.component';
 
 import { Waveform2Component } from './components/waveform-2/waveform-2.component';
-import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
-import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 import { RouterModule, Routes } from '@angular/router';
 import { WaveformToolbarComponent } from './components/waveform-toolbar/waveform-toolbar.component';
 // tslint:disable-next-line:max-line-length
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+import { EventSitePickerComponent } from './components/events-site-picker/event-site-picker.component';
+import { EventSitePickerDialogComponent } from './dialogs/event-site-picker-dialog/event-site-picker-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -30,9 +30,9 @@ const ROUTES: Routes = [
     EventListComponent,
     Waveform2Component,
     WaveformToolbarComponent,
-    EventFilterDialogComponent,
-    EventUpdateDialogComponent,
-    EventInteractiveProcessingDialogComponent
+    EventInteractiveProcessingDialogComponent,
+    EventSitePickerComponent,
+    EventSitePickerDialogComponent
   ],
   imports: [
     RouterModule.forChild(ROUTES),
@@ -42,9 +42,8 @@ const ROUTES: Routes = [
     RouterModule
   ],
   entryComponents: [
-    EventFilterDialogComponent,
-    EventUpdateDialogComponent,
-    EventInteractiveProcessingDialogComponent
+    EventInteractiveProcessingDialogComponent,
+    EventSitePickerDialogComponent
   ]
 })
 export class EventsModule { }

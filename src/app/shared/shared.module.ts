@@ -38,6 +38,8 @@ import { DiffNumber } from './pipes/diff-number.pipe';
 import { OrdinalPipe } from './pipes/ordinal.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from './dialogs/confirmation-dialog/confirmation-dialog.component';
+import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
+import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -100,6 +102,8 @@ const COMPONTENTS = [
 
 const DIALOGS = [
   EventHelpDialogComponent,
+  EventUpdateDialogComponent,
+  EventFilterDialogComponent,
   ConfirmationDialogComponent
 ];
 
