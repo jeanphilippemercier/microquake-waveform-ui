@@ -34,14 +34,8 @@ export class EventListComponent implements OnInit, OnDestroy {
   network: Network;
   networks: Network[];
 
-  eventTypes: EventType[];
   selectedEventTypes: EventType[];
-
-  evaluationStatuses: EvaluationStatus[];
-
-  evaluationStatusGroups: EvaluationStatusGroup[];
   selectedEvaluationStatusGroups: EvaluationStatusGroup[];
-
   EvaluationStatus = EvaluationStatus;
   eventEvaluationModes: EvaluationMode[];
 
