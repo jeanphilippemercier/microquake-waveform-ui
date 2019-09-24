@@ -200,6 +200,16 @@
     (waveformService.currentPage | async) <= 1 ||
     (waveformService.loading | async)
     "
+    (click)="onPageChangedFirst()"
+  >
+    <mat-icon>first_page</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    [disabled]="
+    (waveformService.currentPage | async) <= 1 ||
+    (waveformService.loading | async)
+    "
     (click)="onPageChanged(-1)"
   >
     <mat-icon>chevron_left</mat-icon>
@@ -217,5 +227,15 @@
     (click)="onPageChanged(1)"
   >
     <mat-icon>chevron_right</mat-icon>
+  </button>
+  <button
+    mat-icon-button
+    [disabled]="
+    (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
+    (waveformService.loading | async)
+    "
+    (click)="onPageChangedLast()"
+  >
+    <mat-icon>last_page</mat-icon>
   </button>
 </mat-toolbar>

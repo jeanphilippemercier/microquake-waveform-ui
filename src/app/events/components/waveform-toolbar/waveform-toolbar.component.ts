@@ -127,4 +127,13 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     }
     this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() + calcOp);
   }
+
+  onPageChangedFirst() {
+    this.waveformService.pageChanged.next(1);
+  }
+
+  onPageChangedLast() {
+    this.waveformService.pageChanged.next(this.waveformService.maxPages.getValue());
+  }
+
 }
