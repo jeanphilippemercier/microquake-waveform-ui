@@ -8,7 +8,7 @@ import { globals } from '@src/globals';
 import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './event-api.service';
-import { EventInteractiveProcessingDialogComponent } from '@app/events/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { NgxSpinnerService } from 'ngx-spinner';
