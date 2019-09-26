@@ -81,6 +81,7 @@ export interface SensorBase {
   part_number?: any;
   manufacturer: string;
   enabled: boolean;
+  orientation_valid: boolean;
   signal_quality: SignalQuality;
   components: IComponent[];
 }

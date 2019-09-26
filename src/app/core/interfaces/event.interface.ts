@@ -204,6 +204,20 @@ export interface WaveformSensor {
   } | null;
 }
 
+export interface Channel {
+  code_id?: string;
+  sensor_code?: string;
+  channel_id?: string;
+  sample_rate?: number;
+  start?: any;
+  microsec?: number;
+  duration?: number;
+  raw?: any;
+  rotated?: any;
+  data?: any[];
+  valid?: boolean;
+}
+
 export interface PreferredRay {
   id: number;
   phase: string;

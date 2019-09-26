@@ -31,9 +31,12 @@ export const globals = {
   snapDistance: 10,
   // colors for components line plots
   linecolor : {
-    'X': 'red',
-    'Y': 'green',
-    'Z': 'blue',
+    'E': 'red',
+    'N': 'green',
+    'V': 'blue',
+    'X': 'crimson',
+    'Y': 'teal',
+    'Z': 'navy',
     'C': 'black'
   },
   // context trace colors
@@ -52,7 +55,7 @@ export const globals = {
   // thickness of the predicted pick lines
   predictedPicksLineThickness: 1,
   // component to determine sign for composite trace
-  signComponent: 'X',
+  signComponents: ['X', 'E'],
   // composite trace component code
   compositeChannelCode: 'C',
   // filter defaults

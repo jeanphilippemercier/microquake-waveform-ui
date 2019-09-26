@@ -67,6 +67,16 @@
 
   <button
     mat-icon-button
+    matTooltip="Display Rotated or XYZ Traces"
+    class="activatable"
+    [ngClass]="{'active': waveformService.displayRotated | async}"
+    (click)="onDisplayRotatedClick()"
+  >
+    <mat-icon>3d_rotation</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
     matTooltip="Toggle Predicted Picks"
     class="activatable"
     [ngClass]="{'active': waveformService.predictedPicks | async}"
