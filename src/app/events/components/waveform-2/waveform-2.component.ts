@@ -428,21 +428,26 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           this.picksBias = 0;
 
-          const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
+          try {
+            const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
 
-          if (this.currentEventId !== event.event_resource_id) {
-            console.log(`changed event during loading`);
-            return;
-          }
-
-          if (contextFile) {
-            const contextData = WaveformUtil.parseMiniseed(contextFile, true);
-
-            if (contextData && contextData.sensors) {
-              this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(contextData.sensors));
-              this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
-              this.contextTimeOrigin = contextData.timeOrigin;
+            if (this.currentEventId !== event.event_resource_id) {
+              console.log(`changed event during loading`);
+              return;
             }
+
+            if (contextFile) {
+              const contextData = WaveformUtil.parseMiniseed(contextFile, true);
+
+              if (contextData && contextData.sensors) {
+                this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(contextData.sensors));
+                this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
+                this.contextTimeOrigin = contextData.timeOrigin;
+              }
+            }
+          } catch (err) {
+            this._toastrNotificationService.error(err, 'Could not load context file');
+            console.error(err);
           }
 
           this._changePage(true);
@@ -456,6 +461,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err, 'Could not load waveform data');
     } finally {
       if (this.currentEventId === event.event_resource_id) {
         this.waveformService.loading.next(false);
