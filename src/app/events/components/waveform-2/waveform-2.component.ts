@@ -908,7 +908,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           {
             name: channel.channel_id,
             type: 'line',
-            color: globals.context.linecolor,
+            color: this.waveformService.displayComposite.getValue() ? globals.context.linecolor :
+              globals.linecolor[channel.channel_id.toUpperCase().replace('...CONTEXT', '')],
             lineThickness: globals.lineThickness,
             showInLegend: true,
             // highlightEnabled: true,

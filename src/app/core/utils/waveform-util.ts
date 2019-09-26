@@ -126,7 +126,7 @@ export default class WaveformUtil {
     return (eventData);
   }
 
-  static rorateComponents(seisX, seisY, seisZ, sensor: Sensor): any {
+  static rotateComponents(seisX, seisY, seisZ, sensor: Sensor): any {
 
     if (seisX.y().length !== seisY.y().length ||
       seisX.y().length !== seisZ.y().length ||
@@ -199,12 +199,12 @@ export default class WaveformUtil {
       if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
         message = '';
         if (xyzSensor.channels.length === 3) {
-          const channelX = xyzSensor.channels.find(el => el.channel_id === 'X');
-          const channelY = xyzSensor.channels.find(el => el.channel_id === 'Y');
-          const channelZ = xyzSensor.channels.find(el => el.channel_id === 'Z');
+          const channelX = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'X');
+          const channelY = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Y');
+          const channelZ = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Z');
           if (channelX && channelY && channelZ &&
             channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
-              const result = this.rorateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor);
+              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor);
               if (result) {
                 channelX.rotated = result.e;
                 channelY.rotated = result.n;
