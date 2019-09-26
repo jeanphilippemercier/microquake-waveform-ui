@@ -82,6 +82,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.displayComposite.next(!this.waveformService.displayComposite.getValue());
   }
 
+  onDisplayRotatedClick() {
+    this.waveformService.displayRotated.next(!this.waveformService.displayRotated.getValue());
+  }
+
   onPredictedPicksClick() {
     this.waveformService.predictedPicks.next(!this.waveformService.predictedPicks.getValue());
   }
