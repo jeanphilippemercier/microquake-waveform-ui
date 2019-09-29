@@ -1,4 +1,4 @@
-import { HttpParams } from '@angular/common/http';
+import { HttpParams, HttpHeaders } from '@angular/common/http';
 
 export default class ApiUtil {
   static getHttpParams(query: any): HttpParams {
@@ -12,6 +12,18 @@ export default class ApiUtil {
       });
     }
     return params;
+  }
+  static getHttpHeaders(headersIn: any): HttpHeaders {
+    let headers = new HttpHeaders();
+    if (headersIn) {
+
+      Object.keys(headersIn).forEach(function (key) {
+        if (typeof headersIn[key] !== 'undefined') {
+          headers = headers.append(key, headersIn[key]);
+        }
+      });
+    }
+    return headers;
   }
 
   static parseArrayHttpParams(params: HttpParams, arr: any[], key: string): HttpParams {
