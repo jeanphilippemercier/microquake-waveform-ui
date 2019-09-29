@@ -1,4 +1,5 @@
 import { SiteBase, SensorBase, IComponentBase, StationBase, ISensorTypeBase, CableTypeBase } from './inventory.interface';
+import { MaintenanceEventBase } from './maintenance.interface';
 
 export interface SiteCreateInput extends Partial<SiteBase> { }
 export interface SiteUpdateInput extends Partial<SiteBase> { }
@@ -29,3 +30,6 @@ export interface ISensorTypeUpdateInput extends Partial<ISensorTypeBase> { }
 
 export interface CableTypeCreateInput extends Partial<CableTypeBase> { }
 export interface CableTypeUpdateInput extends Partial<CableTypeBase> { }
+
+export interface MaintenanceEventCreateInput extends Partial<MaintenanceEventBase> { }
+export interface MaintenanceEventUpdateInput extends Partial<MaintenanceEventBase> { }
