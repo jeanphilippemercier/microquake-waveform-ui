@@ -22,6 +22,12 @@ export class HttpCacheInterceptor implements HttpInterceptor {
   constructor(private _cache: CacheService) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler) {
+    let refreshCache = false;
+
+    if (req.headers.get('x-refresh')) {
+      req = req.clone({ headers: req.headers.delete('x-refresh') });
+      refreshCache = true;
+    }
 
     if (req.method !== 'GET') {
       return next.handle(req);
@@ -29,7 +35,7 @@ export class HttpCacheInterceptor implements HttpInterceptor {
 
     const cachedResponse = this._cache.get(req);
 
-    if (req.headers.get('x-refresh')) {
+    if (refreshCache) {
       const results$ = this._sendRequest(req, next);
       return cachedResponse ? results$.pipe(startWith(cachedResponse)) : results$;
     }
