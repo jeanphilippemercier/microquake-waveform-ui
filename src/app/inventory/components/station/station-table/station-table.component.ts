@@ -23,8 +23,4 @@ export class StationTableComponent extends Table<Station> {
     super(_matDialog);
   }
 
-  delete(id: number) {
-    console.log('Delete not implemented yet');
-  }
-
 }

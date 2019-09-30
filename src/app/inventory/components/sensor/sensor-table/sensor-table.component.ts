@@ -22,8 +22,4 @@ export class SensorTableComponent extends Table<Sensor> {
   ) {
     super(_matDialog);
   }
-
-  delete(id: number) {
-    console.log('Delete not implemented yet');
-  }
 }
