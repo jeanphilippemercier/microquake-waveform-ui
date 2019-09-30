@@ -4,10 +4,11 @@ import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  IEvent, Boundaries, Origin, Traveltime, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing,
+  IEvent, Boundaries, Origin, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing, Ray
 } from '@interfaces/event.interface';
 import {
-  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery
+  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery,
+  EventRayQuery
 } from '@interfaces/event-query.interface';
 import ApiUtil from '../utils/api-util';
 import {
@@ -131,6 +132,12 @@ export class EventApiService {
     return this._http.get<Origin[]>(url, { params });
   }
 
+  getRays(query: EventRayQuery): Observable<Ray[]> {
+    const url = `${environment.apiUrl}${globals.apiRays}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<Ray[]>(url, { params });
+  }
+
   updatePartialOriginById(originId, dataObj): any {
     const _httpOptions = {
       headers: new HttpHeaders({
@@ -149,11 +156,6 @@ export class EventApiService {
     const url = `${environment.apiUrl}${globals.apiArrivals}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get(url, { params });
-  }
-
-  getEventOriginTraveltimes(eventId: string, originId: string): Observable<Traveltime[]> {
-    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/${globals.apiOrigins}/${originId}/${globals.apiTravelTimes}`;
-    return this._http.get<Traveltime[]>(url);
   }
 
   getReprocessEventById(site, network, eventId): any {

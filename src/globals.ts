@@ -11,6 +11,8 @@ export const globals = {
   apiEvents: 'events',
   // Origins API endpoint
   apiOrigins: 'origins',
+  // Ray API endpoint
+  apiRays: 'rays',
   // Traveltimes API endpoint
   apiTravelTimes: 'traveltimes',
   // Arrivals API endpoint
@@ -31,6 +33,9 @@ export const globals = {
   snapDistance: 10,
   // colors for components line plots
   linecolor : {
+    'P': 'red',
+    'SV': 'green',
+    'SH': 'blue',
     'E': 'red',
     'N': 'green',
     'V': 'blue',

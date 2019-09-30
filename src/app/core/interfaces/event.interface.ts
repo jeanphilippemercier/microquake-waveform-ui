@@ -180,28 +180,22 @@ export interface Origin {
   z: number;
 }
 
-export interface Traveltime {
-  station_id: string;
-  travel_time_p: number;
-  travel_time_s: number;
-}
-
-export interface WaveformSensor {
-  code: string;
-  enabled: boolean;
-  id: number;
-  location_code: string;
-  name: string;
-  orientation_valid: boolean;
-  preferred_ray: {
-    P: PreferredRay | null;
-    S: PreferredRay | null;
-  };
-  station: {
-    id: number;
-    name: string;
-    code: string;
-  } | null;
+export interface Ray {
+  ray_resource_id: string;
+  site: string;
+  network: string;
+  event: string;
+  origin: string;
+  arrival: string;
+  sensor: string;
+  nodes: string;
+  phase: string;
+  azimuth: number;
+  takeoff_angle: number;
+  back_azimuth: number;
+  incidence_angle: number;
+  ray_length: number;
+  travel_time: number;
 }
 
 export interface Channel {
@@ -216,13 +210,6 @@ export interface Channel {
   rotated?: any;
   data?: any[];
   valid?: boolean;
-}
-
-export interface PreferredRay {
-  id: number;
-  phase: string;
-  ray_length: number;
-  travel_time: number;
 }
 
 export interface ArrivalBase<T> {
