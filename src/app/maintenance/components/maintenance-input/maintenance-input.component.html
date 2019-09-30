@@ -1,0 +1,95 @@
+<div class="d-flex">
+  <mat-form-field
+    appearance="standard"
+    class="example-chip-list mr-3"
+  >
+    <mat-chip-list
+      #chipList
+      aria-label="Fruit selection"
+      selectable="true"
+    >
+      <mat-chip
+        *ngFor="let fruit of fruits"
+        [color]="fruit.type === MaintenanceType.CATEGORY ? 'primary' : 'accent'"
+        selected
+        [removable]="removable"
+        (removed)="remove(fruit)"
+      >
+        <ng-container *ngIf="fruit.type === MaintenanceType.CATEGORY">
+
+        </ng-container>
+        <ng-container *ngIf="fruit.type === MaintenanceType.STATION">
+          Station
+        </ng-container>
+        <span class="pl-1 text-capitalize">
+          {{fruit?.name}}
+        </span>
+        <mat-icon
+          matChipRemove
+          *ngIf="fruit.type !== MaintenanceType.STATION || !stationFixed"
+        >cancel</mat-icon>
+      </mat-chip>
+      <input
+        [placeholder]="
+        (!model?.station && !model?.category && !model?.description ? 'Start typing to add new log... ' : '') +
+        (!model?.station ? '@station_code ' : '') +
+        (!model?.category ? '#category ':'') +
+        (model?.station && model?.category ? '...add some description':'')
+        "
+        #fruitInput
+        [formControl]="fruitCtrl"
+        [matAutocomplete]="auto"
+        [matChipInputFor]="chipList"
+        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+        [matChipInputAddOnBlur]="addOnBlur"
+        (matChipInputTokenEnd)="add($event)"
+      >
+    </mat-chip-list>
+    <mat-autocomplete
+      #auto="matAutocomplete"
+      (optionSelected)="selected($event)"
+      autoActiveFirstOption
+    >
+      <mat-option
+        *ngFor="let fruit of filteredFruits | async"
+        [value]="fruit"
+      >
+        {{fruit?.name}}
+      </mat-option>
+    </mat-autocomplete>
+    <mat-hint align="end">
+      <button
+        [hidden]="openForm"
+        color="primary"
+        (click)="openForm = true"
+        mat-button
+      > open form</button>
+    </mat-hint>
+  </mat-form-field>
+  <button
+    (click)="onSubmit()"
+    mat-fab
+    color="primary"
+  >
+    <mat-icon>keyboard_arrow_right</mat-icon>
+  </button>
+</div>
+<div
+  class="pr-5 mt-3"
+  [hidden]="!openForm"
+>
+  <app-maintenance-form
+    #maintenanceForm
+    [maintenanceCategories]="maintenanceCategories"
+    [maintenanceStatuses]="maintenanceStatuses"
+    [stations]="stations"
+    [model]="model"
+    [stationFixed]="stationFixed"
+    (cancel)="openForm = false"
+    (maintenanceCategoryChanged)="categoryChanged($event)"
+    (maintenanceStationChanged)="stationChanged($event)"
+    (descriptionChanged)="descriptionChanged($event)"
+    (modelCreated)="onCreated($event)"
+  ></app-maintenance-form>
+</div>
+<ngx-spinner name="loading"></ngx-spinner>
