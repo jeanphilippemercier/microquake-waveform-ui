@@ -207,6 +207,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this._changePage(false);
       });
 
+    this.waveformService.displayRotated
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe((val: boolean) => {
+        this._applyFilter();
+      });
 
     this.waveformService.predictedPicks
       .pipe(
@@ -355,8 +364,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       if (eventData && eventData.sensors) {
 
+        WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
+
         // filter and recompute composite traces
-        this.loadedSensors = WaveformUtil.addCompositeTrace(this._filterData(eventData.sensors));
+        this.loadedSensors = WaveformUtil.addCompositeTrace(
+          this._filterData(eventData.sensors, false, this.waveformService.displayRotated.getValue()));
 
         this.waveformService.loadedSensors.next(this.loadedSensors);
         this.waveformService.loadedPages.next(1);
@@ -428,21 +440,28 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           this.picksBias = 0;
 
-          const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
+          try {
+            const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
 
-          if (this.currentEventId !== event.event_resource_id) {
-            console.log(`changed event during loading`);
-            return;
-          }
-
-          if (contextFile) {
-            const contextData = WaveformUtil.parseMiniseed(contextFile, true);
-
-            if (contextData && contextData.sensors) {
-              this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(contextData.sensors));
-              this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
-              this.contextTimeOrigin = contextData.timeOrigin;
+            if (this.currentEventId !== event.event_resource_id) {
+              console.log(`changed event during loading`);
+              return;
             }
+
+            if (contextFile) {
+              const contextData = WaveformUtil.parseMiniseed(contextFile, true);
+
+              if (contextData && contextData.sensors) {
+                WaveformUtil.rotateSensors(contextData.sensors, this.allSensors, this.waveformSensors);
+                this.contextSensor = WaveformUtil.addCompositeTrace(
+                  this._filterData(contextData.sensors, true, this.waveformService.displayRotated.getValue()));
+                this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
+                this.contextTimeOrigin = contextData.timeOrigin;
+              }
+            }
+          } catch (err) {
+            this._toastrNotificationService.error(err, 'Could not load context file');
+            console.error(err);
           }
 
           this._changePage(true);
@@ -456,6 +475,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err, 'Could not load waveform data');
     } finally {
       if (this.currentEventId === event.event_resource_id) {
         this.waveformService.loading.next(false);
@@ -477,8 +497,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
+
+      WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
+
       // filter and recompute composite traces
-      let sensors = WaveformUtil.addCompositeTrace(this._filterData(eventData.sensors));
+      let sensors = WaveformUtil.addCompositeTrace(
+        this._filterData(eventData.sensors, false, this.waveformService.displayRotated.getValue()));
       sensors = WaveformUtil.mapSensorInfoToLoadedSensors(sensors, this.allSensors, this.waveformService.allSensorsMap);
 
       for (let j = 0; j < sensors.length; j++) {
@@ -653,7 +677,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           horizontalAlign: 'left'
         },
         subtitles: [{
-          text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S') : '',
+          text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '',
           dockInsidePlotArea: true,
           fontSize: 10,
           fontFamily: 'tahoma',
@@ -884,7 +908,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           {
             name: channel.channel_id,
             type: 'line',
-            color: globals.context.linecolor,
+            color: this.waveformService.displayComposite.getValue() ? globals.context.linecolor :
+              globals.linecolor[channel.channel_id.toUpperCase().replace('...CONTEXT', '')],
             lineThickness: globals.lineThickness,
             showInLegend: true,
             // highlightEnabled: true,
@@ -921,7 +946,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         horizontalAlign: 'left'
       },
       subtitles: [{
-        text: moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss.S'),
+        text: moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss'),
         dockInsidePlotArea: true,
         fontSize: 10,
         fontFamily: 'tahoma',
@@ -1774,24 +1799,29 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.waveformService.saveOption('numPoles', this.waveformService.numPoles.getValue());
       this.waveformService.saveOption('lowFreqCorner', this.waveformService.lowFreqCorner.getValue());
       this.waveformService.saveOption('highFreqCorner', this.waveformService.highFreqCorner.getValue());
-      this.loadedSensors = WaveformUtil.addCompositeTrace(this._filterData(this.loadedSensors)); // filter and recompute composite traces
+      this.loadedSensors = WaveformUtil.addCompositeTrace(
+        this._filterData(this.loadedSensors, false, this.waveformService.displayRotated.getValue())); // filter, recompute composite
       this.waveformService.loadedSensors.next(this.loadedSensors);
-      this.contextSensor = WaveformUtil.addCompositeTrace(this._filterData(this.contextSensor));
+      this.contextSensor = WaveformUtil.addCompositeTrace(
+        this._filterData(this.contextSensor, true, this.waveformService.displayRotated.getValue()));
       this._changePage(false);
     }
   }
 
-  private _filterData(sensors: Sensor[]): Sensor[] {
+  private _filterData(sensors: Sensor[], isContext, bRotated): Sensor[] {
     for (const sensor of sensors) {
       // remove composite traces if existing
-      const pos = sensor.channels.findIndex(v => v.channel_id === globals.compositeChannelCode);
+      const pos = sensor.channels.findIndex(v =>
+        (!isContext && v.channel_id === globals.compositeChannelCode) ||
+        (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
       if (pos >= 0) {
         sensor.channels.splice(pos, 1);
       }
       for (const channel of sensor.channels) {
         if (channel.hasOwnProperty('raw')) {
           if (channel.valid) {
-            const sg = channel.raw.clone();
+            const sg = (bRotated && channel.hasOwnProperty('rotated')) ?
+              channel.rotated.clone() : channel.raw.clone();
             let seis = null;
             const butterworth = this._createButterworthFilter(channel.sample_rate);
             if (butterworth) {
@@ -1800,6 +1830,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
             } else {
               seis = sg;
             }
+            channel.channel_id = isContext ? seis.channelCode() + '...CONTEXT' : seis.channelCode();
+            channel.code_id = isContext ? seis.codes() + '...CONTEXT' : seis.codes();
             for (let k = 0; k < seis.numPoints(); k++) {
               channel.data[k].y = seis.y()[k];
             }

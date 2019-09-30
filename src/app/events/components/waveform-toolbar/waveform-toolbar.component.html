@@ -62,7 +62,17 @@
     [ngClass]="{'active': waveformService.displayComposite | async}"
     (click)="onDisplayCompositeClick()"
   >
-    <mat-icon>filter_3</mat-icon>
+    <mat-icon>playlist_add</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    matTooltip="Display Rotated or XYZ Traces"
+    class="activatable"
+    [ngClass]="{'active': waveformService.displayRotated | async}"
+    (click)="onDisplayRotatedClick()"
+  >
+    <mat-icon>3d_rotation</mat-icon>
   </button>
 
   <button

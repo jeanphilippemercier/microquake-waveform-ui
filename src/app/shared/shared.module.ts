@@ -41,6 +41,7 @@ import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-micro
 import { ConfirmationDialogComponent } from './dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
+import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -105,6 +106,7 @@ const DIALOGS = [
   EventHelpDialogComponent,
   EventUpdateDialogComponent,
   EventFilterDialogComponent,
+  EventInteractiveProcessingDialogComponent,
   ConfirmationDialogComponent
 ];
 

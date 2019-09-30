@@ -3,24 +3,17 @@ import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject, Subject } from 'rxjs';
 import { distinctUntilChanged, skip, takeUntil } from 'rxjs/operators';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
-import { EventUpdateDialog, EventFilterDialogData, EventInteractiveProcessingDialog } from '@interfaces/dialogs.interface';
 import {
   IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup
 } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
-import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
-import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dialog/event-filter-dialog.component';
 import { WaveformService } from '@services/waveform.service';
 import { InventoryApiService } from '@services/inventory-api.service';
-// tslint:disable-next-line:max-line-length
-import { EventInteractiveProcessingDialogComponent } from '@app/events/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
-import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 
 @Component({
@@ -36,9 +29,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   site: Site;
   network: Network;
   today = moment().startOf('day');
-  eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
-  eventFilterDialogRef: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
-  eventInteractiveProcessDialogRef: MatDialogRef<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>;
 
   eventStartDate: Date;
   eventEndDate: Date;
@@ -87,9 +77,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     private _inventoryApiService: InventoryApiService,
     public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
-    private _matDialog: MatDialog,
     private _router: Router,
-    private _toastrNotificationService: ToastrNotificationService,
     private _ngxSpinnerService: NgxSpinnerService,
   ) { }
 

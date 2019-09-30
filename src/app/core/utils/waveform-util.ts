@@ -3,6 +3,7 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
+import { Channel } from '@interfaces/event.interface';
 import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
@@ -39,7 +40,7 @@ export default class WaveformUtil {
     const channelsMap = miniseed.byChannel(records);
     const sensors = [];
     let zTime = null, timeOrigin = null;
-    const eventData = {};
+    const eventData = {} as any;
     let changetimeOrigin = false;
     channelsMap.forEach(function (this, value, key, map) {
       const sg = miniseed.createSeismogram(channelsMap.get(key));
@@ -69,25 +70,24 @@ export default class WaveformUtil {
         console.error(sg.start());
       }
       const seismogram = valid ? filter.rMean(sg) : sg;
-      const channel = {};
-      channel['code_id'] = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
-      channel['sensor_code'] = sg.stationCode();
-      channel['channel_id'] = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
-      channel['sample_rate'] = sg.sampleRate();
-      channel['start'] = sg.start();  // moment object (good up to milisecond)
+      const channel: Channel = {};
+      channel.code_id = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
+      channel.sensor_code = sg.stationCode();
+      channel.channel_id = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
+      channel.sample_rate = sg.sampleRate();
+      channel.start = sg.start();  // moment object (good up to milisecond)
       // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
-      channel['microsec'] = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-      channel['raw'] = seismogram;
-      channel['valid'] = valid;
-      const data = [];
+      channel.microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+      channel.raw = seismogram;
+      channel.valid = valid;
+      channel.data = [];
       for (let k = 0; k < seismogram.numPoints(); k++) {
-        data.push({
-          x: channel['microsec'] + (k * 1000000 / channel['sample_rate']),   // trace microsecond offset
+        channel.data.push({
+          x: channel.microsec + (k * 1000000 / channel.sample_rate),   // trace microsecond offset
           y: seismogram.y()[k],  // trace after mean removal
         });
       }
-      channel['data'] = data;
-      channel['duration'] = (seismogram.numPoints() - 1) * 1000000 / channel['sample_rate'];  // in microseconds
+      channel.duration = (seismogram.numPoints() - 1) * 1000000 / seismogram.sampleRate();  // in microseconds
       let sensor = WaveformUtil.findValue(sensors, 'sensor_code', sg.stationCode());
       if (!sensor) {
         sensor = { sensor_code: sg.stationCode(), channels: [] };
@@ -121,14 +121,116 @@ export default class WaveformUtil {
 
       }
     }
-    eventData['sensors'] = sensors;
-    eventData['timeOrigin'] = timeOrigin;
+    eventData.sensors = sensors;
+    eventData.timeOrigin = timeOrigin;
     return (eventData);
   }
 
+  static rotateComponents(seisX, seisY, seisZ, sensor: Sensor): any {
+
+    if (seisX.y().length !== seisY.y().length ||
+      seisX.y().length !== seisZ.y().length ||
+      seisY.y().length !== seisY.y().length) {
+        console.error('seismograms do not have same length: ');
+        console.error(sensor);
+        return null;
+    }
+
+    if (seisX.sampleRate() !== seisY.sampleRate() ||
+      seisX.sampleRate() !== seisZ.sampleRate() ||
+      seisY.sampleRate() !== seisY.sampleRate()) {
+        console.error('seismograms do not have same sample rate: ');
+        console.error(sensor);
+        return null;
+    }
+
+    if (!seisX.start().isSame(seisY.start()) ||
+      !seisX.start().isSame(seisZ.start()) ||
+      !seisY.start().isSame(seisZ.start())) {
+        console.error('seismograms do not have same start time: ');
+        console.error(sensor);
+        return null;
+    }
+
+    const x = new Array(seisX.y().length);
+    const y = new Array(seisX.y().length);
+    const z = new Array(seisX.y().length);
+    const compX = sensor.components.find(el => el.code === 'X');
+    const compY = sensor.components.find(el => el.code === 'Y');
+    const compZ = sensor.components.find(el => el.code === 'Z');
+    for (let i = 0; i < seisX.y().length; i++) {
+      x[i] = seisX.yAtIndex(i) * compX.orientation_x +
+        seisY.yAtIndex(i) * compY.orientation_x +
+        seisZ.yAtIndex(i) * compZ.orientation_x;
+      y[i] = seisX.yAtIndex(i) * compX.orientation_y +
+        seisY.yAtIndex(i) * compY.orientation_y +
+        seisZ.yAtIndex(i) * compZ.orientation_y;
+      z[i] = seisX.yAtIndex(i) * compX.orientation_z +
+        seisY.yAtIndex(i) * compY.orientation_z +
+        seisZ.yAtIndex(i) * compZ.orientation_z;
+    }
+    const seisE = seisX.clone().y(x).chanCode(seisX.chanCode().slice(0, -1) + 'E');
+    const seisN = seisY.clone().y(y).chanCode(seisY.chanCode().slice(0, -1) + 'N');
+    const seisV = seisZ.clone().y(z).chanCode(seisZ.chanCode().slice(0, -1) + 'V');
+    const outSeisV = filter.rMean(seisV);
+    const outSeisE = filter.rMean(seisE);
+    const outSeisN = filter.rMean(seisN);
+    return {
+      'e': outSeisE,
+      'n': outSeisN,
+      'v': outSeisV,
+    };
+
+  }
+
+  static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], waveformSensors: WaveformSensor[]) {
+
+    let message;
+    for (const xyzSensor of xyzSensors) {
+
+      const sensor = sensors.find(el => el.code === xyzSensor.sensor_code);
+
+      if (!sensor) {
+        console.error(`no sensor on rotatedComponents for xyz sensor`);
+        console.error(xyzSensor);
+        continue;
+      }
+
+      if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
+        message = '';
+        if (xyzSensor.channels.length === 3) {
+          const channelX = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'X');
+          const channelY = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Y');
+          const channelZ = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Z');
+          if (channelX && channelY && channelZ &&
+            channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
+              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor);
+              if (result) {
+                channelX.rotated = result.e;
+                channelY.rotated = result.n;
+                channelZ.rotated = result.v;
+              }
+          }
+        } else {
+          message += 'Cannot create 3C composite trace for xyzSensor: ' + xyzSensor.sensor_code +
+            ' available channels: ' + xyzSensor.channels.length + ' (' +
+            (xyzSensor.channels.length > 0 ? xyzSensor.channels[0].channel_id +
+              (xyzSensor.channels.length > 1 ? xyzSensor.channels[1].channel_id
+                : ' ') : ' ') + ')\n';
+        }
+        if (message) {
+          console.log(message);
+        // window.alert(message);
+        }
+      }
+    }
+  }
 
   static addCompositeTrace(sensors: Sensor[]): Sensor[] {
     let message = '';
+    const toLower = function (x) {
+      return x.toLowerCase();
+    };
     for (const sensor of sensors) {
       if (sensor.channels.length === 3) {
         if (sensor.channels[0].start.isSame(sensor.channels[1].start) &&
@@ -139,52 +241,51 @@ export default class WaveformUtil {
             sensor.channels[0].sample_rate === sensor.channels[2].sample_rate) {
             if (sensor.channels[0].data.length === sensor.channels[1].data.length &&
               sensor.channels[0].data.length === sensor.channels[2].data.length) {
-              const compositeTrace = {};
-              compositeTrace['code_id'] = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
+              const compositeTrace: Channel = {};
+              compositeTrace.code_id = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
                 sensor.channels[0].code_id.slice(0, -11) + globals.compositeChannelCode + '...CONTEXT' :
                 sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
-              compositeTrace['sensor_code'] = sensor.sensor_code;
-              compositeTrace['channel_id'] = globals.compositeChannelCode +
+              compositeTrace.sensor_code = sensor.channels[0].sensor_code;
+              compositeTrace.channel_id = globals.compositeChannelCode +
                 (sensor.channels[0].channel_id.endsWith('...CONTEXT') ? '...CONTEXT' : '');
-              compositeTrace['sample_rate'] = sensor.channels[0].sample_rate;
-              compositeTrace['start'] = sensor.channels[0].start;  // moment object (good up to milisecond)
-              compositeTrace['microsec'] = sensor.channels[0].microsec;
-              compositeTrace['data'] = [];
-              compositeTrace['duration'] = sensor.channels[0].duration;  // in microseconds
+              compositeTrace.sample_rate = sensor.channels[0].sample_rate;
+              compositeTrace.start = sensor.channels[0].start;  // moment object (good up to milisecond)
+              compositeTrace.microsec = sensor.channels[0].microsec;
+              compositeTrace.data = [];
+              compositeTrace.duration = sensor.channels[0].duration;  // in microseconds
               for (let k = 0; k < sensor.channels[0].data.length; k++) {
                 let compositeValue = 0, sign = 1;
                 for (let j = 0; j < 3; j++) {
-                  const value = sensor.channels[j].data[k]['y'];
-                  sign = sensor.channels[j].channel_id.toLowerCase() === globals.signComponent.toLowerCase() ||
-                    sensor.channels[j].channel_id.toLowerCase() === (globals.signComponent + '...CONTEXT').toLowerCase() ?
-                    Math.sign(value) : sign;
+                  const value = sensor.channels[j].data[k].y;
+                  const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
+                  sign = globals.signComponents.map(toLower).includes(comp.toLowerCase()) ? Math.sign(value) : sign;
                   compositeValue += Math.pow(value, 2);
                 }
                 sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
                 compositeValue = Math.sqrt(compositeValue) * sign;
-                compositeTrace['data'].push({
-                  x: sensor.channels[0].data[k]['x'],
+                compositeTrace.data.push({
+                  x: sensor.channels[0].data[k].x,
                   y: compositeValue
                 });
               }
               sensor.channels.push(compositeTrace);
             } else {
               console.log('Cannot create 3C composite trace for sensor: '
-                + sensor['sensor_code'] + ' different channel lengths');
+                + sensor.sensor_code + ' different channel lengths');
             }
           } else {
             console.log('Cannot create 3C composite trace for sensor: ' +
-              sensor['sensor_code'] + ' different sample rates: ' +
+              sensor.sensor_code + ' different sample rates: ' +
               sensor.channels[0].sample_rate + sensor.channels[2].sample_rate + sensor.channels[2].sample_rate);
           }
         } else {
           console.log('Cannot create 3C composite trace for sensor: '
-            + sensor['sensor_code'] + ' different channels start times ' +
+            + sensor.sensor_code + ' different channels start times ' +
             sensor.channels[0].start.toISOString() + ' ' + sensor.channels[1].start.toISOString() + ' '
             + sensor.channels[2].start.toISOString());
         }
       } else {
-        message += 'Cannot create 3C composite trace for sensor: ' + sensor['sensor_code'] +
+        message += 'Cannot create 3C composite trace for sensor: ' + sensor.sensor_code +
           ' available channels: ' + sensor.channels.length + ' (' +
           (sensor.channels.length > 0 ? sensor.channels[0].channel_id +
             (sensor.channels.length > 1 ? sensor.channels[1].channel_id
