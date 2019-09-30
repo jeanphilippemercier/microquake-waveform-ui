@@ -80,8 +80,8 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
 
   delete(id: number) {
     if (!id) {
-      console.error(`No sensor type id`);
-      this._toastrNotificationService.error('No sensor type id is defined');
+      console.error(`No maintenance event id`);
+      this._toastrNotificationService.error('No maintenance event id is defined');
     }
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
@@ -90,17 +90,16 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
         width: '350px',
         data: {
           header: `Are you sure?`,
-          text: `Do you want to proceed and delete sensor type (ID: ${id})?`
+          text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
         }
       });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          // await this._toastrNotificationService.error('Sensor type deletion is not active');
-          const response = 'not implemnted';
-          console.log(response);
-          await this._toastrNotificationService.success('Sensor type deleted');
+          const response = await this._inventoryApiService.deleteMaintenanceEvent(id).toPromise();
+          this.loadData();
+          await this._toastrNotificationService.success('Maintenance event deleted');
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);

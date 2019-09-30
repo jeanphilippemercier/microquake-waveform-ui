@@ -67,6 +67,7 @@
         [maintenanceCategories]="maintenanceCategories"
         [maintenanceStatuses]="maintenanceStatuses"
         (previousPage)="changePage(cursorPrevious)"
+        (delete)="delete($event)"
         (nextPage)="changePage(cursorNext)"
       >
       </app-maintenance-table>

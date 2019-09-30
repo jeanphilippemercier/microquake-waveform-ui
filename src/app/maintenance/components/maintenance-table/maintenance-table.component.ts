@@ -27,7 +27,7 @@ export class MaintenanceTableComponent extends Table<MaintenanceEvent> {
   @Input() maintenanceCategories: MaintenanceCategory[] = [];
 
   // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['detail', 'date', 'status', 'category', 'station', 'attachments', 'description'];
+  displayedColumns: string[] = ['detail', 'date', 'status', 'category', 'station', 'attachments', 'description', 'actions'];
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
 
   constructor(
@@ -35,14 +35,5 @@ export class MaintenanceTableComponent extends Table<MaintenanceEvent> {
     protected _activatedRoute: ActivatedRoute
   ) {
     super(_matDialog);
-  }
-
-  delete(id: number) {
-    console.log('Delete not implemented yet');
-  }
-
-
-  sortData(sort: Sort) {
-    console.log(sort);
   }
 }

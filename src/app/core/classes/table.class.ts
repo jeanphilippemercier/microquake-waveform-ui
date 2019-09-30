@@ -24,12 +24,17 @@ export class Table<T> implements OnInit {
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
   @Output() sort: EventEmitter<Sort> = new EventEmitter();
+  @Output() delete: EventEmitter<number> = new EventEmitter();
 
   constructor(
     protected _matDialog: MatDialog
   ) { }
 
   async ngOnInit() {
+  }
+
+  onDelete($event: number) {
+    this.delete.emit($event);
   }
 
   onSort($event: Sort) {
