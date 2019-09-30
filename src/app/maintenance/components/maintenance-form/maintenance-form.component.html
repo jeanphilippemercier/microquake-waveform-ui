@@ -1,0 +1,226 @@
+<form
+  class="px-2 py-3"
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+    <div class="col-12 px-3 ">
+      <div class="row pb-1">
+        <div class="col-sm-12">
+          <div class="row">
+
+            <div class="col-sm-3 pr-sm-4">
+              <div class="row">
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Status</mat-label>
+                    <mat-select
+                      [required]="true"
+                      formControlName="status"
+                    >
+                      <mat-option
+                        [value]="maintenanceStatus.name"
+                        *ngFor="let maintenanceStatus of maintenanceStatuses"
+                      >
+                        {{maintenanceStatus.name}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Category</mat-label>
+                    <mat-select
+                      [required]="true"
+                      formControlName="category"
+                      (selectionChange)="categorySelected($event)"
+                    >
+                      <mat-option
+                        [value]="maintenanceCategory.name"
+                        *ngFor="let maintenanceCategory of maintenanceCategories"
+                      >
+                        {{maintenanceCategory.name}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+              </div>
+            </div>
+            <div class="col-sm-3 px-sm-4">
+              <div class="row">
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Date</mat-label>
+
+                    <input
+                      [required]="true"
+                      matInput
+                      [matDatepicker]="picker"
+                      formControlName="date"
+                      placeholder="Choose a date"
+                    >
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="picker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+
+                  </mat-form-field>
+                </div>
+
+                <div class="col">
+                  <mat-form-field class="w-100">
+                    <mat-label>Station</mat-label>
+                    <input
+                      [required]="true"
+                      matInput
+                      type="text"
+                      formControlName="station"
+                      [matAutocomplete]="autoSensor"
+                    >
+                    <mat-autocomplete
+                      #autoSensor="matAutocomplete"
+                      [displayWith]="stationDisplayFn"
+                      (optionSelected)="stationSelected($event)"
+                    >
+                      <mat-option
+                        *ngFor="let option of (filteredStations | async)"
+                        [value]="option"
+                      >{{option.name}}</mat-option>
+                    </mat-autocomplete>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6 pl-sm-4">
+              <div class="row">
+
+                <div class="col">
+                  <mat-form-field>
+                    <mat-label>Description</mat-label>
+                    <textarea
+                      (change)="descriptionChange($event)"
+                      [style.minHeight.px]="98"
+                      matInput
+                      formControlName="description"
+                    ></textarea>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div
+        class="row"
+        *ngIf="mode === PageMode.EDIT"
+      >
+        <div class="col-sm-12 pr-sm-4">
+          <div class="row">
+            <div class="col-12">
+              <h4>
+                Attachments
+              </h4>
+            </div>
+            <div class="col-sm-12">
+              <ngx-file-drop
+                dropZoneLabel="Drop files here"
+                dropZoneClassName="file-upload-dropzone"
+                contentClassName="file-upload-dropzone-content"
+                (onFileDrop)="dropped($event)"
+                (onFileOver)="fileOver($event)"
+                (onFileLeave)="fileLeave($event)"
+              >
+                <ng-template
+                  ngx-file-drop-content-tmp
+                  let-openFileSelector="openFileSelector"
+                >
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <mat-list
+                        dense
+                        *ngIf="model.attachments && model.attachments.length > 0"
+                      >
+                        <ng-container *ngFor="let attachment of model.attachments; let i=index">
+                          <mat-list-item>
+                            <mat-icon mat-list-icon>folder</mat-icon>
+                            <div mat-line>
+                              <small class="pr-3">({{attachment.id ? attachment.id : '??'}})</small>
+                              <a
+                                mat-button
+                                [href]="attachment.file"
+                                target="_blank"
+                              >
+                                <small>
+                                  {{attachment?.uploading ? 'Uploading: ': ''}}
+                                  {{attachment?.error ? 'Error: ': ''}}{{attachment.file }}
+                                </small></a>
+                            </div>
+                          </mat-list-item>
+                          <mat-divider *ngIf="model?.attachments?.length - 1 !==  i"></mat-divider>
+                        </ng-container>
+
+                      </mat-list>
+                    </div>
+                    <div class="col-sm-12">
+                      <div class="d-flex justify-content-center py-5">
+                        <span class="my-auto">
+                          Upload by drag and drop or
+                        </span>
+                        <button
+                          class="ml-3"
+                          type="button"
+                          mat-raised-button
+                          (click)="openFileSelector()"
+                        >Browse Files</button>
+                      </div>
+                    </div>
+                  </div>
+
+                </ng-template>
+
+              </ngx-file-drop>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 py-1">
+          <div class="d-flex">
+            <div class="mr-auto"></div>
+            <ng-container *ngIf="mode === PageMode.EDIT">
+              <button
+                type="submit"
+                [color]="'primary'"
+                mat-raised-button
+              >Save</button>
+            </ng-container>
+
+            <ng-container *ngIf="mode === PageMode.CREATE">
+
+              <button
+                (click)="onCancel();$event.preventDefault();$event.stopPropagation();"
+                class="mr-3"
+                mat-raised-button
+              >Close</button>
+              <button
+                type="submit"
+                [color]="'primary'"
+                mat-raised-button
+              >Create</button>
+            </ng-container>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <ngx-spinner name="loadingForm"></ngx-spinner>
+</form>
