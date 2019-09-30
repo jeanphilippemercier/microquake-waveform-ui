@@ -4,7 +4,7 @@ import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
 import { Channel } from '@interfaces/event.interface';
-import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
+import { PickKey, Arrival, PredictedPickKey, Ray } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
 
@@ -126,7 +126,7 @@ export default class WaveformUtil {
     return (eventData);
   }
 
-  static rotateComponents(seisX, seisY, seisZ, sensor: Sensor): any {
+  static rotateComponents(seisX, seisY, seisZ, sensor: Sensor, backazimuth, incidence): any {
 
     if (seisX.y().length !== seisY.y().length ||
       seisX.y().length !== seisZ.y().length ||
@@ -155,37 +155,60 @@ export default class WaveformUtil {
     const x = new Array(seisX.y().length);
     const y = new Array(seisX.y().length);
     const z = new Array(seisX.y().length);
-    const compX = sensor.components.find(el => el.code === 'X');
-    const compY = sensor.components.find(el => el.code === 'Y');
-    const compZ = sensor.components.find(el => el.code === 'Z');
+    const compX = sensor.components.find(el => el.code.toUpperCase() === 'X');
+    const compY = sensor.components.find(el => el.code.toUpperCase() === 'Y');
+    const compZ = sensor.components.find(el => el.code.toUpperCase() === 'Z');
     for (let i = 0; i < seisX.y().length; i++) {
-      x[i] = seisX.yAtIndex(i) * compX.orientation_x +
+      const eVal = seisX.yAtIndex(i) * compX.orientation_x +
         seisY.yAtIndex(i) * compY.orientation_x +
         seisZ.yAtIndex(i) * compZ.orientation_x;
-      y[i] = seisX.yAtIndex(i) * compX.orientation_y +
+      const nVal = seisX.yAtIndex(i) * compX.orientation_y +
         seisY.yAtIndex(i) * compY.orientation_y +
         seisZ.yAtIndex(i) * compZ.orientation_y;
-      z[i] = seisX.yAtIndex(i) * compX.orientation_z +
+      const vVal = seisX.yAtIndex(i) * compX.orientation_z +
         seisY.yAtIndex(i) * compY.orientation_z +
         seisZ.yAtIndex(i) * compZ.orientation_z;
+      if (backazimuth !== null && incidence !== null) { // XYZ => P SV SH
+        x[i] = vVal * Math.cos(incidence)
+          - eVal * Math.sin(incidence) * Math.sin(backazimuth)
+          - nVal * Math.sin(incidence) * Math.cos(backazimuth);
+        y[i] = vVal * Math.sin(incidence)
+          + eVal * Math.cos(incidence) * Math.sin(backazimuth)
+          + nVal * Math.cos(incidence) * Math.cos(backazimuth);
+        z[i] = - eVal * Math.cos(backazimuth)
+          + nVal * Math.sin(backazimuth);
+      } else { // XYZ => ENV
+        x[i] = eVal;
+        y[i] = nVal;
+        z[i] = vVal;
+      }
     }
-    const seisE = seisX.clone().y(x).chanCode(seisX.chanCode().slice(0, -1) + 'E');
-    const seisN = seisY.clone().y(y).chanCode(seisY.chanCode().slice(0, -1) + 'N');
-    const seisV = seisZ.clone().y(z).chanCode(seisZ.chanCode().slice(0, -1) + 'V');
-    const outSeisV = filter.rMean(seisV);
-    const outSeisE = filter.rMean(seisE);
-    const outSeisN = filter.rMean(seisN);
+    let newCompX = 'E';
+    let newCompY = 'N';
+    let newCompZ = 'V';
+    if (backazimuth !== null && incidence !== null) {
+      newCompX = 'P';
+      newCompY = 'SV';
+      newCompZ = 'SH';
+    }
+    const rotX = seisX.clone().y(x).chanCode(seisX.chanCode().slice(0, -1) + newCompX);
+    const rotY = seisY.clone().y(y).chanCode(seisY.chanCode().slice(0, -1) + newCompY);
+    const rotZ = seisZ.clone().y(z).chanCode(seisZ.chanCode().slice(0, -1) + newCompZ);
+    const outRotX = filter.rMean(rotX);
+    const outRotY = filter.rMean(rotY);
+    const outRotZ = filter.rMean(rotZ);
     return {
-      'e': outSeisE,
-      'n': outSeisN,
-      'v': outSeisV,
+      'x': outRotX,
+      'y': outRotY,
+      'z': outRotZ,
     };
 
   }
 
-  static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], waveformSensors: WaveformSensor[]) {
+  static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], rays: Ray[]) {
 
     let message;
+
     for (const xyzSensor of xyzSensors) {
 
       const sensor = sensors.find(el => el.code === xyzSensor.sensor_code);
@@ -196,19 +219,30 @@ export default class WaveformUtil {
         continue;
       }
 
+      let backazimuth = null, incidence = null; // angles in radians
+      const ray = rays.find(el => el.sensor === sensor.id.toString() && el.phase === PickKey.P);
+      // extract back azimuth and incidence angle for P rays
+      if (ray && ray.back_azimuth !== null && ray.incidence_angle !== null) {
+        backazimuth = ray.back_azimuth;
+        incidence = ray.incidence_angle;
+      }
+
       if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
         message = '';
         if (xyzSensor.channels.length === 3) {
-          const channelX = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'X');
-          const channelY = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Y');
-          const channelZ = xyzSensor.channels.find(el => el.channel_id.replace('...CONTEXT', '') === 'Z');
+          const channelX = xyzSensor.channels.find(
+            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'X');
+          const channelY = xyzSensor.channels.find(
+            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Y');
+          const channelZ = xyzSensor.channels.find(
+            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
           if (channelX && channelY && channelZ &&
             channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
-              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor);
+              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
               if (result) {
-                channelX.rotated = result.e;
-                channelY.rotated = result.n;
-                channelZ.rotated = result.v;
+                channelX.rotated = result.x;
+                channelY.rotated = result.y;
+                channelZ.rotated = result.z;
               }
           }
         } else {
@@ -346,58 +380,47 @@ export default class WaveformUtil {
   }
 
   // tslint:disable-next-line:max-line-length
-  static addPredictedPicksDataToSensors(sensors: Sensor[], waveformSensors: WaveformSensor[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
+  static addPredictedPicksDataToSensors(sensors: Sensor[], rays: Ray[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
 
-    for (const waveSensor of waveformSensors) {
+    for (const ray of rays) {
 
-      const sensor = sensors.find(el => el.code === waveSensor.code);
+      // ray.sensor contains the sensor id (not sensor code)
+      const sensor = sensors.find(el => el.id.toString() === ray.sensor);
 
       if (!sensor) {
-        console.error(`no sensor on addPredictedPicksData for waveform api sensor`);
-        console.error(waveSensor);
-        continue;
-      }
-
-      if (!waveSensor.preferred_ray.P || !waveSensor.preferred_ray.S) {
-        // console.error(`no preferred ray for sensor`);
-        // console.error(waveSensor);
+        console.error(`no sensor on addPredictedPicksData for ray`);
+        console.error(ray);
         continue;
       }
 
       sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
 
       for (const pickKey of Object.values(PredictedPickKey)) {
-        let picktime_utc: string;
         const phase = pickKey.toUpperCase();
-        const ray = waveSensor.preferred_ray[phase];
-
-        if (pickKey === PredictedPickKey.p || pickKey === PredictedPickKey.s) {
-          if (ray) {
-            picktime_utc = WaveformUtil.addSecondsToUtc
+        if (phase === ray.phase) {
+          let picktime_utc: string;
+          picktime_utc = WaveformUtil.addSecondsToUtc
               (waveformOriginTimeUtc, ray.travel_time);
+
+          const pickTime = moment(picktime_utc);
+
+          if ((pickTime.isBefore(timeStart) || pickTime.isAfter(timeEnd))) {
+            console.error(`Predicted picks outside the display time window`);
           }
-        } else {
-          console.error(`wrong predictedPickKey`);
-          continue;
-        }
-        const pickTime = moment(picktime_utc);
 
-        if ((pickTime.isBefore(timeStart) || pickTime.isAfter(timeEnd))) {
-          console.error(`Predicted picks outside the display time window`);
+          sensor[pickKey + '_ray_length'] = ray.ray_length;
+          sensor[pickKey + '_predicted_time_utc'] = picktime_utc;
+          sensor.picks.push({
+            value: WaveformUtil.calculateTimeOffsetMicro(picktime_utc, timeStart),  // relative to timeOrigin's full second
+            thickness: globals.predictedPicksLineThickness,
+            lineDashType: 'dash',
+            opacity: 0.5,
+            color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
+            label: pickKey,
+            labelAlign: 'far',
+            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+          });
         }
-
-        sensor[pickKey + '_ray_length'] = ray.ray_length;
-        sensor[pickKey + '_predicted_time_utc'] = picktime_utc;
-        sensor.picks.push({
-          value: WaveformUtil.calculateTimeOffsetMicro(picktime_utc, timeStart),  // relative to timeOrigin's full second
-          thickness: globals.predictedPicksLineThickness,
-          lineDashType: 'dash',
-          opacity: 0.5,
-          color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
-          label: pickKey,
-          labelAlign: 'far',
-          labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
-        });
       }
     }
 
@@ -424,7 +447,7 @@ export default class WaveformUtil {
         continue;
       }
 
-      // pick.sensor contains the sensor ID (not sensor code)
+      // pick.sensor contains the sensor id (not sensor code)
       const sensor = WaveformUtil.findValue(sensors, 'id', arrival.pick.sensor);
 
       if (!sensor) {

@@ -42,3 +42,10 @@ export interface EventArrivalsQuery {
 export interface EventWaveformQuery {
   traces_per_page?: number;
 }
+
+export interface EventRayQuery {
+  site_code: string;
+  network_code: string;
+  event_id: string;
+  origin_id?: string;
+}
