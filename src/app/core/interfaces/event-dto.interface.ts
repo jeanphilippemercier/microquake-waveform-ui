@@ -16,7 +16,7 @@ export interface WaveformQueryResponse {
   num_of_pages: number;
   pages: string[];
   context: string;
-  complete_stations: string[];
+  all_sensor_codes: string[];
   sensors: WaveformSensor[];
 }
 
