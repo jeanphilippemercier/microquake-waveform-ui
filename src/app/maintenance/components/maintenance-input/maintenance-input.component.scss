@@ -1,0 +1,23 @@
+.mat-chip {
+
+  &.mat-primary,
+  &.mat-accent {
+    color: #fff;
+
+    .mat-icon {
+      color: #fff;
+    }
+  }
+
+  &.mat-primary {
+    background: #3f51b5;
+    color: #fff;
+
+
+  }
+
+  &.mat-accent {
+    background: #ff4081;
+    color: #fff;
+  }
+}

@@ -1,0 +1,167 @@
+<div class="position-relative">
+  <table
+    mat-table
+    matSort
+    matSortActive="code"
+    matSortDirection="asc"
+    matSortDisableClear="true"
+    (matSortChange)="onSort($event)"
+    [dataSource]="dataSource"
+    class=" w-100"
+  >
+    <ng-container
+      matColumnDef="id"
+      sticky
+    >
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > ID </th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      > {{element.id}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="name">
+      <th
+        mat-sort-header="name"
+        mat-header-cell
+        *matHeaderCellDef
+      ><span> Name </span></th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        {{element?.name}}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="network">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      ><span class="pl-3"> Network </span></th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        <a
+          matTooltip="Show network detail"
+          [matTooltipDisabled]="!element?.network"
+          color="primary"
+          href="#"
+          [disabled]="true"
+          mat-button
+        >{{element?.network ? element?.network?.name : 'none'}}</a>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="code">
+      <th
+        mat-sort-header="code"
+        mat-header-cell
+        *matHeaderCellDef
+      ><span class="pl-3"> Code</span></th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        <a
+          mat-button
+          matTooltip="Show station detail"
+          color="primary"
+          [routerLink]="['/inventory/stations', element.id]"
+        >
+          {{element?.code}}
+        </a>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="sensors">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Sensors</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        {{element?.sensors_count}}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="communication">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Communication</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      > {{element?.communication}}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="power">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Power</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      > {{element?.power}}
+      </td>
+    </ng-container>
+
+    <ng-container
+      matColumnDef="actions"
+      stickyEnd
+    >
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      >
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="menu"
+          aria-label="Sensor menu"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/stations', element.id]"
+          >
+            <mat-icon>edit</mat-icon>
+            <span>Edit</span>
+          </button>
+        </mat-menu>
+      </td>
+    </ng-container>
+
+    <tr
+      mat-header-row
+      *matHeaderRowDef="displayedColumns"
+    ></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns;"
+    ></tr>
+  </table>
+  <mat-paginator
+    [pageSizeOptions]="[15]"
+    [pageSize]="pageSize"
+    [length]="count"
+    (page)="onPageChange($event)"
+  ></mat-paginator>
+  <ngx-spinner name="loadingTable"></ngx-spinner>
+</div>

@@ -1,0 +1,42 @@
+import { Input, Output, EventEmitter } from '@angular/core';
+import { FormGroup } from '@angular/forms';
+
+import { PageMode } from '@interfaces/core.interface';
+
+export class Form<T> {
+
+  @Input()
+  public set model(v: T) {
+    this._model = v;
+    this.modelChange.emit(this._model);
+    this.myForm.patchValue(Object.assign(this.myForm.value, this._model));
+  }
+
+  public get model() {
+    return this._model;
+  }
+  private _model: T;
+
+  @Input() mode: PageMode = PageMode.CREATE;
+  @Output() modelChange: EventEmitter<Partial<T>> = new EventEmitter();
+  @Output() modelCreated: EventEmitter<Partial<T>> = new EventEmitter();
+  @Output() modelEdited: EventEmitter<Partial<T>> = new EventEmitter();
+  @Output() cancel: EventEmitter<void> = new EventEmitter();
+
+  editDisabled = false;
+  PageMode = PageMode;
+  loading = false;
+  myForm: FormGroup;
+
+  constructor() { }
+
+  protected _filter<U>(input: string, array: U[], name: string): U[] {
+    const filterValue = input.toLowerCase();
+    return array.filter(option => option[name] && option[name].toLowerCase().indexOf(filterValue) === 0);
+  }
+
+  onCancel() {
+    this.cancel.emit();
+  }
+
+}

@@ -53,6 +53,14 @@
         <a
           (click)="closeMenu()"
           mat-list-item
+          [routerLink]="['/maintenance']"
+        >
+          <mat-icon mat-list-icon>build</mat-icon>
+          <h4 matLine>Maintenance</h4>
+        </a>
+        <a
+          (click)="closeMenu()"
+          mat-list-item
           [routerLink]="['/inventory/stations']"
         >
           <mat-icon mat-list-icon>satellite</mat-icon>

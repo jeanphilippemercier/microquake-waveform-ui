@@ -1,0 +1,63 @@
+<mat-toolbar color="primary">
+  <app-header-layout></app-header-layout>
+</mat-toolbar>
+<div class="container-fluid">
+
+  <div class="row header">
+    <div class="col m-4">
+      <div class="row">
+        <div class="col">
+          <h1>Stations</h1>
+          <small>
+            Inventory > Stations
+          </small>
+        </div>
+        <div class="col d-flex">
+          <div class="mr-auto"></div>
+          <div class="d-flex flex-column">
+            <div class="mb-auto"></div>
+            <button
+              [routerLink]="['/inventory/stations', PageMode.CREATE]"
+              mat-raised-button
+              color="primary"
+            >Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3 ">
+    <div class="col">
+      <div class="filter px-4">
+        <div class="row pt-3">
+          <div class="col-sm-3">
+            <mat-form-field class="w-100">
+              <mat-label>Search</mat-label>
+              <input
+                autocomplete="off"
+                matInput
+                placeholder="Type to filer"
+                type="search"
+                [ngModel]="search"
+                (ngModelChange)="searchChange.next($event)"
+              >
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col mt-1 p-5 content">
+      <app-station-table
+        [dataSource]="dataSource"
+        [count]="count"
+        (previousPage)="changePage(cursorPrevious)"
+        (nextPage)="changePage(cursorNext)"
+        (sort)="onSort($event)"
+      ></app-station-table>
+    </div>
+  </div>
+</div>

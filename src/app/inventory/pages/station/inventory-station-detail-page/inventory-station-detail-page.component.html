@@ -1,0 +1,113 @@
+<mat-toolbar color="primary">
+  <app-header-layout></app-header-layout>
+</mat-toolbar>
+<form class="container-fluid">
+  <div class="row ">
+    <div class="col-12">
+      <div class="header mb-3">
+        <div class="row">
+          <div class="col-10 px-5 py-4">
+            <h1>Station {{station?.code}}</h1>
+            <small>
+              Inventory > Oyu Tolgoi > {{station?.network?.name}} >
+              <a [routerLink]="['/inventory/stations']">Stations</a> >
+              {{station?.id ? station?.code : 'Creating new station'}}
+            </small>
+          </div>
+          <div class="col-2 pr-4 py-4">
+            <button
+              class="float-right mt-3"
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              aria-label="Sensor menu"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button
+                *ngIf="station"
+                mat-menu-item
+                color="primary"
+                (click)="delete(station?.id)"
+              >
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row ">
+    <div class="col ">
+      <div class=" content">
+
+        <mat-tab-group
+          (selectedTabChange)="tabChanged($event)"
+          class="w-100  px-5 py-4"
+        >
+          <mat-tab label="Detail">
+            <ng-template matTabContent>
+              <app-station-form
+                [sites]="sites"
+                [(model)]="station"
+                [mode]="pageMode"
+              ></app-station-form>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Maintenance log">
+            <ng-template matTabContent>
+              <div class="mt-3 w-100">
+                <div class="m-5">
+                  <div class="row">
+                    <div class="col-1"></div>
+                    <div class="col-10">
+                      <app-maintenance-input
+                        [maintenanceCategories]="maintenanceCategories"
+                        [maintenanceStatuses]="maintenanceStatuses"
+                        [stationFixed]="station"
+                        (created)="onCreatedMaintenanceEvent($event)"
+                        class="m-auto"
+                      ></app-maintenance-input>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col mt-5"></div>
+                  </div>
+                </div>
+                <div class="mt-5">
+                  <app-maintenance-table
+                    [dataSource]="maintenanceEvents"
+                    [count]="maintenanceEventsCount"
+                    [maintenanceCategories]="maintenanceCategories"
+                    [maintenanceStatuses]="maintenanceStatuses"
+                    (nextPage)="changeMaintenanceEventsPage(maintenanceEventsCursorNext)"
+                    (previousPage)="changeMaintenanceEventsPage(maintenanceEventsCursorPrevious)"
+                    (delete)="onDeleteMaintenanceEvents($event)"
+                  >
+                  </app-maintenance-table>
+                </div>
+              </div>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="Sensors ({{station?.sensors_count}})">
+            <ng-template matTabContent>
+              <div class="mt-3 w-100">
+                <app-sensor-table
+                  [dataSource]="sensorsDataSource"
+                  [count]="sensorsCount"
+                  (nextPage)="getSensors(sensorsCursorNext)"
+                  (previousPage)="getSensors(sensorsCursorPrevious)"
+                  (sort)="onSensorsSort($event)"
+                ></app-sensor-table>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+        </mat-tab-group>
+
+      </div>
+    </div>
+  </div>
+</form>

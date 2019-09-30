@@ -1,0 +1,28 @@
+td.mat-column-actions {
+  width: 30px;
+  padding-right: 8px;
+}
+
+td.mat-column-id {
+  width: 90px;
+  padding-right: 8px;
+}
+
+th.mat-header-cell,
+td.mat-cell {
+  padding-left: 15px;
+}
+
+// .mat-table-sticky:first-child {
+//   border-right: 1px solid #e0e0e0;
+// }
+
+// .mat-table-sticky:last-child {
+//   border-left: 1px solid #e0e0e0;
+// }
+
+.content,
+.filter,
+.header {
+  background: #fff;
+}

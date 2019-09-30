@@ -203,6 +203,7 @@ export interface StationBase {
 export interface Station extends StationBase {
   id: number;
   network: Network;
+  sensors_count: number;
 }
 
 export interface CableTypeBase {
