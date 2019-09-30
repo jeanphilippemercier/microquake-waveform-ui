@@ -84,6 +84,7 @@
                     [maintenanceStatuses]="maintenanceStatuses"
                     (nextPage)="changeMaintenanceEventsPage(maintenanceEventsCursorNext)"
                     (previousPage)="changeMaintenanceEventsPage(maintenanceEventsCursorPrevious)"
+                    (delete)="onDeleteMaintenanceEvents($event)"
                   >
                   </app-maintenance-table>
                 </div>

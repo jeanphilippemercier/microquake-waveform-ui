@@ -242,6 +242,36 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async onDeleteMaintenanceEvents(id: number) {
+    if (!id) {
+      console.error(`No maintenance event id`);
+      this._toastrNotificationService.error('No maintenance event id is defined');
+    }
+
+    const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
+      ConfirmationDialogComponent, {
+        hasBackdrop: true,
+        width: '350px',
+        data: {
+          header: `Are you sure?`,
+          text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
+        }
+      });
+
+    deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      if (val) {
+        try {
+          const response = await this._inventoryApiService.deleteMaintenanceEvent(id).toPromise();
+          this.getMaintenanceEvents();
+          await this._toastrNotificationService.success('Maintenance event deleted');
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        }
+      }
+    });
+  }
+
   async loadingTableStart() {
     await this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
   }
