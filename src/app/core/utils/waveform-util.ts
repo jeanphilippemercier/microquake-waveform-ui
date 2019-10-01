@@ -4,7 +4,7 @@ import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
 import { Channel } from '@interfaces/event.interface';
-import { PickKey, Arrival, PredictedPickKey, Ray } from '@interfaces/event.interface';
+import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
 
@@ -205,7 +205,7 @@ export default class WaveformUtil {
 
   }
 
-  static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], rays: Ray[]) {
+  static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], waveformSensors: WaveformSensor[]) {
 
     let message;
 
@@ -220,11 +220,21 @@ export default class WaveformUtil {
       }
 
       let backazimuth = null, incidence = null; // angles in radians
-      const ray = rays.find(el => el.sensor === sensor.id.toString() && el.phase === PickKey.P);
-      // extract back azimuth and incidence angle for P rays
-      if (ray && ray.back_azimuth !== null && ray.incidence_angle !== null) {
-        backazimuth = ray.back_azimuth;
-        incidence = ray.incidence_angle;
+      const waveformSensor = waveformSensors.find(el => el.code === xyzSensor.sensor_code);
+
+      if (!waveformSensor) {
+        console.error(`no waveform sensor on rotatedComponents for xyz sensor`);
+        console.error(xyzSensor);
+        continue;
+      }
+
+      const ray = waveformSensor.preferred_ray.P !== null ? waveformSensor.preferred_ray.P :
+        waveformSensor.preferred_ray.S !== null ? waveformSensor.preferred_ray.S : null;
+      if (ray !== null && ray.back_azimuth !== null && ray.incidence_angle !== null) {
+        if (Object.values(PickKey).includes(ray.phase)) {
+          backazimuth = ray.back_azimuth;
+          incidence = ray.incidence_angle;
+        }
       }
 
       if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
@@ -380,25 +390,32 @@ export default class WaveformUtil {
   }
 
   // tslint:disable-next-line:max-line-length
-  static addPredictedPicksDataToSensors(sensors: Sensor[], rays: Ray[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
+  static addPredictedPicksDataToSensors(sensors: Sensor[], waveformSensors: WaveformSensor[], timeStart: moment.Moment, timeEnd: moment.Moment, waveformOriginTimeUtc: string): Sensor[] {
 
-    for (const ray of rays) {
+    for (const waveformSensor of waveformSensors) {
 
-      // ray.sensor contains the sensor id (not sensor code)
-      const sensor = sensors.find(el => el.id.toString() === ray.sensor);
+      const sensor = sensors.find(el => el.code === waveformSensor.code);
 
       if (!sensor) {
-        console.error(`no sensor on addPredictedPicksData for ray`);
-        console.error(ray);
+        console.error(`no sensor on addPredictedPicksData for waveform sensor`);
+        console.error(waveformSensor);
+        continue;
+      }
+
+      if (waveformSensor.preferred_ray.P == null && waveformSensor.preferred_ray.S == null) {
+        // console.error(`no preferred ray for sensor on addPredictedPicksData`);
+        // console.error(waveformSensor);
         continue;
       }
 
       sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
 
       for (const pickKey of Object.values(PredictedPickKey)) {
+        let picktime_utc: string;
         const phase = pickKey.toUpperCase();
-        if (phase === ray.phase) {
-          let picktime_utc: string;
+        const ray = waveformSensor.preferred_ray[phase];
+
+        if (ray !== null && ray.phase === phase) {
           picktime_utc = WaveformUtil.addSecondsToUtc
               (waveformOriginTimeUtc, ray.travel_time);
 

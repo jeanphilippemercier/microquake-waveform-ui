@@ -60,7 +60,7 @@ export const globals = {
   // thickness of the predicted pick lines
   predictedPicksLineThickness: 1,
   // component to determine sign for composite trace
-  signComponents: ['X', 'E'],
+  signComponents: ['X', 'E', 'SH'],
   // composite trace component code
   compositeChannelCode: 'C',
   // filter defaults

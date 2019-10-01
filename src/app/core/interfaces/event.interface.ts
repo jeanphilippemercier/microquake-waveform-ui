@@ -180,6 +180,33 @@ export interface Origin {
   z: number;
 }
 
+export interface WaveformSensor {
+  code: string;
+  enabled: boolean;
+  id: number;
+  location_code: string;
+  name: string;
+  orientation_valid: boolean;
+  preferred_ray: {
+    P: PreferredRay | null;
+    S: PreferredRay | null;
+  };
+  station: {
+    id: number;
+    name: string;
+    code: string;
+  } | null;
+}
+
+export interface PreferredRay {
+  ray_resource_id: string;
+  phase: string;
+  ray_length: number;
+  travel_time: number;
+  back_azimuth: number;
+  incidence_angle: number;
+}
+
 export interface Ray {
   ray_resource_id: string;
   site: string;
