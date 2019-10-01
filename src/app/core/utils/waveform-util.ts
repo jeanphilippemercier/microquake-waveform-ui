@@ -513,9 +513,9 @@ export default class WaveformUtil {
     let nPicksBias = 0;
     for (const sensor of sensors) {
 
-      for (const pickKey of ['p', 's']) {
+      for (const pickKey of Object.values(PredictedPickKey)) {
         const predicted_key = pickKey + '_predicted_time_utc';
-        const pick_key = pickKey + '_pick_time_utc';
+        const pick_key = pickKey.toUpperCase() + '_pick_time_utc';
         if (sensor.hasOwnProperty(predicted_key) && sensor.hasOwnProperty(pick_key)) {
           const pickTime = moment(sensor[pick_key]);
           const referenceTime = moment(sensor[predicted_key]);

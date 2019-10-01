@@ -33,7 +33,7 @@ export class WaveformService implements OnDestroy {
   displayComposite: BehaviorSubject<boolean> = new BehaviorSubject(true);
   displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(false);
   pickingMode: BehaviorSubject<any> = new BehaviorSubject('none'); // TODO: add interface
   loadedAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
