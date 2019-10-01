@@ -1772,7 +1772,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _changePredictedPicksByBias(removeBias: boolean) {
     if (this.picksBias !== 0) {
       for (const sensor of this.loadedSensors) {
-        if (sensor.hasOwnProperty('picks')) {
+        if (sensor && sensor.hasOwnProperty('picks')) {
           for (const pick of sensor.picks) {
             if (pick.label === pick.label.toLowerCase()) {
               pick.value = removeBias ? pick.value + this.picksBias : pick.value - this.picksBias;
