@@ -9,10 +9,10 @@ import * as moment from 'moment';
 import WaveformUtil from '@core/utils/waveform-util';
 import { globals } from '@src/globals';
 import {
-  IEvent, Origin, Arrival, Ray, EvaluationMode, PickKey, PredictedPickKey, ArrivalPartial, BatchStatus, EventBatchMap
+  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap
 } from '@interfaces/event.interface';
 import { Sensor } from '@interfaces/inventory.interface';
-import { EventOriginsQuery, EventArrivalsQuery, EventRayQuery } from '@interfaces/event-query.interface';
+import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
@@ -83,7 +83,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   allArrivals: Arrival[];
   allArrivalsChanged: ArrivalPartial[];
-  allRays: Ray[];
+  waveformSensors: WaveformSensor[];
   lastPicksState: any = null;
   timeOrigin: moment.Moment;
   contextTimeOrigin: moment.Moment;
@@ -349,6 +349,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
       const contextUrl = this.waveformInfo.context;
       const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+      this.waveformSensors = this.waveformInfo.sensors;
 
       if (!eventFile) {
         console.error(`no eventFile`);
@@ -364,43 +365,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       if (eventData && eventData.sensors) {
 
-        // get origins
-        const originsQuery: EventOriginsQuery = {
-          site_code: this.waveformService.site.getValue(),
-          network_code: this.waveformService.network.getValue(),
-          event_id: event.event_resource_id
-        };
-
-        const origins = await this._eventApiService.getOrigins(originsQuery).toPromise();
-        let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
-
-        if (!origin) {
-          this._toastrNotificationService.warning(`Event preferred origin from catalog not found`, 'Warning');
-          console.error('No event preferred origin found');
-          origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
-          return;
-        }
-
-        this.waveformOrigin = origin;
-
-        const rayQuery: EventRayQuery = {
-          site_code: this.waveformService.site.getValue(),
-          network_code: this.waveformService.network.getValue(),
-          event_id: event.event_resource_id,
-          origin_id: origin.origin_resource_id
-        };
-
-        // get rays for preferred origin
-        const rays = await this._eventApiService.getRays(rayQuery).toPromise();
-
-        if (this.currentEventId !== event.event_resource_id) {
-          console.log(`changed event during loading`);
-          return;
-        }
-
-        this.allRays = rays;
-
-        WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.allRays);
+        WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
 
         // filter and recompute composite traces
         this.loadedSensors = WaveformUtil.addCompositeTrace(
@@ -418,6 +383,25 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this.timeEnd = moment(this.timeOrigin).add(globals.fixedDuration, 'seconds');
 
         if (this.loadedSensors.length > 0) {
+
+          // get origins
+          const originsQuery: EventOriginsQuery = {
+            site_code: this.waveformService.site.getValue(),
+            network_code: this.waveformService.network.getValue(),
+            event_id: event.event_resource_id
+          };
+
+          const origins = await this._eventApiService.getOrigins(originsQuery).toPromise();
+          let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
+
+          if (!origin) {
+            this._toastrNotificationService.warning(`Event preferred origin from catalog not found`, 'Warning');
+            console.error('No event preferred origin found');
+            origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
+            return;
+          }
+
+          this.waveformOrigin = origin;
 
           const arrivalsQuery: EventArrivalsQuery = {
             site_code: this.waveformService.site.getValue(),
@@ -440,7 +424,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           // load predicted
           this.allSensors = WaveformUtil.addPredictedPicksDataToSensors(
             this.allSensors,
-            this.allRays,
+            this.waveformSensors,
             this.timeOrigin,
             this.timeEnd,
             this.waveformOrigin.time_utc
@@ -469,7 +453,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               const contextData = WaveformUtil.parseMiniseed(contextFile, true);
 
               if (contextData && contextData.sensors) {
-                WaveformUtil.rotateSensors(contextData.sensors, this.allSensors, this.allRays);
+                WaveformUtil.rotateSensors(contextData.sensors, this.allSensors, this.waveformSensors);
                 this.contextSensor = WaveformUtil.addCompositeTrace(
                   this._filterData(contextData.sensors, true, this.waveformService.displayRotated.getValue()));
                 this.contextSensor = WaveformUtil.mapSensorInfoToLoadedSensors(this.contextSensor, this.allSensors, this.waveformService.allSensorsMap);
@@ -515,7 +499,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         console.log('Warning: Different origin time on page: ', idx);
       }
 
-      WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.allRays);
+      WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
 
       // filter and recompute composite traces
       let sensors = WaveformUtil.addCompositeTrace(

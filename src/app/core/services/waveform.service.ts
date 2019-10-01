@@ -31,7 +31,7 @@ export class WaveformService implements OnDestroy {
   commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject(false);
   zoomAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
   displayComposite: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
   predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(true);
   pickingMode: BehaviorSubject<any> = new BehaviorSubject('none'); // TODO: add interface
