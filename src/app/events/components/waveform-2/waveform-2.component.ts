@@ -96,6 +96,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   selectedContextMenu = -1;
   lastSelectedXPosition = -1;
   lastDownTarget: any;  // last mouse down selection
+  // lastMouseOver: any;  // last mouse over channel index
   eventTimeOriginHeader: string;
 
   chartHeight: number;
@@ -634,13 +635,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
           || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
           data.push(
             {
+              index: i,
               name: channel.channel_id,
               type: 'line',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
               showInLegend: true,
               // highlightEnabled: true,
-              dataPoints: channel.data
+              dataPoints: channel.data,
+              /*
+              mouseover: function(e) {
+                this.lastMouseOver = e.dataSeries.index;
+              }*/
             });
         }
       }
@@ -1111,19 +1117,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
                 }
               }
             }
-          } else if (e.button === 1) {  // remove P or S on Middle mouse Click
+          } else if (e.button === 2) {  // remove P or S on Right mouse Click
             if (this.waveformService.pickingMode.getValue() === 'P') {
-              this._deletePicks(idx, 'P', null); // remove P picks on Middle mouse click in P picking mode
+              this._deletePicks(idx, 'P', null); // remove P picks on Right mouse click in P picking mode
             } else if (this.waveformService.pickingMode.getValue() === 'S') {
-              this._deletePicks(idx, 'S', null); // remove S picks on Middle mouse click in S picking mode
+              this._deletePicks(idx, 'S', null); // remove S picks on Right mouse click in S picking mode
             } else {
               if (e.ctrlKey) {
-                this._deletePicks(idx, 'P', null); // remove P on Ctrl + Middle mouse button click
+                this._deletePicks(idx, 'P', null); // remove P on Ctrl + Right mouse button click
               } else if (e.shiftKey) {
-                this._deletePicks(idx, 'S', null); // remove S on Shift + Middle mouse button click
+                this._deletePicks(idx, 'S', null); // remove S on Shift + Right mouse button click
               }
             }
-          } else if (e.button === 2) {  // save position on right mouse button, context menu
             this.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
           }
         });
@@ -1183,12 +1188,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
         });
 
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
-          e.preventDefault();
-          this._menu.nativeElement.style.left = `${e.offsetX}px`;
-          this._menu.nativeElement.style.top = `${e.y - 40}px`;
-          this._toggleContextMenuChart('show');
-          this.selectedContextMenu = j;
-          return false;
+          if (this.waveformService.pickingMode.getValue() !== 'P' &&
+            this.waveformService.pickingMode.getValue() !== 'S') {
+              e.preventDefault();
+              this._menu.nativeElement.style.left = `${e.offsetX}px`;
+              this._menu.nativeElement.style.top = `${e.y - 40}px`;
+              this._toggleContextMenuChart('show');
+              this.selectedContextMenu = j;
+              return false;
+          } else{
+              e.preventDefault();
+              return false;
+          }
         });
 
       }  // not on context trace
