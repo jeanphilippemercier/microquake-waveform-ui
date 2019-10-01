@@ -1196,7 +1196,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               this._toggleContextMenuChart('show');
               this.selectedContextMenu = j;
               return false;
-          } else{
+          } else {
               e.preventDefault();
               return false;
           }
