@@ -16,6 +16,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import EventUtil from '@core/utils/event-util';
 import { WaveformService } from '@services/waveform.service';
 import { Subject } from 'rxjs';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 interface ViewerOptions {
   site?: string;
@@ -68,6 +69,7 @@ export class EventListComponent implements OnInit, OnDestroy {
     private _ngxSpinnerService: NgxSpinnerService,
     private _activatedRoute: ActivatedRoute,
     public waveformService: WaveformService,
+    private _toastrNotificationService: ToastrNotificationService,
     private _router: Router
   ) { }
 
@@ -150,8 +152,29 @@ export class EventListComponent implements OnInit, OnDestroy {
   }
 
   private async _addEvent(event: IEvent) {
+    try {
+      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
+        this._toastrNotificationService.error(`${event.event_resource_id} is already in the event list.`, `Error: New event`);
+        return;
+      }
 
+      if (this.cursorPrevious !== null) {
+        return;
+      }
+
+      const eventDate = moment(event.time_utc);
+      const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
+      if (idx > -1) {
+        this.events.splice(idx, 0, event);
+      } else {
+        this.events.push(event);
+      }
+      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
+    } catch (err) {
+      console.error(err);
+    }
   }
+
   private async _updateEvent(event: IEvent) {
     if (!event) {
       return;

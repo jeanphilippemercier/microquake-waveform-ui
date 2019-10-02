@@ -1,7 +1,7 @@
 import { Injectable, OnInit, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
-import { first, take } from 'rxjs/operators';
+import { first, take, skipWhile } from 'rxjs/operators';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
@@ -152,6 +152,15 @@ export class WaveformService implements OnDestroy {
     if (this.onServerEventSub) {
       this.onServerEventSub.unsubscribe();
     }
+  }
+
+  public isInitialized(): Promise<void> {
+    return new Promise(resolve => {
+      this.initialized.pipe(
+        skipWhile(val => val !== true),
+        take(1)
+      ).subscribe(val => resolve());
+    });
   }
 
   private async _init() {

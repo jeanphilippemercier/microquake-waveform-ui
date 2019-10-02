@@ -8,13 +8,10 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import EventUtil from '@core/utils/event-util';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
-import {
-  IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup
-} from '@interfaces/event.interface';
+import { IEvent } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { WaveformService } from '@services/waveform.service';
-import { InventoryApiService } from '@services/inventory-api.service';
-
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -30,10 +27,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   network: Network;
   today = moment().startOf('day');
 
-  eventStartDate: Date;
-  eventEndDate: Date;
-
-
   public set currentEvent(v: IEvent) {
     this._currentEvent = v;
     this.waveformService.currentEvent.next(this._currentEvent);
@@ -44,13 +37,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private _currentEvent: IEvent;
-  currentEventChart: IEvent;
   currentEventInfo: IEvent;
-
-  eventTypes: EventType[];
-  evaluationStatuses: EvaluationStatus[];
-  EvaluationStatusGroups: EvaluationStatusGroup[];
-  eventEvaluationModes: EvaluationMode[];
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
@@ -74,16 +61,15 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private _eventApiService: EventApiService,
-    private _inventoryApiService: InventoryApiService,
     public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   async ngOnInit() {
-    await this._loadSites();
-    await this._loadEventTypesAndStatuses();
+    await this.waveformService.isInitialized();
     await Promise.all([
       this._loadCurrentEvent(),
       this._loadCurrentEventCatalog(),
@@ -164,7 +150,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             this.currentEvent = clickedEvent;
 
             if (this.initialized.getValue() === false) {
-              this.currentEventInfo = clickedEvent;
+              this.currentEventInfo = Object.assign({}, clickedEvent);
               this.initialized.next(true);
             }
           } catch (err) {
@@ -192,13 +178,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     try {
       this.loadingEventList = true;
       this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      // if (!this.eventListQuery) {
-      //   const queryParams = this._activatedRoute.snapshot.queryParams;
-      //   this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
-      //   this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
-      // }
-
       const response = await this._eventApiService.getEvents(this.waveformService.eventListQuery).toPromise();
       this.events = response.results;
 
@@ -210,35 +189,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async _loadEventTypesAndStatuses() {
-    this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
-    this.evaluationStatuses = Object.values(EvaluationStatus);
-    this.EvaluationStatusGroups = Object.values(EvaluationStatusGroup);
-    this.eventEvaluationModes = Object.values(EvaluationMode);
-  }
-
-  private async _loadSites() {
-    this.sites = await this._inventoryApiService.getSites().toPromise();
-    const options = JSON.parse(localStorage.getItem('viewer-options'));
-
-    if (options && options.site && options.network) {
-      if (options.site) {
-        this.site = this.sites.find(site => site.code === options.site);
-      }
-      if (options.network && this.site && this.site.networks) {
-        this.network = this.site.networks.find(network => network.code === options.network);
-      }
-    } else if (this.sites) {
-      this.site = this.sites[0];
-
-      if (this.site) {
-        this.network = this.site.networks[0];
-      }
-    }
-  }
-
   private _addEvent(event: IEvent) {
     try {
+      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
+        this._toastrNotificationService.error(`${event.event_resource_id} is already in the event list.`, `Error: New event`);
+        return;
+      }
+
       const eventDate = moment(event.time_utc);
       const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
@@ -247,6 +204,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.events.push(event);
       }
       this.changeDetectCatalog = new Date().getTime();
+      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
     } catch (err) {
       console.error(err);
     }
@@ -272,8 +230,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (this.currentEvent && event.event_resource_id === this.currentEvent.event_resource_id) {
+    if (this.currentEvent && this.currentEvent.event_resource_id === event.event_resource_id) {
       this.currentEvent = Object.assign({}, event);
+    }
+
+    if (this.currentEventInfo && this.currentEventInfo.event_resource_id === event.event_resource_id) {
+      this.currentEventInfo = Object.assign({}, event);
     }
   }
 
@@ -285,7 +247,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openEvent(event: IEvent) {
-    this.currentEventInfo = event;
+    this.currentEventInfo = Object.assign({}, event);
   }
 
   onCollapseButtonClick() {
