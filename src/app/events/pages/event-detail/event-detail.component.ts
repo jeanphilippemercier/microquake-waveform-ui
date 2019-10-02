@@ -2,19 +2,16 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject, Subject } from 'rxjs';
-import { distinctUntilChanged, skip, takeUntil, take, skipWhile } from 'rxjs/operators';
+import { distinctUntilChanged, skip, takeUntil } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
 import { EventApiService } from '@services/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
-import {
-  IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup
-} from '@interfaces/event.interface';
+import { IEvent } from '@interfaces/event.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { WaveformService } from '@services/waveform.service';
-import { InventoryApiService } from '@services/inventory-api.service';
-
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -64,11 +61,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private _eventApiService: EventApiService,
-    private _inventoryApiService: InventoryApiService,
     public waveformService: WaveformService,
     private _activatedRoute: ActivatedRoute,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
+    private _toastrNotificationService: ToastrNotificationService
   ) { }
 
   async ngOnInit() {
@@ -194,6 +191,11 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   private _addEvent(event: IEvent) {
     try {
+      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
+        this._toastrNotificationService.error(`${event.event_resource_id} is already in the event list.`, `Error: New event`);
+        return;
+      }
+
       const eventDate = moment(event.time_utc);
       const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
@@ -202,6 +204,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.events.push(event);
       }
       this.changeDetectCatalog = new Date().getTime();
+      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
     } catch (err) {
       console.error(err);
     }

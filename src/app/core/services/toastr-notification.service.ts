@@ -17,6 +17,12 @@ export class ToastrNotificationService {
   }
 
   error(messageOrErr?: string | any, title?: string, override?: Partial<IndividualConfig>): ActiveToast<any> {
+    if (!override) {
+      override = {
+        timeOut: 4000
+      };
+    }
+
     if (messageOrErr && messageOrErr.message) {
       return this._toastrService.error(messageOrErr.message);
     }
