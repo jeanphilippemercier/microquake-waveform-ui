@@ -67,6 +67,11 @@ mat-expansion-panel.event-detail {
   &.mat-expansion-panel-spacing {
     margin: 0;
   }
+
+  &> ::ng-deep .mat-expansion-panel-content {
+    height: calc(100% - 50px);
+    overflow: auto;
+  }
 }
 
 .sidebar-container {
