@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, BehaviorSubject, Subject } from 'rxjs';
-import { distinctUntilChanged, skip, takeUntil } from 'rxjs/operators';
+import { distinctUntilChanged, skip, takeUntil, take, skipWhile } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
@@ -30,10 +30,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   network: Network;
   today = moment().startOf('day');
 
-  eventStartDate: Date;
-  eventEndDate: Date;
-
-
   public set currentEvent(v: IEvent) {
     this._currentEvent = v;
     this.waveformService.currentEvent.next(this._currentEvent);
@@ -44,13 +40,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   private _currentEvent: IEvent;
-  currentEventChart: IEvent;
   currentEventInfo: IEvent;
-
-  eventTypes: EventType[];
-  evaluationStatuses: EvaluationStatus[];
-  EvaluationStatusGroups: EvaluationStatusGroup[];
-  eventEvaluationModes: EvaluationMode[];
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
@@ -82,8 +72,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    await this._loadSites();
-    await this._loadEventTypesAndStatuses();
+    await this.waveformService.isInitialized();
     await Promise.all([
       this._loadCurrentEvent(),
       this._loadCurrentEventCatalog(),
@@ -164,7 +153,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             this.currentEvent = clickedEvent;
 
             if (this.initialized.getValue() === false) {
-              this.currentEventInfo = clickedEvent;
+              this.currentEventInfo = Object.assign({}, clickedEvent);
               this.initialized.next(true);
             }
           } catch (err) {
@@ -192,13 +181,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     try {
       this.loadingEventList = true;
       this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      // if (!this.eventListQuery) {
-      //   const queryParams = this._activatedRoute.snapshot.queryParams;
-      //   this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
-      //   this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
-      // }
-
       const response = await this._eventApiService.getEvents(this.waveformService.eventListQuery).toPromise();
       this.events = response.results;
 
@@ -207,33 +189,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     } finally {
       this.loadingEventList = false;
       this._ngxSpinnerService.hide('loadingEventList');
-    }
-  }
-
-  private async _loadEventTypesAndStatuses() {
-    this.eventTypes = await this._eventApiService.getMicroquakeEventTypes({ site_code: this.site.code }).toPromise();
-    this.evaluationStatuses = Object.values(EvaluationStatus);
-    this.EvaluationStatusGroups = Object.values(EvaluationStatusGroup);
-    this.eventEvaluationModes = Object.values(EvaluationMode);
-  }
-
-  private async _loadSites() {
-    this.sites = await this._inventoryApiService.getSites().toPromise();
-    const options = JSON.parse(localStorage.getItem('viewer-options'));
-
-    if (options && options.site && options.network) {
-      if (options.site) {
-        this.site = this.sites.find(site => site.code === options.site);
-      }
-      if (options.network && this.site && this.site.networks) {
-        this.network = this.site.networks.find(network => network.code === options.network);
-      }
-    } else if (this.sites) {
-      this.site = this.sites[0];
-
-      if (this.site) {
-        this.network = this.site.networks[0];
-      }
     }
   }
 
@@ -272,8 +227,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (this.currentEvent && event.event_resource_id === this.currentEvent.event_resource_id) {
+    if (this.currentEvent && this.currentEvent.event_resource_id === event.event_resource_id) {
       this.currentEvent = Object.assign({}, event);
+    }
+
+    if (this.currentEventInfo && this.currentEventInfo.event_resource_id === event.event_resource_id) {
+      this.currentEventInfo = Object.assign({}, event);
     }
   }
 
@@ -285,7 +244,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   }
 
   async openEvent(event: IEvent) {
-    this.currentEventInfo = event;
+    this.currentEventInfo = Object.assign({}, event);
   }
 
   onCollapseButtonClick() {
