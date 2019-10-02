@@ -172,7 +172,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     this.waveformService.undoLastZoomOrPanClickedObs
       .pipe(takeUntil(this._unsubscribe))
-      .subscribe(() => this._undoLastZoomOrPan());
+      .subscribe(() => this._undoTimeZoomPan());
 
     this.waveformService.resetAllChartsViewClickedObs
       .pipe(takeUntil(this._unsubscribe))
@@ -235,7 +235,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         takeUntil(this._unsubscribe)
       )
       .subscribe((val: boolean) => {
-        this._predicatePicksBias();
+        this._predictedPicksBias();
         this._changePage(false);
       });
 
@@ -550,8 +550,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     // reset picks last known state
     this.lastPicksState = null;
     if (reset) { // first page , new event
-      this._xViewPortMinStack = [];
-      this._xViewportMaxStack = [];
+      this._resetZoomStack();
     } else {             // remember zoom history
       this._xViewPortMinStack = this.activeSensors[0].chart.options.viewportMinStack;
       this._xViewportMaxStack = this.activeSensors[0].chart.options.viewportMaxStack;
@@ -662,7 +661,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           }
           if (e.trigger === 'zoom') {
             if (this.waveformService.zoomAll.getValue()) {
-              this._zoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum, true);
+              this._xZoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum);
             } else {
               e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
               e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
@@ -1261,11 +1260,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
           if ((newViewportMax - newViewportMin) > (2 * interval)) {
             if (this.waveformService.zoomAll.getValue()
               && idx < this.activeSensors.length - 1) {  // exclude context trace
-              this._zoomAllCharts(newViewportMin, newViewportMax, e.shiftKey || e.altKey);
+              if (e.shiftKey || e.altKey) {
+                this._xZoomAllCharts(newViewportMin, newViewportMax);
+              } else {
+                const factor = newViewportMax / viewportMax;
+                this._yZoomAllCharts(factor);
+              }
             } else {  // zoom selected trace only
               if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
                 axis.set('viewportMinimum', newViewportMin, false);
                 axis.set('viewportMaximum', newViewportMax, false);
+                if (e.ctrlKey) { // Y axis
+                  axis.set('interval', newViewportMax / 2, false);
+                }
                 chart.render();
               }
             }
@@ -1290,9 +1297,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  private _predicatePicksBias() {
+  private _predictedPicksBias() {
     this.picksBias = WaveformUtil.calculatePicksBias(this.allSensors);
     this._changePredictedPicksByBias(this.waveformService.predictedPicksBias.getValue());
+  }
+
+  private _resetZoomStack() {
+      this._xViewPortMinStack = [];
+      this._xViewportMaxStack = [];
   }
 
   private _updateZoomStackCharts(vpMin, vpMax) {
@@ -1395,6 +1407,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     chart.options.axisY.viewportMaximum = null;
     chart.options.axisY.maximum = this._getYmax(channel);
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
+    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
@@ -1410,6 +1423,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     chart.options.axisY.viewportMaximum = null;
     chart.options.axisY.maximum = this._getYmaxContext();
     chart.options.axisY.minimum = -chart.options.axisY.maximum;
+    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
@@ -1496,21 +1510,34 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return max;
   }
 
-  private _zoomAllCharts(vpMin, vpMax, isXaxis) {
+  private _xZoomAllCharts(vpMin, vpMax) {
 
-    if (isXaxis) {
-      this._updateZoomStackCharts(vpMin, vpMax);
-    }
+    const isXaxis = true;
+    this._updateZoomStackCharts(vpMin, vpMax);
     if (vpMin >= this._getAxisMinAll(isXaxis) && vpMax <= this._getAxisMaxAll(isXaxis)) {
       for (let i = 0; i < this.activeSensors.length - 1; i++) {
         const chart = this.activeSensors[i].chart;
-        const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+        const axis = chart.axisX[0];
         axis.set('viewportMinimum', vpMin, false);
         axis.set('viewportMaximum', vpMax, false);
         chart.render();
       }
     }
   }
+
+  private _yZoomAllCharts(factor) {
+
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      const chart = this.activeSensors[i].chart;
+      const axis = chart.axisY[0];
+      const vpMax = axis.viewportMaximum !== null ? axis.viewportMaximum * factor : null;
+      axis.set('viewportMinimum', -vpMax, false);
+      axis.set('viewportMaximum', vpMax, false);
+      axis.set('interval', vpMax / 2 , false);
+      chart.render();
+    }
+  }
+
 
   private _savePicksState(ind, sensor, picks) {
 
@@ -1645,7 +1672,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._waveformContainer.nativeElement.focus();
   }
 
-  private _undoLastZoomOrPan() {
+  private _undoTimeZoomPan() {
 
     if (this.waveformService.zoomAll.getValue()) {
       if (this._xViewPortMinStack && this._xViewPortMinStack.length > 0) {
