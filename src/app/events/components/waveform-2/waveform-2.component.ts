@@ -1462,7 +1462,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     let val = 0;
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
       const sensor = this.activeSensors[i];
-      if(this._getSensorMotionType(sensor) === motionType) {
+      if (this._getSensorMotionType(sensor) === motionType) {
         for (let j = 0; j < sensor.channels.length; j++) {
           val = Math.max(WaveformUtil.maxValue(sensor.channels[j].data), val);
         }
