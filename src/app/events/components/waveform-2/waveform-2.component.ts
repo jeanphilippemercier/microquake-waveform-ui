@@ -939,6 +939,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
+    const startTimeLabel = (this.contextSensor.length > 0 && this.contextSensor[0].channels.length > 0) ?
+      moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '';
     const optionsContext = {
       zoomEnabled: true,
       animationEnabled: false,
@@ -951,7 +953,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         horizontalAlign: 'left'
       },
       subtitles: [{
-        text: moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss'),
+        text: startTimeLabel,
         dockInsidePlotArea: true,
         fontSize: 10,
         fontFamily: 'tahoma',
@@ -1857,12 +1859,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _filterData(sensors: Sensor[], isContext, bRotated): Sensor[] {
     for (const sensor of sensors) {
-      // remove composite traces if existing
-      const pos = sensor.channels.findIndex(v =>
-        (!isContext && v.channel_id === globals.compositeChannelCode) ||
-        (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
-      if (pos >= 0) {
-        sensor.channels.splice(pos, 1);
+      // remove existing composite trace if 3 components are available, to be added back after filtering components
+      if (sensor.channels.length > 3) {
+        const pos = sensor.channels.findIndex(v =>
+          (!isContext && v.channel_id === globals.compositeChannelCode) ||
+          (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
+        if (pos >= 0) {
+          sensor.channels.splice(pos, 1);
+        }
       }
       for (const channel of sensor.channels) {
         if (channel.hasOwnProperty('raw')) {
