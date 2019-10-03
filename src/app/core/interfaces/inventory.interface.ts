@@ -167,9 +167,14 @@ export enum SensorType {
 }
 
 export enum MotionType {
-  MM_PER_S_VELOCITY = 'mm/s (velocity)'
+  MM_PER_S_VELOCITY = 'mm/s (velocity)',
+  MM_PER_S_2_ACCELERATION = 'mm/s^2 (acceleration)'
 }
 
+export enum GroundMotionType {
+  VELOCITY = 'velocity',
+  ACCELERATION = 'acceleration'
+}
 
 export interface Borehole {
   id: number;

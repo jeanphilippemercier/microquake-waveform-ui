@@ -10,7 +10,7 @@
 
   <button
     mat-icon-button
-    matTooltip="Common Time Scale for All Channels"
+    matTooltip="Common Time Scale"
     class="activatable"
     [ngClass]="{'active': waveformService.commonTimeScale | async}"
     (click)="onCommonTimeScaleClick()"
@@ -20,7 +20,7 @@
 
   <button
     mat-icon-button
-    matTooltip="Common Amplitude Scale for All Channels"
+    matTooltip="Common Amplitude Scale"
     class="activatable"
     [ngClass]="{'active': waveformService.commonAmplitudeScale | async}"
     (click)="onCommonAmplitudeScaleClick()"

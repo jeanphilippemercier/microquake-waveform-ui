@@ -11,7 +11,7 @@ import { globals } from '@src/globals';
 import {
   IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap
 } from '@interfaces/event.interface';
-import { Sensor } from '@interfaces/inventory.interface';
+import { Sensor, MotionType, GroundMotionType } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
@@ -638,8 +638,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       // check range decide UOM and y scaling factor
       const motionType = this._getSensorMotionType(this.activeSensors[i]);
       let scaleY = WaveformUtil.convYUnits;
-      let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
-        motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+      let uom = motionType === GroundMotionType.VELOCITY ? WaveformUtil.defaultUnits + '/s' :
+        motionType === GroundMotionType.ACCELERATION ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
       if (yMax * scaleY < 0.002) {
         scaleY = scaleY * 1000;
         uom = uom.replace(WaveformUtil.defaultUnits, 'um');
@@ -727,7 +727,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           gridThickness: 0,
           lineThickness: globals.axis.lineThickness,
           lineColor: globals.axis.lineColor,
-          interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
+          interval: yMax / 2,
           includeZero: true,
           labelFormatter: (e) => {
             const val = e.value * scaleY;
@@ -778,8 +778,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
     sensorMotionType = sensor && sensor.components && sensor.components[0] &&
       sensor.components[0].sensor_type && sensor.components[0].sensor_type.motion_type ?
       sensor.components[0].sensor_type.motion_type : `??`;
-    sensorMotionType = sensorMotionType.indexOf(')') > 1 ?
-      sensorMotionType.substring(sensorMotionType.indexOf('(') + 1, sensorMotionType.indexOf(')')) : sensorMotionType;
+    sensorMotionType = sensorMotionType === MotionType.MM_PER_S_VELOCITY ? GroundMotionType.VELOCITY :
+      sensorMotionType === MotionType.MM_PER_S_2_ACCELERATION ? GroundMotionType.ACCELERATION : sensorMotionType;
 
     return sensorMotionType;
   }
@@ -927,8 +927,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
     // check range decide UOM and y scaling factor
     const motionType = this._getSensorMotionType(this.activeSensors[i]);
     let scaleY = WaveformUtil.convYUnits;
-    let uom = motionType === 'velocity' ? WaveformUtil.defaultUnits + '/s' :
-      motionType === 'acceleration' ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+    let uom = motionType === GroundMotionType.VELOCITY ? WaveformUtil.defaultUnits + '/s' :
+      motionType === GroundMotionType.ACCELERATION ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
     if (yMax * scaleY < 0.002) {
       scaleY = scaleY * 1000;
       uom = uom.replace(WaveformUtil.defaultUnits, 'um');
@@ -1002,7 +1002,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         lineThickness: globals.axis.lineThickness,
         lineColor: globals.axis.lineColor,
         gridThickness: 0,
-        interval: this.waveformService.commonAmplitudeScale.getValue() ? null : yMax / 2,
+        interval: yMax / 2,
         includeZero: true,
         labelFormatter: (e) => {
           const val = e.value * scaleY;
@@ -1457,35 +1457,44 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return this.waveformService.commonTimeScale.getValue() ? 0 : null;
   }
 
-  private _getValueMaxAll() {
+  private _getValueMaxAll(motionType) {
 
-    let val = WaveformUtil.maxValue(this.activeSensors[0].channels[0].data);
+    let val = 0;
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
-      for (let j = 0; j < this.activeSensors[i].channels.length; j++) {
-        val = Math.max(WaveformUtil.maxValue(this.activeSensors[i].channels[j].data), val);
+      const sensor = this.activeSensors[i];
+      if(this._getSensorMotionType(sensor) === motionType) {
+        for (let j = 0; j < sensor.channels.length; j++) {
+          val = Math.max(WaveformUtil.maxValue(sensor.channels[j].data), val);
+        }
       }
     }
     return val;
   }
 
   private _getYmax(sensorIdx: number) {
-    let val = 0;
-    for (let j = 0; j < this.activeSensors[sensorIdx].channels.length; j++) {
-      val = Math.max(WaveformUtil.maxValue(this.activeSensors[sensorIdx].channels[j].data), val);
-    }
 
-    if (this.waveformService.commonAmplitudeScale.getValue() || val === 0) {
-      return this._getValueMaxAll();
-    }
-
-    return val;
+    const sensor = this.activeSensors[sensorIdx];
+    return this._getYmaxForSensor(sensor);
   }
 
   private _getYmaxContext() {
 
-    const val = this.contextSensor[0].channels.length > 0 ?
-      WaveformUtil.maxValue(this.contextSensor[0].channels[0].data) : 0;
-    return (val === 0) ? this._getValueMaxAll() : val;
+    const sensor = this.contextSensor[0];
+    return this._getYmaxForSensor(sensor);
+  }
+
+  private _getYmaxForSensor(sensor: Sensor) {
+
+    let val = 0;
+    if (this.waveformService.commonAmplitudeScale.getValue()) {
+      val = this._getValueMaxAll(this._getSensorMotionType(sensor));
+    } else {
+      for (let j = 0; j < sensor.channels.length; j++) {
+        val = Math.max(WaveformUtil.maxValue(sensor.channels[j].data), val);
+      }
+      val = val === 0 ? this._getValueMaxAll(this._getSensorMotionType(sensor)) : val;
+    }
+    return val;
   }
 
   private _getAxisMinAll(isXaxis: boolean) {
