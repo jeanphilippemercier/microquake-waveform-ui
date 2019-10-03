@@ -509,7 +509,7 @@ export default class WaveformUtil {
    *
    */
   static calculatePicksBias(sensors: Sensor[]): number {
-    let picksTotalBias = 0;
+    let picksBias = 0;
     let nPicksBias = 0;
     for (const sensor of sensors) {
 
@@ -524,13 +524,14 @@ export default class WaveformUtil {
             const microsec_ref = sensor[predicted_key].slice(-7, -1);
             const offset = pickTime.millisecond(0)
               .diff(referenceTime.millisecond(0), 'seconds') * 1000000;
-            picksTotalBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
+            picksBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
             nPicksBias++;
           }
         }
       }
     }
-    return Math.round(picksTotalBias / nPicksBias);
+    picksBias = nPicksBias > 0 ? Math.round(picksBias / nPicksBias) : 0;
+    return picksBias;
   }
 
 
