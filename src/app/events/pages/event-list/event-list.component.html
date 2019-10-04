@@ -20,20 +20,20 @@
     <div class="col">
       <div class="filter px-4">
         <div class="row pt-3">
-          <div class="col-sm-2">
+          <div class="col-md-2 col">
             <app-event-type-field
               [eventTypes]="waveformService.eventTypes"
               [(selectedEventTypes)]="selectedEventTypes"
               (selectedEventTypesChange)="onEventTypesChange($event)"
             ></app-event-type-field>
           </div>
-          <div class="col-sm-2">
+          <div class="col-md-2 col">
             <app-event-status-field
               [evaluationStatuses]="waveformService.evaluationStatusGroups"
               [(selectedEvaluationStatuses)]="eventListQuery.status"
             ></app-event-status-field>
           </div>
-          <div class="col-sm-2">
+          <div class="col-md-3 col">
             <mat-form-field>
               <mat-label>Time range</mat-label>
               <mat-select
@@ -42,47 +42,84 @@
               >
                 <mat-select-trigger>
                   <ng-container *ngIf="eventListQuery.time_range !== 0">
-                    last {{eventListQuery.time_range}} days
+                    Last {{eventListQuery.time_range}} days
+                    <small
+                      class="float-right"
+                      style="color: #aaa;padding-top: 2px;"
+                    >
+                      {{todayEnd | amSubtract: eventListQuery.time_range-1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+                      {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+                    </small>
                   </ng-container>
                   <ng-container *ngIf="!eventListQuery.time_range">
-                    custom
+                    Custom
+                    <small
+                      class="float-right"
+                      style="color: #aaa;padding-top: 2px;"
+                    >
+                      {{eventListQuery.time_utc_after | amDateFormat:'MMM DD.':timezone}} -
+                      {{eventListQuery.time_utc_before | amDateFormat:'MMM DD YYYY'}} (UTC {{timezone}})
+                    </small>
                   </ng-container>
                 </mat-select-trigger>
                 <mat-option [value]="3">
-                  last 3 days
+                  Last 3 days
+                  <small
+                    class="float-right"
+                    style="color: #aaa;padding-top: 2px;"
+                  >
+                    {{todayEnd | amSubtract: 3 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+                    {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+                  </small>
                 </mat-option>
                 <mat-option [value]="7">
-                  last 7 days
+                  Last 7 days
+                  <small
+                    class="float-right"
+                    style="color: #aaa;padding-top: 2px;"
+                  >
+                    {{todayEnd | amSubtract: 7 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+                    {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+                  </small>
                 </mat-option>
                 <mat-option [value]="31">
-                  last 31 days
+                  Last 31 days
+                  <small
+                    class="float-right"
+                    style="color: #aaa;padding-top: 2px;"
+                  >
+                    {{todayEnd | amSubtract: 31 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+                    {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+                  </small>
                 </mat-option>
                 <mat-option [value]="0">
-                  custom
+                  Custom
                 </mat-option>
               </mat-select>
             </mat-form-field>
           </div>
 
           <ng-container *ngIf="!eventListQuery.time_range || eventListQuery.time_range === 0">
-            <div class="col-sm-2">
+            <div class="col-md-2 col-6">
               <app-event-date-field
                 [label]="'Start date'"
-                [(date)]="eventStartDate"
-                [maxDate]="eventEndDate"
+                [date]="eventListQuery.time_utc_after"
+                (dateChange)="onCustomDateStartChange($event)"
+                [maxDate]="eventListQuery.time_utc_before"
               >
               </app-event-date-field>
             </div>
-            <div class="col-sm-2">
+            <div class="col-md-2 col-6">
               <app-event-date-field
                 [label]="'End date'"
-                [(date)]="eventEndDate"
-                [minDate]="eventStartDate"
+                [date]="eventListQuery.time_utc_before"
+                (dateChange)="onCustomDateEndChange($event)"
+                [minDate]="eventListQuery.time_utc_after"
               >
               </app-event-date-field>
             </div>
           </ng-container>
-          <div class="col-sm-2">
+          <div class="col-md-1 col">
             <button
               class="mt-3"
               mat-raised-button
@@ -100,7 +137,7 @@
 
         <table
           mat-table
-          [dataSource]="dataSource"
+          [dataSource]="events"
           class="w-100"
         >
 

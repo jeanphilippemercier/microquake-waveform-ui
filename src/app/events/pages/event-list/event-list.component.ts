@@ -18,11 +18,6 @@ import { WaveformService } from '@services/waveform.service';
 import { Subject } from 'rxjs';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 
-interface ViewerOptions {
-  site?: string;
-  network?: string;
-}
-
 @Component({
   selector: 'app-event-list',
   templateUrl: './event-list.component.html',
@@ -54,7 +49,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   eventUpdateDialogOpened = false;
   timezone = '+08:00';
 
-  todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
+  todayEnd = moment().utc().utcOffset(this.timezone).endOf('day');
   timeRange = 3;
 
   eventsCount = 0;
@@ -75,13 +70,10 @@ export class EventListComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
 
-    this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
 
     // default values
     this.selectedEventTypes = [];
     this.selectedEvaluationStatusGroups = [EvaluationStatusGroup.ACCEPTED];
-
-    this._ngxSpinnerService.hide('loading');
 
     this._activatedRoute.queryParams.subscribe(val => {
       const queryParams = { ...val };
@@ -124,12 +116,12 @@ export class EventListComponent implements OnInit, OnDestroy {
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
       this.events = response.results;
-      this._ngxSpinnerService.hide('loading');
     } catch (err) {
+      this._toastrNotificationService.error(err);
       console.error(err);
+    } finally {
+      this._ngxSpinnerService.hide('loading');
     }
-
-    this.dataSource = new MatTableDataSource(this.events);
 
   }
 
@@ -154,7 +146,9 @@ export class EventListComponent implements OnInit, OnDestroy {
   private async _addEvent(event: IEvent) {
     try {
       if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
-        this._toastrNotificationService.error(`${event.event_resource_id} is already in the event list.`, `Error: New event`);
+        const errMsg = `${event.event_resource_id} is already in the event list.`;
+        this._toastrNotificationService.error(errMsg, `Error: New event`);
+        console.error(errMsg);
         return;
       }
 
@@ -210,6 +204,14 @@ export class EventListComponent implements OnInit, OnDestroy {
         relativeTo: this._activatedRoute,
         queryParams: EventUtil.buildEventListParams(this.eventListQuery),
       });
+  }
+
+  onCustomDateEndChange($event: Date) {
+    this.eventListQuery.time_utc_before = moment($event).utc().utcOffset(this.timezone).endOf('day').toISOString(true);
+
+  }
+  onCustomDateStartChange($event: Date) {
+    this.eventListQuery.time_utc_after = moment($event).utc().utcOffset(this.timezone).startOf('day').toISOString(true);
   }
 
   async openChart(event: IEvent) {
