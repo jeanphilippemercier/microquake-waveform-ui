@@ -4,6 +4,7 @@
     [(ngModel)]="multiple ? selectedEvaluationStatuses : selectedEvaluationStatus"
     (selectionChange)="multiple ? onChangeEvaluationStatuses($event) : onChangeEvaluationStatus($event)"
     [multiple]="multiple"
+    placeholder="Click to choose"
   >
     <mat-option
       *ngFor="let statusTypeEl of evaluationStatuses"

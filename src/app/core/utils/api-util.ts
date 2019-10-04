@@ -1,8 +1,10 @@
 import { HttpParams, HttpHeaders } from '@angular/common/http';
+import { UrlParameterEncodingCodec } from '@core/classes/url-parameter-encoding-codec.class';
 
 export default class ApiUtil {
+  static readonly URL_PARAMETER_ENCODING_CODEC = new UrlParameterEncodingCodec();
   static getHttpParams(query: any): HttpParams {
-    let params = new HttpParams();
+    let params = new HttpParams({ encoder: ApiUtil.URL_PARAMETER_ENCODING_CODEC });
     if (query) {
 
       Object.keys(query).forEach(function (key) {

@@ -192,7 +192,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   private _addEvent(event: IEvent) {
     try {
       if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
-        this._toastrNotificationService.error(`${event.event_resource_id} is already in the event list.`, `Error: New event`);
+        const errMsg = `${event.event_resource_id} is already in the event list.`;
+        this._toastrNotificationService.error(errMsg, `Error: New event`);
+        console.error(errMsg);
         return;
       }
 
