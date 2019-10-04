@@ -36,8 +36,8 @@ export default class EventUtil {
     if (eventListQuery.time_range > 0) {
       params.time_range = eventListQuery.time_range;
     } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
-      params.time_utc_before = eventListQuery.time_utc_before;
       params.time_utc_after = eventListQuery.time_utc_after;
+      params.time_utc_before = eventListQuery.time_utc_before;
     }
 
     if (eventListQuery.page_size) {
@@ -74,7 +74,6 @@ export default class EventUtil {
         eventListQuery.time_range = 3;
       }
 
-      // tslint:disable-next-line:max-line-length
       eventListQuery.time_utc_after = moment().utc().utcOffset(timezone).startOf('day').subtract(eventListQuery.time_range - 1, 'days').toISOString();
       eventListQuery.time_utc_before = moment().utc().utcOffset(timezone).endOf('day').toISOString();
     }
