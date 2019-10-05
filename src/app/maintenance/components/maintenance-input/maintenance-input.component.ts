@@ -216,7 +216,7 @@ export class MaintenanceInputComponent implements OnInit {
         }
 
         return this.maintenanceCategories
-          .filter(val => val.name.indexOf(filterValue) > -1)
+          .filter(val => val.name.toLowerCase().indexOf(filterValue) > -1)
           .map(val => ({
             name: val.name,
             type: MaintenanceType.CATEGORY,
@@ -229,7 +229,7 @@ export class MaintenanceInputComponent implements OnInit {
         }
 
         return this.stations
-          .filter(val => val.code.indexOf(filterValue) > -1)
+          .filter(val => val.code.toLowerCase().indexOf(filterValue) > -1)
           .map(val => ({
             name: val.code,
             type: MaintenanceType.STATION,
