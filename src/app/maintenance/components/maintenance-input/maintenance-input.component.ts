@@ -1,20 +1,19 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, Validators, FormControl } from '@angular/forms';
+import { FormBuilder, FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import { PageMode } from '@interfaces/core.interface';
-import { Sensor, Station } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { ENTER, TAB } from '@angular/cdk/keycodes';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { map } from 'rxjs/operators';
 import { MatDialog, MatDialogRef, MatAutocomplete } from '@angular/material';
+
+import { Station } from '@interfaces/inventory.interface';
+import { InventoryApiService } from '@services/inventory-api.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceCategory, MaintenanceStatus, MaintenanceEvent } from '@interfaces/maintenance.interface';
-import { COMMA, ENTER, TAB, SPACE } from '@angular/cdk/keycodes';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatChipInputEvent } from '@angular/material/chips';
-import { map, startWith } from 'rxjs/operators';
 import { MaintenanceFormComponent } from '../maintenance-form/maintenance-form.component';
 
 enum MaintenanceType {
@@ -83,7 +82,7 @@ export class MaintenanceInputComponent implements OnInit {
   selectable = true;
   removable = true;
   addOnBlur = true;
-  separatorKeysCodes: number[] = [ENTER, COMMA, TAB];
+  separatorKeysCodes: number[] = [ENTER, TAB];
   fruitCtrl = new FormControl();
   filteredFruits: Observable<MaintenanceInput[]>;
   fruits: MaintenanceInput[] = [];
