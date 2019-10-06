@@ -40,9 +40,7 @@
         [formControl]="fruitCtrl"
         [matAutocomplete]="auto"
         [matChipInputFor]="chipList"
-        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-        [matChipInputAddOnBlur]="addOnBlur"
-        (matChipInputTokenEnd)="add($event)"
+        (keyup.enter)="onKeypressEnter($event)"
       >
     </mat-chip-list>
     <mat-autocomplete
@@ -57,7 +55,10 @@
         {{fruit?.name}}
       </mat-option>
     </mat-autocomplete>
-    <mat-hint align="end">
+    <mat-hint
+      align="end"
+      *ngIf=""
+    >
       <button
         [hidden]="openForm"
         color="primary"

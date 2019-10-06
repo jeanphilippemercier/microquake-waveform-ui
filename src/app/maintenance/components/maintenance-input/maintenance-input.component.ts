@@ -1,18 +1,13 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormControl } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
-import { NgxSpinnerService } from 'ngx-spinner';
 import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatChipInputEvent } from '@angular/material/chips';
 import { map } from 'rxjs/operators';
 import { MatDialog, MatDialogRef, MatAutocomplete } from '@angular/material';
 
 import { Station } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceCategory, MaintenanceStatus, MaintenanceEvent } from '@interfaces/maintenance.interface';
 import { MaintenanceFormComponent } from '../maintenance-form/maintenance-form.component';
 
@@ -34,6 +29,7 @@ interface MaintenanceInput {
 
 export class MaintenanceInputComponent implements OnInit {
 
+  @ViewChild('auto', { static: false }) autoCompleteEl: MatAutocomplete;
 
   @Input()
   public set maintenanceStatuses(v: MaintenanceStatus[]) {
@@ -56,9 +52,6 @@ export class MaintenanceInputComponent implements OnInit {
   public set stationFixed(v: Station) {
     this._stationFixed = v;
     if (this._stationFixed) {
-      console.log(`this._stationFixed`);
-      console.log(this._stationFixed);
-
       this.stationChanged(this._stationFixed);
     }
   }
@@ -81,7 +74,8 @@ export class MaintenanceInputComponent implements OnInit {
   visible = true;
   selectable = true;
   removable = true;
-  addOnBlur = true;
+  addOnBlur = false;
+  addingChip = false;
   separatorKeysCodes: number[] = [ENTER, TAB];
   fruitCtrl = new FormControl();
   filteredFruits: Observable<MaintenanceInput[]>;
@@ -97,35 +91,10 @@ export class MaintenanceInputComponent implements OnInit {
 
 
   constructor(
-    private _activatedRoute: ActivatedRoute,
-    private _inventoryApiService: InventoryApiService,
-    private _fb: FormBuilder,
-    private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
     protected _matDialog: MatDialog,
-    private _toastrNotificationService: ToastrNotificationService
-  ) {
-
-  }
+  ) { }
 
   ngOnInit() {
-    // this.fruits = [...this.maintenanceStatuses.map(val => ({
-    //   name: val.name,
-    //   type: MaintenanceType.STATUS,
-    //   obj: val
-    // }))];
-
-    // this.fruits = [...this.fruits, ...this.maintenanceCategories.map(val => ({
-    //   name: val.name,
-    //   type: MaintenanceType.CATEGORY,
-    //   obj: val
-    // }))];
-
-    // this.fruits = [...this.fruits, ...this.stations.map(val => ({
-    //   name: val.name,
-    //   type: MaintenanceType.STATION,
-    //   obj: val
-    // }))];
 
     this.filteredFruits = this.fruitCtrl.valueChanges.pipe(
       // startWith(null),
@@ -133,28 +102,14 @@ export class MaintenanceInputComponent implements OnInit {
 
   }
 
-
-  add(event: MatChipInputEvent): void {
-
-    // Add fruit only when MatAutocomplete is not open
-    // To make sure this does not conflict with OptionSelected Event
-    if (!this.matAutocomplete.isOpen) {
-      const input = event.input;
-      const value = event.value;
-
-      // // Add our fruit
-      // if ((value || '').trim()) {
-      //   this.fruits.push(value);
-      // }
-
-      // // Reset the input value
-      // if (input) {
-      //   input.value = '';
-      // }
-
-      this.fruitCtrl.setValue(null);
+  onKeypressEnter($event: KeyboardEvent) {
+    if (this.addingChip) {
+      return;
     }
+
+    this.onSubmit();
   }
+
 
   remove(fruit: MaintenanceInput): void {
     if (this.stationFixed && fruit.type === MaintenanceType.STATION) {
@@ -179,9 +134,14 @@ export class MaintenanceInputComponent implements OnInit {
     this.model = { ...this.model };
   }
 
-  selected(event: MatAutocompleteSelectedEvent): any {
-    const val = event.option.value;
+  selected($event: MatAutocompleteSelectedEvent): any {
+    this.addingChip = true;
+    const val = $event.option.value;
     this._addChip(val);
+
+    setTimeout(_ => {
+      this.addingChip = false;
+    }, 250);
   }
 
   private _addChip(val: MaintenanceInput) {
@@ -244,7 +204,6 @@ export class MaintenanceInputComponent implements OnInit {
     }
 
     return [];
-    // return this.allFruits.filter(fruit => fruit.toLowerCase().indexOf(filterValue) === 0);
   }
 
   categoryChanged($event: string) {
