@@ -181,7 +181,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       filter(val => this.pooling.getValue()),
       takeUntil(this._unsubscribe)
     ).subscribe(_ => {
-      console.log('event detail interval');
       this._loadEvents(false);
     });
   }
