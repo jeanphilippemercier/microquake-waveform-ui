@@ -160,12 +160,11 @@ export class EventListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private async _addEvent(event: IEvent) {
+  private async _addEvent($event: IEvent) {
     try {
-      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
-        const errMsg = `${event.event_resource_id} is already in the event list.`;
-        this._toastrNotificationService.error(errMsg, `Error: New event`);
-        console.error(errMsg);
+      if (this.events.findIndex(ev => ev.event_resource_id === $event.event_resource_id) > -1) {
+        this.waveformService.showNewEventToastrNotification($event, 'error');
+        console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
         return;
       }
 
@@ -173,14 +172,14 @@ export class EventListComponent implements OnInit, OnDestroy {
         return;
       }
 
-      const eventDate = moment(event.time_utc);
+      const eventDate = moment($event.time_utc);
       const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
-        this.events.splice(idx, 0, event);
+        this.events.splice(idx, 0, $event);
       } else {
-        this.events.push(event);
+        this.events.push($event);
       }
-      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
+      this.waveformService.showNewEventToastrNotification($event, 'success');
     } catch (err) {
       console.error(err);
     }

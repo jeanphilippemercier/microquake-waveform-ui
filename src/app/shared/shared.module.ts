@@ -166,6 +166,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     ...SHEETS
   ],
   providers: [
+    EventQuakemlToMicroquakeTypePipe,
     {
       provide: MAT_LABEL_GLOBAL_OPTIONS,
       useValue: { float: 'always' }
