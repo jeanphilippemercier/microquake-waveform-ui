@@ -24,13 +24,19 @@ export class EventTypeIconPipe implements PipeTransform {
       case 'anthropogenic event':
         return 'person';
         break;
+      case 'PN':
+      case 'collapse':
+      case 'DN':
+      case 'reservoir loading':
+      case 'MN':
+      case 'road cut':
       case 'CN':
       case 'acoustic noise':
-        return 'hearing';
-        break;
       case 'L':
       case 'thunder':
-        return 'flash_on';
+      case 'N':
+      case 'other event':
+        return 'hearing';
         break;
       case 'OP':
       case 'quarry blast':
