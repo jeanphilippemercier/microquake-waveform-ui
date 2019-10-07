@@ -1,7 +1,8 @@
-import { Injectable, OnInit, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, Renderer2, RendererFactory2 } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { first, take, skipWhile } from 'rxjs/operators';
+import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
@@ -19,6 +20,8 @@ import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
 import { InventoryApiService } from './inventory-api.service';
 import { Site, Network, Station, Sensor } from '@interfaces/inventory.interface';
+import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
+import { EventTypeIconPipe } from '@app/shared/pipes/event-type-icon.pipe';
 
 @Injectable({
   providedIn: 'root'
@@ -136,6 +139,7 @@ export class WaveformService implements OnDestroy {
   sites: Site[] = [];
   networks: Network[] = [];
 
+
   constructor(
     private _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService,
@@ -143,7 +147,8 @@ export class WaveformService implements OnDestroy {
     private _inventoryApiService: InventoryApiService,
     private _ngxSpinnerService: NgxSpinnerService,
     private _router: Router,
-    private _activatedRoute: ActivatedRoute
+    private _activatedRoute: ActivatedRoute,
+    private _eventQuakemlToMicroquakeTypePipe: EventQuakemlToMicroquakeTypePipe,
   ) {
     this._init();
   }
@@ -529,6 +534,29 @@ export class WaveformService implements OnDestroy {
       this.allStations.forEach((station, idx) => this.allStationsMap[station.id] = idx);
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  async showNewEventToastrNotification($event: IEvent, type: 'success' | 'error' = 'success') {
+    const time = moment($event.time_utc).utc().utcOffset($event.timezone);
+    const eventType = `<strong>${this._eventQuakemlToMicroquakeTypePipe.transform($event.event_type, this.eventTypes)}</strong>`;
+    const date = `<strong>${time.format('HH:mm:ss')}</strong><small>${time.format('.SSS MMM DD YYYY')}</small>`;
+    const magnitude = `${$event.magnitude ? '<strong>' + $event.magnitude.toFixed(1) + '</strong>' + ' <small>Mw</small>' : '-'}`;
+
+    if (type === 'success') {
+      this._toastrNotificationService.success(`
+    ${date}<br>
+    ${eventType}<br>
+    ${magnitude}
+    `, `New event`, { enableHtml: true, timeOut: 10000 });
+    } else {
+      const errMsg = `Already in the event list.`;
+      this._toastrNotificationService.error(`
+    ${errMsg}<br><br>
+    ${date}<br>
+    ${eventType}<br>
+    ${magnitude}
+    `, `Error: New event`, { enableHtml: true, timeOut: 10000 });
     }
   }
 }

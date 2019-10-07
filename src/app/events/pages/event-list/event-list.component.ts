@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import * as moment from 'moment';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil, take, filter } from 'rxjs/operators';
 
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { Site, Network } from '@interfaces/inventory.interface';
@@ -15,7 +15,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import EventUtil from '@core/utils/event-util';
 import { WaveformService } from '@services/waveform.service';
-import { Subject } from 'rxjs';
+import { Subject, interval, BehaviorSubject } from 'rxjs';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
@@ -42,7 +42,6 @@ export class EventListComponent implements OnInit, OnDestroy {
   dataSource: MatTableDataSource<any>;
 
   events: IEvent[];
-
   eventListQuery: EventQuery = {};
 
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
@@ -56,6 +55,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   cursorPrevious: string;
   cursorNext: string;
 
+  pooling: BehaviorSubject<boolean> = new BehaviorSubject(false);
   private _unsubscribe = new Subject<void>();
 
   constructor(
@@ -74,6 +74,8 @@ export class EventListComponent implements OnInit, OnDestroy {
     // default values
     this.selectedEventTypes = [];
     this.selectedEvaluationStatusGroups = [EvaluationStatusGroup.ACCEPTED];
+
+    this._initPooling();
 
     this._activatedRoute.queryParams.subscribe(val => {
       const queryParams = { ...val };
@@ -108,14 +110,26 @@ export class EventListComponent implements OnInit, OnDestroy {
     this._unsubscribe.complete();
   }
 
-  private async _loadEvents() {
+  private async _initPooling() {
+    interval(31000).pipe(
+      filter(val => this.pooling.getValue()),
+      takeUntil(this._unsubscribe)
+    ).subscribe(_ => {
+      this._loadEvents(false);
+    });
+  }
+
+  private async _loadEvents(showLoading = true) {
     try {
-      this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+      if (showLoading) {
+        this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+      }
       const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
       this.eventsCount = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
       this.events = response.results;
+      this.pooling.next(true);
     } catch (err) {
       this._toastrNotificationService.error(err);
       console.error(err);
@@ -135,6 +149,9 @@ export class EventListComponent implements OnInit, OnDestroy {
   }
 
   async filter() {
+    if (this.eventListQuery.cursor) {
+      delete this.eventListQuery.cursor;
+    }
     this._router.navigate(
       [],
       {
@@ -143,12 +160,11 @@ export class EventListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private async _addEvent(event: IEvent) {
+  private async _addEvent($event: IEvent) {
     try {
-      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
-        const errMsg = `${event.event_resource_id} is already in the event list.`;
-        this._toastrNotificationService.error(errMsg, `Error: New event`);
-        console.error(errMsg);
+      if (this.events.findIndex(ev => ev.event_resource_id === $event.event_resource_id) > -1) {
+        this.waveformService.showNewEventToastrNotification($event, 'error');
+        console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
         return;
       }
 
@@ -156,14 +172,14 @@ export class EventListComponent implements OnInit, OnDestroy {
         return;
       }
 
-      const eventDate = moment(event.time_utc);
+      const eventDate = moment($event.time_utc);
       const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
-        this.events.splice(idx, 0, event);
+        this.events.splice(idx, 0, $event);
       } else {
-        this.events.push(event);
+        this.events.push($event);
       }
-      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
+      this.waveformService.showNewEventToastrNotification($event, 'success');
     } catch (err) {
       console.error(err);
     }

@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as moment from 'moment';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, BehaviorSubject, Subject } from 'rxjs';
-import { distinctUntilChanged, skip, takeUntil } from 'rxjs/operators';
+import { Subscription, BehaviorSubject, Subject, interval } from 'rxjs';
+import { distinctUntilChanged, skip, takeUntil, filter } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
@@ -40,6 +40,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   currentEventInfo: IEvent;
 
   initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  pooling: BehaviorSubject<boolean> = new BehaviorSubject(false);
   eventUpdateDialogOpened = false;
   eventFilterDialogOpened = false;
 
@@ -74,6 +75,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       this._loadCurrentEvent(),
       this._loadCurrentEventCatalog(),
     ]);
+    this._initPooling();
 
     this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
       .pipe(
@@ -174,14 +176,27 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  private async _loadEvents() {
+  private async _initPooling() {
+    interval(31000).pipe(
+      filter(val => this.pooling.getValue()),
+      takeUntil(this._unsubscribe)
+    ).subscribe(_ => {
+      this._loadEvents(false);
+    });
+  }
+
+  private async _loadEvents(showLoading = true) {
     try {
       this.loadingEventList = true;
-      this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      if (showLoading) {
+        this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      }
       const response = await this._eventApiService.getEvents(this.waveformService.eventListQuery).toPromise();
       this.events = response.results;
+      this.pooling.next(true);
 
     } catch (err) {
+      this._toastrNotificationService.error(err);
       console.error(err);
     } finally {
       this.loadingEventList = false;
@@ -189,24 +204,23 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  private _addEvent(event: IEvent) {
+  private _addEvent($event: IEvent) {
     try {
-      if (this.events.findIndex(ev => ev.event_resource_id === event.event_resource_id) > -1) {
-        const errMsg = `${event.event_resource_id} is already in the event list.`;
-        this._toastrNotificationService.error(errMsg, `Error: New event`);
-        console.error(errMsg);
+      if (this.events.findIndex(ev => ev.event_resource_id === $event.event_resource_id) > -1) {
+        this.waveformService.showNewEventToastrNotification($event, 'error');
+        console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
         return;
       }
 
-      const eventDate = moment(event.time_utc);
+      const eventDate = moment($event.time_utc);
       const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
-        this.events.splice(idx, 0, event);
+        this.events.splice(idx, 0, $event);
       } else {
-        this.events.push(event);
+        this.events.push($event);
       }
       this.changeDetectCatalog = new Date().getTime();
-      this._toastrNotificationService.success(`${event.event_resource_id}`, `New event`);
+      this.waveformService.showNewEventToastrNotification($event, 'success');
     } catch (err) {
       console.error(err);
     }
