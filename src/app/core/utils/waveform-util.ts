@@ -8,6 +8,9 @@ import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from
 
 export default class WaveformUtil {
 
+  // default time units conversion factor is from s to microsenonds (us)
+  static convXUnits = 1000000;
+
   // default data units conversion factor is from m to defaultUnits (mm)
   static convYUnits = 1000;
   static defaultUnits = 'mm';
@@ -83,11 +86,11 @@ export default class WaveformUtil {
       channel.data = [];
       for (let k = 0; k < seismogram.numPoints(); k++) {
         channel.data.push({
-          x: channel.microsec + (k * 1000000 / channel.sample_rate),   // trace microsecond offset
+          x: channel.microsec + (k * WaveformUtil.convXUnits / channel.sample_rate),   // trace microsecond offset
           y: seismogram.y()[k],  // trace after mean removal
         });
       }
-      channel.duration = (seismogram.numPoints() - 1) * 1000000 / seismogram.sampleRate();  // in microseconds
+      channel.duration = (seismogram.numPoints() - 1) * WaveformUtil.convXUnits / seismogram.sampleRate();  // in microseconds
       let sensor = WaveformUtil.findValue(sensors, 'sensor_code', sg.stationCode());
       if (!sensor) {
         sensor = { sensor_code: sg.stationCode(), channels: [] };
@@ -110,7 +113,7 @@ export default class WaveformUtil {
           for (const channel of sensor.channels) {
             if (!channel.start.isSame(zTime, 'second')) {
               console.log('***adjust time origin for sensor: ' + sensor.sensor_code + ' channel: ' + channel.channel_id);
-              const offset = channel.start.diff(zTime, 'seconds') * 1000000;
+              const offset = channel.start.diff(zTime, 'seconds') * WaveformUtil.convXUnits;
               channel.microsec += offset;
               for (const datasample of channel.data) { // microsecond offset from new zeroTime
                 datasample['x'] += offset;
@@ -366,7 +369,7 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with millisec precision
   static calculateTimeOffset(time: moment.Moment, origin: moment.Moment) {
     let diff = moment(time).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
-    diff *= 1000000;
+    diff *= WaveformUtil.convXUnits;
     diff += moment(time).millisecond() * 1000;
     return diff;
   }
@@ -374,7 +377,7 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with microsec precision
   static calculateTimeOffsetMicro(timeUtc: string, origin: moment.Moment) {
     let diff = moment(timeUtc).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
-    diff *= 1000000;
+    diff *= WaveformUtil.convXUnits;
     diff += parseInt(timeUtc.slice(-7, -1), 10);
     return diff;
   }
@@ -382,8 +385,8 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with microsec precision
   static addTimeOffsetMicro(origin: moment.Moment, micro: number) {
 
-    const fullseconds = Math.floor(micro / 1000000);
-    const microsec = micro - fullseconds * 1000000;
+    const fullseconds = Math.floor(micro / WaveformUtil.convXUnits);
+    const microsec = micro - fullseconds * WaveformUtil.convXUnits;
     const str = '000000' + microsec;
     const ts = moment(origin).millisecond(0).add(fullseconds, 'seconds');
     return ts.toISOString().slice(0, -4) + str.substring(str.length - 6) + 'Z';
@@ -523,7 +526,7 @@ export default class WaveformUtil {
             const microsec = sensor[pick_key].slice(-7, -1);
             const microsec_ref = sensor[predicted_key].slice(-7, -1);
             const offset = pickTime.millisecond(0)
-              .diff(referenceTime.millisecond(0), 'seconds') * 1000000;
+              .diff(referenceTime.millisecond(0), 'seconds') * WaveformUtil.convXUnits;
             picksBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
             nPicksBias++;
           }
