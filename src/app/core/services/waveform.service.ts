@@ -290,6 +290,7 @@ export class WaveformService implements OnDestroy {
     }
 
     this.eventInteractiveProcessDialogRef = this._matDialog.open<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>(EventInteractiveProcessingDialogComponent, {
+      disableClose: true,
       hasBackdrop: true,
       width: '600px',
       data: {
