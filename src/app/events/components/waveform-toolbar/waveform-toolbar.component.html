@@ -193,6 +193,20 @@
   </button>
 
   <div
+    [matTooltipDisabled]="(waveformService.batchPicksDisabled | async) === false"
+    matTooltip="No arrivals to load"
+  >
+    <button
+      mat-icon-button
+      [disabled]="waveformService.batchPicksDisabled | async"
+      [matTooltip]="((waveformService.batchPicks | async) ? 'Unload' : 'Load') + ' arrivals from latest reprocessing'"
+      (click)="onBatchPicksClick()"
+    >
+      <mat-icon>backup</mat-icon>
+    </button>
+  </div>
+
+  <div
     [matTooltip]="'Interactive processing' + (interactiveProcessingDisabled ? '. Currently DISABLED, because another reprocessing is already running.' : '')"
   >
     <button

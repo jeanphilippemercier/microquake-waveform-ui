@@ -94,6 +94,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.predictedPicksBias.next(!this.waveformService.predictedPicksBias.getValue());
   }
 
+  onBatchPicksClick() {
+    this.waveformService.batchPicks.next(!this.waveformService.batchPicks.getValue());
+  }
+
   onApplyFilter() {
     this.waveformService.numPoles.next(this.numPoles);
     this.waveformService.lowFreqCorner.next(this.lowFreqCorner);
