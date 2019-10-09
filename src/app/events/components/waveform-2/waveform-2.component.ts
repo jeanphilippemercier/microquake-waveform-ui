@@ -23,7 +23,7 @@ enum ContextMenuChartAction {
   DELETE_S = 'delete s',
   NEW_P = 'new p',
   NEW_S = 'new s',
-  SHOW_TOOLTIP = 'show tooltip',
+  SHOW_CROSSHAIR = 'show crosshair',
 }
 
 @Component({
@@ -57,6 +57,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _xViewportMaxStack: any[];
   private _unsubscribe = new Subject<void>();
   contextMenuChartVisible = false;
+  isContextPickingMenuVisible = true;
 
   /*
   * SENSORS
@@ -261,6 +262,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => {
         this._applyFilter();
+      });
+
+    this.waveformService.pickingMode
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe(() => {
+        this._onPickingModeChange();
       });
 
     this.waveformService.undoLastPickingClickedObs
@@ -671,6 +682,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               index: i,
               name: channel.channel_id,
               type: 'line',
+              // markerType: 'none',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
               showInLegend: true,
@@ -744,14 +756,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           horizontalAlign: 'left'
         },
         toolTip: {
-          enabled: false,
-          contentFormatter: (e) => {
-            const content = ' ' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
-              '<br/>' +
-              '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
-            return content;
-          }
+          enabled: false
         },
         axisX: {
           minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
@@ -766,7 +771,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
           labelAutoFit: false,
           labelWrap: false,
           labelFormatter: (e) => {
-            return e.value / 1000000 + ' s';
+            return e.value / WaveformUtil.convXUnits + ' s';
+          },
+          crosshair: {
+            enabled: false,
+            snapToDataPoint: true,
+            labelFormatter: (e) => {
+              return e.value / WaveformUtil.convXUnits;
+            },
           },
           stripLines: this.activeSensors[i].picks
         },
@@ -781,16 +793,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
           includeZero: true,
           labelFormatter: (e) => {
             const val = e.value * scaleY;
-
-            if (val === 0) {
-              return val;
-            }
-
             if (Math.abs(Number(val.toPrecision(1))) < 10) {
-              return Number(val.toPrecision(1)).toFixed(3);
+              return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
             }
-
             return Number(val.toPrecision(2)).toFixed(2);
+          },
+          crosshair: {
+            enabled: false,
+            snapToDataPoint: true,
+            labelFormatter: (e) => {
+              const val = e.value * scaleY;
+              return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
+            },
           }
         },
         data: data
@@ -963,6 +977,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           {
             name: channel.channel_id,
             type: 'line',
+            // markerType: 'none',
             color: this.waveformService.displayComposite.getValue() ? globals.context.linecolor :
               globals.linecolor[channel.channel_id.toUpperCase().replace('...CONTEXT', '')],
             lineThickness: globals.lineThickness,
@@ -1015,14 +1030,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         horizontalAlign: 'left'
       },
       toolTip: {
-        enabled: true,
-        contentFormatter: (e) => {
-          const content = ' ' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.y * scaleY * 1000000) / 1000000 + ' ' + uom + '</strong>' +
-            '<br/>' +
-            '<strong>' + Math.ceil(e.entries[0].dataPoint.x / 1000000 * 1000000) / 1000000 + ' s</strong>';
-          return content;
-        }
+        enabled: false
       },
       axisX: {
         minimum: this.contextTimeOrigin.millisecond() * 1000,
@@ -1039,11 +1047,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
         labelAutoFit: false,
         labelWrap: false,
         labelFormatter: (e) => {
-          return e.value / 1000000 + ' s';
+          return e.value / WaveformUtil.convXUnits + ' s';
+        },
+        crosshair: {
+          enabled: false,
+          snapToDataPoint: true,
+          labelFormatter: (e) => {
+            return e.value / WaveformUtil.convXUnits;
+          },
         },
         stripLines: [{
           startValue: timeOriginValue,
-          endValue: timeOriginValue + globals.fixedDuration * 1000000,
+          endValue: timeOriginValue + globals.fixedDuration * WaveformUtil.convXUnits,
           color: globals.context.highlightColor
         }]
       },
@@ -1058,16 +1073,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
         includeZero: true,
         labelFormatter: (e) => {
           const val = e.value * scaleY;
-
-          if (val === 0) {
-            return val;
-          }
-
           if (Math.abs(Number(val.toPrecision(1))) < 10) {
-            return Number(val.toPrecision(1)).toFixed(3);
+            return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
           }
-
           return Number(val.toPrecision(2)).toFixed(2);
+        },
+        crosshair: {
+          enabled: false,
+          snapToDataPoint: true,
+          labelFormatter: (e) => {
+              const val = e.value * scaleY;
+              return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
+          },
         }
       },
       data: data
@@ -1225,12 +1242,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
-            e.preventDefault();
-            this._menu.nativeElement.style.left = `${e.offsetX}px`;
-            this._menu.nativeElement.style.top = `${e.y - 40}px`;
-            this._toggleContextMenuChart('show');
-            this.selectedContextMenu = j;
-            return false;
+              e.preventDefault();
+              this._menu.nativeElement.style.left = `${e.offsetX}px`;
+              this._menu.nativeElement.style.top = `${e.y - 40}px`;
+              this._toggleContextMenuChart('show', false);
+              this.selectedContextMenu = j;
+              return false;
           } else {
             e.preventDefault();
             return false;
@@ -1238,6 +1255,34 @@ export class Waveform2Component implements OnInit, OnDestroy {
         });
 
       }  // not on context trace
+
+      if (j === this.activeSensors.length - 1) {       // on context trace
+
+        canvas.addEventListener('mousedown', (e: MouseEvent) => {
+
+          if (this.contextMenuChartVisible) {
+            this.selectedContextMenu = -1;
+            this._toggleContextMenuChart('hide');
+            return;
+          }
+        });
+
+        canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+          if (this.waveformService.pickingMode.getValue() !== 'P' &&
+            this.waveformService.pickingMode.getValue() !== 'S') {
+              e.preventDefault();
+              this._menu.nativeElement.style.left = `${e.offsetX}px`;
+              this._menu.nativeElement.style.top = `${e.y - 40}px`;
+              this._toggleContextMenuChart('show', true);
+              this.selectedContextMenu = j;
+              return false;
+          } else {
+              e.preventDefault();
+              return false;
+          }
+        });
+
+      }
 
 
       // Wheel events: zoomp/pan, move picks in picking mode
@@ -1483,7 +1528,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const endMicrosec = this.activeSensors[pos].channels[0].microsec + this.activeSensors[pos].channels[0].duration;
 
     if (this.waveformService.commonTimeScale.getValue()) {
-      return Math.max(endMicrosec, this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000);
+      return Math.max(endMicrosec, this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * WaveformUtil.convXUnits);
     }
 
     return endMicrosec;
@@ -1499,7 +1544,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _getXvpMax() {
     if (this.waveformService.commonTimeScale.getValue()) {
-      return this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * 1000000;
+      return this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * WaveformUtil.convXUnits;
     }
 
     return null;
@@ -1725,12 +1770,34 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._waveformContainer.nativeElement.focus();
   }
 
-  private _toggleTooltip(ind, value) {
+  private _toggleCrosshair(ind, value) {
 
-    value = value ? value : !this.activeSensors[ind].chart.options.toolTip.enabled;
-    this.activeSensors[ind].chart.options.toolTip.enabled = value;
-    this.activeSensors[ind].chart.render();
+    const chart = this.activeSensors[ind].chart;
+    value = value ? value : !chart.options.axisY['crosshair'].enabled;
+    chart.options.axisX['crosshair'].enabled = value;
+    chart.options.axisY['crosshair'].enabled = value;
+    if (value) {
+      if (ind < this.activeSensors.length - 1) {
+        chart.options.axisX['crosshair'].color =
+          this.waveformService.pickingMode.getValue() === 'P' ? 'blue' :
+          this.waveformService.pickingMode.getValue() === 'S' ? 'red' : 'black';
+        chart.options.axisX['crosshair'].lineDashType = this.waveformService.pickingMode.getValue() === 'none' ?
+          'dash' : 'solid';
+      } else {
+        chart.options.axisX['crosshair'].color = 'black';
+        chart.options.axisX['crosshair'].lineDashType = 'dash';
+      }
+      chart.options.axisX['crosshair'].thickness = 1;
+    }
+    chart.render();
     this._waveformContainer.nativeElement.focus();
+  }
+
+  private _onPickingModeChange() {
+    const value = this.waveformService.pickingMode.getValue() === 'none' ? false : true;
+    for (let j = 0; j < this.activeSensors.length; j++) {
+      this. _toggleCrosshair(j, value);
+    }
   }
 
   private _undoTimeZoomPan() {
@@ -1946,7 +2013,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return sensors;
   }
 
-  private _toggleContextMenuChart(force?: 'show' | 'hide') {
+  private _toggleContextMenuChart(force?: 'show' | 'hide', hidePicksOptions?: true | false) {
+    if (hidePicksOptions) {
+      this.isContextPickingMenuVisible = false;
+    } else {
+      this.isContextPickingMenuVisible = true;
+    }
     if (force) {
       if (force === 'show') {
         this.contextMenuChartVisible = true;
@@ -1965,7 +2037,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         case ContextMenuChartAction.DELETE_S: this._deletePicks(this.selectedContextMenu, 'S', null); break;
         case ContextMenuChartAction.NEW_P: this._addPick(this.selectedContextMenu, 'P', null); break;
         case ContextMenuChartAction.NEW_S: this._addPick(this.selectedContextMenu, 'S', null); break;
-        case ContextMenuChartAction.SHOW_TOOLTIP: this._toggleTooltip(this.selectedContextMenu, null); break;
+        case ContextMenuChartAction.SHOW_CROSSHAIR: this._toggleCrosshair(this.selectedContextMenu, null); break;
         default: break;
       }
     }
