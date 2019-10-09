@@ -9,7 +9,7 @@ import * as moment from 'moment';
 import WaveformUtil from '@core/utils/waveform-util';
 import { globals } from '@src/globals';
 import {
-  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap
+  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap, InteractiveProcessing
 } from '@interfaces/event.interface';
 import { Sensor, MotionType, GroundMotionType } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
@@ -81,8 +81,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
   // allStations: Station[];
   // allStationsMap: { [key: number]: number } = {};
 
-  allArrivals: Arrival[];
-  allArrivalsChanged: ArrivalPartial[];
+  /*
+  * ARRIVALS
+  */
+  arrivals: Arrival[] = [];
+  batchArrivals: Arrival[] = [];
+  allArrivals: Arrival[] = [];
+  allArrivalsChanged: ArrivalPartial[] = [];
+
   waveformSensors: WaveformSensor[];
   lastPicksState: any = null;
   timeOrigin: moment.Moment;
@@ -153,11 +159,23 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private async _getInteractiveProcessingStatus() {
     try {
-      const ip = await this._eventApiService.getInteractiveProcessing(this.event.event_resource_id).toPromise();
-      if ([BatchStatus.PENDING, BatchStatus.PROCESSING].indexOf(ip.status) > -1) {
+      this.waveformService.batchPicksDisabled.next(true);
+      this.waveformService.batchPicks.next(false);
+      const response = await this._eventApiService.getInteractiveProcessing(this.event.event_resource_id).toPromise();
+      this.batchArrivals = response && response.data ? [...response.data] : [];
+
+      if (this.batchArrivals.length > 0) {
+        this.batchArrivals.forEach(element => {
+          element.pick.time_utc = `${element.pick.time_utc.slice(0, element.pick.time_utc.length - 1)}000${element.pick.time_utc[element.pick.time_utc.length - 1]}`;
+        });
+        this.waveformService.batchPicksDisabled.next(false);
+        this.waveformService.openBatchDialog();
+      }
+
+      if ([BatchStatus.PENDING, BatchStatus.PROCESSING].indexOf(response.status) > -1) {
         const currentList = this.waveformService.interactiveProcessActiveList.getValue();
         const newData: EventBatchMap = {
-          batchId: ip.id,
+          batchId: response.id,
           event: this.event
         };
 
@@ -248,6 +266,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this.waveformService.undoLastPickingClickedObs
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this._undoLastPicking());
+
+    this.waveformService.batchPicks
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe(() => {
+        if (this.waveformService.batchPicksDisabled.getValue()) {
+          return;
+        }
+        this._toggleBatchPicks();
+        if (this.activeSensors && this.activeSensors.length > 0) {
+          this._changePage(false);
+        }
+      });
 
     this.waveformService.interactiveProcessClickedObs
       .pipe(takeUntil(this._unsubscribe))
@@ -411,14 +445,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
           };
 
           // get arrivals, picks for preferred origin
-          const arrivals = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
+          this.arrivals = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
 
           if (this.currentEventId !== event.event_resource_id) {
             console.log(`changed event during loading`);
             return;
           }
 
-          this.allArrivals = arrivals;
+          if (this.waveformService.batchPicks.getValue()) {
+            this.allArrivals = [...this.batchArrivals];
+          } else {
+            this.allArrivals = [...this.arrivals];
+          }
+
           this.allArrivalsChanged = JSON.parse(JSON.stringify(this.allArrivals));
 
           // load predicted
@@ -557,6 +596,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
     this._destroyCharts();
     this._renderPage();
+  }
+
+  private async _toggleBatchPicks() {
+    if (this.waveformService.batchPicks.getValue()) {
+      this.allArrivals = [...this.batchArrivals];
+      this.waveformService.batchPicks.next(true);
+    } else {
+      this.allArrivals = [...this.arrivals];
+      this.waveformService.batchPicks.next(false);
+    }
+    this.allArrivalsChanged = JSON.parse(JSON.stringify(this.allArrivals));
   }
 
   private async _onInteractiveProcess() {
@@ -1175,15 +1225,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
-              e.preventDefault();
-              this._menu.nativeElement.style.left = `${e.offsetX}px`;
-              this._menu.nativeElement.style.top = `${e.y - 40}px`;
-              this._toggleContextMenuChart('show');
-              this.selectedContextMenu = j;
-              return false;
+            e.preventDefault();
+            this._menu.nativeElement.style.left = `${e.offsetX}px`;
+            this._menu.nativeElement.style.top = `${e.y - 40}px`;
+            this._toggleContextMenuChart('show');
+            this.selectedContextMenu = j;
+            return false;
           } else {
-              e.preventDefault();
-              return false;
+            e.preventDefault();
+            return false;
           }
         });
 
@@ -1305,8 +1355,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _resetZoomStack() {
-      this._xViewPortMinStack = [];
-      this._xViewportMaxStack = [];
+    this._xViewPortMinStack = [];
+    this._xViewportMaxStack = [];
   }
 
   private _updateZoomStackCharts(vpMin, vpMax) {
@@ -1544,7 +1594,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const vpMax = axis.viewportMaximum !== null ? axis.viewportMaximum * factor : null;
       axis.set('viewportMinimum', -vpMax, false);
       axis.set('viewportMaximum', vpMax, false);
-      axis.set('interval', vpMax / 2 , false);
+      axis.set('interval', vpMax / 2, false);
       chart.render();
     }
   }
