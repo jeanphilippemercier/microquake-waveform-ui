@@ -134,25 +134,25 @@ export default class WaveformUtil {
     if (seisX.y().length !== seisY.y().length ||
       seisX.y().length !== seisZ.y().length ||
       seisY.y().length !== seisY.y().length) {
-        console.error('seismograms do not have same length: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same length: ');
+      console.error(sensor);
+      return null;
     }
 
     if (seisX.sampleRate() !== seisY.sampleRate() ||
       seisX.sampleRate() !== seisZ.sampleRate() ||
       seisY.sampleRate() !== seisY.sampleRate()) {
-        console.error('seismograms do not have same sample rate: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same sample rate: ');
+      console.error(sensor);
+      return null;
     }
 
     if (!seisX.start().isSame(seisY.start()) ||
       !seisX.start().isSame(seisZ.start()) ||
       !seisY.start().isSame(seisZ.start())) {
-        console.error('seismograms do not have same start time: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same start time: ');
+      console.error(sensor);
+      return null;
     }
 
     const x = new Array(seisX.y().length);
@@ -251,12 +251,12 @@ export default class WaveformUtil {
             el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
           if (channelX && channelY && channelZ &&
             channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
-              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
-              if (result) {
-                channelX.rotated = result.x;
-                channelY.rotated = result.y;
-                channelZ.rotated = result.z;
-              }
+            const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
+            if (result) {
+              channelX.rotated = result.x;
+              channelY.rotated = result.y;
+              channelZ.rotated = result.z;
+            }
           }
         } else {
           message += 'Cannot create 3C composite trace for xyzSensor: ' + xyzSensor.sensor_code +
@@ -267,7 +267,7 @@ export default class WaveformUtil {
         }
         if (message) {
           console.log(message);
-        // window.alert(message);
+          // window.alert(message);
         }
       }
     }
@@ -420,7 +420,7 @@ export default class WaveformUtil {
 
         if (ray !== null && ray.phase === phase) {
           picktime_utc = WaveformUtil.addSecondsToUtc
-              (waveformOriginTimeUtc, ray.travel_time);
+            (waveformOriginTimeUtc, ray.travel_time);
 
           const pickTime = moment(picktime_utc);
 

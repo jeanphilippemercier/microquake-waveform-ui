@@ -1082,8 +1082,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           enabled: false,
           snapToDataPoint: true,
           labelFormatter: (e) => {
-              const val = e.value * scaleY;
-              return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
+            const val = e.value * scaleY;
+            return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
           },
         }
       },
@@ -1242,12 +1242,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
-              e.preventDefault();
-              this._menu.nativeElement.style.left = `${e.offsetX}px`;
-              this._menu.nativeElement.style.top = `${e.y - 40}px`;
-              this._toggleContextMenuChart('show', false);
-              this.selectedContextMenu = j;
-              return false;
+            e.preventDefault();
+            this._menu.nativeElement.style.left = `${e.offsetX}px`;
+            this._menu.nativeElement.style.top = `${e.y - 40}px`;
+            this._toggleContextMenuChart('show', false);
+            this.selectedContextMenu = j;
+            return false;
           } else {
             e.preventDefault();
             return false;
@@ -1270,15 +1270,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
         canvas.addEventListener('contextmenu', (e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
-              e.preventDefault();
-              this._menu.nativeElement.style.left = `${e.offsetX}px`;
-              this._menu.nativeElement.style.top = `${e.y - 40}px`;
-              this._toggleContextMenuChart('show', true);
-              this.selectedContextMenu = j;
-              return false;
+            e.preventDefault();
+            this._menu.nativeElement.style.left = `${e.offsetX}px`;
+            this._menu.nativeElement.style.top = `${e.y - 40}px`;
+            this._toggleContextMenuChart('show', true);
+            this.selectedContextMenu = j;
+            return false;
           } else {
-              e.preventDefault();
-              return false;
+            e.preventDefault();
+            return false;
           }
         });
 
@@ -1780,7 +1780,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if (ind < this.activeSensors.length - 1) {
         chart.options.axisX['crosshair'].color =
           this.waveformService.pickingMode.getValue() === 'P' ? 'blue' :
-          this.waveformService.pickingMode.getValue() === 'S' ? 'red' : 'black';
+            this.waveformService.pickingMode.getValue() === 'S' ? 'red' : 'black';
         chart.options.axisX['crosshair'].lineDashType = this.waveformService.pickingMode.getValue() === 'none' ?
           'dash' : 'solid';
       } else {
@@ -1796,7 +1796,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _onPickingModeChange() {
     const value = this.waveformService.pickingMode.getValue() === 'none' ? false : true;
     for (let j = 0; j < this.activeSensors.length; j++) {
-      this. _toggleCrosshair(j, value);
+      this._toggleCrosshair(j, value);
     }
   }
 
