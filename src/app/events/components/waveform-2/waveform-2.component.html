@@ -17,9 +17,9 @@
   #contextMenuChart
   [hidden]="!contextMenuChartVisible"
 >
-  <li (click)="contextMenuClick(ContextMenuChartAction.DELETE_P)">Delete P Pick</li>
-  <li (click)="contextMenuClick(ContextMenuChartAction.DELETE_S)">Delete S Pick</li>
-  <li (click)="contextMenuClick(ContextMenuChartAction.NEW_P)">New P Pick</li>
-  <li (click)="contextMenuClick(ContextMenuChartAction.NEW_S)">New S Pick</li>
-  <li (click)="contextMenuClick(ContextMenuChartAction.SHOW_TOOLTIP)">Toggle Tooltip</li>
+  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.DELETE_P)">Delete P Pick</li>
+  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.DELETE_S)">Delete S Pick</li>
+  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.NEW_P)">New P Pick</li>
+  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.NEW_S)">New S Pick</li>
+  <li (click)="contextMenuClick(ContextMenuChartAction.SHOW_CROSSHAIR)">Toggle CrossHair</li>
 </ul>
