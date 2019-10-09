@@ -108,10 +108,15 @@ mat-expansion-panel-header {
     }
   }
 
-  &.event-accepted-manual {
-    &:before {
-      // background: green;
+  &.event-no-status {
+
+    .event-icon .mat-badge-content {
+      background: #e8e300;
+      color: #e8e300;
     }
+  }
+
+  &.event-accepted-manual {
 
     .event-icon .mat-badge-content {
       background: green;
@@ -120,9 +125,6 @@ mat-expansion-panel-header {
   }
 
   &.event-accepted-automatic {
-    &:before {
-      // background: blue;
-    }
 
     .event-icon .mat-badge-content {
       background: blue;
@@ -131,9 +133,6 @@ mat-expansion-panel-header {
   }
 
   &.event-rejected-manual {
-    &:before {
-      // background: red;
-    }
 
     .event-icon .mat-badge-content {
       background: red;
@@ -142,9 +141,6 @@ mat-expansion-panel-header {
   }
 
   &.event-rejected-automatic {
-    &:before {
-      // background: purple;
-    }
 
     .event-icon .mat-badge-content {
       background: purple;
