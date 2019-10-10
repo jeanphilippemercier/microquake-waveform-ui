@@ -290,7 +290,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
         this._toggleBatchPicks();
         if (this.activeSensors && this.activeSensors.length > 0) {
-          this._changePage(false);
+          this._changePage(true);
         }
       });
 
@@ -617,7 +617,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.allArrivals = [...this.arrivals];
       this.waveformService.batchPicks.next(false);
     }
+
     this.allArrivalsChanged = JSON.parse(JSON.stringify(this.allArrivals));
+    this.allSensors = WaveformUtil.removeArrivalsPickDataFromSensors(this.allSensors);
+
+    this.allSensors = WaveformUtil.addArrivalsPickDataToSensors(
+      this.allSensors,
+      this.allArrivals,
+      this.timeOrigin
+    );
+    this.loadedSensors = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensors, this.allSensors, this.waveformService.allSensorsMap);
   }
 
   private async _onInteractiveProcess() {

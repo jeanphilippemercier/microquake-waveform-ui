@@ -3,7 +3,7 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
-import { Channel } from '@interfaces/event.interface';
+import { Channel, PickType } from '@interfaces/event.interface';
 import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
@@ -438,11 +438,26 @@ export default class WaveformUtil {
             color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
             label: pickKey,
             labelAlign: 'far',
-            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label,
+            pickType: PickType.TRAVELTIME
           });
         }
       }
     }
+
+    return sensors;
+  }
+
+  static removeArrivalsPickDataFromSensors(sensors: Sensor[]) {
+    if (!sensors || sensors.length === 0) {
+      return [];
+    }
+
+    sensors.forEach(val => {
+      if (val.picks) {
+        val.picks = val.picks.filter(pick => pick.pickType !== PickType.ARRIVAL);
+      }
+    });
 
     return sensors;
   }
@@ -494,6 +509,7 @@ export default class WaveformUtil {
         color: arrival.phase === PickKey.P ? 'blue' : arrival.phase === PickKey.S ? 'red' : 'black',
         label: arrival.phase,
         labelAlign: 'far',
+        pickType: PickType.ARRIVAL
       });
 
     }

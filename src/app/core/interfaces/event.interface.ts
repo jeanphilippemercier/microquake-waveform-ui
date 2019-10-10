@@ -288,3 +288,8 @@ export enum PickKey {
   P = 'P',
   S = 'S'
 }
+
+export enum PickType {
+  ARRIVAL = 'arrival',
+  TRAVELTIME = 'traveltime'
+}
