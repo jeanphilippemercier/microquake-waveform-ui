@@ -1,11 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
 import { WaveformService } from '@services/waveform.service';
-import { Subject, combineLatest } from 'rxjs';
-import { takeUntil, skip, distinctUntilChanged } from 'rxjs/operators';
+import { Subject, combineLatest, timer } from 'rxjs';
+import { takeUntil, skip, distinctUntilChanged, debounce } from 'rxjs/operators';
+import { FormControl } from '@angular/forms';
+import { MatOptionSelectionChange, MatSelectChange, MatSelect } from '@angular/material';
 
 
 @Component({
@@ -15,6 +17,8 @@ import { takeUntil, skip, distinctUntilChanged } from 'rxjs/operators';
 })
 
 export class WaveformToolbarComponent implements OnInit, OnDestroy {
+
+  @ViewChild('options', { static: true }) optionsSelect: MatSelect;
 
   // FILTER
   lowFreqCorner: number;
@@ -30,11 +34,96 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
   private _unsubscribe = new Subject<void>();
   interactiveProcessingDisabled = false;
 
+  test = new FormControl();
+
   constructor(
     public waveformService: WaveformService
   ) { }
 
+  testChange($event: MatOptionSelectionChange) {
+
+    if (!$event.isUserInput) {
+      return;
+    }
+    console.log(`event`);
+    console.log($event);
+
+    const value = $event.source.value;
+    const selected = $event.source.selected;
+
+    switch (value) {
+      case 'commonTimeScale':
+        this.waveformService.commonTimeScale.next(selected);
+        break;
+      case 'commonAmplitudeScale':
+        this.waveformService.commonAmplitudeScale.next(selected);
+        break;
+      case 'zoomAll':
+        this.waveformService.zoomAll.next(selected);
+        break;
+      case 'displayComposite':
+        this.waveformService.displayComposite.next(selected);
+        break;
+      case 'displayRotated':
+        this.waveformService.displayRotated.next(selected);
+        break;
+      case 'predictedPicks':
+        this.waveformService.predictedPicks.next(selected);
+        break;
+      case 'predictedPicksBias':
+        this.waveformService.predictedPicksBias.next(selected);
+        break;
+      default:
+        break;
+    }
+  }
+
+  initTest() {
+    this.optionsSelect.optionSelectionChanges.pipe(
+      takeUntil(this._unsubscribe)
+    ).subscribe((val: MatOptionSelectionChange) => {
+      this.testChange(val);
+    });
+
+
+    combineLatest([
+      this.waveformService.commonTimeScale,
+      this.waveformService.commonAmplitudeScale,
+      this.waveformService.zoomAll,
+      this.waveformService.displayComposite,
+      this.waveformService.displayRotated,
+      this.waveformService.predictedPicks,
+      this.waveformService.predictedPicksBias,
+    ]).pipe(
+      distinctUntilChanged(),
+      takeUntil(this._unsubscribe)
+    ).subscribe(([
+      commonTimeScale,
+      commonAmplitudeScale,
+      zoomAll,
+      displayComposite,
+      displayRotated,
+      predictedPicks,
+      predictedPicksBias
+    ]) => {
+
+      let values = [];
+      values.push(commonTimeScale ? 'commonTimeScale' : '');
+      values.push(commonAmplitudeScale ? 'commonAmplitudeScale' : '');
+      values.push(zoomAll ? 'zoomAll' : '');
+      values.push(displayComposite ? 'displayComposite' : '');
+      values.push(displayRotated ? 'displayRotated' : '');
+      values.push(predictedPicks ? 'predictedPicks' : '');
+      values.push(predictedPicksBias ? 'predictedPicksBias' : '');
+      values = values.filter(val => val !== '');
+      this.test.setValue(values);
+    });
+  }
+
   async ngOnInit() {
+    this.initTest();
+
+
     this.lowFreqCorner = this.waveformService.lowFreqCorner.getValue();
     this.highFreqCorner = this.waveformService.highFreqCorner.getValue();
     this.numPoles = this.waveformService.numPoles.getValue();
@@ -139,5 +228,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
   onPageChangedLast() {
     this.waveformService.pageChanged.next(this.waveformService.maxPages.getValue());
   }
+
+
 
 }

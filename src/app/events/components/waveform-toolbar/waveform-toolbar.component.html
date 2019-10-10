@@ -10,33 +10,24 @@
 
   <button
     mat-icon-button
-    matTooltip="Common Time Scale"
-    class="activatable"
-    [ngClass]="{'active': waveformService.commonTimeScale | async}"
-    (click)="onCommonTimeScaleClick()"
+    matTooltip="Options"
+    (click)="options.open()"
   >
-    <mat-icon>more_horiz</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Common Amplitude Scale"
-    class="activatable"
-    [ngClass]="{'active': waveformService.commonAmplitudeScale | async}"
-    (click)="onCommonAmplitudeScaleClick()"
-  >
-    <mat-icon>more_vert</mat-icon>
-  </button>
-
-
-  <button
-    mat-icon-button
-    matTooltip="Zoom or Pan All Channels"
-    class="activatable"
-    [ngClass]="{'active': waveformService.zoomAll | async}"
-    (click)="onZoomAllClick()"
-  >
-    <mat-icon>link</mat-icon>
+    <mat-icon>ballot</mat-icon>
+    <mat-select
+      [formControl]="test"
+      multiple
+      #options
+      class="langSelect"
+    >
+      <mat-option value="commonTimeScale">Common Time Scale</mat-option>
+      <mat-option value="commonAmplitudeScale">Common Amplitude Scale</mat-option>
+      <mat-option value="zoomAll">Zoom or Pan All Channels</mat-option>
+      <mat-option value="displayComposite">Display Composite or 3-Component Traces</mat-option>
+      <mat-option value="displayRotated">Display Rotated or XYZ Traces</mat-option>
+      <mat-option value="predictedPicks">Predicted Picks</mat-option>
+      <mat-option value="predictedPicksBias">Remove Predicted Picks Bias</mat-option>
+    </mat-select>
   </button>
 
   <button
@@ -55,45 +46,6 @@
     <mat-icon>settings_backup_restore</mat-icon>
   </button>
 
-  <button
-    mat-icon-button
-    matTooltip="Display Composite or 3-Component Traces"
-    class="activatable"
-    [ngClass]="{'active': waveformService.displayComposite | async}"
-    (click)="onDisplayCompositeClick()"
-  >
-    <mat-icon>playlist_add</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Display Rotated or XYZ Traces"
-    class="activatable"
-    [ngClass]="{'active': waveformService.displayRotated | async}"
-    (click)="onDisplayRotatedClick()"
-  >
-    <mat-icon>3d_rotation</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Toggle Predicted Picks"
-    class="activatable"
-    [ngClass]="{'active': waveformService.predictedPicks | async}"
-    (click)="onPredictedPicksClick()"
-  >
-    <mat-icon>blur_linear</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Toggle Remove Predicted Picks Bias"
-    class="activatable"
-    [ngClass]="{'active': waveformService.predictedPicksBias | async}"
-    (click)="onPredictedPicksBiasClick()"
-  >
-    <mat-icon>compare_arrows</mat-icon>
-  </button>
 
   <button
     [disabled]="helpDialogOpened"
@@ -174,13 +126,13 @@
     (ngModelChange)="onPickingModeChange($event)"
   >
     <mat-button-toggle value="P">
-      <mat-icon>local_parking</mat-icon>
+      P
     </mat-button-toggle>
     <mat-button-toggle value="S">
-      <mat-icon>strikethrough_s</mat-icon>
+      S
     </mat-button-toggle>
     <mat-button-toggle value="none">
-      <mat-icon>trip_origin</mat-icon>
+      <mat-icon>block</mat-icon>
     </mat-button-toggle>
   </mat-button-toggle-group>
 
@@ -224,10 +176,28 @@
   >
     <mat-icon>chevron_left</mat-icon>
   </button>
-  <small class="pagination-pages">
+  <small
+    class="pagination-pages"
+    (click)="pagination.open()"
+  >
     <span class="current">{{waveformService.currentPage | async}}</span> / {{waveformService.maxPages | async}}<br>
     <span class="suffix-label">pages</span>
   </small>
+  <button
+    mat-icon-button
+    matTooltip="Options"
+    (click)="pagination.open()"
+  >
+    <mat-select
+      [formControl]="test"
+      #pagination
+      class="langSelect"
+    >
+      <mat-option value="1">1</mat-option>
+      <mat-option value="2">2</mat-option>
+      <mat-option value="3">3</mat-option>
+    </mat-select>
+  </button>
   <button
     mat-icon-button
     [disabled]="

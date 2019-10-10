@@ -57,6 +57,7 @@ mat-paginator {
 }
 
 .pagination-pages {
+  width: 40px;
   font-size: 12px;
   line-height: 14px;
   text-align: center;
@@ -69,4 +70,13 @@ mat-paginator {
     font-size: 11px;
     opacity: 0.5;
   }
+}
+
+
+::ng-deep .langSelect div.mat-select-arrow-wrapper {
+  display: none;
+}
+
+::ng-deep .langSelect.mat-select {
+  display: inline;
 }
