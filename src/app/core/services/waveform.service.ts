@@ -10,7 +10,7 @@ import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGrou
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
-import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
+import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -22,6 +22,7 @@ import { InventoryApiService } from './inventory-api.service';
 import { Site, Network, Station, Sensor } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { EventTypeIconPipe } from '@app/shared/pipes/event-type-icon.pipe';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +38,8 @@ export class WaveformService implements OnDestroy {
   displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
   predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  batchPicks: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  batchPicksDisabled: BehaviorSubject<boolean> = new BehaviorSubject(true);
   pickingMode: BehaviorSubject<any> = new BehaviorSubject('none'); // TODO: add interface
   loadedAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
@@ -62,6 +65,9 @@ export class WaveformService implements OnDestroy {
 
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
+
+  batchPicksDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  batchPicksDialogOpened = false;
 
   site: BehaviorSubject<string> = new BehaviorSubject('');
   network: BehaviorSubject<string> = new BehaviorSubject('');
@@ -309,6 +315,25 @@ export class WaveformService implements OnDestroy {
     });
   }
 
+
+  async openBatchDialog() {
+
+    this.batchPicksDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(ConfirmationDialogComponent, {
+      hasBackdrop: true,
+      width: '600px',
+      data: {
+        header: 'Do you want to load arrivals from the latest reprocessing?',
+        text: `Previous reprocessing of this event has failed or was not accepted. If you want to, you can load arrivals from the latest reprocessing.`
+      }
+    });
+
+    this.batchPicksDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.batchPicks.next(true);
+      }
+    });
+
+  }
 
   async cancelLastInteractiveProcess() {
     try {
