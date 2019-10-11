@@ -8,230 +8,212 @@
     <app-event-site-picker></app-event-site-picker>
   </app-header-layout>
 
-  <button
-    mat-icon-button
-    matTooltip="Options"
-    (click)="options.open()"
-  >
-    <mat-icon>ballot</mat-icon>
-    <mat-select
-      [formControl]="test"
-      multiple
-      #options
-      class="langSelect"
-    >
-      <mat-option value="commonTimeScale">Common Time Scale</mat-option>
-      <mat-option value="commonAmplitudeScale">Common Amplitude Scale</mat-option>
-      <mat-option value="zoomAll">Zoom or Pan All Channels</mat-option>
-      <mat-option value="displayComposite">Display Composite or 3-Component Traces</mat-option>
-      <mat-option value="displayRotated">Display Rotated or XYZ Traces</mat-option>
-      <mat-option value="predictedPicks">Predicted Picks</mat-option>
-      <mat-option value="predictedPicksBias">Remove Predicted Picks Bias</mat-option>
-    </mat-select>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Undo Zoom or Pan on Time Axis"
-    (click)="onBackClick()"
-  >
-    <mat-icon>undo</mat-icon>
-  </button>
-
-  <button
-    mat-icon-button
-    matTooltip="Reset View after Zoom or Pan"
-    (click)="onResetAllChartsViewClick()"
-  >
-    <mat-icon>settings_backup_restore</mat-icon>
-  </button>
-
-
-  <button
-    [disabled]="helpDialogOpened"
-    mat-icon-button
-    matTooltip='Show Help'
-    (click)="onHelpDialogClick()"
-  >
-    <mat-icon>help</mat-icon>
-  </button>
-
-  <div class="float-left filters">
-
-    <mat-form-field
-      class="input-form-width float-left"
-      appearance="standard"
-    >
-      <mat-label>Low Corner</mat-label>
-      <input
-        matInput
-        matTooltip="Butterworth Filter Low Corner Frequency"
-        type="number"
-        step="10"
-        min="0"
-        (keydown.enter)="onApplyFilter()"
-        [(ngModel)]="lowFreqCorner"
-        #minRateControl="ngModel"
+  <div class="buttons-group ml-2">
+    <div class="buttons-group-content">
+      <mat-button-toggle-group
+        class="picking-mode"
+        name="pickingMode"
+        aria-label="Picking Mode"
+        matTooltip="Select Picking Mode P or S. Click again to deselect"
+        #group="matButtonToggleGroup"
+        [ngModel]="this.waveformService.pickingMode | async"
       >
-    </mat-form-field>
+        <mat-button-toggle
+          [value]="PickKey.P"
+          (click)="onPickingModeChange(PickKey.P)"
+        >
+          P
+        </mat-button-toggle>
+        <mat-button-toggle
+          [value]="PickKey.S"
+          (click)="onPickingModeChange(PickKey.S)"
+        >
+          S
+        </mat-button-toggle>
+      </mat-button-toggle-group>
 
-    <mat-form-field
-      class="input-form-width float-left"
-      appearance="standard"
-    >
-      <mat-label>High Corner</mat-label>
-      <input
-        matInput
-        matTooltip="Butterworth Filter High Corner Frequency"
-        type="number"
-        step="100"
-        [max]="maxFreq"
-        (keydown.enter)="onApplyFilter()"
-        [(ngModel)]="highFreqCorner"
-        #rateControl="ngModel"
+
+      <button
+        mat-icon-button
+        matTooltip="Undo Last Picking Operation"
+        (click)="onUndoLastPickingClick()"
       >
-    </mat-form-field>
-
-    <mat-form-field
-      class="input-form-width-less float-left"
-      appearance="standard"
-    >
-      <mat-label>Poles</mat-label>
-      <input
-        matInput
-        matTooltip="Number of Poles for Butterworth Filter"
-        type="number"
-        (keydown.enter)="onApplyFilter()"
-        [(ngModel)]="numPoles"
-        [ngModelOptions]="{standalone: true}"
-      >
-    </mat-form-field>
-
+        <mat-icon>undo</mat-icon>
+      </button>
+    </div>
   </div>
 
-  <button
-    mat-icon-button
-    matTooltip="Apply Filter"
-    (click)="onApplyFilter()"
-  >
-    <mat-icon>redo</mat-icon>
-  </button>
+  <div class="buttons-group ml-2">
+    <div class="buttons-group-content">
+      <div
+        [matTooltipDisabled]="(waveformService.batchPicksDisabled | async) === false"
+        matTooltip="No arrivals to load"
+      >
+        <button
+          mat-icon-button
+          [disabled]="waveformService.batchPicksDisabled | async"
+          [matTooltip]="((waveformService.batchPicks | async) ? 'Unload' : 'Load') + ' arrivals from latest reprocessing'"
+          (click)="onBatchPicksClick()"
+        >
+          <ng-container *ngIf="(waveformService.batchPicksDisabled | async)">
+            <mat-icon>cloud_off</mat-icon>
+          </ng-container>
+          <ng-container *ngIf="(waveformService.batchPicksDisabled | async) === false">
+            <mat-icon *ngIf="!(waveformService.batchPicks | async)">cloud_download</mat-icon>
+            <mat-icon *ngIf="(waveformService.batchPicks | async)">cloud_done</mat-icon>
+          </ng-container>
+        </button>
+      </div>
 
-  <mat-button-toggle-group
-    name="pickingMode"
-    aria-label="Picking Mode"
-    matTooltip="Select Picking Mode P, S or None"
-    #group="matButtonToggleGroup"
-    [ngModel]="this.waveformService.pickingMode | async"
-    (ngModelChange)="onPickingModeChange($event)"
-  >
-    <mat-button-toggle value="P">
-      P
-    </mat-button-toggle>
-    <mat-button-toggle value="S">
-      S
-    </mat-button-toggle>
-    <mat-button-toggle value="none">
-      <mat-icon>block</mat-icon>
-    </mat-button-toggle>
-  </mat-button-toggle-group>
-
-  <button
-    mat-icon-button
-    matTooltip="Undo Last Picking Operation"
-    (click)="onUndoLastPickingClick()"
-  >
-    <mat-icon>cached</mat-icon>
-  </button>
-
-  <div
-    [matTooltipDisabled]="(waveformService.batchPicksDisabled | async) === false"
-    matTooltip="No arrivals to load"
-  >
-    <button
-      mat-icon-button
-      class="activatable"
-      [ngClass]="{'active': waveformService.batchPicks | async}"
-      [disabled]="waveformService.batchPicksDisabled | async"
-      [matTooltip]="((waveformService.batchPicks | async) ? 'Unload' : 'Load') + ' arrivals from latest reprocessing'"
-      (click)="onBatchPicksClick()"
-    >
-      <mat-icon>backup</mat-icon>
-    </button>
-  </div>
-
-  <div
-    [matTooltip]="'Interactive processing' + (interactiveProcessingDisabled ? '. Currently DISABLED, because another reprocessing is already running.' : '')"
-  >
-    <button
-      mat-icon-button
-      (click)="onInteractiveProcessClick()"
-      [disabled]="interactiveProcessingDisabled"
-    >
-      <mat-icon>launch</mat-icon>
-    </button>
+      <div
+        [matTooltip]="'Interactive processing' + (interactiveProcessingDisabled ? '. Currently DISABLED, because another reprocessing is already running.' : '')"
+      >
+        <button
+          mat-icon-button
+          (click)="onInteractiveProcessClick()"
+          [disabled]="interactiveProcessingDisabled"
+        >
+          <mat-icon>play_circle_outline</mat-icon>
+        </button>
+      </div>
+    </div>
   </div>
   <div class="mr-auto"></div>
-  <button
-    mat-icon-button
-    [disabled]="
+
+  <div class="buttons-group ml-2">
+    <div class="buttons-group-content">
+
+      <button
+        mat-icon-button
+        matTooltip="Undo Zoom or Pan on Time Axis"
+        (click)="onBackClick()"
+      >
+        <mat-icon>youtube_searched_for</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        matTooltip="Reset View after Zoom or Pan"
+        (click)="onResetAllChartsViewClick()"
+      >
+        <mat-icon>find_replace</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div class="buttons-group ml-2">
+    <div class="buttons-group-content">
+      <button
+        [disabled]="helpDialogOpened"
+        mat-icon-button
+        matTooltip='Open filter'
+        (click)="onWaveformFilterDialogClick()"
+      >
+        <mat-icon>colorize</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        matTooltip="Options"
+        (click)="options.open()"
+      >
+        <mat-icon>ballot</mat-icon>
+        <mat-select
+          [formControl]="optionsForm"
+          multiple
+          #options
+          class="langSelect"
+        >
+          <mat-option value="commonTimeScale">Common Time Scale</mat-option>
+          <mat-option value="commonAmplitudeScale">Common Amplitude Scale</mat-option>
+          <mat-option value="zoomAll">Zoom or Pan All Channels</mat-option>
+          <mat-option value="displayComposite">Display Composite or 3-Component Traces</mat-option>
+          <mat-option value="displayRotated">Display Rotated or XYZ Traces</mat-option>
+          <mat-option value="predictedPicks">Predicted Picks</mat-option>
+          <mat-option value="predictedPicksBias">Remove Predicted Picks Bias</mat-option>
+        </mat-select>
+      </button>
+
+      <button
+        [disabled]="helpDialogOpened"
+        mat-icon-button
+        matTooltip='Show Help'
+        (click)="onHelpDialogClick()"
+      >
+        <mat-icon>help</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="buttons-group ml-2">
+    <div class="buttons-group-content">
+      <button
+        *ngIf=""
+        mat-icon-button
+        [disabled]="
     (waveformService.currentPage | async) <= 1 ||
     (waveformService.loading | async)
     "
-    (click)="onPageChangedFirst()"
-  >
-    <mat-icon>first_page</mat-icon>
-  </button>
-  <button
-    mat-icon-button
-    [disabled]="
+        (click)="onChangeToFirstPage()"
+      >
+        <mat-icon>first_page</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        [disabled]="
     (waveformService.currentPage | async) <= 1 ||
     (waveformService.loading | async)
     "
-    (click)="onPageChanged(-1)"
-  >
-    <mat-icon>chevron_left</mat-icon>
-  </button>
-  <small
-    class="pagination-pages"
-    (click)="pagination.open()"
-  >
-    <span class="current">{{waveformService.currentPage | async}}</span> / {{waveformService.maxPages | async}}<br>
-    <span class="suffix-label">pages</span>
-  </small>
-  <button
-    mat-icon-button
-    matTooltip="Options"
-    (click)="pagination.open()"
-  >
-    <mat-select
-      [formControl]="test"
-      #pagination
-      class="langSelect"
-    >
-      <mat-option value="1">1</mat-option>
-      <mat-option value="2">2</mat-option>
-      <mat-option value="3">3</mat-option>
-    </mat-select>
-  </button>
-  <button
-    mat-icon-button
-    [disabled]="
+        (click)="onAddPage(-1)"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <small
+        class="pagination-pages"
+        (click)="pagination.open()"
+        matTooltip="Waveform page"
+      >
+        <span class="current">{{waveformService.currentPage | async}}</span> / {{waveformService.maxPages | async}}<br>
+        <span class="suffix-label">pages</span>
+      </small>
+      <button
+        class="pagination-button"
+        mat-icon-button
+        matTooltip="Waveform data page"
+        (click)="pagination.open()"
+      >
+        <mat-select
+          [formControl]="paginationForm"
+          #pagination
+          class="langSelect"
+        >
+          <mat-option
+            *ngFor="let paginationPage of paginationPages"
+            (click)="onChangeToCustomPage(paginationPage)"
+            [value]="paginationPage"
+          >{{paginationPage}}</mat-option>
+        </mat-select>
+      </button>
+      <button
+        mat-icon-button
+        [disabled]="
     (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
     (waveformService.loading | async)
     "
-    (click)="onPageChanged(1)"
-  >
-    <mat-icon>chevron_right</mat-icon>
-  </button>
-  <button
-    mat-icon-button
-    [disabled]="
+        (click)="onAddPage(1)"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <button
+        *ngIf=""
+        mat-icon-button
+        [disabled]="
     (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
     (waveformService.loading | async)
     "
-    (click)="onPageChangedLast()"
-  >
-    <mat-icon>last_page</mat-icon>
-  </button>
+        (click)="onChangToLastPage()"
+      >
+        <mat-icon>last_page</mat-icon>
+      </button>
+    </div>
+  </div>
 </mat-toolbar>

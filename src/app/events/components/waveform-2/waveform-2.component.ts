@@ -890,17 +890,17 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         if (e.keyCode === 68) {   // d
           if (this.waveformService.pickingMode.getValue() === 'P') {
-            this.waveformService.pickingMode.next('none');
+            this.waveformService.pickingMode.next(null);
           } else {
-            this.waveformService.pickingMode.next('P');
+            this.waveformService.pickingMode.next(PickKey.P);
           }
         }
 
         if (e.keyCode === 70) {   // f
           if (this.waveformService.pickingMode.getValue() === 'S') {
-            this.waveformService.pickingMode.next('none');
+            this.waveformService.pickingMode.next(null);
           } else {
-            this.waveformService.pickingMode.next('S');
+            this.waveformService.pickingMode.next(PickKey.S);
           }
         }
 
@@ -913,7 +913,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
 
         if (e.keyCode === 39) {  // right arrow moves pick to right
-          if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
+          if (this.waveformService.pickingMode.getValue() !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
               this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), step * 10, true, true);
@@ -924,7 +924,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
 
         if (e.keyCode === 37) {  // left arrow moves pick to left
-          if (this.waveformService.pickingMode.getValue() !== 'none' && this.lastDownTarget !== null && this.lastDownTarget > -1) {
+          if (this.waveformService.pickingMode.getValue() !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
               this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), -step * 10, true, true);
@@ -1298,7 +1298,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       canvas.addEventListener('wheel', (e: WheelEvent) => {
         const idx = j;
         // in pick mode wheel up moves pick left, wheel down moves pick right
-        if (this.waveformService.pickingMode.getValue() !== 'none' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        if (this.waveformService.pickingMode.getValue() !== null && !e.ctrlKey && !e.shiftKey && !e.altKey) {
           if (idx < this.activeSensors.length - 1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.deltaY < 0) { // scrolling up
@@ -1790,7 +1790,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         chart.options.axisX['crosshair'].color =
           this.waveformService.pickingMode.getValue() === 'P' ? 'blue' :
             this.waveformService.pickingMode.getValue() === 'S' ? 'red' : 'black';
-        chart.options.axisX['crosshair'].lineDashType = this.waveformService.pickingMode.getValue() === 'none' ?
+        chart.options.axisX['crosshair'].lineDashType = this.waveformService.pickingMode.getValue() === null ?
           'dash' : 'solid';
       } else {
         chart.options.axisX['crosshair'].color = 'black';
@@ -1803,7 +1803,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _onPickingModeChange() {
-    const value = this.waveformService.pickingMode.getValue() === 'none' ? false : true;
+    const value = this.waveformService.pickingMode.getValue() === null ? false : true;
     for (let j = 0; j < this.activeSensors.length; j++) {
       this._toggleCrosshair(j, value);
     }
