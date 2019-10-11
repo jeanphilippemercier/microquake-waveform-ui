@@ -691,7 +691,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               index: i,
               name: channel.channel_id,
               type: 'line',
-              // markerType: 'none',
+              markerType: 'none',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
               showInLegend: true,
@@ -986,7 +986,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           {
             name: channel.channel_id,
             type: 'line',
-            // markerType: 'none',
+            markerType: 'none',
             color: this.waveformService.displayComposite.getValue() ? globals.context.linecolor :
               globals.linecolor[channel.channel_id.toUpperCase().replace('...CONTEXT', '')],
             lineThickness: globals.lineThickness,
