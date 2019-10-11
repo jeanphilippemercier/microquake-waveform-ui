@@ -151,7 +151,7 @@ export interface EventBatchMap {
 }
 
 export interface InteractiveProcessing {
-  data: any;
+  data: Arrival[];
   id: number;
   new_catalog: any;
   status: BatchStatus;
@@ -287,4 +287,11 @@ export enum PredictedPickKey {
 export enum PickKey {
   P = 'P',
   S = 'S'
+}
+
+export type PickingMode = PickKey | null;
+
+export enum PickType {
+  ARRIVAL = 'arrival',
+  TRAVELTIME = 'traveltime'
 }

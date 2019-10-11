@@ -3,10 +3,13 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
-import { Channel } from '@interfaces/event.interface';
+import { Channel, PickType } from '@interfaces/event.interface';
 import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
 
 export default class WaveformUtil {
+
+  // default time units conversion factor is from s to microsenonds (us)
+  static convXUnits = 1000000;
 
   // default data units conversion factor is from m to defaultUnits (mm)
   static convYUnits = 1000;
@@ -83,11 +86,11 @@ export default class WaveformUtil {
       channel.data = [];
       for (let k = 0; k < seismogram.numPoints(); k++) {
         channel.data.push({
-          x: channel.microsec + (k * 1000000 / channel.sample_rate),   // trace microsecond offset
+          x: channel.microsec + (k * WaveformUtil.convXUnits / channel.sample_rate),   // trace microsecond offset
           y: seismogram.y()[k],  // trace after mean removal
         });
       }
-      channel.duration = (seismogram.numPoints() - 1) * 1000000 / seismogram.sampleRate();  // in microseconds
+      channel.duration = (seismogram.numPoints() - 1) * WaveformUtil.convXUnits / seismogram.sampleRate();  // in microseconds
       let sensor = WaveformUtil.findValue(sensors, 'sensor_code', sg.stationCode());
       if (!sensor) {
         sensor = { sensor_code: sg.stationCode(), channels: [] };
@@ -110,7 +113,7 @@ export default class WaveformUtil {
           for (const channel of sensor.channels) {
             if (!channel.start.isSame(zTime, 'second')) {
               console.log('***adjust time origin for sensor: ' + sensor.sensor_code + ' channel: ' + channel.channel_id);
-              const offset = channel.start.diff(zTime, 'seconds') * 1000000;
+              const offset = channel.start.diff(zTime, 'seconds') * WaveformUtil.convXUnits;
               channel.microsec += offset;
               for (const datasample of channel.data) { // microsecond offset from new zeroTime
                 datasample['x'] += offset;
@@ -131,25 +134,25 @@ export default class WaveformUtil {
     if (seisX.y().length !== seisY.y().length ||
       seisX.y().length !== seisZ.y().length ||
       seisY.y().length !== seisY.y().length) {
-        console.error('seismograms do not have same length: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same length: ');
+      console.error(sensor);
+      return null;
     }
 
     if (seisX.sampleRate() !== seisY.sampleRate() ||
       seisX.sampleRate() !== seisZ.sampleRate() ||
       seisY.sampleRate() !== seisY.sampleRate()) {
-        console.error('seismograms do not have same sample rate: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same sample rate: ');
+      console.error(sensor);
+      return null;
     }
 
     if (!seisX.start().isSame(seisY.start()) ||
       !seisX.start().isSame(seisZ.start()) ||
       !seisY.start().isSame(seisZ.start())) {
-        console.error('seismograms do not have same start time: ');
-        console.error(sensor);
-        return null;
+      console.error('seismograms do not have same start time: ');
+      console.error(sensor);
+      return null;
     }
 
     const x = new Array(seisX.y().length);
@@ -248,12 +251,12 @@ export default class WaveformUtil {
             el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
           if (channelX && channelY && channelZ &&
             channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
-              const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
-              if (result) {
-                channelX.rotated = result.x;
-                channelY.rotated = result.y;
-                channelZ.rotated = result.z;
-              }
+            const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
+            if (result) {
+              channelX.rotated = result.x;
+              channelY.rotated = result.y;
+              channelZ.rotated = result.z;
+            }
           }
         } else {
           message += 'Cannot create 3C composite trace for xyzSensor: ' + xyzSensor.sensor_code +
@@ -264,7 +267,7 @@ export default class WaveformUtil {
         }
         if (message) {
           console.log(message);
-        // window.alert(message);
+          // window.alert(message);
         }
       }
     }
@@ -366,7 +369,7 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with millisec precision
   static calculateTimeOffset(time: moment.Moment, origin: moment.Moment) {
     let diff = moment(time).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
-    diff *= 1000000;
+    diff *= WaveformUtil.convXUnits;
     diff += moment(time).millisecond() * 1000;
     return diff;
   }
@@ -374,7 +377,7 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with microsec precision
   static calculateTimeOffsetMicro(timeUtc: string, origin: moment.Moment) {
     let diff = moment(timeUtc).millisecond(0).diff(moment(origin).millisecond(0), 'seconds');
-    diff *= 1000000;
+    diff *= WaveformUtil.convXUnits;
     diff += parseInt(timeUtc.slice(-7, -1), 10);
     return diff;
   }
@@ -382,8 +385,8 @@ export default class WaveformUtil {
   // microsec time offset from the origin full second with microsec precision
   static addTimeOffsetMicro(origin: moment.Moment, micro: number) {
 
-    const fullseconds = Math.floor(micro / 1000000);
-    const microsec = micro - fullseconds * 1000000;
+    const fullseconds = Math.floor(micro / WaveformUtil.convXUnits);
+    const microsec = micro - fullseconds * WaveformUtil.convXUnits;
     const str = '000000' + microsec;
     const ts = moment(origin).millisecond(0).add(fullseconds, 'seconds');
     return ts.toISOString().slice(0, -4) + str.substring(str.length - 6) + 'Z';
@@ -417,7 +420,7 @@ export default class WaveformUtil {
 
         if (ray !== null && ray.phase === phase) {
           picktime_utc = WaveformUtil.addSecondsToUtc
-              (waveformOriginTimeUtc, ray.travel_time);
+            (waveformOriginTimeUtc, ray.travel_time);
 
           const pickTime = moment(picktime_utc);
 
@@ -435,11 +438,26 @@ export default class WaveformUtil {
             color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
             label: pickKey,
             labelAlign: 'far',
-            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label
+            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label,
+            pickType: PickType.TRAVELTIME
           });
         }
       }
     }
+
+    return sensors;
+  }
+
+  static removeArrivalsPickDataFromSensors(sensors: Sensor[]) {
+    if (!sensors || sensors.length === 0) {
+      return [];
+    }
+
+    sensors.forEach(val => {
+      if (val.picks) {
+        val.picks = val.picks.filter(pick => pick.pickType !== PickType.ARRIVAL);
+      }
+    });
 
     return sensors;
   }
@@ -491,6 +509,7 @@ export default class WaveformUtil {
         color: arrival.phase === PickKey.P ? 'blue' : arrival.phase === PickKey.S ? 'red' : 'black',
         label: arrival.phase,
         labelAlign: 'far',
+        pickType: PickType.ARRIVAL
       });
 
     }
@@ -523,7 +542,7 @@ export default class WaveformUtil {
             const microsec = sensor[pick_key].slice(-7, -1);
             const microsec_ref = sensor[predicted_key].slice(-7, -1);
             const offset = pickTime.millisecond(0)
-              .diff(referenceTime.millisecond(0), 'seconds') * 1000000;
+              .diff(referenceTime.millisecond(0), 'seconds') * WaveformUtil.convXUnits;
             picksBias += offset + parseInt(microsec, 10) - parseInt(microsec_ref, 10);
             nPicksBias++;
           }

@@ -6,11 +6,11 @@ import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
-import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData } from '@interfaces/dialogs.interface';
+import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -22,6 +22,8 @@ import { InventoryApiService } from './inventory-api.service';
 import { Site, Network, Station, Sensor } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { EventTypeIconPipe } from '@app/shared/pipes/event-type-icon.pipe';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
+import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +39,9 @@ export class WaveformService implements OnDestroy {
   displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
   predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  pickingMode: BehaviorSubject<any> = new BehaviorSubject('none'); // TODO: add interface
+  batchPicks: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  batchPicksDisabled: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  pickingMode: BehaviorSubject<PickingMode> = new BehaviorSubject(null);
   loadedAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   undoLastZoomOrPanClicked: Subject<void> = new Subject;
@@ -62,6 +66,9 @@ export class WaveformService implements OnDestroy {
 
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
+
+  batchPicksDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  batchPicksDialogOpened = false;
 
   site: BehaviorSubject<string> = new BehaviorSubject('');
   network: BehaviorSubject<string> = new BehaviorSubject('');
@@ -103,6 +110,9 @@ export class WaveformService implements OnDestroy {
   eventFilterDialogOpened = false;
   eventFilterDialogRef: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
 
+  eventWaveformFilterDialogOpened = false;
+  eventWaveformFilterDialogRef: MatDialogRef<EventWaveformFilterDialogComponent>;
+
   eventTypes: EventType[] = [];
   evaluationStatuses = Object.values(EvaluationStatus);
   evaluationStatusGroups = Object.values(EvaluationStatusGroup);
@@ -116,7 +126,6 @@ export class WaveformService implements OnDestroy {
 
   allSensorsMap: { [key: string]: number } = {};
   allStationsMap: { [key: number]: number } = {};
-
 
   initialized: ReplaySubject<boolean> = new ReplaySubject(1);
   initializedObs: Observable<boolean> = this.initialized.asObservable();
@@ -270,6 +279,37 @@ export class WaveformService implements OnDestroy {
     });
   }
 
+
+  async openWaveformFilterDialog() {
+    if (this.eventWaveformFilterDialogOpened || this.eventWaveformFilterDialogRef) {
+      return;
+    }
+
+    this.eventWaveformFilterDialogOpened = true;
+    this.eventWaveformFilterDialogRef = this._matDialog.open<EventWaveformFilterDialogComponent, EventWaveformFilterDialogData>(EventWaveformFilterDialogComponent, {
+      width: '400px',
+      data: {
+        lowFreqCorner: this.lowFreqCorner.getValue(),
+        highFreqCorner: this.highFreqCorner.getValue(),
+        numPoles: this.numPoles.getValue(),
+        maxFreq: globals.highFreqCorner
+      }
+    });
+
+    this.eventWaveformFilterDialogRef.componentInstance.applyFilter.pipe(first()).subscribe(val => {
+      this.lowFreqCorner.next(val.lowFreqCorner);
+      this.highFreqCorner.next(val.highFreqCorner);
+      this.numPoles.next(val.numPoles);
+      this.applyFilterClicked.next();
+      this.eventWaveformFilterDialogRef.close();
+    });
+
+    this.eventWaveformFilterDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.eventWaveformFilterDialogRef;
+      this.eventWaveformFilterDialogOpened = false;
+    });
+  }
+
   async openHelpDialog() {
     if (this.helpDialogOpened || this.helpDialogRef) {
       return;
@@ -290,6 +330,7 @@ export class WaveformService implements OnDestroy {
     }
 
     this.eventInteractiveProcessDialogRef = this._matDialog.open<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>(EventInteractiveProcessingDialogComponent, {
+      disableClose: true,
       hasBackdrop: true,
       width: '600px',
       data: {
@@ -308,6 +349,25 @@ export class WaveformService implements OnDestroy {
     });
   }
 
+
+  async openBatchDialog() {
+
+    this.batchPicksDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(ConfirmationDialogComponent, {
+      hasBackdrop: true,
+      width: '600px',
+      data: {
+        header: 'Do you want to load arrivals from the latest reprocessing?',
+        text: `Previous reprocessing of this event has failed or was not accepted. If you want to, you can load arrivals from the latest reprocessing.`
+      }
+    });
+
+    this.batchPicksDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.batchPicks.next(true);
+      }
+    });
+
+  }
 
   async cancelLastInteractiveProcess() {
     try {

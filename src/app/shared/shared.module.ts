@@ -43,6 +43,7 @@ import { ConfirmationDialogComponent } from './dialogs/confirmation-dialog/confi
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
+import { EventWaveformFilterDialogComponent } from './dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -108,7 +109,8 @@ const DIALOGS = [
   EventUpdateDialogComponent,
   EventFilterDialogComponent,
   EventInteractiveProcessingDialogComponent,
-  ConfirmationDialogComponent
+  ConfirmationDialogComponent,
+  EventWaveformFilterDialogComponent
 ];
 
 const SHEETS = [
