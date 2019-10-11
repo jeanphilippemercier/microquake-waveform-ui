@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
-import { globals } from '@src/globals';
 import { WaveformService } from '@services/waveform.service';
 import { Subject, combineLatest } from 'rxjs';
-import { takeUntil, skip, distinctUntilChanged } from 'rxjs/operators';
-
+import { takeUntil, distinctUntilChanged } from 'rxjs/operators';
+import { FormControl } from '@angular/forms';
+import { MatOptionSelectionChange, MatSelect } from '@angular/material';
+import { PickingMode, PickKey } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-waveform-toolbar',
@@ -16,28 +17,23 @@ import { takeUntil, skip, distinctUntilChanged } from 'rxjs/operators';
 
 export class WaveformToolbarComponent implements OnInit, OnDestroy {
 
-  // FILTER
-  lowFreqCorner: number;
-  highFreqCorner: number;
-  numPoles: number;
+  @ViewChild('options', { static: true }) optionsSelect: MatSelect;
 
-  pickingMode: any = 'none'; // TODO: interface
-
-  maxFreq = globals.highFreqCorner;
-
+  PickKey = PickKey;
   helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
-  private _unsubscribe = new Subject<void>();
   interactiveProcessingDisabled = false;
+  paginationPages: number[] = [];
+  optionsForm = new FormControl();
+  paginationForm = new FormControl();
+  private _unsubscribe = new Subject<void>();
 
   constructor(
     public waveformService: WaveformService
   ) { }
 
   async ngOnInit() {
-    this.lowFreqCorner = this.waveformService.lowFreqCorner.getValue();
-    this.highFreqCorner = this.waveformService.highFreqCorner.getValue();
-    this.numPoles = this.waveformService.numPoles.getValue();
+    this._initOptions();
 
     combineLatest([this.waveformService.interactiveProcessActiveList, this.waveformService.currentEvent]).pipe(
       takeUntil(this._unsubscribe)
@@ -51,11 +47,97 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
         }
       });
     });
+
+    this.waveformService.maxPages.pipe(
+      takeUntil(this._unsubscribe)
+    ).subscribe(val => {
+      this.paginationPages = [];
+      for (let i = 0; i < val; i++) {
+        this.paginationPages.push(i + 1);
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this._unsubscribe.next();
     this._unsubscribe.complete();
+  }
+
+  private _initOptions() {
+    this.optionsSelect.optionSelectionChanges.pipe(
+      takeUntil(this._unsubscribe)
+    ).subscribe((val: MatOptionSelectionChange) => {
+      this._optionsChange(val);
+    });
+
+    combineLatest([
+      this.waveformService.commonTimeScale,
+      this.waveformService.commonAmplitudeScale,
+      this.waveformService.zoomAll,
+      this.waveformService.displayComposite,
+      this.waveformService.displayRotated,
+      this.waveformService.predictedPicks,
+      this.waveformService.predictedPicksBias,
+    ]).pipe(
+      distinctUntilChanged(),
+      takeUntil(this._unsubscribe)
+    ).subscribe(([
+      commonTimeScale,
+      commonAmplitudeScale,
+      zoomAll,
+      displayComposite,
+      displayRotated,
+      predictedPicks,
+      predictedPicksBias
+    ]) => {
+
+      let values = [];
+      values.push(commonTimeScale ? 'commonTimeScale' : '');
+      values.push(commonAmplitudeScale ? 'commonAmplitudeScale' : '');
+      values.push(zoomAll ? 'zoomAll' : '');
+      values.push(displayComposite ? 'displayComposite' : '');
+      values.push(displayRotated ? 'displayRotated' : '');
+      values.push(predictedPicks ? 'predictedPicks' : '');
+      values.push(predictedPicksBias ? 'predictedPicksBias' : '');
+      values = values.filter(val => val !== '');
+      this.optionsForm.setValue(values);
+    });
+  }
+
+  private _optionsChange($event: MatOptionSelectionChange) {
+
+    if (!$event.isUserInput) {
+      return;
+    }
+
+    const value = $event.source.value;
+    const selected = $event.source.selected;
+
+    switch (value) {
+      case 'commonTimeScale':
+        this.waveformService.commonTimeScale.next(selected);
+        break;
+      case 'commonAmplitudeScale':
+        this.waveformService.commonAmplitudeScale.next(selected);
+        break;
+      case 'zoomAll':
+        this.waveformService.zoomAll.next(selected);
+        break;
+      case 'displayComposite':
+        this.waveformService.displayComposite.next(selected);
+        break;
+      case 'displayRotated':
+        this.waveformService.displayRotated.next(selected);
+        break;
+      case 'predictedPicks':
+        this.waveformService.predictedPicks.next(selected);
+        break;
+      case 'predictedPicksBias':
+        this.waveformService.predictedPicksBias.next(selected);
+        break;
+      default:
+        break;
+    }
   }
 
   onCommonTimeScaleClick() {
@@ -99,9 +181,6 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
   }
 
   onApplyFilter() {
-    this.waveformService.numPoles.next(this.numPoles);
-    this.waveformService.lowFreqCorner.next(this.lowFreqCorner);
-    this.waveformService.highFreqCorner.next(this.highFreqCorner);
     this.waveformService.applyFilterClicked.next();
   }
 
@@ -113,9 +192,16 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.interactiveProcessClicked.next();
   }
 
-  // TODO: add interface
-  onPickingModeChange($event: any) {
-    this.waveformService.pickingMode.next($event);
+  onPickingModeChange($event: PickingMode) {
+
+    const currentVal = this.waveformService.pickingMode.getValue();
+    let nextVal = $event;
+
+    if (currentVal === nextVal) {
+      nextVal = null;
+    }
+
+    this.waveformService.pickingMode.next(nextVal);
   }
 
   onEventSidebarCollapseClick() {
@@ -126,7 +212,11 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.openHelpDialog();
   }
 
-  onPageChanged(calcOp: number) {
+  onWaveformFilterDialogClick() {
+    this.waveformService.openWaveformFilterDialog();
+  }
+
+  onAddPage(calcOp: number) {
     if (
       this.waveformService.currentPage.getValue() + calcOp <= 0 ||
       this.waveformService.currentPage.getValue() + calcOp > this.waveformService.maxPages.getValue()
@@ -136,12 +226,15 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.pageChanged.next(this.waveformService.currentPage.getValue() + calcOp);
   }
 
-  onPageChangedFirst() {
+  onChangeToFirstPage() {
     this.waveformService.pageChanged.next(1);
   }
 
-  onPageChangedLast() {
+  onChangToLastPage() {
     this.waveformService.pageChanged.next(this.waveformService.maxPages.getValue());
   }
 
+  onChangeToCustomPage(pageNumber: number) {
+    this.waveformService.pageChanged.next(pageNumber);
+  }
 }

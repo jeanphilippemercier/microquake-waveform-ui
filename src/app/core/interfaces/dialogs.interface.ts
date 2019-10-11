@@ -32,3 +32,10 @@ export interface EventSitePickerDialogData {
   currentSite: Site;
   currentNetwork: Network;
 }
+
+export interface EventWaveformFilterDialogData {
+  lowFreqCorner: number;
+  highFreqCorner: number;
+  numPoles: number;
+  maxFreq: number;
+}

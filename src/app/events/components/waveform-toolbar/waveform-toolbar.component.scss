@@ -56,10 +56,17 @@ mat-paginator {
   }
 }
 
+.pagination-button {
+  width: 0;
+}
+
 .pagination-pages {
+  cursor: pointer;
+  width: 40px;
   font-size: 12px;
   line-height: 14px;
   text-align: center;
+  margin: auto;
 
   .current {
     font-weight: 400;
@@ -68,5 +75,46 @@ mat-paginator {
   .suffix-label {
     font-size: 11px;
     opacity: 0.5;
+  }
+}
+
+
+::ng-deep .langSelect div.mat-select-arrow-wrapper {
+  display: none;
+}
+
+::ng-deep .langSelect.mat-select {
+  display: inline;
+}
+
+.picking-mode ::ng-deep .mat-button-toggle-label-content {
+  line-height: 38px;
+}
+
+
+.buttons-group {
+  display: flex;
+  flex-direction: column;
+  height: 50px;
+  border-radius: 5px;
+  background: #394ba7;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+  padding-bottom: 10px;
+  position: relative;
+
+  .buttons-group-header {
+    position: absolute;
+    margin: auto;
+    left: 5px;
+    font-size: 9px;
+    line-height: 7px;
+    color: #fff;
+    opacity: 0.8;
+  }
+
+  .buttons-group-content {
+    display: flex;
   }
 }

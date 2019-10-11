@@ -289,6 +289,8 @@ export enum PickKey {
   S = 'S'
 }
 
+export type PickingMode = PickKey | null;
+
 export enum PickType {
   ARRIVAL = 'arrival',
   TRAVELTIME = 'traveltime'
