@@ -1,4 +1,7 @@
-<mat-toolbar color="primary">
+<mat-toolbar
+  color="primary"
+  class="overflow-auto"
+>
   <app-header-layout
     [showEventSidebarButton]="false"
     [eventSidebarOpened]="waveformService.sidebarOpened | async"
