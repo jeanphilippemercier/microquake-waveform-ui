@@ -1,0 +1,13 @@
+<h1 mat-dialog-title></h1>
+<mat-dialog-content>
+  <app-maintenance-form
+    [mode]="PageMode.EDIT"
+    [stations]="dialogData.stations"
+    [maintenanceStatuses]="dialogData.maintenanceStatuses"
+    [maintenanceCategories]="dialogData.maintenanceCategories"
+    [model]="dialogData.model"
+    [showCancelButton]="true"
+    (modelEdited)="onSaveClicked()"
+    (cancel)="onCancelClicked()"
+  ></app-maintenance-form>
+</mat-dialog-content>

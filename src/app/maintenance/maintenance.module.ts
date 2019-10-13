@@ -6,16 +6,17 @@ import { MaintenanceListPageComponent } from './pages/maintenance-list-page/main
 import { MaintenanceTableComponent } from './components/maintenance-table/maintenance-table.component';
 import { MaintenanceInputComponent } from './components/maintenance-input/maintenance-input.component';
 import { MaintenanceDialogComponent } from './dialogs/maintenance-dialog/maintenance-dialog.component';
+import { MaintenanceFormDialogComponent } from './dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
 
 
 const ROUTES: Routes = [
   {
     path: 'maintenance',
-    redirectTo: 'maintenance',
+    redirectTo: 'maintenance/',
     pathMatch: 'full'
   },
   {
-    path: 'maintenance',
+    path: 'maintenance/:maintenanceEventId',
     component: MaintenanceListPageComponent,
   },
 ];
@@ -26,7 +27,8 @@ const ROUTES: Routes = [
     MaintenanceTableComponent,
     MaintenanceListPageComponent,
     MaintenanceInputComponent,
-    MaintenanceDialogComponent
+    MaintenanceDialogComponent,
+    MaintenanceFormDialogComponent
   ],
   imports: [
     SharedModule,
@@ -37,10 +39,12 @@ const ROUTES: Routes = [
     MaintenanceFormComponent,
     MaintenanceListPageComponent,
     MaintenanceInputComponent,
-    MaintenanceDialogComponent
+    MaintenanceDialogComponent,
+    MaintenanceFormDialogComponent
   ],
   entryComponents: [
-    MaintenanceDialogComponent
+    MaintenanceDialogComponent,
+    MaintenanceFormDialogComponent
   ]
 })
 export class MaintenanceModule { }
