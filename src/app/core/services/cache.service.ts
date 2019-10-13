@@ -8,8 +8,8 @@ export interface CacheEntry {
   lastRead: number;
 }
 // maximum default cache age in ms
-// 0.5 min
-const maxAge = 0.5 * 60 * 1000;
+// 5 sec
+const maxAge = 10 * 60 * 1000;
 
 @Injectable({
   providedIn: 'root'
@@ -30,14 +30,15 @@ export class CacheService {
     return isExpired ? undefined : cached.response;
   }
 
-  set(req: HttpRequest<any>, response: HttpResponse<any>): void {
+  set(req: HttpRequest<any>, response: HttpResponse<any>, customCacheTimeout?: number): void {
     const url = req.urlWithParams;
 
+    const timeout = customCacheTimeout ? customCacheTimeout : maxAge;
     const entry = { url, response, lastRead: Date.now() };
     this.cache.set(url, entry);
 
     // remove expired cache entries
-    const expired = Date.now() - maxAge;
+    const expired = Date.now() - timeout;
     this.cache.forEach(val => {
       if (val.lastRead < expired) {
         this.cache.delete(val.url);

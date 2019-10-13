@@ -40,9 +40,7 @@
         [formControl]="fruitCtrl"
         [matAutocomplete]="auto"
         [matChipInputFor]="chipList"
-        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-        [matChipInputAddOnBlur]="addOnBlur"
-        (matChipInputTokenEnd)="add($event)"
+        (keyup.enter)="onKeypressEnter($event)"
       >
     </mat-chip-list>
     <mat-autocomplete
@@ -54,10 +52,13 @@
         *ngFor="let fruit of filteredFruits | async"
         [value]="fruit"
       >
-        {{fruit?.name}}
+        {{fruit?.autocompleteLabel}}
       </mat-option>
     </mat-autocomplete>
-    <mat-hint align="end">
+    <mat-hint
+      align="end"
+      *ngIf=""
+    >
       <button
         [hidden]="openForm"
         color="primary"
@@ -67,6 +68,7 @@
     </mat-hint>
   </mat-form-field>
   <button
+    class="mt-3"
     (click)="onSubmit()"
     mat-fab
     color="primary"
@@ -90,6 +92,7 @@
     (maintenanceStationChanged)="stationChanged($event)"
     (descriptionChanged)="descriptionChanged($event)"
     (modelCreated)="onCreated($event)"
+    [loadingElName]="'loading'"
   ></app-maintenance-form>
 </div>
 <ngx-spinner name="loading"></ngx-spinner>

@@ -39,11 +39,11 @@ export class InventorySensorTypeDetailComponent extends Form<ISensorType> implem
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     private _toastrNotificationService: ToastrNotificationService,
     protected _matDialog: MatDialog
   ) {
-    super();
+    super(_ngxSpinnerService);
   }
 
   ngOnInit() {

@@ -14,7 +14,7 @@ import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceStatus, MaintenanceCategory, MaintenanceEvent } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
-import { RequestHeaderOptions, PaginationRequest } from '@interfaces/query.interface';
+import { RequestOptions } from '@interfaces/query.interface';
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 
 @Component({
@@ -209,7 +209,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     this.getSensors();
   }
 
-  getMaintenanceEvents(cursor: string | null = null, cacheRefresh = false) {
+  getMaintenanceEvents(cursor: string | null = null) {
     const query: MaintenanceEventQuery = {
       station_id: this.stationId,
       page_size: 15
@@ -219,12 +219,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       query.cursor = cursor;
     }
 
-    const headers: RequestHeaderOptions = {};
-    if (cacheRefresh) {
-      headers['x-refresh'] = cacheRefresh;
-    }
-
-    return this._inventoryApiService.getMaintenanceEvents(query, headers);
+    return this._inventoryApiService.getMaintenanceEvents(query);
   }
 
   async changeMaintenanceEventsPage(cursor?: string) {
@@ -262,7 +257,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       if (val) {
         try {
           const response = await this._inventoryApiService.deleteMaintenanceEvent(id).toPromise();
-          this.getMaintenanceEvents();
+          this.changeMaintenanceEventsPage();
           await this._toastrNotificationService.success('Maintenance event deleted');
         } catch (err) {
           console.error(err);
@@ -283,7 +278,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
     try {
       await this.loadingTableStart();
-      const response = await this.getMaintenanceEvents(null, true).toPromise();
+      const response = await this.getMaintenanceEvents(null).toPromise();
       this.maintenanceEvents = response.results;
       this.maintenanceEventsCount = response.count;
       this.maintenanceEventsCursorPrevious = response.cursor_previous;

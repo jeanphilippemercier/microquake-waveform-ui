@@ -3,6 +3,7 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 import { MatDialog, PageEvent } from '@angular/material';
 
 import { PageMode } from '@interfaces/core.interface';
+import { ReplaySubject } from 'rxjs';
 export class ListPage<T> implements OnInit {
 
   displayedColumns: string[];
@@ -15,7 +16,7 @@ export class ListPage<T> implements OnInit {
   cursorNext: string | null = null;
   PageMode = PageMode;
   paginationEnabled = true;
-  initialized = false;
+  initialized: ReplaySubject<boolean> = new ReplaySubject(1);
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
 

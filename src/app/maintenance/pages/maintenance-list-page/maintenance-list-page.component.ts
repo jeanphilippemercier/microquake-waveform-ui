@@ -1,6 +1,6 @@
-import { Component, } from '@angular/core';
-import { forkJoin } from 'rxjs';
-import { first } from 'rxjs/operators';
+import { Component, OnDestroy, } from '@angular/core';
+import { forkJoin, Subject } from 'rxjs';
+import { first, takeUntil, take, skipWhile } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import { Station, } from '@interfaces/inventory.interface';
@@ -10,22 +10,24 @@ import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { ConfirmationDialogData, MaintenanceFormDialogData } from '@interfaces/dialogs.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
+import { MaintenanceFormDialogComponent } from '@app/maintenance/dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
 
 @Component({
   selector: 'app-maintenance-list-page',
   templateUrl: './maintenance-list-page.component.html',
   styleUrls: ['./maintenance-list-page.component.scss']
 })
-export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
+export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> implements OnDestroy {
 
   maintenanceStatuses: MaintenanceStatus[] = [];
   maintenanceCategories: MaintenanceCategory[] = [];
   stations: Station[] = [];
   count = 0;
+  private _unsubscribe = new Subject<void>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -37,7 +39,49 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
   ) {
     super(_activatedRoute, _matDialog, _router);
     this._initFormData();
+
+
+    this._activatedRoute.params
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(async params => {
+        console.log('params');
+        console.log(params);
+
+        const maintenanceEventId = params['maintenanceEventId'];
+        if (!maintenanceEventId) {
+          return;
+        }
+
+        try {
+          await this.loadingStart();
+          await this.wiatForInitialization();
+          const response = await this._inventoryApiService.getMaintenanceEvent(maintenanceEventId).toPromise();
+          await this.openFormDialog(response);
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        } finally {
+          await this.loadingStop();
+        }
+
+      });
   }
+
+  ngOnDestroy() {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
+  }
+
+
+  public wiatForInitialization(): Promise<void> {
+    return new Promise(resolve => {
+      this.initialized.pipe(
+        skipWhile(val => val !== true),
+        take(1)
+      ).subscribe(val => resolve());
+    });
+  }
+
   private async _initFormData() {
     forkJoin([
       this._inventoryApiService.getMaintenanceStatuses(),
@@ -48,7 +92,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
         this.maintenanceStatuses = result[0];
         this.maintenanceCategories = result[1];
         this.stations = result[2].results;
-        this.initialized = true;
+        this.initialized.next(true);
       }, err => {
         console.error(err);
       });
@@ -61,7 +105,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
 
       const query: MaintenanceEventQuery = {
         cursor,
-        page_size: this.pageSize
+        page_size: this.pageSize,
       };
 
       const response = await this._inventoryApiService.getMaintenanceEvents(query).toPromise();
@@ -108,6 +152,12 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
     });
   }
 
+  async loadingStart() {
+    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingStop() {
+    await this._ngxSpinnerService.hide('loading');
+  }
 
   async loadingTableStart() {
     await this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
@@ -119,5 +169,26 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> {
   async onCreatedMaintenanceEvent($event: MaintenanceEvent) {
     this.loadData();
   }
+
+  async openFormDialog($event: MaintenanceEvent) {
+    const formDialogRef = this._matDialog.open<MaintenanceFormDialogComponent, MaintenanceFormDialogData>(
+      MaintenanceFormDialogComponent, {
+        hasBackdrop: true,
+        data: {
+          model: $event,
+          stations: this.stations,
+          maintenanceCategories: this.maintenanceCategories,
+          maintenanceStatuses: this.maintenanceStatuses
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+      this._router.navigate(['maintenance'], { preserveQueryParams: true });
+    });
+  }
+
 
 }

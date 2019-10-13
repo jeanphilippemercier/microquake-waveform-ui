@@ -8,7 +8,7 @@ import { environment } from '@env/environment';
 import { Site, Station, Borehole, ISensorType, CableType } from '@interfaces/inventory.interface';
 import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
-import { PaginationRequest, RequestHeaderOptions } from '@interfaces/query.interface';
+import { PaginationRequest, RequestOptions } from '@interfaces/query.interface';
 import {
   SiteUpdateInput, SiteCreateInput, SensorCreateInput, SensorUpdateInput,
   ComponentUpdateInput, StationUpdateInput, ISensorTypeCreateInput, ISensorTypeUpdateInput, CableTypeCreateInput, CableTypeUpdateInput, MaintenanceEventCreateInput, MaintenanceEventUpdateInput
@@ -175,10 +175,10 @@ export class InventoryApiService {
   /**
    * MAINTENANCE EVENTS
   */
-  getMaintenanceEvents(query: MaintenanceEventQuery = {}, headerOptions?: RequestHeaderOptions): Observable<PaginationResponse<MaintenanceEvent>> {
+  getMaintenanceEvents(query: MaintenanceEventQuery = {}, options?: RequestOptions): Observable<PaginationResponse<MaintenanceEvent>> {
     const url = `${environment.apiUrl}inventory/stations/maintenance-events`;
     const params = ApiUtil.getHttpParams(query);
-    const headers = ApiUtil.getHttpHeaders(headerOptions);
+    const headers = ApiUtil.getHttpHeaders(options);
     return this._http.get<PaginationResponse<MaintenanceEvent>>(url, { params, headers });
   }
 

@@ -6,6 +6,11 @@
   <div class="row">
     <div class="col-12 px-3 ">
       <div class="row pb-1">
+        <div class="col-12 pb-3">
+          <h4>
+            Detail
+          </h4>
+        </div>
         <div class="col-sm-12">
           <div class="row">
 
@@ -133,8 +138,6 @@
                 dropZoneClassName="file-upload-dropzone"
                 contentClassName="file-upload-dropzone-content"
                 (onFileDrop)="dropped($event)"
-                (onFileOver)="fileOver($event)"
-                (onFileLeave)="fileLeave($event)"
               >
                 <ng-template
                   ngx-file-drop-content-tmp
@@ -196,6 +199,14 @@
             <div class="mr-auto"></div>
             <ng-container *ngIf="mode === PageMode.EDIT">
               <button
+                *ngIf="showCancelButton"
+                (click)="onCancel();$event.preventDefault();$event.stopPropagation();"
+                mat-raised-button
+              >
+                Cancel
+              </button>
+              <button
+                class="ml-3"
                 type="submit"
                 [color]="'primary'"
                 mat-raised-button

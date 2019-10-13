@@ -21,7 +21,21 @@ export default class ApiUtil {
 
       Object.keys(headersIn).forEach(function (key) {
         if (typeof headersIn[key] !== 'undefined') {
-          headers = headers.append(key, headersIn[key]);
+          switch (key) {
+            case 'useCache':
+              headers = headers.append('x-cache', headersIn.useCache);
+              break;
+            case 'refreshCache':
+              headers = headers.append('x-cache-refresh', headersIn.useCache);
+              break;
+            case 'cacheTimeout':
+              headers = headers.append('x-cache-timeout', headersIn.useCache);
+              break;
+            default:
+              headers = headers.append(key, headersIn[key]);
+              break;
+          }
+
         }
       });
     }

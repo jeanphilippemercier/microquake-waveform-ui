@@ -21,6 +21,7 @@ import { MomentModule } from 'ngx-moment';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { ToastrModule } from 'ngx-toastr';
 import { NgxFileDropModule } from 'ngx-file-drop';
+import { ClipboardModule } from 'ngx-clipboard';
 
 import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
@@ -143,6 +144,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     MomentModule,
     NgxSpinnerModule,
     NgxFileDropModule,
+    ClipboardModule,
     ToastrModule.forRoot(),
     ...MATERIAL_MODULES,
     ...CDK_MODULES,
@@ -159,6 +161,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
     MomentModule,
     NgxSpinnerModule,
     NgxFileDropModule,
+    ClipboardModule,
     ToastrModule,
     ...MATERIAL_MODULES,
     ...CDK_MODULES
