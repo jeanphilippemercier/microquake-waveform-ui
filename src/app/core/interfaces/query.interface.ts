@@ -3,6 +3,8 @@ export interface PaginationRequest {
   cursor?: string;
 }
 
-export interface RequestHeaderOptions {
-  'x-refresh'?: boolean;
+export interface RequestOptions {
+  useCache?: boolean;
+  refreshCache?: boolean;
+  cacheTimeout?: number;
 }
