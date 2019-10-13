@@ -1,6 +1,7 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network } from './inventory.interface';
+import { Site, Network, Station } from './inventory.interface';
+import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
 
 export interface EventUpdateDialog {
   event: IEvent;
@@ -38,4 +39,11 @@ export interface EventWaveformFilterDialogData {
   highFreqCorner: number;
   numPoles: number;
   maxFreq: number;
+}
+
+export interface MaintenanceFormDialogData {
+  model: MaintenanceEvent;
+  stations: Station[];
+  maintenanceStatuses: MaintenanceStatus[];
+  maintenanceCategories: MaintenanceCategory[];
 }

@@ -1,12 +1,12 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Table } from '@core/classes/table.class';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 import { Station } from '@interfaces/inventory.interface';
+import { TableWithExpandableRows } from '@core/classes/table-with-expandable-rows.class';
 
 @Component({
   selector: 'app-maintenance-table',
@@ -20,7 +20,7 @@ import { Station } from '@interfaces/inventory.interface';
     ]),
   ],
 })
-export class MaintenanceTableComponent extends Table<MaintenanceEvent> {
+export class MaintenanceTableComponent extends TableWithExpandableRows<MaintenanceEvent> {
 
   @Input() stations: Station[];
   @Input() maintenanceStatuses: MaintenanceStatus[] = [];
@@ -41,5 +41,13 @@ export class MaintenanceTableComponent extends Table<MaintenanceEvent> {
   generateCopyUrl(id: number) {
     const url = window.location.origin + this._router.createUrlTree(['maintenance', id]);
     return url;
+  }
+
+  onModelEdited($event: MaintenanceEvent, oldEvent: MaintenanceEvent) {
+    Object.assign(oldEvent, $event);
+  }
+
+  editButtonClick(maintenanceEventId) {
+    this._router.navigate(['maintenance', maintenanceEventId], { preserveQueryParams: true });
   }
 }

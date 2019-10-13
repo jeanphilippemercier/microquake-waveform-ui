@@ -158,10 +158,10 @@
             mat-menu-item
             color="primary"
             [disabled]="addingNewComponent"
-            (click)="expandedElement = element"
+            (click)="editButtonClick(element.id)"
           >
             <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <span>Edit dialog</span>
           </button>
           <button
             mat-menu-item
@@ -197,11 +197,12 @@
         >
           <app-maintenance-form
             *ngIf="element === expandedElement"
-            [model]="element"
             [mode]="PageMode.EDIT"
             [stations]="stations"
             [maintenanceStatuses]="maintenanceStatuses"
             [maintenanceCategories]="maintenanceCategories"
+            [model]="element"
+            (modelEdited)="onModelEdited($event, element)"
           ></app-maintenance-form>
         </div>
       </td>

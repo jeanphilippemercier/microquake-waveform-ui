@@ -56,11 +56,11 @@ export class InventoryComponentDetailComponent extends Form<IComponent> implemen
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super();
+    super(_ngxSpinnerService);
   }
 
   async ngOnInit() {

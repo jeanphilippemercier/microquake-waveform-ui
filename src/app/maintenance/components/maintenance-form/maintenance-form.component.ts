@@ -26,7 +26,6 @@ import { FileSystemDirectoryEntry, FileSystemFileEntry, NgxFileDropEntry } from 
 export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements OnInit {
 
   @Input()
-
   public set stationFixed(v: Station) {
     this._stationFixed = v;
     if (this._stationFixed) {
@@ -42,10 +41,13 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   @Input() stations: Station[] = [];
   @Input() maintenanceStatuses: MaintenanceStatus[] = [];
   @Input() maintenanceCategories: MaintenanceCategory[] = [];
+  @Input() showCancelButton = false;
+  @Input() loadingElName = 'loadingForm';
 
   @Output() maintenanceCategoryChanged: EventEmitter<string> = new EventEmitter();
   @Output() maintenanceStationChanged: EventEmitter<Station> = new EventEmitter();
   @Output() descriptionChanged: EventEmitter<string> = new EventEmitter();
+  @Output() cancelClicked: EventEmitter<void> = new EventEmitter();
 
   editDisabled = false;
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
@@ -61,9 +63,9 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   });
 
   submited = false;
-  public files: NgxFileDropEntry[] = [];
+  files: NgxFileDropEntry[] = [];
 
-  public async dropped(files: NgxFileDropEntry[]) {
+  async dropped(files: NgxFileDropEntry[]) {
     this.files = files;
     const unuploaed = files.map(val => ({
       id: null,
@@ -102,16 +104,8 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
         this._toastrNotificationService.error('Folder uploads are not supported');
       }
     }
-  }
 
-  public fileOver(event) {
-    console.log(`fileOver`);
-    console.log(event);
-  }
-
-  public fileLeave(event) {
-    console.log(`fileLeave`);
-    console.log(event);
+    this.modelEdited.emit(this.model);
   }
 
   constructor(
@@ -119,16 +113,17 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super();
+    super(_ngxSpinnerService);
   }
 
   async ngOnInit() {
     this._initEditableForm();
   }
+
 
   private async _initEditableForm() {
 
@@ -179,13 +174,6 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       throw new Error('No description is defined');
     }
 
-
-    // if (formValues.category && formValues.category.name) {
-    //   dto.category = formValues.category.name;
-    // } else {
-    //   throw new Error('No category is defined');
-    // }
-
     return dto;
   }
 
@@ -193,32 +181,18 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   private _buildCreateDtoObject(formValues: any): MaintenanceEventCreateInput {
     const dto = <MaintenanceEventCreateInput>this._buildUpdateDtoObject(formValues);
 
-    // if (this.sensorId) {
-    //   dto.sensor_id = this.sensorId;
-    // } else {
-    //   throw new Error('No sensor is defined');
-    // }
-
     return dto;
   }
 
   async onSubmit() {
-
-    this.submited = true;
-    // if (this.myForm.invalid) {
-    //   this._toastrNotificationService.error('Form is not valid');
-    //   return;
-    // }
-
     try {
-
+      this.submited = true;
       let response: any;
-      await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
       this.loading = true;
+      await this.loadingFormStart(this.loadingElName);
 
       if (this.mode === PageMode.CREATE) {
         const dto = this._buildCreateDtoObject(this.myForm.getRawValue());
-
         response = await this._inventoryApiService.createMaintenanceEvent(dto).toPromise();
         this._toastrNotificationService.success('Maintenance event created');
         this.modelCreated.emit(response);
@@ -237,7 +211,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loading');
+      await this.loadingFormStop(this.loadingElName);
     }
   }
 
@@ -253,5 +227,4 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
     const val = $event.target.value;
     this.descriptionChanged.emit(val);
   }
-
 }

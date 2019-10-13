@@ -2,6 +2,8 @@ import { Input, Output, EventEmitter } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
 import { PageMode } from '@interfaces/core.interface';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 export class Form<T> {
 
@@ -28,7 +30,9 @@ export class Form<T> {
   loading = false;
   myForm: FormGroup;
 
-  constructor() { }
+  constructor(
+    protected _ngxSpinnerService: NgxSpinnerService
+  ) { }
 
   protected _filter<U>(input: string, array: U[], name: string): U[] {
     const filterValue = input.toLowerCase();
@@ -37,6 +41,13 @@ export class Form<T> {
 
   onCancel() {
     this.cancel.emit();
+  }
+
+  async loadingFormStart(loadingElName = 'loadingForm') {
+    await this._ngxSpinnerService.show(loadingElName, { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingFormStop(loadingElName = 'loadingForm') {
+    await this._ngxSpinnerService.hide(loadingElName);
   }
 
 }

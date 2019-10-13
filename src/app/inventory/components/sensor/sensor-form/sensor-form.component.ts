@@ -54,11 +54,11 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
     private _inventoryApiService: InventoryApiService,
     private _fb: FormBuilder,
     private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     private _toastrNotificationService: ToastrNotificationService,
     private _matDialog: MatDialog
   ) {
-    super();
+    super(_ngxSpinnerService);
   }
 
   ngOnInit() {

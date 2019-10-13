@@ -18,6 +18,7 @@ enum MaintenanceType {
 }
 interface MaintenanceInput {
   name: string;
+  autocompleteLabel: string;
   type: MaintenanceType;
   obj: any;
 }
@@ -179,6 +180,7 @@ export class MaintenanceInputComponent implements OnInit {
           .filter(val => val.name.toLowerCase().indexOf(filterValue) > -1)
           .map(val => ({
             name: val.name,
+            autocompleteLabel: `${val.name}`,
             type: MaintenanceType.CATEGORY,
             obj: val
           }));
@@ -189,9 +191,10 @@ export class MaintenanceInputComponent implements OnInit {
         }
 
         return this.stations
-          .filter(val => val.code.toLowerCase().indexOf(filterValue) > -1)
+          .filter(val => val.code.toLowerCase().indexOf(filterValue) > -1 || val.name.toLowerCase().indexOf(filterValue) > -1)
           .map(val => ({
-            name: val.code,
+            name: `${val.code}`,
+            autocompleteLabel: `${val.code} - ${val.name}`,
             type: MaintenanceType.STATION,
             obj: val
           }));
@@ -225,12 +228,14 @@ export class MaintenanceInputComponent implements OnInit {
     if (!chip) {
       this._addChip({
         name: $event,
+        autocompleteLabel: `${$event}`,
         type: MaintenanceType.CATEGORY,
         obj: category
       });
     } else {
       Object.assign(chip, {
         name: $event,
+        autocompleteLabel: `${$event}`,
         type: MaintenanceType.CATEGORY,
         obj: category
       });
@@ -254,12 +259,14 @@ export class MaintenanceInputComponent implements OnInit {
     if (!chip) {
       this._addChip({
         name: $event.code,
+        autocompleteLabel: `${$event.code} - ${$event.name}`,
         type: MaintenanceType.STATION,
         obj: $event
       });
     } else {
       Object.assign(chip, {
         name: $event.code,
+        autocompleteLabel: `${$event.code} - ${$event.name}`,
         type: MaintenanceType.STATION,
         obj: $event
       });

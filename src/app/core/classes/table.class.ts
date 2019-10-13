@@ -11,11 +11,6 @@ export class Table<T> implements OnInit {
   PageMode = PageMode;
   paginationEnabled = true;
 
-  /*
-    FOR EXPANDALE ROW TABLES
-  */
-  expandedElement: T | null = null;
-  addingNewComponent = false;
   initialized = false;
 
   @Input() dataSource: T[];
