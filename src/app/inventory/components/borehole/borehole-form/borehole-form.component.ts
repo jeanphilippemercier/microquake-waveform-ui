@@ -76,57 +76,38 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
     this.submited = true;
     if (this.myForm.invalid) {
       console.log(`invalid`);
-
       return;
     }
 
-    if (this.mode === PageMode.CREATE) {
-      try {
-        this.loading = true;
-        this.loadingFormStart();
+    try {
+      this.loading = true;
+      this.loadingFormStart();
+      if (this.mode === PageMode.CREATE) {
         const response = await this._inventoryApiService.createBorehole(dto).toPromise();
         await this._toastrNotificationService.success('Borehole created');
         this._router.navigate(['/inventory/boreholes', response.id]);
-      } catch (err) {
-        console.error(err);
-        await this._toastrNotificationService.error(err);
-      } finally {
-        this.loading = false;
-        this._ngxSpinnerService.hide('loadingCurrentEvent');
-      }
-    } else if (this.mode === PageMode.EDIT) {
-      try {
+      } else if (this.mode === PageMode.EDIT) {
         this.loading = true;
-        this.loadingFormStart();
         const response = await this._inventoryApiService.updateBorehole(this.model.id, dto).toPromise();
         await this._toastrNotificationService.success('Borehole updated');
         this._router.navigate(['/inventory/boreholes', response.id]);
-      } catch (err) {
-        console.error(err);
-        await this._toastrNotificationService.error(err);
-      } finally {
-        this.loading = false;
-        this.loadingFormStop();
       }
+    } catch (err) {
+      console.error(err);
+      await this._toastrNotificationService.error(err);
+    } finally {
+      this.loading = false;
+      this.loadingFormStop();
     }
   }
+
 
   createDtoObject(formValues: any) {
     if (!formValues) {
       return;
     }
 
-    const dto: SensorCreateInput = formValues;
-
-    if (formValues.borehole && formValues.borehole.id) {
-      dto.borehole_id = formValues.borehole.id;
-      delete formValues.borehole;
-    }
-
-    if (formValues.station && formValues.station.id) {
-      dto.station_id = formValues.station.id;
-      delete formValues.station;
-    }
+    const dto: any = formValues;
 
     return dto;
   }
