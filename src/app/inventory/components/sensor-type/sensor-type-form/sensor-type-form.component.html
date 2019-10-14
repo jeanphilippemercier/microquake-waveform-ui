@@ -20,8 +20,9 @@
 
         <div class="col">
           <mat-form-field>
-            <mat-label>manufacturer</mat-label>
+            <mat-label>Manufacturer</mat-label>
             <input
+              [required]="true"
               matInput
               formControlName="manufacturer"
             >
@@ -32,6 +33,7 @@
           <mat-form-field>
             <mat-label>Sensor type</mat-label>
             <input
+              [required]="true"
               matInput
               formControlName="sensor_type"
             >
