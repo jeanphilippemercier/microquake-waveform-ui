@@ -54,10 +54,10 @@
                     <ng-template #sensorTypeUpdate>
                       <h2 matDialogTitle>Sensor type {{myForm?.value?.sensor_type?.model}}</h2>
                       <mat-dialog-content>
-                        <app-inventory-sensor-type-detail
+                        <app-sensor-type-form
                           [mode]="PageMode.EDIT"
                           [id]="myForm?.value?.sensor_type?.id"
-                        ></app-inventory-sensor-type-detail>
+                        ></app-sensor-type-form>
                       </mat-dialog-content>
                     </ng-template>
                     <mat-autocomplete

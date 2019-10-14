@@ -65,13 +65,13 @@
             [disabled]="pageMode === PageMode.CREATE"
           >
             <ng-template matTabContent>
-              <app-inventory-component-list
+              <app-component-table
                 *ngIf="model?.components"
-                [data]="model?.components"
-                [showPagination]="false"
+                [dataSource]="model?.components"
                 [sensorId]="model?.id"
+                (delete)="deleteComponent($event)"
               >
-              </app-inventory-component-list>
+              </app-component-table>
             </ng-template>
           </mat-tab>
 

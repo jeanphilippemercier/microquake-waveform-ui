@@ -12,12 +12,12 @@ import { MatDialog } from '@angular/material';
 import { Form } from '@core/classes/form.class';
 
 @Component({
-  selector: 'app-inventory-sensor-type-detail',
-  templateUrl: './inventory-sensor-type-detail.component.html',
-  styleUrls: ['./inventory-sensor-type-detail.component.scss']
+  selector: 'app-sensor-type-form',
+  templateUrl: './sensor-type-form.component.html',
+  styleUrls: ['./sensor-type-form.component.scss']
 })
 
-export class InventorySensorTypeDetailComponent extends Form<ISensorType> implements OnInit {
+export class SensorTypeFormComponent extends Form<ISensorType> implements OnInit {
 
   myForm = this._fb.group({
     model: [, [Validators.required]],
@@ -46,8 +46,7 @@ export class InventorySensorTypeDetailComponent extends Form<ISensorType> implem
     super(_ngxSpinnerService);
   }
 
-  ngOnInit() {
-  }
+  ngOnInit() { }
 
   private _buildUpdateDtoObject(formValues: any): ISensorTypeUpdateInput {
     const dto: ISensorTypeUpdateInput = formValues;

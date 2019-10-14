@@ -116,4 +116,32 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> imple
       }
     });
   }
+
+  deleteComponent(componentId: number) {
+    if (!componentId) {
+      console.error(`No componentId`);
+    }
+
+    const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
+      ConfirmationDialogComponent, {
+        hasBackdrop: true,
+        width: '350px',
+        data: {
+          header: `Are you sure?`,
+          text: `Do you want to proceed and delete this component?`
+        }
+      });
+
+    deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      if (val) {
+        try {
+          const response = await this._inventoryApiService.deleteComponent(componentId).toPromise();
+          this._toastrNotificationService.success('Component deleted');
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        }
+      }
+    });
+  }
 }
