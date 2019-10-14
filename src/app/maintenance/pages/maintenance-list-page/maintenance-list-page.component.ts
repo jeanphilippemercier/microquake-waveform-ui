@@ -27,25 +27,21 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   maintenanceCategories: MaintenanceCategory[] = [];
   stations: Station[] = [];
   count = 0;
-  private _unsubscribe = new Subject<void>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
     this._initFormData();
-
 
     this._activatedRoute.params
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(async params => {
-        console.log('params');
-        console.log(params);
 
         const maintenanceEventId = params['maintenanceEventId'];
         if (!maintenanceEventId) {
@@ -65,21 +61,6 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
         }
 
       });
-  }
-
-  ngOnDestroy() {
-    this._unsubscribe.next();
-    this._unsubscribe.complete();
-  }
-
-
-  public wiatForInitialization(): Promise<void> {
-    return new Promise(resolve => {
-      this.initialized.pipe(
-        skipWhile(val => val !== true),
-        take(1)
-      ).subscribe(val => resolve());
-    });
   }
 
   private async _initFormData() {

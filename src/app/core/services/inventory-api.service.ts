@@ -16,6 +16,8 @@ import {
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
 import { SensorsQuery, StationsQuery } from '@interfaces/inventory-query.interface';
+import { MicroquakeEventTypesQuery } from '@interfaces/event-query.interface';
+import { EventType } from '@interfaces/event.interface';
 
 
 @Injectable({
@@ -326,5 +328,34 @@ export class InventoryApiService {
   deleteCableType(id: number): Observable<CableType> {
     const url = `${environment.apiUrl}cables/${id}`;
     return this._http.delete<CableType>(url);
+  }
+
+  /**
+   * Micoquake event types
+   */
+  getMicroquakeEventTypes(query?: MicroquakeEventTypesQuery): Observable<EventType[]> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<EventType[]>(url, { params });
+  }
+
+  getMicroquakeEventType(id: number): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.get<EventType>(url);
+  }
+
+  createMicroquakeEventType(body: any): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
+    return this._http.post<EventType>(url, body);
+  }
+
+  updateMicroquakeEventType(id: number, body: any): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.patch<EventType>(url, body);
+  }
+
+  deleteMicroquakeEventType(id: number): Observable<any> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.delete(url);
   }
 }

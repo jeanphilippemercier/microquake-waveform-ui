@@ -24,13 +24,13 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
     protected _activatedRoute: ActivatedRoute,
     protected _ngxSpinnerService: NgxSpinnerService
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
   }
 
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      this.loadingTableStart();
 
       const query: PaginationRequest = {
         cursor,
@@ -47,7 +47,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
       console.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingTable');
+      this.loadingTableStop();
     }
   }
 

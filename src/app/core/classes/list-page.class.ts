@@ -1,10 +1,12 @@
-import { OnInit, TemplateRef, Output, EventEmitter } from '@angular/core';
+import { OnInit, TemplateRef, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { MatDialog, PageEvent } from '@angular/material';
 
 import { PageMode } from '@interfaces/core.interface';
-import { ReplaySubject } from 'rxjs';
-export class ListPage<T> implements OnInit {
+import { ReplaySubject, Subject } from 'rxjs';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { skipWhile, take } from 'rxjs/operators';
+export class ListPage<T> implements OnInit, OnDestroy {
 
   displayedColumns: string[];
   dataSource: T[];
@@ -19,11 +21,13 @@ export class ListPage<T> implements OnInit {
   initialized: ReplaySubject<boolean> = new ReplaySubject(1);
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
+  protected _unsubscribe = new Subject<void>();
 
   constructor(
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
-    protected _router: Router
+    protected _router: Router,
+    protected _ngxSpinnerService: NgxSpinnerService
   ) { }
 
   async ngOnInit() {
@@ -40,6 +44,20 @@ export class ListPage<T> implements OnInit {
       }
 
       await this.loadData(cursor);
+    });
+  }
+
+  ngOnDestroy() {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
+  }
+
+  public wiatForInitialization(): Promise<void> {
+    return new Promise(resolve => {
+      this.initialized.pipe(
+        skipWhile(val => val !== true),
+        take(1)
+      ).subscribe(val => resolve());
     });
   }
 
@@ -66,4 +84,10 @@ export class ListPage<T> implements OnInit {
       });
   }
 
+  async loadingTableStart() {
+    await this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingTableStop() {
+    await this._ngxSpinnerService.hide('loadingTable');
+  }
 }

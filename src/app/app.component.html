@@ -98,6 +98,14 @@
           <mat-icon mat-list-icon>line_weight</mat-icon>
           <h4 matLine>Cable types</h4>
         </a>
+        <a
+          (click)="closeMenu()"
+          mat-list-item
+          [routerLink]="['/inventory/microquake-event-types']"
+        >
+          <mat-icon mat-list-icon>bubble_chart</mat-icon>
+          <h4 matLine>Microquake types</h4>
+        </a>
         <h3 mat-subheader>Account</h3>
         <a
           mat-list-item

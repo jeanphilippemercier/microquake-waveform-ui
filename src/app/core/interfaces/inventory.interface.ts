@@ -1,3 +1,4 @@
+import { QuakemlType, EventType } from './event.interface';
 
 export interface SiteBase {
   name: string;
@@ -225,4 +226,10 @@ export interface CableTypeBase {
 export interface CableType extends CableTypeBase {
   id: number;
   upload_time: string;
+}
+
+
+export interface TakenEventType {
+  microquake_type: EventType;
+  quakeml_type: QuakemlType;
 }

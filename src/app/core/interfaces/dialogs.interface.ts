@@ -1,7 +1,8 @@
-import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup } from './event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station } from './inventory.interface';
+import { Site, Network, Station, TakenEventType } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
+import { PageMode } from './core.interface';
 
 export interface EventUpdateDialog {
   event: IEvent;
@@ -46,4 +47,12 @@ export interface MaintenanceFormDialogData {
   stations: Station[];
   maintenanceStatuses: MaintenanceStatus[];
   maintenanceCategories: MaintenanceCategory[];
+}
+
+
+export interface MicroquakeEventTypeFormDialogData {
+  model: EventType | Partial<EventType>;
+  mode: PageMode;
+  sites: Site[];
+  takenEventType: TakenEventType[];
 }

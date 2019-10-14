@@ -1,0 +1,136 @@
+<form
+  class=""
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+    <div class="col-sm-3 pr-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Site</mat-label>
+            <input
+              [required]="true"
+              matInput
+              type="text"
+              formControlName="site"
+              [matAutocomplete]="autoSite"
+            >
+            <mat-autocomplete
+              #autoSite="matAutocomplete"
+              [displayWith]="siteDisplayFn"
+            >
+              <mat-option
+                *ngFor="let option of (filteredSites | async)"
+                [value]="option"
+              >{{option.name}}</mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-sm-3 px-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Microquake type</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="microquake_type"
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Identifier</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="identifier"
+            >
+          </mat-form-field>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="col-sm-3 pl-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Quakeml type</mat-label>
+            <mat-select formControlName="quakeml_type">
+              <ng-container *ngFor="let quakemlType of allQuakemlTypes">
+                <mat-option
+                  [value]="quakemlType"
+                  [disabled]="quakemlType !== model.quakeml_type && isQuakemlTypeTaken(quakemlType) > -1"
+                >
+                  {{quakemlType}} {{quakemlType !== model.quakeml_type ? takenQuakemlType(isQuakemlTypeTaken(quakemlType)) : ''}}
+                </mat-option>
+              </ng-container>
+
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-sm-3 pl-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Countable</mat-label>
+            <mat-select formControlName="countable">
+              <mat-option [value]="false">
+                No
+              </mat-option>
+              <mat-option [value]="true">
+                Yes
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-12 py-1">
+      <div class="d-flex">
+        <div class="mr-auto"></div>
+        <button
+          (click)="onCancel();$event.preventDefault()"
+          class="mr-3"
+          mat-raised-button
+        >Cancel</button>
+
+        <ng-container *ngIf="mode === PageMode.EDIT">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Save</button>
+        </ng-container>
+
+        <ng-container *ngIf="mode === PageMode.CREATE">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Create</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+  <ngx-spinner name="loading"></ngx-spinner>
+</form>

@@ -19,12 +19,12 @@ export class InventoryCableTypeListPageComponent extends ListPage<CableType> {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
     protected _router: Router
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
   }
 
   async loadData(cursor?: string) {

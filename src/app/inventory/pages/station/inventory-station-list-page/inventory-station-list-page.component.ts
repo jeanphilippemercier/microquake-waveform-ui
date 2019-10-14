@@ -1,17 +1,14 @@
-import { Component, OnInit } from '@angular/core';
-import { PageEvent } from '@angular/material/paginator';
-
-import { PageMode } from '@interfaces/core.interface';
-import { PaginationRequest } from '@interfaces/query.interface';
-import { Sensor, Station } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { Component } from '@angular/core';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { Params, Router, ActivatedRoute } from '@angular/router';
-import { ListPage } from '@core/classes/list-page.class';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog, Sort } from '@angular/material';
-import { StationsQuery, StationsQueryOrdering, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+import { ListPage } from '@core/classes/list-page.class';
+import { Station } from '@interfaces/inventory.interface';
+import { InventoryApiService } from '@services/inventory-api.service';
+import { StationsQuery, StationsQueryOrdering } from '@interfaces/inventory-query.interface';
 
 @Component({
   selector: 'app-inventory-station-list-page',
@@ -26,19 +23,19 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
     protected _matDialog: MatDialog,
     protected _activatedRoute: ActivatedRoute
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
     this._subscribeToSearch();
   }
 
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      this.loadingTableStart();
 
       const query: StationsQuery = {
         cursor,
@@ -63,7 +60,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
       console.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingTable');
+      this.loadingTableStop();
     }
   }
 

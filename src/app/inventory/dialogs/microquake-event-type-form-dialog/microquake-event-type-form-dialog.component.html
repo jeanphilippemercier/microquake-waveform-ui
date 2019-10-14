@@ -1,0 +1,14 @@
+<h1 mat-dialog-title></h1>
+<mat-dialog-content>
+
+  <app-microquake-event-type-form
+    [mode]="dialogData.mode"
+    [model]="dialogData.model"
+    (modelEdited)="onSaveClicked()"
+    (modelCreated)="onSaveClicked()"
+    (cancel)="onCancelClicked()"
+    [sites]="dialogData.sites"
+    [takenEventTypes]="dialogData.takenEventType"
+  >
+  </app-microquake-event-type-form>
+</mat-dialog-content>

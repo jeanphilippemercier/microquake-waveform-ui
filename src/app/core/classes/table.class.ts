@@ -11,11 +11,13 @@ export class Table<T> implements OnInit {
   PageMode = PageMode;
   paginationEnabled = true;
 
+
   initialized = false;
 
   @Input() dataSource: T[];
   @Input() count = 0;
   @Input() pageSize = 15;
+  @Input() showPagination = true;
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
   @Output() sort: EventEmitter<Sort> = new EventEmitter();

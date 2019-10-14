@@ -31,7 +31,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
     protected _activatedRoute: ActivatedRoute,
     protected _ngxSpinnerService: NgxSpinnerService
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
     this._subscribeOnSearch();
   }
 
