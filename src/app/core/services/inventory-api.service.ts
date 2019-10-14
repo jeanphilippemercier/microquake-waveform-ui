@@ -289,6 +289,11 @@ export class InventoryApiService {
     return this._http.post<Borehole>(url, body);
   }
 
+  updateBorehole(id: number, body: any): Observable<Borehole> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}`;
+    return this._http.patch<Borehole>(url, body);
+  }
+
   deleteBorehole(boreholeId: number): Observable<Borehole> {
     const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
     return this._http.delete<Borehole>(url);

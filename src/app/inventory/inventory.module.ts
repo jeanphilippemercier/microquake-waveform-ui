@@ -19,6 +19,10 @@ import { InventoryCableTypeDetailComponent } from './components/cable-type/inven
 import { MaintenanceModule } from '@app/maintenance/maintenance.module';
 import { StationTableComponent } from './components/station/station-table/station-table.component';
 import { SensorTableComponent } from './components/sensor/sensor-table/sensor-table.component';
+import { InventoryBoreholeDetailPageComponent } from './pages/borehole/inventory-borehole-detail-page/inventory-borehole-detail-page.component';
+import { InventoryBoreholeListPageComponent } from './pages/borehole/inventory-borehole-list-page/inventory-borehole-list-page.component';
+import { BoreholeFormComponent } from './components/borehole/borehole-form/borehole-form.component';
+import { BoreholeTableComponent } from './components/borehole/borehole-table/borehole-table.component';
 
 const ROUTES: Routes = [
   {
@@ -62,6 +66,14 @@ const ROUTES: Routes = [
     path: 'inventory/cable-types',
     component: InventoryCableTypeListPageComponent,
   },
+  {
+    path: 'inventory/boreholes',
+    component: InventoryBoreholeListPageComponent,
+  },
+  {
+    path: 'inventory/boreholes/:boreholeId',
+    component: InventoryBoreholeDetailPageComponent,
+  },
 ];
 @NgModule({
   declarations: [
@@ -80,7 +92,11 @@ const ROUTES: Routes = [
     ComponentFormComponent,
     SensorTypeFormComponent,
     StationTableComponent,
-    SensorTableComponent
+    SensorTableComponent,
+    InventoryBoreholeDetailPageComponent,
+    InventoryBoreholeListPageComponent,
+    BoreholeFormComponent,
+    BoreholeTableComponent
   ],
   imports: [
     SharedModule,
