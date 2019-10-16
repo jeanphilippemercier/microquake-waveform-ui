@@ -1,0 +1,91 @@
+<h1 mat-dialog-title>
+  Upload survey file
+</h1>
+<mat-dialog-content>
+  <ngx-file-drop
+    dropZoneLabel="Drop files here"
+    dropZoneClassName="file-upload-dropzone"
+    contentClassName="file-upload-dropzone-content"
+    (onFileDrop)="dropped($event)"
+  >
+    <ng-template
+      ngx-file-drop-content-tmp
+      let-openFileSelector="openFileSelector"
+    >
+      <div
+        class="row"
+        [formGroup]="myForm"
+      >
+
+        <div class="col-sm-9 pl-3">
+          <div class="row">
+            <div class="col-sm-12 pt-5">
+              <div class="d-flex justify-content-center py-5">
+                <span class="my-auto">
+                  Upload by drag and drop or
+                </span>
+                <button
+                  class="ml-3"
+                  type="button"
+                  mat-raised-button
+                  (click)="openFileSelector()"
+                >Browse Files</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-3 pr-3">
+          <div class="row">
+            <div class="col-sm-12">
+              <mat-form-field>
+                <mat-label>Collar x</mat-label>
+                <input
+                  matInput
+                  formControlName="collar_x"
+                >
+              </mat-form-field>
+            </div>
+
+            <div class="col-sm-12">
+              <mat-form-field>
+                <mat-label>Collar y</mat-label>
+                <input
+                  matInput
+                  formControlName="collar_y"
+                >
+              </mat-form-field>
+            </div>
+
+            <div class="col-sm-12">
+              <mat-form-field>
+                <mat-label>Collar z</mat-label>
+                <input
+                  matInput
+                  formControlName="collar_z"
+                >
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </ng-template>
+
+  </ngx-file-drop>
+</mat-dialog-content>
+<div
+  mat-dialog-actions
+  align="end"
+>
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Cancel</button>
+  <button
+    color="primary"
+    mat-raised-button
+    cdkFocusInitial
+    mat-dialog-close
+  >Upload</button>
+</div>

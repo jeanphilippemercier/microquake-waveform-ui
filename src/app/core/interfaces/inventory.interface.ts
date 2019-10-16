@@ -183,17 +183,21 @@ export interface Borehole {
   length: number;
   azimuth: any;
   dip: any;
-  collar_location_x: number;
-  collar_location_y: number;
-  collar_location_z: number;
+  collar_x: number;
+  collar_y: number;
+  collar_z: number;
   toe_x: number;
   toe_y: number;
   toe_z: number;
-  trace_x: number;
-  trace_y: number;
-  trace_z: number;
-  vtp_file_url: string;
-  dfx_file_url: string;
+  trace?: {
+    d: number;
+    x: number;
+    y: number;
+    z: number;
+  }[];
+  vtp_file: string;
+  dxf_file: string;
+  survey_file: string;
 }
 export interface StationBase {
   code: string;

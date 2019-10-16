@@ -49,11 +49,16 @@ export interface MaintenanceFormDialogData {
   maintenanceCategories: MaintenanceCategory[];
 }
 
-
 export interface MicroquakeEventTypeFormDialogData {
   model: EventType | Partial<EventType>;
   mode: PageMode;
   sites: Site[];
   takenEventType: TakenEventType[];
   quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+}
+
+export interface BoreholeSurveyFileDialogData {
+  colar_x: number;
+  colar_y: number;
+  colar_z: number;
 }

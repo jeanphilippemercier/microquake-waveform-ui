@@ -27,6 +27,7 @@ import { MicroquakeEventTypeFormComponent } from './components/microquake-event-
 import { InventoryMicroquakeEventTypeListPageComponent } from './pages/microquake-event-type/inventory-microquake-event-type-list-page/inventory-microquake-event-type-list-page.component';
 import { MicroquakeEventTypeTableComponent } from './components/microquake-event-type/microquake-event-type-table/microquake-event-type-table.component';
 import { MicroquakeEventTypeFormDialogComponent } from './dialogs/microquake-event-type-form-dialog/microquake-event-type-form-dialog.component';
+import { BoreholeSurveyFileDialogComponent } from './dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -112,7 +113,8 @@ const ROUTES: Routes = [
     MicroquakeEventTypeTableComponent,
     MicroquakeEventTypeFormComponent,
     InventoryMicroquakeEventTypeListPageComponent,
-    MicroquakeEventTypeFormDialogComponent
+    MicroquakeEventTypeFormDialogComponent,
+    BoreholeSurveyFileDialogComponent
   ],
   imports: [
     SharedModule,
@@ -121,7 +123,8 @@ const ROUTES: Routes = [
   ],
   exports: [RouterModule],
   entryComponents: [
-    MicroquakeEventTypeFormDialogComponent
+    MicroquakeEventTypeFormDialogComponent,
+    BoreholeSurveyFileDialogComponent
   ]
 })
 export class InventoryModule { }
