@@ -10,7 +10,7 @@ import { PageMode } from '@interfaces/core.interface';
 import { MicroquakeEventTypeCreateInput, MicroquakeEventTypeUpdateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { EventType, QuakemlType } from '@interfaces/event.interface';
+import { EventType, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 import { Site, TakenEventType } from '@interfaces/inventory.interface';
 
 @Component({
@@ -25,6 +25,8 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
   sites: Site[] = [];
   @Input()
   takenEventTypes: TakenEventType[];
+  @Input()
+  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
 
   filteredSites: Observable<Site[]>;
 
@@ -60,6 +62,12 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
     if (foundSite) {
       this.myForm.patchValue({ site: foundSite });
     }
+
+    const foundQuakemlType = this.quakemlTypes.find(val => val.quakeml_type === this.model.quakeml_type);
+    if (foundQuakemlType) {
+      this.myForm.patchValue({ quakeml_type: foundQuakemlType });
+    }
+
     this.filteredSites = this.myForm.get('site').valueChanges
       .pipe(
         startWith(''),
@@ -77,6 +85,10 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
 
     if (formValues.site && formValues.site.id) {
       dto.site = formValues.site.id;
+    }
+
+    if (formValues.quakeml_type && formValues.quakeml_type.id) {
+      dto.quakeml_type = formValues.quakeml_type.id;
     }
 
     return dto;

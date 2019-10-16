@@ -66,12 +66,12 @@
           <mat-form-field>
             <mat-label>Quakeml type</mat-label>
             <mat-select formControlName="quakeml_type">
-              <ng-container *ngFor="let quakemlType of allQuakemlTypes">
+              <ng-container *ngFor="let quakemlType of quakemlTypes">
                 <mat-option
                   [value]="quakemlType"
-                  [disabled]="quakemlType !== model.quakeml_type && isQuakemlTypeTaken(quakemlType) > -1"
+                  [disabled]="quakemlType?.quakeml_type !== model?.quakeml_type && quakemlType?.microquake_event_type"
                 >
-                  {{quakemlType}} {{quakemlType !== model.quakeml_type ? takenQuakemlType(isQuakemlTypeTaken(quakemlType)) : ''}}
+                  {{quakemlType?.quakeml_type}} {{quakemlType?.microquake_event_type ? '('+quakemlType?.microquake_event_type?.microquake_type+')' : ''}}
                 </mat-option>
               </ng-container>
 

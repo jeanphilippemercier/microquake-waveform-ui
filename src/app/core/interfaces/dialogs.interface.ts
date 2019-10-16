@@ -1,4 +1,4 @@
-import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType } from './event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
 import { Site, Network, Station, TakenEventType } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
@@ -55,4 +55,5 @@ export interface MicroquakeEventTypeFormDialogData {
   mode: PageMode;
   sites: Site[];
   takenEventType: TakenEventType[];
+  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
 }

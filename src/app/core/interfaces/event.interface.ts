@@ -64,6 +64,18 @@ export enum EvaluationMode {
   AUTOMATIC = 'automatic'
 }
 
+export interface QuakemlTypeWithMappedMicroquakeType {
+  id: number;
+  quakeml_type: QuakemlType;
+  microquake_event_type: {
+    id: number;
+    identifier: string;
+    microquake_type: string;
+    site: number;
+  } | null;
+
+}
+
 export interface EventType {
   id: number;
   identifier: string;

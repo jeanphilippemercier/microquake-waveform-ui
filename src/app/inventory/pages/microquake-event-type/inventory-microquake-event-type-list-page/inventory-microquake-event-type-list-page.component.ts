@@ -9,7 +9,7 @@ import { InventoryApiService } from '@services/inventory-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, MicroquakeEventTypeFormDialogData } from '@interfaces/dialogs.interface';
-import { EventType } from '@interfaces/event.interface';
+import { EventType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 import { MicroquakeEventTypeTableComponent } from '@app/inventory/components/microquake-event-type/microquake-event-type-table/microquake-event-type-table.component';
 import { MicroquakeEventTypeFormDialogComponent } from '@app/inventory/dialogs/microquake-event-type-form-dialog/microquake-event-type-form-dialog.component';
 import { TakenEventType, Site } from '@interfaces/inventory.interface';
@@ -25,6 +25,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
 
   takenEventType: TakenEventType[];
   sites: Site[];
+  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -85,9 +86,11 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
   private async _initFormData() {
     forkJoin([
       this._inventoryApiService.getSites(),
+      this._inventoryApiService.getQuakemlEventTypes()
     ]).subscribe(
       result => {
         this.sites = result[0];
+        this.quakemlTypes = result[1];
         this.initialized.next(true);
       }, err => {
         console.error(err);
@@ -114,7 +117,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
       if (val) {
         try {
           const response = await this._inventoryApiService.deleteMicroquakeEventType(id).toPromise();
-          console.log(response);
+          this.loadData();
           await this._toastrNotificationService.success('Microquake event type deleted');
         } catch (err) {
           console.error(err);
@@ -128,11 +131,13 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
     const formDialogRef = this._matDialog.open<MicroquakeEventTypeFormDialogComponent, MicroquakeEventTypeFormDialogData>(
       MicroquakeEventTypeFormDialogComponent, {
         hasBackdrop: true,
+        autoFocus: false,
         data: {
           model: $event,
           mode: PageMode.EDIT,
           sites: this.sites,
-          takenEventType: this.takenEventType
+          takenEventType: this.takenEventType,
+          quakemlTypes: this.quakemlTypes
         }
       });
 
@@ -149,11 +154,13 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
     const formDialogRef = this._matDialog.open<MicroquakeEventTypeFormDialogComponent, MicroquakeEventTypeFormDialogData>(
       MicroquakeEventTypeFormDialogComponent, {
         hasBackdrop: true,
+        autoFocus: false,
         data: {
           model: model,
           mode: PageMode.CREATE,
           sites: this.sites,
-          takenEventType: this.takenEventType
+          takenEventType: this.takenEventType,
+          quakemlTypes: this.quakemlTypes
         }
       });
 

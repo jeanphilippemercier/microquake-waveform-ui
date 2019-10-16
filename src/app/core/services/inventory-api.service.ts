@@ -17,7 +17,7 @@ import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@inter
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
 import { SensorsQuery, StationsQuery } from '@interfaces/inventory-query.interface';
 import { MicroquakeEventTypesQuery } from '@interfaces/event-query.interface';
-import { EventType } from '@interfaces/event.interface';
+import { EventType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 
 
 @Injectable({
@@ -303,6 +303,15 @@ export class InventoryApiService {
 
 
   /**
+   * BOREHOLES GYRO SURVEY ATTACHMENT
+  */
+  addGyroSurveyAttachmentToBorehole(id: number, formData: FormData): Observable<any> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}/add_survey`;
+    return this._http.post<any>(url, formData);
+  }
+
+
+  /**
    * Cables ~ CableTypes
   */
   getCableTypes(): Observable<CableType[]> {
@@ -329,6 +338,7 @@ export class InventoryApiService {
     const url = `${environment.apiUrl}cables/${id}`;
     return this._http.delete<CableType>(url);
   }
+
 
   /**
    * Micoquake event types
@@ -357,5 +367,14 @@ export class InventoryApiService {
   deleteMicroquakeEventType(id: number): Observable<any> {
     const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
     return this._http.delete(url);
+  }
+
+
+  /**
+   * QuakeML event types
+   */
+  getQuakemlEventTypes(): Observable<QuakemlTypeWithMappedMicroquakeType[]> {
+    const url = `${environment.apiUrl}inventory/quakeml_event_types`;
+    return this._http.get<QuakemlTypeWithMappedMicroquakeType[]>(url);
   }
 }
