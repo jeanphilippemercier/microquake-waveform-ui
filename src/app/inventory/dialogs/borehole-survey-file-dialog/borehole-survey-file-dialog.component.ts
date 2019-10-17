@@ -8,6 +8,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-borehole-survey-file-dialog',
@@ -18,6 +19,7 @@ export class BoreholeSurveyFileDialogComponent {
   PageMode = PageMode;
   model: MaintenanceEvent;
   files: NgxFileDropEntry[];
+  unuploadedFile: any;
 
   myForm = this._fb.group({
     collar_x: [, Validators.required],
@@ -30,7 +32,8 @@ export class BoreholeSurveyFileDialogComponent {
     private _matDialogRef: MatDialogRef<BoreholeSurveyFileDialogComponent, boolean>,
     private _fb: FormBuilder,
     private _inventoryApiService: InventoryApiService,
-    private _toastrNotificationService: ToastrNotificationService
+    private _toastrNotificationService: ToastrNotificationService,
+    private _ngxSpinnerService: NgxSpinnerService
   ) {
     this.myForm.patchValue({
       collar_x: dialogData.colar_x,
@@ -47,51 +50,67 @@ export class BoreholeSurveyFileDialogComponent {
     this._matDialogRef.close();
   }
 
-  onSaveClicked() {
-    this._matDialogRef.close(true);
+  async dropped([file]: NgxFileDropEntry[]) {
+    console.log(file);
+
+    this.unuploadedFile = {
+      file: file.relativePath,
+      fileObj: file,
+      readyToUpload: true,
+      uploading: false,
+      error: false
+    };
   }
 
-  async dropped(files: NgxFileDropEntry[]) {
-    this.files = files;
-    const unuploaed = files.map(val => ({
-      id: null,
-      description: null,
-      file: val.relativePath,
-      fileObj: val,
-      uploading: true,
-      error: false
-    }));
-    const tmpFiles = [...this.files];
-
-    for (let i = 0; i < unuploaed.length; i++) {
-      const droppedFile = unuploaed[i].fileObj;
-      // Is it a file?
-      if (droppedFile.fileEntry.isFile) {
-        const fileEntry = droppedFile.fileEntry as FileSystemFileEntry;
-        fileEntry.file(async (file: File) => {
-
-          try {
-
-            const formData = new FormData();
-            formData.append('survey_file', file);
-            formData.append('collar_x', this.myForm.value.collar_x + '');
-            formData.append('collar_y', this.myForm.value.collar_y + '');
-            formData.append('collar_z', this.myForm.value.collar_z + '');
-            const response = await this._inventoryApiService.addGyroSurveyAttachmentToBorehole(this.model.id, formData).toPromise();
-            Object.assign(unuploaed[i], response);
-            unuploaed[i].uploading = false;
-          } catch (err) {
-            unuploaed[i].uploading = false;
-            unuploaed[i].error = true;
-            console.error(err);
-            this._toastrNotificationService.error(err);
-          }
-
-        });
-      } else {
-        this._toastrNotificationService.error('Folder uploads are not supported');
-      }
+  onSaveClicked() {
+    if (!this.myForm.value.collar_x || !this.myForm.value.collar_y || !this.myForm.value.collar_z) {
+      this._toastrNotificationService.error('Collar values must be defined');
+      return;
     }
 
+    if (!this.unuploadedFile) {
+      this._toastrNotificationService.error('No file to upload');
+      return;
+    }
+    const droppedFile = this.unuploadedFile.fileObj;
+
+    if (droppedFile.fileEntry.isFile) {
+      const fileEntry = droppedFile.fileEntry as FileSystemFileEntry;
+      fileEntry.file(async (file: File) => {
+        try {
+          this.loadingDialogStart();
+          const formData = new FormData();
+          formData.append('survey_file', file);
+          formData.append('collar_x', this.myForm.value.collar_x + '');
+          formData.append('collar_y', this.myForm.value.collar_y + '');
+          formData.append('collar_z', this.myForm.value.collar_z + '');
+          this.unuploadedFile.readyToUpload = false;
+          this.unuploadedFile.uploading = true;
+          const response = await this._inventoryApiService.addGyroSurveyAttachmentToBorehole(this.dialogData.id, formData).toPromise();
+          Object.assign(this.unuploadedFile, response);
+          this.unuploadedFile.uploading = false;
+          this.unuploadedFile = null;
+          this._matDialogRef.close(true);
+        } catch (err) {
+          this.unuploadedFile.uploading = false;
+          this.unuploadedFile.error = true;
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        } finally {
+          this.loadingDialogStop();
+        }
+
+      });
+    } else {
+      this._toastrNotificationService.error('Folder uploads are not supported');
+    }
+
+  }
+
+  async loadingDialogStart() {
+    await this._ngxSpinnerService.show('loadingDialog', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingDialogStop() {
+    await this._ngxSpinnerService.hide('loadingDialog');
   }
 }

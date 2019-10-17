@@ -25,12 +25,12 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
     length: [],
     azimuth: [],
     dip: [],
-    collar: [],
-    toe: [],
-    trace: [],
-    survey_file: [],
-    vtp_file: [],
-    dxf_file: []
+    collar_x: [],
+    collar_y: [],
+    collar_z: [],
+    toe_x: [],
+    toe_y: [],
+    toe_z: []
   });
 
   @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
@@ -85,11 +85,14 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
       if (this.mode === PageMode.CREATE) {
         const response = await this._inventoryApiService.createBorehole(dto).toPromise();
         await this._toastrNotificationService.success('Borehole created');
+        this.modelCreated.emit(response);
         this._router.navigate(['/inventory/boreholes', response.id]);
       } else if (this.mode === PageMode.EDIT) {
         this.loading = true;
         const response = await this._inventoryApiService.updateBorehole(this.model.id, dto).toPromise();
         await this._toastrNotificationService.success('Borehole updated');
+        this.modelEdited.emit(response);
+        this.modelChange.emit(response);
         this._router.navigate(['/inventory/boreholes', response.id]);
       }
     } catch (err) {

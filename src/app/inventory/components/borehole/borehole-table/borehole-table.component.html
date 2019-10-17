@@ -97,12 +97,25 @@
       <th
         mat-header-cell
         *matHeaderCellDef
-      > Toe</th>
+      > Toe (x, y, z)</th>
       <td
         mat-cell
         *matCellDef="let element"
       >
-        {{element?.toe ? element?.toe : '-'}}
+        {{element?.toe_x ? element?.toe_x?.toFixed(2) + ', ' + element?.toe_y?.toFixed(2) +', '+ element?.toe_z?.toFixed(2) : '-'}}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="collar">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Collar (x, y, z)</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        {{element?.collar_x ? element?.collar_x?.toFixed(2) + ', ' + element?.collar_y?.toFixed(2) +', '+ element?.collar_z?.toFixed(2) : '-'}}
       </td>
     </ng-container>
 
@@ -115,7 +128,44 @@
         mat-cell
         *matCellDef="let element"
       >
-        {{element?.trace ? element?.trace : '-'}}
+        <ng-container *ngIf="element?.trace;then traceTemplate else noTraceTemplate"></ng-container>
+        <ng-template #traceTemplate>
+          <mat-icon
+            class="mat-18"
+            [color]="'primary'"
+          >check_circle_outline</mat-icon>
+        </ng-template>
+        <ng-template #noTraceTemplate>
+          <mat-icon
+            class="mat-18"
+            [color]="'warn'"
+          >highlight_off</mat-icon>
+        </ng-template>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="survey">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Survey file</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        <ng-container *ngIf="element?.survey_file;then surveyTemplate else noSureyTemplate"></ng-container>
+        <ng-template #surveyTemplate>
+          <mat-icon
+            class="mat-18"
+            [color]="'primary'"
+          >check_circle_outline</mat-icon>
+        </ng-template>
+        <ng-template #noSureyTemplate>
+          <mat-icon
+            class="mat-18"
+            [color]="'warn'"
+          >highlight_off</mat-icon>
+        </ng-template>
       </td>
     </ng-container>
 
@@ -150,13 +200,40 @@
             <mat-icon>visibility</mat-icon>
             <span>Detail</span>
           </button>
+          <div
+            [matTooltipPosition]="'left'"
+            [matTooltip]="'Add survey file to enable'"
+            [matTooltipDisabled]="element?.trace"
+          >
+            <button
+              mat-menu-item
+              [disabled]="!element?.trace"
+              (click)="onInterpolate(element)"
+            >
+              <mat-icon>straighten</mat-icon>
+              <span>Calculate sensor</span>
+            </button>
+          </div>
           <button
             mat-menu-item
-            color="primary"
+            (click)="onSurveyFile(element)"
+          >
+            <mat-icon>cloud_upload</mat-icon>
+            <span>Upload survey file</span>
+          </button>
+          <button
+            mat-menu-item
             [routerLink]="['/inventory/boreholes', element.id]"
           >
             <mat-icon>edit</mat-icon>
             <span>Edit</span>
+          </button>
+          <button
+            mat-menu-item
+            (click)="onDelete(element.id)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
           </button>
         </mat-menu>
       </td>

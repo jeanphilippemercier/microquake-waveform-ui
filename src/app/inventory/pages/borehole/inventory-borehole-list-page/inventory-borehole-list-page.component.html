@@ -34,6 +34,9 @@
         [count]="count"
         (previousPage)="loadData(cursorPrevious)"
         (nextPage)="loadData(cursorNext)"
+        (surveyFile)="onUploadSurveyFile($event)"
+        (interpolate)="onInterpolateBorehole($event)"
+        (delete)="onDelete($event)"
       ></app-borehole-table>
     </div>
   </div>
