@@ -237,3 +237,16 @@ export interface TakenEventType {
   microquake_type: EventType;
   quakeml_type: QuakemlType;
 }
+
+export interface InterpolateBoreholeResponse {
+  location: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  orientation: {
+    x: number;
+    y: number;
+    z: number;
+  };
+}

@@ -28,3 +28,7 @@ export enum StationsQueryOrdering {
   pkASC = 'pk',
   pkDESC = '-pkÎ',
 }
+
+export interface InterpolateBoreholeQuery {
+  alonghole_depth: number;
+}

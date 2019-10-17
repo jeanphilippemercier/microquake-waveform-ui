@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole, ISensorType, CableType } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse } from '@interfaces/inventory.interface';
 import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest, RequestOptions } from '@interfaces/query.interface';
@@ -15,7 +15,7 @@ import {
 } from '@interfaces/inventory-dto.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
-import { SensorsQuery, StationsQuery } from '@interfaces/inventory-query.interface';
+import { SensorsQuery, StationsQuery, InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
 import { MicroquakeEventTypesQuery } from '@interfaces/event-query.interface';
 import { EventType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 
@@ -308,6 +308,16 @@ export class InventoryApiService {
   addGyroSurveyAttachmentToBorehole(id: number, formData: FormData): Observable<any> {
     const url = `${environment.apiUrl}inventory/boreholes/${id}/add_survey`;
     return this._http.post<any>(url, formData);
+  }
+
+
+  /**
+   * BOREHOLES INTERPOLATION
+  */
+  interpolateBorehole(id: number, query: InterpolateBoreholeQuery): Observable<InterpolateBoreholeResponse> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}/interpolation`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<InterpolateBoreholeResponse>(url, {params});
   }
 
 

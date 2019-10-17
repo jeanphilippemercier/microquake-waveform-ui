@@ -58,7 +58,12 @@ export interface MicroquakeEventTypeFormDialogData {
 }
 
 export interface BoreholeSurveyFileDialogData {
+  id: number;
   colar_x: number;
   colar_y: number;
   colar_z: number;
+}
+
+export interface BoreholeInterpolationDialogData {
+  id: number;
 }
