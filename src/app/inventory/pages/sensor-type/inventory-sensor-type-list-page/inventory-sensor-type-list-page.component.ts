@@ -24,13 +24,13 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
-    private _ngxSpinnerService: NgxSpinnerService,
+    protected _ngxSpinnerService: NgxSpinnerService,
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
     protected _router: Router,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super(_activatedRoute, _matDialog, _router);
+    super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
   }
 
   async loadData(cursor?: string) {

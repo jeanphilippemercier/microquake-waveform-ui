@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole, ISensorType, CableType } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse } from '@interfaces/inventory.interface';
 import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest, RequestOptions } from '@interfaces/query.interface';
@@ -15,7 +15,9 @@ import {
 } from '@interfaces/inventory-dto.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
-import { SensorsQuery, StationsQuery } from '@interfaces/inventory-query.interface';
+import { SensorsQuery, StationsQuery, InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
+import { MicroquakeEventTypesQuery } from '@interfaces/event-query.interface';
+import { EventType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 
 
 @Injectable({
@@ -289,9 +291,33 @@ export class InventoryApiService {
     return this._http.post<Borehole>(url, body);
   }
 
+  updateBorehole(id: number, body: any): Observable<Borehole> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}`;
+    return this._http.patch<Borehole>(url, body);
+  }
+
   deleteBorehole(boreholeId: number): Observable<Borehole> {
     const url = `${environment.apiUrl}inventory/boreholes/${boreholeId}`;
     return this._http.delete<Borehole>(url);
+  }
+
+
+  /**
+   * BOREHOLES GYRO SURVEY ATTACHMENT
+  */
+  addGyroSurveyAttachmentToBorehole(id: number, formData: FormData): Observable<any> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}/add_survey`;
+    return this._http.post<any>(url, formData);
+  }
+
+
+  /**
+   * BOREHOLES INTERPOLATION
+  */
+  interpolateBorehole(id: number, query: InterpolateBoreholeQuery): Observable<InterpolateBoreholeResponse> {
+    const url = `${environment.apiUrl}inventory/boreholes/${id}/interpolation`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<InterpolateBoreholeResponse>(url, {params});
   }
 
 
@@ -321,5 +347,44 @@ export class InventoryApiService {
   deleteCableType(id: number): Observable<CableType> {
     const url = `${environment.apiUrl}cables/${id}`;
     return this._http.delete<CableType>(url);
+  }
+
+
+  /**
+   * Micoquake event types
+   */
+  getMicroquakeEventTypes(query?: MicroquakeEventTypesQuery): Observable<EventType[]> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<EventType[]>(url, { params });
+  }
+
+  getMicroquakeEventType(id: number): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.get<EventType>(url);
+  }
+
+  createMicroquakeEventType(body: any): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}`;
+    return this._http.post<EventType>(url, body);
+  }
+
+  updateMicroquakeEventType(id: number, body: any): Observable<EventType> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.patch<EventType>(url, body);
+  }
+
+  deleteMicroquakeEventType(id: number): Observable<any> {
+    const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.delete(url);
+  }
+
+
+  /**
+   * QuakeML event types
+   */
+  getQuakemlEventTypes(): Observable<QuakemlTypeWithMappedMicroquakeType[]> {
+    const url = `${environment.apiUrl}inventory/quakeml_event_types`;
+    return this._http.get<QuakemlTypeWithMappedMicroquakeType[]>(url);
   }
 }

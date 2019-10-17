@@ -1,0 +1,125 @@
+<h1 mat-dialog-title>
+  Calculate sensor location and depth
+</h1>
+<mat-dialog-content>
+  <div
+    class="row"
+    [formGroup]="myForm"
+  >
+
+    <div class="col-sm-12 px-3">
+      <div class="row">
+        <div class="col-sm-12">
+          <mat-form-field>
+            <mat-label>Depth along the borehole</mat-label>
+            <input
+              type="number"
+              min="0"
+              required
+              matInput
+              formControlName="alonghole_depth"
+            >
+          </mat-form-field>
+        </div>
+        <div class="col-sm-12">
+          <table class="table table-extra-condensed mb-0">
+            <tbody>
+              <tr>
+                <th>
+                  Depth
+                </th>
+                <td>
+                  <div class="d-flex w-100 flex-column">
+                    <div class="row">
+                      <div class=" col-1 p-0"><small></small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{currentDepth ? currentDepth : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  Location
+                </th>
+                <td>
+                  <div class="d-flex w-100 flex-column">
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>X</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.location.x  ? (response?.location.x | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>Y</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.location.y  ? (response?.location.y | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>Z</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.location.z  ? (response?.location.z | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  Orientation
+                </th>
+                <td>
+                  <div class="d-flex w-100 flex-column">
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>X</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.orientation.x  ? (response?.orientation.x | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>Y</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.orientation.y  ? (response?.orientation.y | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                    <div class="row">
+                      <div class=" col-1 p-0 text-right"><small>Z</small></div>
+                      <div class="col-5 p-0 text-right">
+                        {{response?.orientation.z  ? (response?.orientation.z | number:'.0-4') : '-'}}
+                      </div>
+                      <div class="col-6"></div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+<div
+  mat-dialog-actions
+  align="end"
+>
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Close</button>
+  <button
+    (click)="onSaveClicked()"
+    color="primary"
+    mat-raised-button
+    cdkFocusInitial
+  >Calculate</button>
+</div>
+<ngx-spinner name="loadingDialog"></ngx-spinner>

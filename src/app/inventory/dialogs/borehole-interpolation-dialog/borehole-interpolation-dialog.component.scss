@@ -1,0 +1,29 @@
+.table-extra-condensed {
+
+  &>thead,
+  &>tbody,
+  &>tfoot {
+    &>tr {
+
+      &>th,
+      &>td {
+        line-height: 20px;
+        padding: 8px 0;
+        font-size: 13px;
+      }
+    }
+  }
+
+  &>tbody tr:first-child {
+
+    &,
+    &>th,
+    &>td {
+      border-top: 0;
+    }
+  }
+
+  th {
+    width: 155px;
+  }
+}

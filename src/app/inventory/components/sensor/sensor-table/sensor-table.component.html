@@ -100,8 +100,7 @@
           matTooltip="Show borehole detail"
           [matTooltipDisabled]="!element?.borehole"
           color="primary"
-          href="#"
-          [disabled]="true"
+          [routerLink]="['/inventory/boreholes', element?.borehole?.id]"
           mat-button
         >{{element?.borehole ? element?.borehole?.name : 'none'}}</a>
       </td>

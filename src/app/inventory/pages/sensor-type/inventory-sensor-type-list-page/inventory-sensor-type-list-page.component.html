@@ -25,10 +25,10 @@
           <ng-template #sensorTypeCreate>
             <h2 matDialogTitle>Creating sensor type</h2>
             <mat-dialog-content>
-              <app-inventory-sensor-type-detail
+              <app-sensor-type-form
                 (cancel)="closeDialog()"
                 [mode]="PageMode.CREATE"
-              ></app-inventory-sensor-type-detail>
+              ></app-sensor-type-form>
             </mat-dialog-content>
           </ng-template>
         </div>
@@ -76,12 +76,12 @@
           <ng-template #sensorTypeUpdate>
             <h2 matDialogTitle>Sensor type {{element?.model}}</h2>
             <mat-dialog-content>
-              <app-inventory-sensor-type-detail
+              <app-sensor-type-form
                 [model]="element"
                 (cancel)="closeDialog()"
                 [mode]="PageMode.EDIT"
                 [id]="element?.id"
-              ></app-inventory-sensor-type-detail>
+              ></app-sensor-type-form>
             </mat-dialog-content>
           </ng-template>
         </td>
@@ -188,12 +188,12 @@
           <ng-template #sensorTypeUpdate>
             <h2 matDialogTitle>Sensor type {{element?.model}}</h2>
             <mat-dialog-content>
-              <app-inventory-sensor-type-detail
+              <app-sensor-type-form
                 [model]="element"
                 (cancel)="closeDialog()"
                 [mode]="PageMode.EDIT"
                 [id]="element?.id"
-              ></app-inventory-sensor-type-detail>
+              ></app-sensor-type-form>
             </mat-dialog-content>
           </ng-template>
         </td>

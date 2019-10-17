@@ -1,0 +1,43 @@
+<mat-toolbar color="primary">
+  <app-header-layout></app-header-layout>
+</mat-toolbar>
+<div class="container-fluid">
+
+  <div class="row header">
+    <div class="col m-4">
+      <div class="row">
+        <div class="col">
+          <h1>Boreholes</h1>
+          <small>
+            Inventory > Boreholes
+          </small>
+        </div>
+        <div class="col d-flex">
+          <div class="mr-auto"></div>
+          <div class="d-flex flex-column">
+            <div class="mb-auto"></div>
+            <button
+              [routerLink]="['/inventory/boreholes', PageMode.CREATE]"
+              mat-raised-button
+              color="primary"
+            >Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col mt-3 p-5 content">
+      <app-borehole-table
+        [dataSource]="dataSource"
+        [count]="count"
+        (previousPage)="loadData(cursorPrevious)"
+        (nextPage)="loadData(cursorNext)"
+        (surveyFile)="onUploadSurveyFile($event)"
+        (interpolate)="onInterpolateBorehole($event)"
+        (delete)="onDelete($event)"
+      ></app-borehole-table>
+    </div>
+  </div>
+</div>

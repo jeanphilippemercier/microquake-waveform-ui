@@ -15,12 +15,12 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 import { Form } from '@core/classes/form.class';
 
 @Component({
-  selector: 'app-inventory-component-detail',
-  templateUrl: './inventory-component-detail.component.html',
-  styleUrls: ['./inventory-component-detail.component.scss']
+  selector: 'app-component-form',
+  templateUrl: './component-form.component.html',
+  styleUrls: ['./component-form.component.scss']
 })
 
-export class InventoryComponentDetailComponent extends Form<IComponent> implements OnInit {
+export class ComponentFormComponent extends Form<IComponent> implements OnInit {
 
   @Input() sensorId: number;
   @Input() sensorTypes: ISensorType[] = [];

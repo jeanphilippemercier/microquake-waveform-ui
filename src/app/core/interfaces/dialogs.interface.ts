@@ -1,7 +1,8 @@
-import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup } from './event.interface';
+import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station } from './inventory.interface';
+import { Site, Network, Station, TakenEventType } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
+import { PageMode } from './core.interface';
 
 export interface EventUpdateDialog {
   event: IEvent;
@@ -46,4 +47,23 @@ export interface MaintenanceFormDialogData {
   stations: Station[];
   maintenanceStatuses: MaintenanceStatus[];
   maintenanceCategories: MaintenanceCategory[];
+}
+
+export interface MicroquakeEventTypeFormDialogData {
+  model: EventType | Partial<EventType>;
+  mode: PageMode;
+  sites: Site[];
+  takenEventType: TakenEventType[];
+  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+}
+
+export interface BoreholeSurveyFileDialogData {
+  id: number;
+  colar_x: number;
+  colar_y: number;
+  colar_z: number;
+}
+
+export interface BoreholeInterpolationDialogData {
+  id: number;
 }

@@ -9,80 +9,76 @@
 
         <div class="col">
           <mat-form-field>
-            <mat-label>Model</mat-label>
+            <mat-label>Site</mat-label>
             <input
               [required]="true"
               matInput
-              formControlName="model"
+              type="text"
+              formControlName="site"
+              [matAutocomplete]="autoSite"
             >
+            <mat-autocomplete
+              #autoSite="matAutocomplete"
+              [displayWith]="siteDisplayFn"
+            >
+              <mat-option
+                *ngFor="let option of (filteredSites | async)"
+                [value]="option"
+              >{{option.name}}</mat-option>
+            </mat-autocomplete>
           </mat-form-field>
         </div>
 
-        <div class="col">
-          <mat-form-field>
-            <mat-label>manufacturer</mat-label>
-            <input
-              matInput
-              formControlName="manufacturer"
-            >
-          </mat-form-field>
-        </div>
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Sensor type</mat-label>
-            <input
-              matInput
-              formControlName="sensor_type"
-            >
-          </mat-form-field>
-        </div>
       </div>
     </div>
     <div class="col-sm-3 px-sm-4">
       <div class="row">
+
         <div class="col">
           <mat-form-field>
-            <mat-label>Resonance frequency</mat-label>
+            <mat-label>Microquake type</mat-label>
             <input
+              [required]="true"
               matInput
-              formControlName="resonance_frequency"
+              formControlName="microquake_type"
             >
           </mat-form-field>
         </div>
+
         <div class="col">
           <mat-form-field>
-            <mat-label>Coil resistance</mat-label>
+            <mat-label>Identifier</mat-label>
             <input
+              [required]="true"
               matInput
-              formControlName="coil_resistance"
+              formControlName="identifier"
             >
           </mat-form-field>
         </div>
 
       </div>
+
     </div>
     <div class="col-sm-3 pl-sm-4">
       <div class="row">
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Shunt resistance</mat-label>
-            <input
-              matInput
-              formControlName="shunt_resistance"
-            >
-          </mat-form-field>
-        </div>
 
         <div class="col">
           <mat-form-field>
-            <mat-label>Gain</mat-label>
-            <input
-              matInput
-              formControlName="gain"
-            >
+            <mat-label>Quakeml type</mat-label>
+            <mat-select formControlName="quakeml_type">
+              <ng-container *ngFor="let quakemlType of quakemlTypes">
+                <mat-option
+                  [value]="quakemlType"
+                  [disabled]="quakemlType?.quakeml_type !== model?.quakeml_type && quakemlType?.microquake_event_type"
+                >
+                  {{quakemlType?.quakeml_type}} {{quakemlType?.microquake_event_type ? '('+quakemlType?.microquake_event_type?.microquake_type+')' : ''}}
+                </mat-option>
+              </ng-container>
+
+            </mat-select>
           </mat-form-field>
         </div>
+
       </div>
     </div>
 
@@ -91,23 +87,18 @@
 
         <div class="col">
           <mat-form-field>
-            <mat-label>Motion type</mat-label>
-            <input
-              matInput
-              formControlName="motion_type"
-            >
+            <mat-label>Countable</mat-label>
+            <mat-select formControlName="countable">
+              <mat-option [value]="false">
+                No
+              </mat-option>
+              <mat-option [value]="true">
+                Yes
+              </mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
 
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Description</mat-label>
-            <textarea
-              matInput
-              formControlName="description"
-            ></textarea>
-          </mat-form-field>
-        </div>
       </div>
     </div>
 

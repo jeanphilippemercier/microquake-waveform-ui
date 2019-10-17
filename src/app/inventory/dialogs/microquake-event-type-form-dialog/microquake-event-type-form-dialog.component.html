@@ -1,0 +1,21 @@
+<h1 mat-dialog-title>
+  <ng-container *ngIf="dialogData.mode === PageMode.CREATE; else editTemplate">
+    Creating new microquake event type
+  </ng-container>
+  <ng-template #editTemplate>
+    Editing microquake event type
+  </ng-template>
+</h1>
+<mat-dialog-content>
+  <app-microquake-event-type-form
+    [mode]="dialogData.mode"
+    [model]="dialogData.model"
+    (modelEdited)="onSaveClicked()"
+    (modelCreated)="onSaveClicked()"
+    (cancel)="onCancelClicked()"
+    [sites]="dialogData.sites"
+    [takenEventTypes]="dialogData.takenEventType"
+    [quakemlTypes]="dialogData.quakemlTypes"
+  >
+  </app-microquake-event-type-form>
+</mat-dialog-content>

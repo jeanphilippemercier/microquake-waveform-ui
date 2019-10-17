@@ -1,0 +1,147 @@
+<form
+  class=""
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+    <div class="col-sm-3 pr-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Model</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="model"
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Manufacturer</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="manufacturer"
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Sensor type</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="sensor_type"
+            >
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-3 px-sm-4">
+      <div class="row">
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Resonance frequency</mat-label>
+            <input
+              matInput
+              formControlName="resonance_frequency"
+            >
+          </mat-form-field>
+        </div>
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Coil resistance</mat-label>
+            <input
+              matInput
+              formControlName="coil_resistance"
+            >
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+    <div class="col-sm-3 pl-sm-4">
+      <div class="row">
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Shunt resistance</mat-label>
+            <input
+              matInput
+              formControlName="shunt_resistance"
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Gain</mat-label>
+            <input
+              matInput
+              formControlName="gain"
+            >
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-3 pl-sm-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Motion type</mat-label>
+            <input
+              matInput
+              formControlName="motion_type"
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Description</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+            ></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-12 py-1">
+      <div class="d-flex">
+        <div class="mr-auto"></div>
+        <button
+          (click)="onCancel();$event.preventDefault()"
+          class="mr-3"
+          mat-raised-button
+        >Cancel</button>
+
+        <ng-container *ngIf="mode === PageMode.EDIT">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Save</button>
+        </ng-container>
+
+        <ng-container *ngIf="mode === PageMode.CREATE">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Create</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+  <ngx-spinner name="loading"></ngx-spinner>
+</form>

@@ -192,7 +192,7 @@ export class WaveformService implements OnDestroy {
 
   private async _loadEventTypes() {
     // TODO: add real site code from site picker
-    this.eventTypes = await this._eventApiService.getMicroquakeEventTypes().toPromise();
+    this.eventTypes = await this._inventoryApiService.getMicroquakeEventTypes().toPromise();
   }
 
   private async _getAllSitesAndNetworks() {

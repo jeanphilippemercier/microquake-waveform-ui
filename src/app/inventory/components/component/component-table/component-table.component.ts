@@ -7,14 +7,13 @@ import { forkJoin } from 'rxjs';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { first } from 'rxjs/operators';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { TableWithExpandableRows } from '@core/classes/table-with-expandable-rows.class';
 
 @Component({
-  selector: 'app-inventory-component-list',
-  templateUrl: './inventory-component-list.component.html',
-  styleUrls: ['./inventory-component-list.component.scss'],
+  selector: 'app-component-table',
+  templateUrl: './component-table.component.html',
+  styleUrls: ['./component-table.component.scss'],
   animations: [
     trigger('detailExpand', [
       state('collapsed', style({ height: '0px', minHeight: '0' })),
@@ -23,55 +22,30 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
     ]),
   ],
 })
-export class InventoryComponentListComponent implements OnInit {
-
-  @Input()
-
-  public set data(v: IComponent[]) {
-    this._data = v;
-    this.missingComponentCodes = [];
-
-    if (this._data) {
-      this.allComponentCodes.forEach(val => {
-        if (this._data.findIndex(val2 => val2.code === val) === -1) {
-          this.missingComponentCodes.push(val);
-        }
-      });
-    }
-  }
-
-  public get data(): IComponent[] {
-    return this._data;
-  }
-  private _data: IComponent[];
+export class ComponentTableComponent extends TableWithExpandableRows<IComponent> implements OnInit {
 
   @Input() sensorId: number;
-  @Input() loading = false;
-  @Input() count = 0;
-  @Input() showPagination = true;
-  @Output() nextPage = new EventEmitter();
-  @Output() previousPage = new EventEmitter();
 
   sensorTypes: ISensorType[] = [];
   cables: CableType[] = [];
 
-  // tslint:disable-next-line:max-line-length
   displayedColumns: string[] = ['detail', 'enabled', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'id', 'actions'];
-  dataSource: IComponent[];
-  expandedElement: IComponent | null = null;
-  pageSize = 15;
   addingNewComponent = false;
   initialized = false;
 
   allComponentCodes = Object.values(ComponentCode);
   missingComponentCodes: ComponentCode[] = [];
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  @Output() created: EventEmitter<IComponent> = new EventEmitter();
+  @Output() updated: EventEmitter<IComponent> = new EventEmitter();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
-    private _matDialog: MatDialog,
+    protected _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
-  ) { }
+  ) {
+    super(_matDialog);
+  }
 
   async ngOnInit() {
 
@@ -96,35 +70,6 @@ export class InventoryComponentListComponent implements OnInit {
     }
   }
 
-
-  delete(componentId: number) {
-    if (!componentId) {
-      console.error(`No componentId`);
-    }
-
-    this.deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
-      ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this component?`
-        }
-      });
-
-    this.deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
-      if (val) {
-        try {
-          const response = await this._inventoryApiService.deleteComponent(componentId).toPromise();
-          this._toastrNotificationService.success('Component deleted');
-        } catch (err) {
-          console.error(err);
-          this._toastrNotificationService.error(err);
-        }
-      }
-    });
-  }
-
   componentEdited(currentComponent: IComponent, $event: IComponent) {
     this.expandedElement = null;
     currentComponent = Object.assign(currentComponent, $event);
@@ -133,6 +78,6 @@ export class InventoryComponentListComponent implements OnInit {
   componentCreated($event: IComponent) {
     this.expandedElement = null;
     this.addingNewComponent = false;
-    this.data.push($event);
+    this.dataSource.push($event);
   }
 }
