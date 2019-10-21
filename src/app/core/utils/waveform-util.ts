@@ -129,6 +129,28 @@ export default class WaveformUtil {
     return (eventData);
   }
 
+  static setSensorsEnabled(eventSensors: Sensor[], sensors: Sensor[]) {
+
+    for (const eventSensor of eventSensors) {
+
+      const sensor = sensors.find(el => el.code === eventSensor.sensor_code);
+
+      if (!sensor) {
+        console.error(`no sensor on cleanSensors for event sensor`);
+        console.error(eventSensor);
+        continue;
+      }
+
+      eventSensor.enabled = sensor.enabled;
+
+      for (const eventChannel of eventSensor.channels) {
+        const channel = sensor.components.find(
+            el => el.code.toUpperCase() === eventChannel.channel_id.replace('...CONTEXT', '').toUpperCase());
+        eventChannel.enabled = channel.enabled;
+      }
+    }
+  }
+
   static rotateComponents(seisX, seisY, seisZ, sensor: Sensor, backazimuth, incidence): any {
 
     if (seisX.y().length !== seisY.y().length ||
@@ -210,14 +232,12 @@ export default class WaveformUtil {
 
   static rotateSensors(xyzSensors: Sensor[], sensors: Sensor[], waveformSensors: WaveformSensor[]) {
 
-    let message;
-
     for (const xyzSensor of xyzSensors) {
 
       const sensor = sensors.find(el => el.code === xyzSensor.sensor_code);
 
       if (!sensor) {
-        console.error(`no sensor on rotatedComponents for xyz sensor`);
+        console.error(`no sensor on rotateSensors for xyz sensor`);
         console.error(xyzSensor);
         continue;
       }
@@ -241,7 +261,6 @@ export default class WaveformUtil {
       }
 
       if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
-        message = '';
         if (xyzSensor.channels.length === 3) {
           const channelX = xyzSensor.channels.find(
             el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'X');
@@ -250,7 +269,8 @@ export default class WaveformUtil {
           const channelZ = xyzSensor.channels.find(
             el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
           if (channelX && channelY && channelZ &&
-            channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw')) {
+            channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw') &&
+            channelX.enabled && channelY.enabled && channelZ.enabled) {
             const result = this.rotateComponents(channelX.raw, channelY.raw, channelZ.raw, sensor, backazimuth, incidence);
             if (result) {
               channelX.rotated = result.x;
@@ -259,89 +279,91 @@ export default class WaveformUtil {
             }
           }
         } else {
-          message += 'Cannot create 3C composite trace for xyzSensor: ' + xyzSensor.sensor_code +
-            ' available channels: ' + xyzSensor.channels.length + ' (' +
-            (xyzSensor.channels.length > 0 ? xyzSensor.channels[0].channel_id +
-              (xyzSensor.channels.length > 1 ? xyzSensor.channels[1].channel_id
-                : ' ') : ' ') + ')\n';
-        }
-        if (message) {
-          console.log(message);
-          // window.alert(message);
+          console.log(`cannot rotate sensor no XYZ components available or components not enabled`);
+          console.log(xyzSensor);
         }
       }
     }
   }
 
   static addCompositeTrace(sensors: Sensor[]): Sensor[] {
-    let message = '';
     const toLower = function (x) {
       return x.toLowerCase();
     };
     for (const sensor of sensors) {
-      if (sensor.channels.length === 3) {
-        if (sensor.channels[0].start.isSame(sensor.channels[1].start) &&
-          sensor.channels[0].start.isSame(sensor.channels[2].start) &&
-          sensor.channels[0].microsec === sensor.channels[1].microsec &&
-          sensor.channels[0].microsec === sensor.channels[2].microsec) {
-          if (sensor.channels[0].sample_rate === sensor.channels[1].sample_rate &&
-            sensor.channels[0].sample_rate === sensor.channels[2].sample_rate) {
-            if (sensor.channels[0].data.length === sensor.channels[1].data.length &&
-              sensor.channels[0].data.length === sensor.channels[2].data.length) {
-              const compositeTrace: Channel = {};
-              compositeTrace.code_id = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
-                sensor.channels[0].code_id.slice(0, -11) + globals.compositeChannelCode + '...CONTEXT' :
-                sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
-              compositeTrace.sensor_code = sensor.channels[0].sensor_code;
-              compositeTrace.channel_id = globals.compositeChannelCode +
-                (sensor.channels[0].channel_id.endsWith('...CONTEXT') ? '...CONTEXT' : '');
-              compositeTrace.sample_rate = sensor.channels[0].sample_rate;
-              compositeTrace.start = sensor.channels[0].start;  // moment object (good up to milisecond)
-              compositeTrace.microsec = sensor.channels[0].microsec;
-              compositeTrace.data = [];
-              compositeTrace.duration = sensor.channels[0].duration;  // in microseconds
-              for (let k = 0; k < sensor.channels[0].data.length; k++) {
-                let compositeValue = 0, sign = 1;
-                for (let j = 0; j < 3; j++) {
-                  const value = sensor.channels[j].data[k].y;
-                  const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
-                  sign = globals.signComponents.map(toLower).includes(comp.toLowerCase()) ? Math.sign(value) : sign;
-                  compositeValue += Math.pow(value, 2);
-                }
-                sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
-                compositeValue = Math.sqrt(compositeValue) * sign;
-                compositeTrace.data.push({
-                  x: sensor.channels[0].data[k].x,
-                  y: compositeValue
-                });
-              }
-              sensor.channels.push(compositeTrace);
-            } else {
-              console.log('Cannot create 3C composite trace for sensor: '
-                + sensor.sensor_code + ' different channel lengths');
-            }
-          } else {
-            console.log('Cannot create 3C composite trace for sensor: ' +
-              sensor.sensor_code + ' different sample rates: ' +
-              sensor.channels[0].sample_rate + sensor.channels[2].sample_rate + sensor.channels[2].sample_rate);
-          }
-        } else {
-          console.log('Cannot create 3C composite trace for sensor: '
-            + sensor.sensor_code + ' different channels start times ' +
-            sensor.channels[0].start.toISOString() + ' ' + sensor.channels[1].start.toISOString() + ' '
-            + sensor.channels[2].start.toISOString());
-        }
-      } else {
-        message += 'Cannot create 3C composite trace for sensor: ' + sensor.sensor_code +
-          ' available channels: ' + sensor.channels.length + ' (' +
-          (sensor.channels.length > 0 ? sensor.channels[0].channel_id +
-            (sensor.channels.length > 1 ? sensor.channels[1].channel_id
-              : ' ') : ' ') + ')\n';
+
+      if (sensor.hasOwnProperty('enabled') && !sensor.enabled) {
+        console.log(`cannot create 3C composite trace for sensor not enabled`);
+        console.log(sensor);
+        continue;
       }
-    }
-    if (message) {
-      // console.log(message);
-      // window.alert(message);
+
+      if (sensor.channels.length < 3) {
+        console.log(`cannot create 3C composite trace for sensor with less than 3 channels`);
+        console.log(sensor);
+        continue;
+      }
+
+      const comp1 = sensor.channels[0];
+      const comp2 = sensor.channels[1];
+      const comp3 = sensor.channels[2];
+
+      if (comp1.hasOwnProperty('enabled') && !comp1.enabled ||
+          comp2.hasOwnProperty('enabled') && !comp2.enabled ||
+          comp3.hasOwnProperty('enabled') && !comp3.enabled) {
+        console.log(`cannot create 3C composite trace for sensor with components disabled`);
+        console.log(sensor);
+        continue;
+      }
+
+      if (!comp1.start.isSame(comp2.start) || !comp1.start.isSame(comp3.start) ||
+          comp1.microsec !== comp2.microsec || comp1.microsec !== comp3.microsec) {
+        console.log(`cannot create 3C composite trace for sensor with different channels start times`);
+        console.log(sensor);
+        continue;
+      }
+
+      if (comp1.sample_rate !== comp2.sample_rate || comp1.sample_rate !== comp3.sample_rate) {
+        console.log(`cannot create 3C composite trace for sensor with different sample rates`);
+        console.log(sensor);
+        continue;
+      }
+
+      if (comp1.data.length !== comp2.data.length || comp1.data.length !== comp3.data.length) {
+        console.log(`cannot create 3C composite trace for sensor with different lengths`);
+        console.log(sensor);
+        continue;
+      }
+
+      const compositeTrace: Channel = {};
+      compositeTrace.code_id = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
+        sensor.channels[0].code_id.slice(0, -11) + globals.compositeChannelCode + '...CONTEXT' :
+        sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
+      compositeTrace.sensor_code = sensor.channels[0].sensor_code;
+      compositeTrace.channel_id = globals.compositeChannelCode +
+        (sensor.channels[0].channel_id.endsWith('...CONTEXT') ? '...CONTEXT' : '');
+      compositeTrace.sample_rate = sensor.channels[0].sample_rate;
+      compositeTrace.start = sensor.channels[0].start;  // moment object (good up to milisecond)
+      compositeTrace.microsec = sensor.channels[0].microsec;
+      compositeTrace.data = [];
+      compositeTrace.duration = sensor.channels[0].duration;  // in microseconds
+      compositeTrace.enabled = true;
+      for (let k = 0; k < sensor.channels[0].data.length; k++) {
+        let compositeValue = 0, sign = 1;
+        for (let j = 0; j < 3; j++) {
+          const value = sensor.channels[j].data[k].y;
+          const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
+          sign = globals.signComponents.map(toLower).includes(comp.toLowerCase()) ? Math.sign(value) : sign;
+          compositeValue += Math.pow(value, 2);
+        }
+        sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
+        compositeValue = Math.sqrt(compositeValue) * sign;
+        compositeTrace.data.push({
+          x: sensor.channels[0].data[k].x,
+          y: compositeValue
+        });
+      }
+      sensor.channels.push(compositeTrace);
     }
     return sensors;
   }
