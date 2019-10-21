@@ -410,6 +410,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       if (eventData && eventData.sensors) {
 
+        WaveformUtil.setSensorsEnabled(eventData.sensors, this.allSensors);
+
         WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
 
         // filter and recompute composite traces
@@ -503,6 +505,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               const contextData = WaveformUtil.parseMiniseed(contextFile, true);
 
               if (contextData && contextData.sensors) {
+                WaveformUtil.setSensorsEnabled(contextData.sensors, this.allSensors);
                 WaveformUtil.rotateSensors(contextData.sensors, this.allSensors, this.waveformSensors);
                 this.contextSensor = WaveformUtil.addCompositeTrace(
                   this._filterData(contextData.sensors, true, this.waveformService.displayRotated.getValue()));
@@ -548,6 +551,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
+
+      WaveformUtil.setSensorsEnabled(eventData.sensors, this.allSensors);
 
       WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
 
@@ -682,21 +687,26 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
 
       const data = [];
+      const hasDisabledChannels = (!this.activeSensors[i].enabled) ||
+        (this.activeSensors[i].channels.findIndex(el => el.enabled === false) === -1 ? false : true);
       for (const channel of this.activeSensors[i].channels) {
-        if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode)
-          || (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode)
-          || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
+        if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode) ||
+          (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
+          (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length < 3) ||
+          (this.waveformService.displayComposite.getValue() && hasDisabledChannels)) {
           data.push(
             {
               index: i,
-              name: channel.channel_id,
+              name: channel.enabled && this.activeSensors[i].enabled ?
+                channel.channel_id : channel.channel_id + ' (disabled)',
               type: 'line',
               markerType: 'none',
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
               showInLegend: true,
               // highlightEnabled: true,
-              dataPoints: channel.data,
+              dataPoints: channel.enabled && this.activeSensors[i].enabled ? channel.data :
+                new Array(channel.data.length).fill({x: 0, y: 0}),
               /*
               mouseover: function(e) {
                 this.lastMouseOver = e.dataSeries.index;
@@ -704,7 +714,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
             });
         }
       }
-
       const yMax = this._getYmax(i);
       // check range decide UOM and y scaling factor
       const motionType = this._getSensorMotionType(this.activeSensors[i]);
@@ -1985,38 +1994,47 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _filterData(sensors: Sensor[], isContext, bRotated): Sensor[] {
     for (const sensor of sensors) {
+      if (sensor.enabled) {
       // remove existing composite trace if 3 components are available, to be added back after filtering components
-      if (sensor.channels.length > 3) {
-        const pos = sensor.channels.findIndex(v =>
-          (!isContext && v.channel_id === globals.compositeChannelCode) ||
-          (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
-        if (pos >= 0) {
-          sensor.channels.splice(pos, 1);
-        }
-      }
-      for (const channel of sensor.channels) {
-        if (channel.hasOwnProperty('raw')) {
-          if (channel.valid) {
-            const sg = (bRotated && channel.hasOwnProperty('rotated')) ?
-              channel.rotated.clone() : channel.raw.clone();
-            let seis = null;
-            const butterworth = this._createButterworthFilter(channel.sample_rate);
-            if (butterworth) {
-              seis = filter.taper.taper(sg);
-              butterworth.filterInPlace(seis.y());
-            } else {
-              seis = sg;
-            }
-            channel.channel_id = isContext ? seis.channelCode() + '...CONTEXT' : seis.channelCode();
-            channel.code_id = isContext ? seis.codes() + '...CONTEXT' : seis.codes();
-            for (let k = 0; k < seis.numPoints(); k++) {
-              channel.data[k].y = seis.y()[k];
-            }
+        if (sensor.channels.length > 3) {
+          const pos = sensor.channels.findIndex(v =>
+            (!isContext && v.channel_id === globals.compositeChannelCode) ||
+            (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
+          if (pos >= 0) {
+            sensor.channels.splice(pos, 1);
           }
-        } else {
-          console.log('Error applying filter cannot find raw data');
-          break;
         }
+        for (const channel of sensor.channels) {
+          if (channel.hasOwnProperty('raw')) {
+            if (channel.valid && channel.enabled) {
+              const sg = (bRotated && channel.hasOwnProperty('rotated')) ?
+                channel.rotated.clone() : channel.raw.clone();
+              let seis = null;
+              const butterworth = this._createButterworthFilter(channel.sample_rate);
+              if (butterworth) {
+                seis = filter.taper.taper(sg);
+                butterworth.filterInPlace(seis.y());
+              } else {
+                seis = sg;
+              }
+              channel.channel_id = isContext ? seis.channelCode() + '...CONTEXT' : seis.channelCode();
+              channel.code_id = isContext ? seis.codes() + '...CONTEXT' : seis.codes();
+              for (let k = 0; k < seis.numPoints(); k++) {
+                channel.data[k].y = seis.y()[k];
+              }
+            } else {
+              console.log('Do not filter disabled or invalid channel');
+              console.log(channel);
+            }
+          } else {
+            console.error('Error applying filter cannot find raw data');
+            console.error(sensor);
+            break;
+          }
+        }
+      } else {
+        console.log('Do not filter disabled sensor');
+        console.log(sensor);
       }
     }
     return sensors;

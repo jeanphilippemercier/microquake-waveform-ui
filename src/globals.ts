@@ -33,9 +33,9 @@ export const globals = {
   snapDistance: 10,
   // colors for components line plots
   linecolor : {
-    'P': 'red',
+    'P': 'blue',
     'SV': 'green',
-    'SH': 'blue',
+    'SH': 'red',
     'E': 'red',
     'N': 'green',
     'V': 'blue',
