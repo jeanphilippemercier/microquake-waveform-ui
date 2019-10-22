@@ -694,6 +694,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
           (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
           (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length < 3) ||
           (this.waveformService.displayComposite.getValue() && hasDisabledChannels)) {
+          const dataArray = [];
+          if (!channel.enabled || !this.activeSensors[i].enabled) {
+            for (const el of channel.data) {
+              dataArray.push({
+                x: el.x,
+                y: 0
+              });
+            }
+          }
           data.push(
             {
               index: i,
@@ -705,8 +714,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               lineThickness: globals.lineThickness,
               showInLegend: true,
               // highlightEnabled: true,
-              dataPoints: channel.enabled && this.activeSensors[i].enabled ? channel.data :
-                new Array(channel.data.length).fill({x: 0, y: 0}),
+              dataPoints: channel.enabled && this.activeSensors[i].enabled ? channel.data : dataArray,
               /*
               mouseover: function(e) {
                 this.lastMouseOver = e.dataSeries.index;
