@@ -4,7 +4,7 @@ import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  IEvent, Boundaries, Origin, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing, Ray
+  IEvent, Boundaries, Origin, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing, Ray, EventsDailySummary
 } from '@interfaces/event.interface';
 import {
   EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery,
@@ -57,7 +57,6 @@ export class EventApiService {
     const url = `${environment.apiUrl}events`;
     let params = ApiUtil.getHttpParams(query);
 
-
     if (query.event_type && query.event_type.length > 1) {
       params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
     }
@@ -107,11 +106,19 @@ export class EventApiService {
     return this._http.delete(url);
   }
 
-  getEventDailySummary(query?: EventDailySummaryQuery) {
+  getEventDailySummary(query?: EventDailySummaryQuery): Observable<PaginationResponse<EventsDailySummary>> {
     const url = `${environment.apiUrl}events/daily_summary`;
-    const params = ApiUtil.getHttpParams(query);
+    let params = ApiUtil.getHttpParams(query);
 
-    return this._http.get<PaginationResponse<IEvent>>(url, { params });
+    if (query.event_type && query.event_type.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
+    }
+
+    if (query.status && query.status.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
+    }
+
+    return this._http.get<PaginationResponse<EventsDailySummary>>(url, { params });
   }
 
   getOriginById(originId: string): Observable<Origin> {
