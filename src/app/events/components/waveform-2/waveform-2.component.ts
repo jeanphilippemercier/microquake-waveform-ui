@@ -37,7 +37,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   set event(event: IEvent) {
     const newEventId = event ? event.event_resource_id : null;
     const oldEventId = this._event ? this._event.event_resource_id : null;
-    if (newEventId !== oldEventId) {
+    if (newEventId !== oldEventId || (
+      this._event && event && (
+        this._event.x !== event.x ||
+        this._event.y !== event.y ||
+        this._event.z !== event.z
+      )
+    )) {
       this._event = event;
       this._handleEvent(this._event);
     }
