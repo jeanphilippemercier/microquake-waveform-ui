@@ -231,7 +231,7 @@ export class WaveformService implements OnDestroy {
       try {
 
         switch (data.operation) {
-          case WebsocketResponseOperation.UPDATE:
+          case WebsocketResponseOperation.UPDATED:
             this.wsEventUpdated.next(data.event);
             break;
           case WebsocketResponseOperation.CREATED:
@@ -341,10 +341,13 @@ export class WaveformService implements OnDestroy {
 
     this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
       try {
+        this._ngxSpinnerService.show('loadingAcceptIntercativeProcessing', { fullScreen: false, bdColor: 'rgba(51,51,51,0.75)' });
         const response = await this._eventApiService.acceptInteractiveProcessing(newEvent.event_resource_id).toPromise();
         console.log(response);
       } catch (err) {
         console.error(err);
+      } finally {
+        this._ngxSpinnerService.hide('loadingAcceptIntercativeProcessing');
       }
     });
   }
@@ -600,7 +603,7 @@ export class WaveformService implements OnDestroy {
   async showNewEventToastrNotification($event: IEvent, type: 'success' | 'error' = 'success') {
     const time = moment($event.time_utc).utc().utcOffset($event.timezone);
     const eventType = `<strong>${this._eventQuakemlToMicroquakeTypePipe.transform($event.event_type, this.eventTypes)}</strong>`;
-    const date = `<strong>${time.format('HH:mm:ss')}</strong><small>${time.format('.SSS MMM DD YYYY')}</small>`;
+    const date = `<strong>${time.format('HH:mm:ss')}${time.format('.SSS MMM DD YYYY')}</strong>`;
     const magnitude = `${$event.magnitude ? '<strong>' + $event.magnitude.toFixed(1) + '</strong>' + ' <small>Mw</small>' : '-'}`;
 
     if (type === 'success') {
@@ -612,7 +615,7 @@ export class WaveformService implements OnDestroy {
     } else {
       const errMsg = `Already in the event list.`;
       this._toastrNotificationService.error(`
-    ${errMsg}<br><br>
+    ${errMsg}<br>
     ${date}<br>
     ${eventType}<br>
     ${magnitude}
