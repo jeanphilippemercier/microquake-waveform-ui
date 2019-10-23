@@ -1,3 +1,5 @@
+import * as moment from 'moment';
+
 export enum QuakemlType {
   NOT_EXISTING = 'not existing',
   NOT_REPORTED = 'not reported',
@@ -106,7 +108,7 @@ export interface IEvent {
   preferred_origin_id: string;
   replaced_event: boolean;
   site: number;
-  status: string;
+  status: EvaluationStatus;
   time_epoch: number;
   time_residual: number;
   time_utc: string;
@@ -121,11 +123,12 @@ export interface IEvent {
   x: number;
   y: number;
   z: number;
+  outsideOfCurrentFilter?: boolean;
 }
 
 export enum WebsocketResponseOperation {
   CREATED = 'created',
-  UPDATE = 'update',
+  UPDATED = 'updated',
   INTERACTIVE_BATCH_READY = 'interactive_batch_ready',
   INTERACTIVE_BATCH_FAILED = 'interactive_batch_failed',
 }
@@ -307,4 +310,19 @@ export type PickingMode = PickKey | null;
 export enum PickType {
   ARRIVAL = 'arrival',
   TRAVELTIME = 'traveltime'
+}
+
+export interface EventsDailySummary {
+  date: string;
+  count: number;
+  modification_timestamp_max: string;
+  accepted_counts: {
+    [key in QuakemlType | '_total_']?: number;
+  };
+  dayDate?: moment.Moment;
+  acceptedSum?: number;
+  events?: IEvent[];
+  expanded?: boolean;
+  upToDate?: boolean;
+  partial?: boolean;
 }

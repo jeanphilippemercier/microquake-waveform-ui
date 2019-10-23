@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import * as moment from 'moment';
 
-import { IEvent } from '@interfaces/event.interface';
+import { IEvent, EventsDailySummary } from '@interfaces/event.interface';
 
 interface EventDay {
   dayDate: moment.Moment;
@@ -17,28 +17,53 @@ interface EventDay {
 })
 export class EventCatalogComponent {
 
-  private _events: IEvent[];
-
+  private _eventsDailySummary: EventsDailySummary[];
   @Input()
-  set events(events: IEvent[]) {
-    this._events = events || [];
-    this.addCurrentEventToList();
-    this.sortAndMapEvents();
-    this.currentEventDayInList = this.isCurrentEventDayInList();
-    return;
+  set eventsDailySummary(eventsDailySummary: EventsDailySummary[]) {
+    console.log(`eventsDailySummary`);
+
+    this.reopenDay = false;
+    this.scrolledToEvent = false;
+
+    if (!eventsDailySummary) {
+      return;
+    }
+
+    this._eventsDailySummary = eventsDailySummary;
+    this.reopenDay = true;
+    if (this.currentEvent) {
+      this.currentEvent.outsideOfCurrentFilter = false;
+      this.addCurrentEventToList();
+    }
+  }
+  get eventsDailySummary(): EventsDailySummary[] {
+    return this._eventsDailySummary;
   }
 
-  get events(): IEvent[] {
-    return this._events;
-  }
 
   // to force changeDetection
   private _forceCD = 0;
   @Input()
   set forceCD(forceCD: number) {
-    this.sortAndMapEvents();
-    this.currentEventDayInList = this.isCurrentEventDayInList();
     this._forceCD = forceCD;
+    if (this.currentEvent) {
+      this.currentEvent.outsideOfCurrentFilter = false;
+      this.addCurrentEventToList();
+    }
+
+    if (!this.scrolledToEvent && this.currentEvent) {
+      // scroll to event
+      // setTimeout(() => {
+      //   const el = document.getElementById(`event-${this.currentEvent.event_resource_id}`);
+      //   if (el) {
+      //     el.scrollIntoView(false);
+      //     this.scrolledToEvent = true;
+      //   }
+      //   console.log(el);
+      // }, 300);
+    } else {
+      this.scrolledToEvent = true;
+    }
   }
   get forceCD() {
     return this._forceCD;
@@ -46,20 +71,19 @@ export class EventCatalogComponent {
 
   @Input() currentEventInfo: IEvent;
 
-  _currentEvent: IEvent;
+  private _currentEvent: IEvent;
   @Input()
   set currentEvent(event: IEvent) {
     this._currentEvent = event;
-    if (event && event.time_utc) {
-      this.openedDay = moment(event.time_utc).utcOffset(this.timezone).startOf('day');
-      this.currentEventDayInList = this.isCurrentEventDayInList();
-    }
-    return;
+    this.currentEventDay = event && event.time_utc ? moment.utc(event.time_utc).utcOffset(this.timezone).startOf('day') : null;
+    this.currentEventDate = event && event.time_utc ? moment.utc(event.time_utc).utcOffset(this.timezone) : null;
+    this.addCurrentEventToList();
   }
-
   get currentEvent(): IEvent {
     return this._currentEvent;
   }
+
+
 
   @Input() timezone: string;
 
@@ -81,32 +105,85 @@ export class EventCatalogComponent {
     this._interactiveProcessingEvents = v;
   }
 
+  @Output() dayChanged: EventEmitter<moment.Moment> = new EventEmitter();
+
   public get interactiveProcessingEvents(): { id: number; event: IEvent }[] {
     return this._interactiveProcessingEvents;
   }
 
   private _interactiveProcessingEvents: { id: number; event: IEvent }[];
   interactiveProcessingEventsIds: string[] = [];
-
-  days: EventDay[] = [];
   daysMap: any = {};
   openedDay: moment.Moment;
   currentEventDayInList = false;
   eventOutsideFiter: string;
-
-  sortAndMapEvents() {
-    this.events.sort((a, b) => (new Date(a.time_utc) > new Date(b.time_utc)) ? -1 : 1);
-    [this.days, this.daysMap] = this.mapEventsToDays(this.events);
-  }
+  showCurrentDayBeforeCatalog = false;
+  showCurrentDayAfterCatalog = false;
+  currentEventDayOutsideCatalog = false;
+  currentEventDaySummaryOutsideCatalog: Partial<EventsDailySummary>;
+  currentEventDay: moment.Moment;
+  currentEventDate: moment.Moment;
+  reopenDay = false;
+  scrolledToEvent = false;
 
   addCurrentEventToList() {
-    if (
-      this.currentEvent &&
-      this.events &&
-      this.events.findIndex(event => event.event_resource_id === this.currentEvent.event_resource_id) === -1
-    ) {
-      this.eventOutsideFiter = this.currentEvent.event_resource_id;
-      this.events.push(this.currentEvent);
+    if (this.currentEvent) {
+      const inList = this.isEventDayInList(this.currentEvent);
+
+      switch (inList) {
+        case -1:
+        case null:
+          this.showCurrentDayBeforeCatalog = true;
+          this.showCurrentDayAfterCatalog = false;
+          this.currentEventDaySummaryOutsideCatalog = this.generateEventDailySummaryForEventOuside(this.currentEvent);
+          break;
+        case 0:
+          this.showCurrentDayBeforeCatalog = false;
+          this.showCurrentDayAfterCatalog = true;
+          this.currentEventDaySummaryOutsideCatalog = this.generateEventDailySummaryForEventOuside(this.currentEvent);
+
+          break;
+        default:
+
+          this.showCurrentDayBeforeCatalog = false;
+          this.showCurrentDayAfterCatalog = false;
+
+          if (this.currentEvent.outsideOfCurrentFilter) {
+            return;
+          }
+
+          const found = this.eventsDailySummary.some(day => {
+            if (!day.dayDate.isSame(this.currentEventDay)) {
+              return false;
+            }
+            return day.events && day.events.some((ev, idx) => {
+              if (this.currentEvent && this.currentEvent.event_resource_id === ev.event_resource_id) {
+                return true;
+              }
+              const nextEvent = ev;
+              if (nextEvent) {
+                const nextDate = nextEvent.time_utc ? moment.utc(nextEvent.time_utc).utcOffset(this.timezone) : null;
+
+                if (this.currentEventDate.isAfter(nextDate)) {
+                  // console.log(`index: ${idx}`);
+                  // console.log(this.currentEventDate.format('YYYY-MM-DD HH:mm:ss.S'));
+                  // console.log(nextDate.format('YYYY-MM-DD HH:mm:ss.S'));
+
+                  day.events.splice(idx, 0, this.currentEvent);
+                  this.currentEvent.outsideOfCurrentFilter = true;
+                  return true;
+                } else if (idx === day.events.length - 1) {
+                  console.log(`index end: ${idx}`);
+                  day.events.splice(idx, 0, this.currentEvent);
+                  this.currentEvent.outsideOfCurrentFilter = true;
+                  return true;
+                }
+              }
+            });
+          });
+
+          break;
+      }
     }
   }
 
@@ -143,22 +220,58 @@ export class EventCatalogComponent {
     return [eventDays, daysMap];
   }
 
-  isCurrentEventDayInList() {
-    if (this.events && this.currentEvent) {
-      if (this.events.findIndex(event => event.event_resource_id === this.currentEvent.event_resource_id) > -1) {
-        return true;
-      }
+  isEventInList(ev: IEvent) {
+    if (this.eventsDailySummary && ev) {
+      const found = this.eventsDailySummary.some(val => val.events && val.events.some(event => event.event_resource_id === ev.event_resource_id));
+      return found ? true : false;
     }
 
     return false;
   }
 
-  trackDay(index: number, item: EventDay) {
-    return item.dayDateStr;
+  isEventDayInList(ev: IEvent) {
+    if (!ev) {
+      return null;
+    }
+
+    console.log('this.eventsDailySummary');
+    console.log(this.eventsDailySummary);
+
+
+    const eventDay = moment(moment.utc(ev.time_utc).utcOffset(this.timezone));
+
+    if (!this.eventsDailySummary || this.eventsDailySummary.length === 0) {
+      return -1;
+    }
+
+    if (eventDay.isSameOrBefore(this.eventsDailySummary[0].dayDate, 'day')) {
+      if (eventDay.isSameOrAfter(this.eventsDailySummary[this.eventsDailySummary.length - 1].dayDate, 'day')) {
+        return 1;
+      }
+    } else if (eventDay.isSameOrAfter(this.eventsDailySummary[this.eventsDailySummary.length - 1].dayDate, 'day')) {
+      return -1;
+    }
+    return 0;
+
+  }
+
+  generateEventDailySummaryForEventOuside(ev: IEvent) {
+    ev.outsideOfCurrentFilter = true;
+    const ds: Partial<EventsDailySummary> = {
+      dayDate: moment.utc(ev.time_utc).utcOffset(this.timezone).startOf('day'),
+      date: moment.utc(ev.time_utc).utcOffset(this.timezone).format('YYYY-MM-DD'),
+      partial: true,
+      events: [ev]
+    };
+    return ds;
+  }
+
+  trackDay(index: number, item: EventsDailySummary) {
+    return item.date;
   }
 
   trackEvent(index: number, item: IEvent) {
-    return item.modification_timestamp;
+    return item.event_resource_id;
   }
 
   async onEventClick($event: IEvent) {
@@ -167,5 +280,11 @@ export class EventCatalogComponent {
 
   async onChartClick($event: IEvent) {
     this.chartClick.emit($event);
+  }
+
+  onDayChanged($event: moment.Moment) {
+    if ($event) {
+      this.dayChanged.emit($event);
+    }
   }
 }
