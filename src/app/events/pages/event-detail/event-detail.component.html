@@ -55,7 +55,7 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
-          <ng-container *ngIf="(initialized | async ) && events?.length === 0 && !loadingEventList">
+          <ng-container *ngIf="(initialized | async ) && eventsDailySummary?.length === 0 && !loadingEventList">
             <h5 class="text-center pt-4 pb-2">No events found</h5>
             <p class="text-center">Try to change filter: <button
                 class="filter-button"
@@ -80,7 +80,7 @@
           </ng-container>
           <app-event-catalog
             [forceCD]="changeDetectCatalog"
-            [events]="events"
+            [eventsDailySummary]="eventsDailySummary"
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
@@ -89,6 +89,7 @@
             [filterTimeBefore]="waveformService.eventListQuery?.time_utc_before"
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
+            (dayChanged)="dayChanged($event)"
           ></app-event-catalog>
         </ng-template>
         <ngx-spinner name="loadingEventList"></ngx-spinner>
@@ -109,10 +110,10 @@
             <div class="mr-auto"></div>
             <!-- TODO: REMOVE -->
             <button
-              *ngIf="false && currentEvent"
+              *ngIf=""
               color="primary"
               mat-button
-              (click)="waveformService.openInteractiveProcessDialog(currentEventInfo);$event.stopPropagation()"
+              (click)="$event.stopPropagation()"
             >
               <mat-icon class="mat-18">new_releases</mat-icon>
               <small class="align-self-center">
@@ -199,6 +200,22 @@
         color="primary"
         mat-raised-button
       >Run in background</button>
+    </div>
+  </div>
+</ngx-spinner>
+
+<ngx-spinner name="loadingAcceptIntercativeProcessing">
+  <div>
+    <p
+      class="text-center"
+      style="font-size: 27px; font-weight: 600; color: #fff; padding-top: 180px;"
+    >
+      Accepting interactive processing
+    </p>
+    <div
+      style="width: 100%; margin: 45px auto 0;"
+      class="d-flex justify-content-around"
+    >
     </div>
   </div>
 </ngx-spinner>

@@ -1,89 +1,141 @@
-<mat-accordion
-  class="days"
-  *ngIf="days"
->
-  <mat-expansion-panel
-    *ngFor="let day of days; let i = index; trackBy: trackDay"
-    class="mat-elevation-z day"
-    [expanded]="currentEventDayInList ? day?.dayDate.isSame(openedDay) : (i === 0)"
-    hideToggle
+<mat-accordion class="days">
+  <ng-container *ngIf="showCurrentDayBeforeCatalog">
+    <ng-container *ngTemplateOutlet="test;context: {day: currentEventDaySummaryOutsideCatalog}"></ng-container>
+  </ng-container>
+
+  <ng-container *ngFor="let day of eventsDailySummary; let i = index; trackBy: trackDay">
+    <ng-container *ngTemplateOutlet="test;context: {day: day}"></ng-container>
+  </ng-container>
+
+  <ng-container *ngIf="showCurrentDayAfterCatalog">
+    <ng-container *ngTemplateOutlet="test;context: {day: currentEventDaySummaryOutsideCatalog}"></ng-container>
+  </ng-container>
+
+  <ng-template
+    #test
+    let-day="day"
   >
-    <mat-expansion-panel-header
-      [collapsedHeight]="'30px'"
-      [expandedHeight]="'30px'"
+
+    <mat-expansion-panel
+      [id]="'day-'+day.date"
+      [expanded]="reopenDay && day?.dayDate?.isSame(currentEventDay)"
+      class="mat-elevation-z day"
+      hideToggle
+      (opened)="onDayChanged(day?.dayDate)"
     >
-      <mat-panel-title>
-        {{day?.dayDate | date:' MMM dd': timezone}} <small class="pl-1">
-          {{day?.dayDate | date:'yyyy': timezone}}</small>
-      </mat-panel-title>
-      <mat-panel-description>
-        <div class="mr-auto"></div>
-        ({{day?.dayEvents.length}} events)
-      </mat-panel-description>
-    </mat-expansion-panel-header>
-
-    <ng-template matExpansionPanelContent>
-      <mat-nav-list dense>
-        <ng-container *ngFor="let event of day?.dayEvents; let j = index;trackBy: trackEvent">
-          <a
-            mat-list-item
-            (click)="onEventClick(event)"
-            [ngClass]="{
-                      'active': event?.event_resource_id === currentEventInfo?.event_resource_id,
-                      'active-chart': event?.event_resource_id === currentEvent?.event_resource_id,
-                      'event-no-status': !event?.status,
-                      'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
-                      'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
-                      'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
-                      'event-rejected-automatic': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic'
-                  }"
-          >
-            <mat-icon
-              class="event-icon"
-              matBadgeSize="small"
-              matBadge="."
-              matBadgeOverlap="true"
-              matBadgePosition="before"
+      <mat-expansion-panel-header
+        [collapsedHeight]="'30px'"
+        [expandedHeight]="'30px'"
+      >
+        <mat-panel-title>
+          {{day?.dayDate | date:' MMM dd':timezone}} <small class="pl-1">
+            {{day?.dayDate | date:'yyyy':timezone}}</small>
+        </mat-panel-title>
+        <mat-panel-description class="mr-0">
+          <div class="mr-auto"></div>
+          <ng-container *ngIf="!day?.partial; then nonPartialTemplate; else partialTemplate"></ng-container>
+          <ng-template #nonPartialTemplate>
+            <div
+              [matTooltipClass]="'break-line-tooltip'"
+              [matTooltipPosition]="'right'"
+              [matTooltip]="
+          (day?.dayDate | date:' MMM dd yyyy') + '\n'+
+          day?.accepted_counts?._total_ + ' accepted seismic events\n '+
+          day?.count +' total events in current filter'
+          "
             >
-              {{event?.event_type | eventTypeIcon}}
-            </mat-icon>
-            <div class="px-3">
-
-              {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
-              <small>{{event?.time_utc | date:'.SSS'}}</small>
-              <ng-container *ngIf="event?.magnitude !== -999 && event?.magnitude">
-                ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
-              </ng-container>
+              {{day?.accepted_counts?._total_}} / {{day?.count}}
             </div>
-            <ng-container *ngIf="event?.event_resource_id === eventOutsideFiter">
-              <mat-icon
-                matTooltip="Event is outside of the event filter. "
-                style="font-size: 18px; line-height: 22px;"
-                color="warn"
-              >warning</mat-icon>
-            </ng-container>
-            <ng-container *ngIf="interactiveProcessingEventsIds && interactiveProcessingEventsIds?.indexOf(event?.event_resource_id) > -1">
-              <mat-icon
-                matTooltip="Interactive processing is running. "
-                style="font-size: 18px; line-height: 22px;"
-                color="warn"
-              >access_time</mat-icon>
-            </ng-container>
-            <div class="mr-auto"></div>
-            <button
-              class="chart-button"
-              mat-icon-button
-              matTooltip="Open chart"
-              matTooltipPosition="right"
-              (click)="onChartClick(event)"
-            >
-              <mat-icon>insert_chart_outlined</mat-icon>
-            </button>
-          </a>
-          <mat-divider *ngIf="j !== day?.dayEvents?.length - 1"></mat-divider>
-        </ng-container>
-      </mat-nav-list>
-    </ng-template>
-  </mat-expansion-panel>
+          </ng-template>
+          <ng-template #partialTemplate>
+            <mat-icon
+              [matTooltipClass]="'break-line-tooltip'"
+              [matTooltipPosition]="'right'"
+              [matTooltip]="'Day is outside of the event filter. \n Day shows, becase event in this day has currenty loaded waveform charts'"
+              style="font-size: 18px; line-height: 22px;"
+              color="warn"
+            >warning</mat-icon>
+          </ng-template>
 
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <ng-template matExpansionPanelContent>
+        <ng-container *ngIf="day?.events; then eventListTemplate; else noEventListTemplate"></ng-container>
+        <ng-template #eventListTemplate>
+
+          <mat-nav-list dense>
+            <ng-container *ngFor="let event of day?.events; let j = index;trackBy: trackEvent">
+              <a
+                [id]="'event-'+event?.event_resource_id"
+                mat-list-item
+                (click)="onEventClick(event)"
+                [ngClass]="{
+                            'active': event?.event_resource_id === currentEventInfo?.event_resource_id,
+                            'active-chart': event?.event_resource_id === currentEvent?.event_resource_id,
+                            'event-no-status': !event?.status,
+                            'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
+                            'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
+                            'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
+                            'event-rejected-automatic': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic'
+                        }"
+              >
+                <mat-icon
+                  class="event-icon"
+                  matBadgeSize="small"
+                  matBadge="."
+                  matBadgeOverlap="true"
+                  matBadgePosition="before"
+                >
+                  {{event?.event_type | eventTypeIcon}}
+                </mat-icon>
+                <div class="px-3">
+
+                  {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
+                  <small>{{event?.time_utc | date:'.SSS'}}</small>
+                  <ng-container *ngIf="event?.magnitude !== -999 && event?.magnitude">
+                    ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
+                  </ng-container>
+                </div>
+                <ng-container *ngIf="event?.outsideOfCurrentFilter">
+                  <mat-icon
+                    matTooltip="Event is outside of the event filter. "
+                    style="font-size: 18px; line-height: 22px;"
+                    color="warn"
+                  >warning</mat-icon>
+                </ng-container>
+                <ng-container
+                  *ngIf="interactiveProcessingEventsIds && interactiveProcessingEventsIds?.indexOf(event?.event_resource_id) > -1"
+                >
+                  <mat-icon
+                    matTooltip="Interactive processing is running. "
+                    style="font-size: 18px; line-height: 22px;"
+                    color="warn"
+                  >access_time</mat-icon>
+                </ng-container>
+                <div class="mr-auto"></div>
+                <button
+                  class="chart-button"
+                  mat-icon-button
+                  matTooltip="Open chart"
+                  matTooltipPosition="right"
+                  (click)="onChartClick(event)"
+                >
+                  <mat-icon>insert_chart_outlined</mat-icon>
+                </button>
+              </a>
+              <mat-divider *ngIf="j !== day?.events?.length - 1"></mat-divider>
+            </ng-container>
+          </mat-nav-list>
+        </ng-template>
+        <ng-template #noEventListTemplate>
+          <mat-spinner
+            class="mx-auto mt-3 mb-3"
+            [diameter]="50"
+            [strokeWidth]="3"
+          ></mat-spinner>
+        </ng-template>
+      </ng-template>
+    </mat-expansion-panel>
+  </ng-template>
 </mat-accordion>

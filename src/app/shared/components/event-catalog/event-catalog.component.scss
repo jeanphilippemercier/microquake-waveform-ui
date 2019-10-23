@@ -152,3 +152,8 @@ mat-expansion-panel-header {
     color: #aaa;
   }
 }
+
+
+::ng-deep .break-line-tooltip {
+  white-space: pre-line;
+}

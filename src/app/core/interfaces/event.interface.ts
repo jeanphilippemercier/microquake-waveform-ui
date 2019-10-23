@@ -108,7 +108,7 @@ export interface IEvent {
   preferred_origin_id: string;
   replaced_event: boolean;
   site: number;
-  status: string;
+  status: EvaluationStatus;
   time_epoch: number;
   time_residual: number;
   time_utc: string;
