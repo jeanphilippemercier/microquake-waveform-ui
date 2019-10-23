@@ -252,6 +252,7 @@ export interface Channel {
   rotated?: any;
   data?: any[];
   valid?: boolean;
+  enabled?: boolean;
 }
 
 export interface ArrivalBase<T> {
