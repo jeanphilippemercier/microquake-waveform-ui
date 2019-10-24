@@ -172,9 +172,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.batchArrivals = response && response.data ? [...response.data] : [];
 
       if (this.batchArrivals.length > 0) {
-        this.batchArrivals.forEach(element => {
-          element.pick.time_utc = `${element.pick.time_utc.slice(0, element.pick.time_utc.length - 1)}000${element.pick.time_utc[element.pick.time_utc.length - 1]}`;
-        });
         this.waveformService.batchPicksDisabled.next(false);
         this.waveformService.openBatchDialog();
       }
@@ -2009,7 +2006,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _filterData(sensors: Sensor[], isContext, bRotated): Sensor[] {
     for (const sensor of sensors) {
       if (sensor.enabled) {
-      // remove existing composite trace if 3 components are available, to be added back after filtering components
+        // remove existing composite trace if 3 components are available, to be added back after filtering components
         if (sensor.channels.length > 3) {
           const pos = sensor.channels.findIndex(v =>
             (!isContext && v.channel_id === globals.compositeChannelCode) ||
