@@ -601,7 +601,7 @@ export class WaveformService implements OnDestroy {
   }
 
   async showNewEventToastrNotification($event: IEvent, type: 'success' | 'error' = 'success') {
-    const time = moment($event.time_utc).utc().utcOffset($event.timezone);
+    const time = moment($event.time_utc).utc().utcOffset(this.timezone);
     const eventType = `<strong>${this._eventQuakemlToMicroquakeTypePipe.transform($event.event_type, this.eventTypes)}</strong>`;
     const date = `<strong>${time.format('HH:mm:ss')}${time.format('.SSS MMM DD YYYY')}</strong>`;
     const magnitude = `${$event.magnitude ? '<strong>' + $event.magnitude.toFixed(1) + '</strong>' + ' <small>Mw</small>' : '-'}`;

@@ -20,7 +20,6 @@ export class EventCatalogComponent {
   private _eventsDailySummary: EventsDailySummary[];
   @Input()
   set eventsDailySummary(eventsDailySummary: EventsDailySummary[]) {
-    console.log(`eventsDailySummary`);
 
     this.reopenDay = false;
     this.scrolledToEvent = false;
@@ -173,7 +172,6 @@ export class EventCatalogComponent {
                   this.currentEvent.outsideOfCurrentFilter = true;
                   return true;
                 } else if (idx === day.events.length - 1) {
-                  console.log(`index end: ${idx}`);
                   day.events.splice(idx, 0, this.currentEvent);
                   this.currentEvent.outsideOfCurrentFilter = true;
                   return true;
@@ -193,7 +191,6 @@ export class EventCatalogComponent {
 
     events.forEach((event, idx) => {
 
-      // TODO: use timezone from event.timezone not this.timezone (when timezone's fixed on API)
       const dayMoment = moment(event.time_utc).utcOffset(this.timezone).startOf('day');
       const day = dayMoment.toString();
       let dayOutsideFiterRange = false;
@@ -233,11 +230,6 @@ export class EventCatalogComponent {
     if (!ev) {
       return null;
     }
-
-    console.log('this.eventsDailySummary');
-    console.log(this.eventsDailySummary);
-
-
     const eventDay = moment(moment.utc(ev.time_utc).utcOffset(this.timezone));
 
     if (!this.eventsDailySummary || this.eventsDailySummary.length === 0) {

@@ -49,12 +49,12 @@
         <td>
           <div class="row">
             <div class="col-5 p-0 text-right">
-              {{event?.time_utc | date:'HH:mm:ss':event?.timezone}}
+              {{event?.time_utc | date:'HH:mm:ss':timezone}}
               <small>{{event?.time_utc | date:'.SSS'}}</small>
             </div>
             <div class="col-7"><small class="">
-                {{event?.time_utc | date:' MMM dd': event?.timezone}}
-                {{event?.time_utc | date:'yyyy': event?.timezone}}</small>
+                {{event?.time_utc | date:' MMM dd': timezone}}
+                {{event?.time_utc | date:'yyyy': timezone}}</small>
             </div>
           </div>
         </td>

@@ -25,6 +25,7 @@ export class EventInfoComponent implements OnInit {
   @Input() evaluationStatuses: EvaluationStatus[];
   @Input() eventEvaluationModes: EvaluationMode[];
   @Input() loading = false;
+  @Input() timezone: string;
   @Output() acceptClicked: EventEmitter<EventType> = new EventEmitter();
   @Output() rejectClicked: EventEmitter<EventType> = new EventEmitter();
 
