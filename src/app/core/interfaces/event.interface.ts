@@ -93,10 +93,8 @@ export interface IEvent {
   corner_frequency?: number;
   event_file: string;
   event_resource_id: string;
-  event_type: string;
-  in_interactive_mode: any;
+  event_type: QuakemlType;
   insertion_timestamp: string;
-  is_active: boolean;
   is_processing: boolean;
   magnitude: number;
   magnitude_type: string;
@@ -106,7 +104,6 @@ export interface IEvent {
   plunge: any;
   preferred_magnitude_id: string;
   preferred_origin_id: string;
-  replaced_event: boolean;
   site: number;
   status: EvaluationStatus;
   time_epoch: number;

@@ -79,6 +79,46 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     private _toastrNotificationService: ToastrNotificationService
   ) { }
 
+  test() {
+    /*
+    const e: IEvent = {
+      azimuth: null,
+      corner_frequency: 407.958984375,
+      evaluation_mode: 'automatic',
+      event_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.xml',
+      event_resource_id: 'smi:local/2019/09/28/13/56_40_699406127.e',
+      event_type: QuakemlType.COLLAPSE,
+      insertion_timestamp: '2019-09-28T14:12:12.922549Z',
+      is_processing: false,
+      magnitude: -1.30648463863957,
+      magnitude_type: 'Mw',
+      modification_timestamp: '2019-10-24T00:22:21.386091Z',
+      network: null,
+      npick: 0,
+      plunge: null,
+      preferred_magnitude_id: 'smi:local/e2a0a92f-ea87-4fd9-bbda-855e48d62949',
+      preferred_origin_id: 'smi:local/c04c7085-a75c-4c5f-bed7-7346a3a72ba9',
+      site: 1,
+      status: EvaluationStatus.PRELIMINARY,
+      time_epoch: 1569679000705994000,
+      time_residual: null,
+      time_utc: '2019-10-24T05:56:39.705994Z',
+      timezone: '+08:00',
+      uncertainty: null,
+      uncertainty_vector_x: null,
+      uncertainty_vector_y: null,
+      uncertainty_vector_z: null,
+      variable_size_waveform_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.variable_mseed',
+      waveform_context_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.context_mseed',
+      waveform_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.mseed',
+      x: 651400,
+      y: 4767670,
+      z: -25,
+    };
+    this._addEvent(e);
+  */
+  }
+
   async ngOnInit() {
     await this.waveformService.isInitialized();
     await this._getAndSubForQueryParamChange();
@@ -147,10 +187,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
       if (this.eventsDailySummary) {
         this.checkForChangesInSummary(this.eventsDailySummary, response.results);
+
         const currentDay = this.currentDay.getValue();
 
         if (currentDay && !currentDay.upToDate) {
-          this.loadEventsForCurrentlySelectedDay();
+          const found = this.eventsDailySummary ? this.eventsDailySummary.find(val => val.dayDate.isSame(currentDay.dayDate)) : null;
+          this.loadEventsForCurrentlySelectedDay(found);
         }
 
       } else {
@@ -169,23 +211,28 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     } finally {
       this.stopLoadingEventList();
     }
-
   }
 
   private checkForChangesInSummary(currentSummary: EventsDailySummary[], newSummary: EventsDailySummary[]) {
-    currentSummary = newSummary.map((val, idx) => {
+    newSummary.map((val, idx) => {
       const found = currentSummary.find(v => v.date === val.date);
       if (found) {
         const foundTmp = Object.assign({}, found);
-        Object.assign(found, val);
-        val.events = foundTmp.events;
-        val.upToDate = val.events && val.modification_timestamp_max === foundTmp.modification_timestamp_max ? true : false;
+        val.events = found.events;
+        val.upToDate = found.upToDate && val.events && val.modification_timestamp_max === found.modification_timestamp_max ? true : false;
+        val.dayDate = found.dayDate;
+      } else {
+        val.dayDate = moment.utc(val.date, 'YYYY-MM-DD').utcOffset(this.timezone, true).startOf('day');
       }
       return val;
     });
+
+    Object.assign(currentSummary, newSummary);
+
     const currentDay = this.currentDay.getValue();
     if (currentDay) {
       const foundCurrentDay = currentSummary.find(v => v.date === currentDay.date);
+
       if (foundCurrentDay) {
         Object.assign(currentDay, foundCurrentDay);
       }
@@ -224,6 +271,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
               this.initialized.next(true);
             }
           } catch (err) {
+            this._toastrNotificationService.error(err);
             console.error(err);
           } finally {
             this.loadingCurrentEvent = false;
@@ -288,43 +336,65 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
         return;
       }
-      const eventDate = moment.utc($event.time_utc).utcOffset(this.timezone).startOf('day');
+      const eventDate = moment.utc($event.time_utc).utcOffset(this.timezone);
+      const eventDayDate = moment.utc($event.time_utc).utcOffset(this.timezone).startOf('day');
+      const addedEventInExistingDay = this.eventsDailySummary.some(day => {
 
-      const addedEvent = this.eventsDailySummary.some(day => {
-        if (!day.dayDate.isSame(eventDate)) {
+        if (!day.dayDate.isSame(eventDayDate)) {
           return false;
         }
+
         // day was not yet clicked. Mark as added, it will load automatically after clicking on the day.
         if (!day.events) {
           return true;
         }
 
-        return day.events.some(ev => {
-          if (eventDate.isAfter(moment.utc(ev.timezone).utcOffset(this.timezone))) {
-            day.events.unshift($event);
+        day.modification_timestamp_max = $event.modification_timestamp;
+
+        const addedEvent = day.events.some((ev, idx) => {
+          if (eventDate.isAfter(moment.utc(ev.time_utc).utcOffset(this.timezone))) {
+            day.events.splice(idx, 0, $event);
             return true;
           }
           return false;
         });
+
+        if (!addedEvent) {
+          day.events.push($event);
+        }
+
+        return true;
       });
-
-      if (!addedEvent && this.eventsDailySummary) {
-        const ds: EventsDailySummary = {
-          date: eventDate.format('YYYY-MM-DD'),
-          dayDate: eventDate,
-          modification_timestamp_max: null,
-          events: [$event],
-          count: 1,
-          accepted_counts: {
-            _total_: 0
-          }
-        };
-        this.eventsDailySummary.unshift(ds);
-      }
-
 
       this.changeDetectCatalog = new Date().getTime();
       this.waveformService.showNewEventToastrNotification($event, 'success');
+
+      if (!addedEventInExistingDay && this.eventsDailySummary) {
+        if (this.waveformService.eventListQuery) {
+          if (
+            eventDate.isAfter(moment.utc(this.waveformService.eventListQuery.time_utc_before)) ||
+            eventDate.isBefore(moment.utc(this.waveformService.eventListQuery.time_utc_after))
+          ) {
+            console.log(`New event is outside of the current filter. Not added!`);
+            return;
+          }
+        }
+
+        const ds: EventsDailySummary = {
+          date: eventDayDate.format('YYYY-MM-DD'),
+          dayDate: eventDayDate,
+          modification_timestamp_max: null,
+          events: [$event],
+          count: null,
+          accepted_counts: {
+            _total_: null
+          }
+        };
+
+        this.eventsDailySummary.splice(0, 0, ds);
+      }
+
+
     } catch (err) {
       console.error(err);
     }
@@ -405,9 +475,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
       if (found) {
         this.currentDay.next(found);
-
         if (!found.upToDate) {
-          this.loadEventsForCurrentlySelectedDay();
+          await this.loadEventsForCurrentlySelectedDay(found);
         }
       } else {
         // event outside filter's catalog
@@ -419,14 +488,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadEventsForCurrentlySelectedDay() {
-    const selectedDay = this.currentDay.getValue();
+  async loadEventsForCurrentlySelectedDay(selectedDay: EventsDailySummary) {
 
     if (!selectedDay) {
       return;
     }
-    try {
 
+    try {
       const date = moment(selectedDay.dayDate);
 
       const query: EventQuery = {

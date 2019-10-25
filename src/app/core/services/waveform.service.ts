@@ -582,6 +582,7 @@ export class WaveformService implements OnDestroy {
       this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.code] = idx);
 
     } catch (err) {
+      this._toastrNotificationService.error(err);
       console.error(err);
     }
   }
