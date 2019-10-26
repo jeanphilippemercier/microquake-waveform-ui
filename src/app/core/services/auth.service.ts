@@ -8,6 +8,8 @@ import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefre
 import { User } from '@interfaces/user.interface';
 import { UserService } from '@services/user.service';
 import { JwtHelperService } from '@auth0/angular-jwt';
+import { UsersApiService } from './users-api.service';
+import { UserCreateInput } from '@interfaces/user-dto.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +24,7 @@ export class AuthService {
   constructor(
     private _httpClient: HttpClient,
     private _userService: UserService,
+    private _userApiService: UsersApiService,
     private _jwtHelperService: JwtHelperService
   ) { }
 
@@ -114,6 +117,22 @@ export class AuthService {
         mergeMap((user: User) => {
           this._setUser(user);
           return of(user);
+        }),
+        catchError((err) => {
+          this._handleAuthenticationError(err);
+          return throwError(err);
+        }));
+  }
+
+  register(data: UserCreateInput): Observable<User> {
+    return this._userApiService.createUser(data)
+      .pipe(
+        mergeMap((createdUser: User) => {
+          const authLoginInput: AuthLoginInput = {
+            username: createdUser.username,
+            password: data.password
+          };
+          return this.login(authLoginInput);
         }),
         catchError((err) => {
           this._handleAuthenticationError(err);
