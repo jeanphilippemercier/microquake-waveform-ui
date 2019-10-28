@@ -4,10 +4,10 @@ import { Subscription, Observable, forkJoin } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Borehole } from '@interfaces/inventory.interface';
+import { Borehole, Sensor } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { MatDialog } from '@angular/material';
+import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
@@ -16,6 +16,7 @@ import { DetailPage } from '@core/classes/detail-page.class';
 import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
+import { SensorsQueryOrdering, SensorsQuery } from '@interfaces/inventory-query.interface';
 
 @Component({
   selector: 'app-inventory-borehole-detail-page',
@@ -40,7 +41,15 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
   traceDisplayedColumns: string[] = ['d', 'x', 'y', 'z'];
 
-
+  /*
+   * SENSORS
+   */
+  sensorsDataSource: Sensor[];
+  sensorsCount = 0;
+  sensorsCursorPrevious: string;
+  sensorsCursorNext: string;
+  sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
+  sensorsInitialized = false;
 
   myForm = this._fb.group({
     collar_x: [, Validators.required],
@@ -82,6 +91,15 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   ngOnDestroy() {
     if (this.params$) {
       this.params$.unsubscribe();
+    }
+  }
+
+  tabChanged($event: MatTabChangeEvent) {
+    const idx = $event.index;
+    if (idx === 1) {
+      if (!this.sensorsInitialized) {
+        this._initSensors();
+      }
     }
   }
 
@@ -176,5 +194,55 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
       }
     });
+  }
+
+
+  /*
+   * SENSORS
+   */
+  private async _initSensors() {
+    await this.getSensors();
+    this.sensorsInitialized = true;
+  }
+
+  async getSensors(cursor?: string) {
+    try {
+      this.loading = true;
+      this.loadingStart();
+
+      const query: SensorsQuery = {
+        cursor,
+        page_size: 15,
+        // TODO: add after implemented on API
+        // borehole: this.boreholeId
+      };
+
+      if (this.sensorsOrdring) {
+        query.ordering = this.sensorsOrdring;
+      }
+
+      const response = await this._inventoryApiService.getSensors(query).toPromise();
+
+      this.sensorsDataSource = response.results;
+      this.sensorsCount = response.count;
+      this.sensorsCursorPrevious = response.cursor_previous;
+      this.sensorsCursorNext = response.cursor_next;
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.loading = false;
+      this.loadingStop();
+    }
+  }
+
+  onSensorsSort($event: Sort) {
+    if ($event.active === 'sensor') {
+      if ($event.direction === 'asc') {
+        this.sensorsOrdring = SensorsQueryOrdering.station_location_codeASC;
+      } else {
+        this.sensorsOrdring = SensorsQueryOrdering.station_location_codeDESC;
+      }
+    }
+    this.getSensors();
   }
 }

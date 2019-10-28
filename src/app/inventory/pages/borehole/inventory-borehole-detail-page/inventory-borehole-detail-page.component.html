@@ -71,6 +71,7 @@
         <mat-tab-group
           class="w-100  px-5 py-4"
           [selectedIndex]="selectedTabIndex"
+          (selectedTabChange)="tabChanged($event)"
         >
           <mat-tab label="Details">
             <ng-template matTabContent>
@@ -79,6 +80,19 @@
                 (modelEdited)="model = $event"
                 [mode]="pageMode"
               ></app-borehole-form>
+            </ng-template>
+          </mat-tab>
+
+          <mat-tab label="Sensors">
+            <ng-template matTabContent>
+              <app-sensor-table
+                [dataSource]="sensorsDataSource"
+                [count]="sensorsCount"
+                (nextPage)="getSensors(sensorsCursorNext)"
+                (previousPage)="getSensors(sensorsCursorPrevious)"
+                (sort)="onSensorsSort($event)"
+              >
+              </app-sensor-table>
             </ng-template>
           </mat-tab>
 
@@ -149,7 +163,7 @@
           </mat-tab>
 
           <mat-tab
-            label="Traces"
+            label="Trace"
             [disabled]="!model?.trace"
           >
             <ng-template matTabContent>

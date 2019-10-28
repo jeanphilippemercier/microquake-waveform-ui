@@ -27,8 +27,30 @@
     </div>
   </div>
 
+  <div class="row mt-3 ">
+    <div class="col">
+      <div class="filter px-4">
+        <div class="row pt-3">
+          <div class="col-sm-3">
+            <mat-form-field class="w-100">
+              <mat-label>Search</mat-label>
+              <input
+                autocomplete="off"
+                matInput
+                placeholder="Type to filer"
+                type="search"
+                [ngModel]="search"
+                (ngModelChange)="searchChange.next($event)"
+              >
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row">
-    <div class="col mt-3 p-5 content">
+    <div class="col mt-1 p-5 content">
       <app-borehole-table
         [dataSource]="dataSource"
         [count]="count"

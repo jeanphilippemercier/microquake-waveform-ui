@@ -30,6 +30,7 @@
                       [matAutocomplete]="autoSensor"
                     >
                     <button
+                      *ngIf=""
                       (click)="openDialog(stationUpdate);$event.stopPropagation();$event.preventDefault()"
                       matSuffix
                       mat-icon-button
@@ -69,6 +70,7 @@
                       [matAutocomplete]="autoBorehole"
                     >
                     <button
+                      *ngIf=""
                       [disabled]="true"
                       matSuffix
                       mat-icon-button
@@ -109,9 +111,12 @@
                     <mat-label>Code</mat-label>
                     <input
                       [required]="true"
+                      [maxLength]="3"
                       matInput
                       formControlName="code"
                     >
+                    <mat-error *ngIf="!!code?.errors?.required">This field is required</mat-error>
+                    <mat-error *ngIf="!!code?.errors?.maxLength">Max length is 3</mat-error>
                   </mat-form-field>
                 </div>
 
@@ -243,7 +248,10 @@
                 <div class="col">
                   <mat-form-field>
                     <mat-label>Orientation valid</mat-label>
-                    <mat-select formControlName="orientation_valid">
+                    <mat-select
+                      formControlName="orientation_valid"
+                      [required]="true"
+                    >
                       <mat-option [value]="false">
                         No
                       </mat-option>

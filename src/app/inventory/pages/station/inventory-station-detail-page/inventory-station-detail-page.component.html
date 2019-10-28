@@ -7,7 +7,15 @@
       <div class="header mb-3">
         <div class="row">
           <div class="col-10 px-5 py-4">
-            <h1>Station {{station?.code}}</h1>
+            <h1>
+              <ng-container *ngIf="pageMode === PageMode.CREATE; then createTemplate; else editTemplate"></ng-container>
+              <ng-template #createTemplate>
+                Creating new station
+              </ng-template>
+              <ng-template #editTemplate>
+                Station {{station?.code}}
+              </ng-template>
+            </h1>
             <small>
               Inventory > Oyu Tolgoi > {{station?.network?.name}} >
               <a [routerLink]="['/inventory/stations']">Stations</a> >
@@ -53,10 +61,14 @@
                 [sites]="sites"
                 [(model)]="station"
                 [mode]="pageMode"
+                (modelCreated)="openDetail($event)"
               ></app-station-form>
             </ng-template>
           </mat-tab>
-          <mat-tab label="Maintenance log">
+          <mat-tab
+            label="Maintenance log"
+            [disabled]="pageMode === PageMode.CREATE"
+          >
             <ng-template matTabContent>
               <div class="mt-3 w-100">
                 <div class="m-5">
@@ -91,9 +103,20 @@
               </div>
             </ng-template>
           </mat-tab>
-          <mat-tab label="Sensors ({{station?.sensors_count}})">
+          <mat-tab
+            label="Sensors ({{station?.sensors_count ? station?.sensors_count : 0}})"
+            [disabled]="pageMode === PageMode.CREATE"
+          >
             <ng-template matTabContent>
               <div class="mt-3 w-100">
+                <div class="w-100 d-flex justify-content-end">
+                  <button
+                    [routerLink]="['/inventory/sensors', PageMode.CREATE]"
+                    [queryParams]="{ stationId: stationId}"
+                    color="primary"
+                    mat-raised-button
+                  >Create</button>
+                </div>
                 <app-sensor-table
                   [dataSource]="sensorsDataSource"
                   [count]="sensorsCount"
@@ -111,3 +134,4 @@
     </div>
   </div>
 </form>
+<ngx-spinner name="loading"></ngx-spinner>

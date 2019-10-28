@@ -32,3 +32,7 @@ export enum StationsQueryOrdering {
 export interface InterpolateBoreholeQuery {
   alonghole_depth: number;
 }
+
+export interface BoreholesQuery extends PaginationRequest {
+  search?: string;
+}
