@@ -15,7 +15,7 @@ import {
 } from '@interfaces/inventory-dto.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
-import { SensorsQuery, StationsQuery, InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
+import { SensorsQuery, StationsQuery, InterpolateBoreholeQuery, BoreholesQuery } from '@interfaces/inventory-query.interface';
 import { MicroquakeEventTypesQuery } from '@interfaces/event-query.interface';
 import { EventType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 
@@ -275,7 +275,7 @@ export class InventoryApiService {
   /**
    * BOREHOLES
   */
-  getBoreholes(query: PaginationRequest = {}): Observable<PaginationResponse<Borehole>> {
+  getBoreholes(query: BoreholesQuery = {}): Observable<PaginationResponse<Borehole>> {
     const url = `${environment.apiUrl}inventory/boreholes`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get<PaginationResponse<Borehole>>(url, { params });
@@ -317,7 +317,7 @@ export class InventoryApiService {
   interpolateBorehole(id: number, query: InterpolateBoreholeQuery): Observable<InterpolateBoreholeResponse> {
     const url = `${environment.apiUrl}inventory/boreholes/${id}/interpolation`;
     const params = ApiUtil.getHttpParams(query);
-    return this._http.get<InterpolateBoreholeResponse>(url, {params});
+    return this._http.get<InterpolateBoreholeResponse>(url, { params });
   }
 
 

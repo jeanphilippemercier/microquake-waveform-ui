@@ -134,8 +134,19 @@
   <div class="row mt-1">
     <div class="col-12">
       <div class="position-relative content p-4">
-
+        <h3
+          class="text-center pt-5 pb-5"
+          *ngIf="!events || events?.length === 0"
+        >
+          <ng-container *ngIf="!events">
+            Loading...
+          </ng-container>
+          <ng-container *ngIf="events?.length === 0">
+            No events
+          </ng-container>
+        </h3>
         <table
+          *ngIf="events?.length > 0"
           mat-table
           [dataSource]="events"
           class="w-100"

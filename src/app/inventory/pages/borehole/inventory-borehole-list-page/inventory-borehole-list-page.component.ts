@@ -8,12 +8,14 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material';
-import { first } from 'rxjs/operators';
+import { first, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
+import { Subject } from 'rxjs';
+import { BoreholesQuery } from '@interfaces/inventory-query.interface';
 
 @Component({
   selector: 'app-inventory-borehole-list-page',
@@ -21,6 +23,9 @@ import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-di
   styleUrls: ['./inventory-borehole-list-page.component.scss']
 })
 export class InventoryBoreholeListPageComponent extends ListPage<Borehole> implements OnInit {
+
+  search = '';
+  searchChange = new Subject<string>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -31,6 +36,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
     private _toastrNotificationService: ToastrNotificationService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
+    this._subscribeToSearch();
   }
 
   async loadData(cursor?: string) {
@@ -38,10 +44,14 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
       this.loading = true;
       this.loadingTableStart();
 
-      const query: PaginationRequest = {
+      const query: BoreholesQuery = {
         cursor,
         page_size: this.pageSize
       };
+
+      if (this.search) {
+        query.search = this.search;
+      }
 
       const response = await this._inventoryApiService.getBoreholes(query).toPromise();
 
@@ -116,5 +126,15 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
         }
       }
     });
+  }
+
+  private _subscribeToSearch() {
+    this.searchChange.pipe(
+      debounceTime(400),
+      distinctUntilChanged())
+      .subscribe(value => {
+        this.search = value;
+        this.loadData();
+      });
   }
 }
