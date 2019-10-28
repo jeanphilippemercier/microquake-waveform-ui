@@ -23,6 +23,11 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
 
   @Input() stations: Station[];
   @Input() boreholes: Borehole[];
+  @Input() stationId: number;
+
+  public get code() {
+    return this.myForm.get('code');
+  }
 
   filteredStations: Observable<Station[]>;
   filteredBoreholes: Observable<Borehole[]>;
@@ -30,17 +35,17 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
   myForm = this._fb.group({
     enabled: [false],
     name: [, [Validators.required]],
-    code: [, [Validators.required]],
+    code: [, [Validators.required, Validators.maxLength(3)]],
     alternate_code: [],
     location_code: [],
     station: [, Validators.required],
-    borehole: [],
+    borehole: [, [Validators.required]],
     commissioning_date: [],
     decommissioning_date: [],
     location_x: [],
     location_y: [],
     location_z: [],
-    orientation_valid: [],
+    orientation_valid: [false, [Validators.required]],
     along_hole_z: [],
     part_number: [],
     manufacturer: [],
@@ -80,6 +85,14 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
           map(value => !value || typeof value === 'string' ? value : value.name),
           map(name => name ? this._filterStation(name) : this.stations.slice())
         );
+
+      const fixedStation = this.stationId ? this.stations.find(station => station.id === +this.stationId) : null;
+
+      if (fixedStation) {
+        this.myForm.controls['station'].patchValue(fixedStation, { onlySelf: true });
+        this.myForm.controls['station'].disable({ onlySelf: true });
+      }
+
 
       this.filteredBoreholes = this.myForm.get('borehole').valueChanges
         .pipe(
@@ -121,7 +134,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
   }
 
   async onSubmit() {
-    const dto = this.createDtoObject(this.myForm.value);
+    const dto = this.createDtoObject(this.myForm.getRawValue());
 
     this.submited = true;
     if (this.myForm.invalid) {
@@ -136,6 +149,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.createSensor(dto).toPromise();
         await this._toastrNotificationService.success('Sensor created');
+        this.modelCreated.emit(response);
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
@@ -149,6 +163,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
         this.loading = true;
         this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const response = await this._inventoryApiService.updateSensor(this.model.id, dto).toPromise();
+        this.modelEdited.emit(response);
         await this._toastrNotificationService.success('Sensor updated');
         this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {

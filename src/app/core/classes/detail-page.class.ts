@@ -40,7 +40,7 @@ export class DetailPage<T> {
   }
 
   async loadingStart() {
-    await this._ngxSpinnerService.show('loading', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
   }
   async loadingStop() {
     await this._ngxSpinnerService.hide('loading');

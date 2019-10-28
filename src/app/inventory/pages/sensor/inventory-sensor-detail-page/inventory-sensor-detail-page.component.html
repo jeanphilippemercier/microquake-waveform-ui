@@ -7,18 +7,28 @@
       <div class="header mb-3">
         <div class="row">
           <div class="col-10 px-5 py-4">
-            <h1>Sensor {{model?.station?.code}}.{{model?.location_code ? model?.location_code : '??'}}</h1>
+            <h1>
+              <ng-container *ngIf="pageMode === PageMode.CREATE; then createTemplate; else editTemplate"></ng-container>
+              <ng-template #createTemplate>
+                Creating new sensor
+              </ng-template>
+              <ng-template #editTemplate>
+                Sensor {{model?.station?.code}}.{{model?.location_code ? model?.location_code : '??'}}
+              </ng-template>
+            </h1>
             <small>
               Inventory > Oyu Tolgoi > Hugo North Underground Network >
-              <a
-                *ngIf="model?.station?.id"
-                [routerLink]="['/inventory/stations',model?.station?.id]"
-              >Station {{model?.station?.code}}</a> >
+              <ng-container *ngIf="model?.station?.id">
+                <a [routerLink]="['/inventory/stations',model?.station?.id]">Station {{model?.station?.code}}</a> >
+              </ng-container>
               <a [routerLink]="['/inventory/sensors']">Sensors</a> >
               {{model ? ('' + model?.station?.code +'.'+ (model?.location_code ? model?.location_code  : '??') + '') : 'Creating new sensor'}}
             </small>
           </div>
-          <div class="col-2 pr-4 py-4">
+          <div
+            class="col-2 pr-4 py-4"
+            *ngIf="pageMode === PageMode.EDIT"
+          >
             <button
               class="float-right mt-3"
               mat-icon-button
@@ -54,7 +64,9 @@
                 [model]="model"
                 [stations]="stations"
                 [boreholes]="boreholes"
-                (modelEdited)="sensor = $event"
+                [stationId]="queryParams ? queryParams['stationId'] : null"
+                (modelEdited)="model = $event"
+                (modelCreated)="openDetail($event)"
                 [mode]="pageMode"
               ></app-sensor-form>
             </ng-template>
@@ -126,3 +138,4 @@
     </div>
   </div>
 </form>
+<ngx-spinner name="loading"></ngx-spinner>

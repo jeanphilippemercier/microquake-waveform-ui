@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, Input } from '@angular/core';
 
 import { MatDialogRef, MatDialog, Sort } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
@@ -15,6 +15,8 @@ export class SensorTableComponent extends Table<Sensor> {
 
   displayedColumns: string[] = ['enabled', 'sensor', 'station', 'borehole', 'components', 'actions'];
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+
+  @Input() stationId: number = null;
 
   constructor(
     protected _matDialog: MatDialog,

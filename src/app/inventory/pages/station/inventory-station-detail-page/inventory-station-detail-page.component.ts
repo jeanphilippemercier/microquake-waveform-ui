@@ -101,12 +101,16 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          await this._toastrNotificationService.error('Station deletion is not active');
-          // const response = await this._inventoryApiService.deleteStation(stationId).toPromise();
-          // await this._toastrNotificationService.success('Station deleted');
+
+          await this.loadingStart();
+          const response = await this._inventoryApiService.deleteStation(stationId).toPromise();
+          await this._toastrNotificationService.success('Station deleted');
+          this._router.navigate(['/inventory/stations']);
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
+        } finally {
+          await this.loadingStop();
         }
       }
     });
@@ -126,7 +130,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
   }
 
   private async _initDetail() {
-    this.loadingTableStart();
+    this.loadingStart();
     forkJoin([
       this._inventoryApiService.getSites(),
       this._inventoryApiService.getStation(this.stationId),
@@ -135,15 +139,15 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
         this.sites = result[0];
         this.station = result[1];
         this.detailInitialized = true;
-        this.loadingTableStop();
+        this.loadingStop();
       }, err => {
         console.error(err);
-        this.loadingTableStop();
+        this.loadingStop();
       });
   }
 
   private async _initMaintenanceLogs() {
-    this.loadingTableStart();
+    this.loadingStart();
     forkJoin([
       this._inventoryApiService.getMaintenanceStatuses(),
       this._inventoryApiService.getMaintenanceCategories(),
@@ -157,10 +161,10 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
         this.maintenanceEventsCursorPrevious = result[2].cursor_previous;
         this.maintenanceEventsCursorNext = result[2].cursor_next;
         this.maintenanceEventsInitialized = true;
-        this.loadingTableStop();
+        this.loadingStop();
       }, err => {
         console.error(err);
-        this.loadingTableStop();
+        this.loadingStop();
       });
   }
 
@@ -172,7 +176,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
   async getSensors(cursor?: string) {
     try {
       this.loading = true;
-      this.loadingTableStart();
+      this.loadingStart();
 
       const query: SensorsQuery = {
         cursor,
@@ -194,7 +198,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       console.error(err);
     } finally {
       this.loading = false;
-      this.loadingTableStop();
+      this.loadingStop();
     }
   }
 
@@ -224,7 +228,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
   async changeMaintenanceEventsPage(cursor?: string) {
     try {
-      await this.loadingTableStart();
+      await this.loadingStart();
       const response = await this.getMaintenanceEvents(cursor).toPromise();
       this.maintenanceEvents = response.results;
       this.maintenanceEventsCount = response.count;
@@ -233,7 +237,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     } finally {
-      await this.loadingTableStop();
+      await this.loadingStop();
     }
   }
 
@@ -256,28 +260,31 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
+          this.loadingStart();
           const response = await this._inventoryApiService.deleteMaintenanceEvent(id).toPromise();
           this.changeMaintenanceEventsPage();
           await this._toastrNotificationService.success('Maintenance event deleted');
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
+        } finally {
+          this.loadingStop();
         }
       }
     });
   }
 
-  async loadingTableStart() {
-    await this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+  async loadingStart() {
+    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
   }
-  async loadingTableStop() {
-    await this._ngxSpinnerService.hide('loadingTable');
+  async loadingStop() {
+    await this._ngxSpinnerService.hide('loading');
   }
 
   async onCreatedMaintenanceEvent($event: MaintenanceEvent) {
 
     try {
-      await this.loadingTableStart();
+      await this.loadingStart();
       const response = await this.getMaintenanceEvents(null).toPromise();
       this.maintenanceEvents = response.results;
       this.maintenanceEventsCount = response.count;
@@ -286,8 +293,12 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     } finally {
-      await this.loadingTableStop();
+      await this.loadingStop();
     }
+  }
+
+  openDetail($event: Station) {
+    this._router.navigate(['/inventory/stations', $event.id]);
   }
 }
 
