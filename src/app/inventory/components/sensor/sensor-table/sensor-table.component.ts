@@ -16,8 +16,6 @@ export class SensorTableComponent extends Table<Sensor> {
   displayedColumns: string[] = ['enabled', 'sensor', 'station', 'borehole', 'components', 'actions'];
   deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
 
-  @Input() stationId: number = null;
-
   constructor(
     protected _matDialog: MatDialog,
     protected _activatedRoute: ActivatedRoute

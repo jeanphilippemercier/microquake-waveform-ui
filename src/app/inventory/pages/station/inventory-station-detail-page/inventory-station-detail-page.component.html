@@ -119,7 +119,6 @@
                 </div>
                 <app-sensor-table
                   [dataSource]="sensorsDataSource"
-                  [stationId]="stationId"
                   [count]="sensorsCount"
                   (nextPage)="getSensors(sensorsCursorNext)"
                   (previousPage)="getSensors(sensorsCursorPrevious)"
