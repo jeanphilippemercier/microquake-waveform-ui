@@ -146,7 +146,7 @@ export default class WaveformUtil {
       for (const eventChannel of eventSensor.channels) {
         const channel = sensor.components.find(
             el => el.code.toUpperCase() === eventChannel.channel_id.replace('...CONTEXT', '').toUpperCase());
-        eventChannel.enabled = channel.enabled;
+        eventChannel.enabled = channel ? channel.enabled : true;
       }
     }
   }
