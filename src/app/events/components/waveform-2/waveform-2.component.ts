@@ -591,8 +591,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this._renderContextChart();
       this._setChartKeys();
       for (const sensor of this.activeSensors) {
-        sensor.chart.options.viewportMinStack = this._xViewPortMinStack;
-        sensor.chart.options.viewportMaxStack = this._xViewportMaxStack;
+        if (sensor.chart !== undefined) {
+          sensor.chart.options.viewportMinStack = this._xViewPortMinStack;
+          sensor.chart.options.viewportMaxStack = this._xViewportMaxStack;
+        }
       }
     }
   }
@@ -665,11 +667,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _destroyCharts() {
 
     if (this.activeSensors) {
-      for (let i = 0; i < this.activeSensors.length; i++) {
-        this.activeSensors[i].chart.destroy();
-        const elem = document.getElementById(this.activeSensors[i].container);
-        if (elem) {
-          elem.parentElement.removeChild(elem);
+      for (const activeSensor of this.activeSensors) {
+        if (activeSensor.chart !== undefined) {
+          activeSensor.chart.destroy();
+          const elem = document.getElementById(activeSensor.container);
+          if (elem) {
+            elem.parentElement.removeChild(elem);
+          }
         }
       }
     }
@@ -678,6 +682,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _renderCharts() {
     // Chart Options, Render
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
+
       this.activeSensors[i].container = 'container' + i.toString();
 
       if (document.querySelectorAll('#' + this.activeSensors[i].container).length === 0) {
@@ -725,119 +730,127 @@ export class Waveform2Component implements OnInit, OnDestroy {
             });
         }
       }
-      const yMax = this._getYmax(i);
-      // check range decide UOM and y scaling factor
-      const motionType = this._getSensorMotionType(this.activeSensors[i]);
-      let scaleY = WaveformUtil.convYUnits;
-      let uom = motionType === GroundMotionType.VELOCITY ? WaveformUtil.defaultUnits + '/s' :
-        motionType === GroundMotionType.ACCELERATION ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
-      if (yMax * scaleY < 0.002) {
-        scaleY = scaleY * 1000;
-        uom = uom.replace(WaveformUtil.defaultUnits, 'um');
-      }
-      if (yMax * scaleY > 99.) {
-        scaleY = scaleY / 1000;
-        uom = uom.replace(WaveformUtil.defaultUnits, 'm');
-      }
 
-      const options = {
-        zoomEnabled: true,
-        zoomType: 'x',
-        animationEnabled: false,
-        rangeChanged: (e) => {
-          this._bHoldEventTrigger = true;
-          if (!e.chart.options.viewportMinStack) {
-            e.chart.options.viewportMinStack = [];
-            e.chart.options.viewportMaxStack = [];
-          }
-          if (e.trigger === 'zoom') {
-            if (this.waveformService.zoomAll.getValue()) {
-              this._xZoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum);
-            } else {
-              e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
-              e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
+      let options = {};
+
+      if (this.activeSensors[i].channels.length === 0) {
+        const msg_str = `Invalid trace` + (this.activeSensors[i].sensor_code ? ' for sensor: ' + this.activeSensors[i].sensor_code : '');
+        this._toastrNotificationService.warning(msg_str);
+      } else {
+        const yMax = this._getYmax(i);
+        // check range decide UOM and y scaling factor
+        const motionType = this._getSensorMotionType(this.activeSensors[i]);
+        let scaleY = WaveformUtil.convYUnits;
+        let uom = motionType === GroundMotionType.VELOCITY ? WaveformUtil.defaultUnits + '/s' :
+          motionType === GroundMotionType.ACCELERATION ? WaveformUtil.defaultUnits + '/s' + '\u00B2' : '??';
+        if (yMax * scaleY < 0.002) {
+          scaleY = scaleY * 1000;
+          uom = uom.replace(WaveformUtil.defaultUnits, 'um');
+        }
+        if (yMax * scaleY > 99.) {
+          scaleY = scaleY / 1000;
+          uom = uom.replace(WaveformUtil.defaultUnits, 'm');
+        }
+
+        options = {
+          zoomEnabled: true,
+          zoomType: 'x',
+          animationEnabled: false,
+          rangeChanged: (e) => {
+            this._bHoldEventTrigger = true;
+            if (!e.chart.options.viewportMinStack) {
+              e.chart.options.viewportMinStack = [];
+              e.chart.options.viewportMaxStack = [];
             }
-          }
-          if (e.trigger === 'reset') {
-            this._resetChartViewX(e.chart);
-          }
-          this._waveformContainer.nativeElement.focus();
+            if (e.trigger === 'zoom') {
+              if (this.waveformService.zoomAll.getValue()) {
+                this._xZoomAllCharts(e.axisX[0].viewportMinimum, e.axisX[0].viewportMaximum);
+              } else {
+                e.chart.options.viewportMinStack.push(e.axisX[0].viewportMinimum);
+                e.chart.options.viewportMaxStack.push(e.axisX[0].viewportMaximum);
+              }
+            }
+            if (e.trigger === 'reset') {
+              this._resetChartViewX(e.chart);
+            }
+            this._waveformContainer.nativeElement.focus();
 
-        },
-        title: {
-          text: this._getSensorTitle(this.activeSensors[i]),
-          dockInsidePlotArea: true,
-          fontSize: 12,
-          fontFamily: 'tahoma',
-          fontColor: 'black',
-          horizontalAlign: 'left'
-        },
-        subtitles: [{
-          text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '',
-          dockInsidePlotArea: true,
-          fontSize: 10,
-          fontFamily: 'tahoma',
-          fontColor: 'black',
-          horizontalAlign: 'left'
-        }],
-        legend: {
-          dockInsidePlotArea: true,
-          horizontalAlign: 'left'
-        },
-        toolTip: {
-          enabled: false
-        },
-        axisX: {
-          minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
-          maximum: this._getXmax(i),
-          lineThickness: globals.axis.lineThickness,
-          lineColor: globals.axis.lineColor,
-          viewportMinimum: this.waveformService.zoomAll.getValue() && this._xViewPortMinStack.length > 0 ?
-            this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : this._getXvpMin(),
-          viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
-            this._xViewportMaxStack[this._xViewportMaxStack.length - 1] : this._getXvpMax(),
-          includeZero: true,
-          labelAutoFit: false,
-          labelWrap: false,
-          labelFormatter: (e) => {
-            return e.value / WaveformUtil.convXUnits + ' s';
           },
-          crosshair: {
-            enabled: false,
-            snapToDataPoint: true,
+          title: {
+            text: this._getSensorTitle(this.activeSensors[i]),
+            dockInsidePlotArea: true,
+            fontSize: 12,
+            fontFamily: 'tahoma',
+            fontColor: 'black',
+            horizontalAlign: 'left'
+          },
+          subtitles: [{
+            text: i === 0 ? moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '',
+            dockInsidePlotArea: true,
+            fontSize: 10,
+            fontFamily: 'tahoma',
+            fontColor: 'black',
+            horizontalAlign: 'left'
+          }],
+          legend: {
+            dockInsidePlotArea: true,
+            horizontalAlign: 'left'
+          },
+          toolTip: {
+            enabled: false
+          },
+          axisX: {
+            minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
+            maximum: this._getXmax(i),
+            lineThickness: globals.axis.lineThickness,
+            lineColor: globals.axis.lineColor,
+            viewportMinimum: this.waveformService.zoomAll.getValue() && this._xViewPortMinStack.length > 0 ?
+              this._xViewPortMinStack[this._xViewPortMinStack.length - 1] : this._getXvpMin(),
+            viewportMaximum: this.waveformService.zoomAll.getValue() && this._xViewportMaxStack.length > 0 ?
+              this._xViewportMaxStack[this._xViewportMaxStack.length - 1] : this._getXvpMax(),
+            includeZero: true,
+            labelAutoFit: false,
+            labelWrap: false,
             labelFormatter: (e) => {
-              return e.value / WaveformUtil.convXUnits;
+              return e.value / WaveformUtil.convXUnits + ' s';
             },
+            crosshair: {
+              enabled: false,
+              snapToDataPoint: true,
+              labelFormatter: (e) => {
+                return e.value / WaveformUtil.convXUnits;
+              },
+            },
+            stripLines: this.activeSensors[i].picks
           },
-          stripLines: this.activeSensors[i].picks
-        },
-        axisY: {
-          minimum: -yMax,
-          maximum: yMax,
-          title: uom,
-          gridThickness: 0,
-          lineThickness: globals.axis.lineThickness,
-          lineColor: globals.axis.lineColor,
-          interval: yMax / 2,
-          includeZero: true,
-          labelFormatter: (e) => {
-            const val = e.value * scaleY;
-            if (Math.abs(Number(val.toPrecision(1))) < 10) {
-              return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
-            }
-            return Number(val.toPrecision(2)).toFixed(2);
-          },
-          crosshair: {
-            enabled: false,
-            snapToDataPoint: true,
+          axisY: {
+            minimum: -yMax,
+            maximum: yMax,
+            title: uom,
+            gridThickness: 0,
+            lineThickness: globals.axis.lineThickness,
+            lineColor: globals.axis.lineColor,
+            interval: yMax / 2,
+            includeZero: true,
             labelFormatter: (e) => {
               const val = e.value * scaleY;
-              return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
+              if (Math.abs(Number(val.toPrecision(1))) < 10) {
+                return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
+              }
+              return Number(val.toPrecision(2)).toFixed(2);
             },
-          }
-        },
-        data: data
-      };
+            crosshair: {
+              enabled: false,
+              snapToDataPoint: true,
+              labelFormatter: (e) => {
+                const val = e.value * scaleY;
+                return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
+              },
+            }
+          },
+          data: data
+        };
+      }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
       this.activeSensors[i].chart.render();
     }
@@ -983,6 +996,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     // Chart Options, Render
 
+    if (this.contextSensor.length === 0 || this.contextSensor[0].channels.length === 0) {
+      this._toastrNotificationService.warning(`Invalid context trace`);
+      return;
+    }
+
     const i = this.activeSensors.length - 1;
 
     this.activeSensors[i].container = 'container' + i.toString();
@@ -1033,8 +1051,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
-    const startTimeLabel = (this.contextSensor.length > 0 && this.contextSensor[0].channels.length > 0) ?
-      moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '';
+    const startTimeLabel = moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
     const optionsContext = {
       zoomEnabled: true,
       animationEnabled: false,
@@ -1127,6 +1144,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     for (let j = 0; j < this.activeSensors.length; j++) {
       const chartEl = this.activeSensors[j].chart;
+
+      if (chartEl === undefined) {
+        continue;
+      }
 
       const chartElDom: Element = chartEl.get('container');
       const chartElCanvasesDom = chartElDom.querySelectorAll('.canvasjs-chart-canvas');
@@ -1626,10 +1647,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _getAxisMinAll(isXaxis: boolean) {
 
     let min;
-    for (let i = 0; i < this.activeSensors.length; i++) {
-      const chart = this.activeSensors[i].chart;
+    for (const activeSensor of this.activeSensors) {
+      const chart = activeSensor.chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      min = i === 0 ? axis.get('minimum') : Math.min(+axis.get('minimum'), min);
+      if (axis !== undefined && axis.get('minimum') !== undefined) {
+        min = min === undefined ? axis.get('minimum') : Math.min(+axis.get('minimum'), min);
+      }
     }
     return min;
   }
@@ -1637,10 +1660,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _getAxisMaxAll(isXaxis: boolean) {
 
     let max;
-    for (let i = 0; i < this.activeSensors.length - 1; i++) {
-      const chart = this.activeSensors[i].chart;
+    for (const activeSensor of this.activeSensors) {
+      const chart = activeSensor.chart;
       const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      max = i === 0 ? axis.get('maximum') : Math.max(+axis.get('maximum'), max);
+      if (axis !== undefined && axis.get('minimum') !== undefined) {
+        max = max === undefined ? axis.get('maximum') : Math.max(+axis.get('maximum'), max);
+      }
     }
     return max;
   }
@@ -1653,9 +1678,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
       for (let i = 0; i < this.activeSensors.length - 1; i++) {
         const chart = this.activeSensors[i].chart;
         const axis = chart.axisX[0];
-        axis.set('viewportMinimum', vpMin, false);
-        axis.set('viewportMaximum', vpMax, false);
-        chart.render();
+        if (axis !== undefined) {
+          axis.set('viewportMinimum', vpMin, false);
+          axis.set('viewportMaximum', vpMax, false);
+          chart.render();
+        }
       }
     }
   }
@@ -1665,11 +1692,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
       const chart = this.activeSensors[i].chart;
       const axis = chart.axisY[0];
-      const vpMax = axis.viewportMaximum !== null ? axis.viewportMaximum * factor : null;
-      axis.set('viewportMinimum', -vpMax, false);
-      axis.set('viewportMaximum', vpMax, false);
-      axis.set('interval', vpMax / 2, false);
-      chart.render();
+      if (axis !== undefined) {
+        const vpMax = axis.viewportMaximum !== null ? axis.viewportMaximum * factor : null;
+        axis.set('viewportMinimum', -vpMax, false);
+        axis.set('viewportMaximum', vpMax, false);
+        axis.set('interval', vpMax / 2, false);
+        chart.render();
+      }
     }
   }
 
