@@ -213,8 +213,7 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
       const query: SensorsQuery = {
         cursor,
         page_size: 15,
-        // TODO: add after implemented on API
-        // borehole: this.boreholeId
+        borehole: this.boreholeId
       };
 
       if (this.sensorsOrdring) {

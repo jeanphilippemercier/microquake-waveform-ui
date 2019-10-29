@@ -2,6 +2,7 @@ import { PaginationRequest } from './query.interface';
 
 export interface SensorsQuery extends PaginationRequest {
   station?: number;
+  borehole?: number;
   ordering?: SensorsQueryOrdering;
   search?: string;
 }
