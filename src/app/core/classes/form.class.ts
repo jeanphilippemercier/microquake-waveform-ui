@@ -50,4 +50,11 @@ export class Form<T> {
     await this._ngxSpinnerService.hide(loadingElName);
   }
 
+  async loadingStart(loadingElName = 'loading') {
+    await this._ngxSpinnerService.show(loadingElName, { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingStop(loadingElName = 'loading') {
+    await this._ngxSpinnerService.hide(loadingElName);
+  }
+
 }

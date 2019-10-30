@@ -74,7 +74,7 @@
 
           <mat-tab
             label="Components ({{model?.components?.length > 0 ? model?.components?.length : 0}})"
-            [disabled]="pageMode === PageMode.CREATE"
+            [disabled]="pageMode === PageMode.CREATE || !model"
           >
             <ng-template matTabContent>
               <app-component-table
@@ -138,4 +138,3 @@
     </div>
   </div>
 </form>
-<ngx-spinner name="loading"></ngx-spinner>

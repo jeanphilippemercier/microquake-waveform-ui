@@ -53,6 +53,7 @@
       <app-sensor-table
         [dataSource]="dataSource"
         [count]="count"
+        (rowClick)="openFormDialog($event)"
         (previousPage)="loadData(cursorPrevious)"
         (nextPage)="loadData(cursorNext)"
         (sort)="onSort($event)"

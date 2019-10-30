@@ -3,7 +3,7 @@ import { PageEvent } from '@angular/material/paginator';
 
 import { PageMode } from '@interfaces/core.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
-import { Sensor } from '@interfaces/inventory.interface';
+import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Params, Router, ActivatedRoute } from '@angular/router';
@@ -11,7 +11,9 @@ import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog, Sort } from '@angular/material';
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
+import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
+import { SensorFormDialogData } from '@interfaces/dialogs.interface';
 
 @Component({
   selector: 'app-inventory-sensor-list-page',
@@ -83,6 +85,24 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
         this.search = value;
         this.loadData();
       });
+  }
+
+  async openFormDialog($event: Sensor) {
+    const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
+      SensorFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+    });
   }
 
 }

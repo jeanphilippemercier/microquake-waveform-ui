@@ -90,4 +90,11 @@ export class ListPage<T> implements OnInit, OnDestroy {
   async loadingTableStop() {
     await this._ngxSpinnerService.hide('loadingTable');
   }
+
+  async loadingStart() {
+    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+  async loadingStop() {
+    await this._ngxSpinnerService.hide('loading');
+  }
 }

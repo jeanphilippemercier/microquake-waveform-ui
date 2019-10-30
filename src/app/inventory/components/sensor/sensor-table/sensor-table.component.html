@@ -21,6 +21,25 @@
     [dataSource]="dataSource"
     class=" w-100"
   >
+    <ng-container matColumnDef="quickview">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      >
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        <button
+          mat-icon-button
+          color="primary"
+        >
+          <mat-icon>search</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
     <ng-container
       matColumnDef="id"
       sticky
@@ -40,17 +59,25 @@
         mat-header-cell
         mat-sort-header="sensor"
         *matHeaderCellDef
-      ><span class="pl-3"> Sensor </span></th>
+      ><span
+          class="pl-3"
+          matTooltip="Click to change ascending / descending order"
+          matTooltipPosition="right"
+        > Sensor </span>
+      </th>
       <td
         mat-cell
         *matCellDef="let element"
       >
         <a
-          matTooltip="Show sensor detail"
+          matTooltip="Open sensor detail"
+          matTooltipPosition="right"
           color="primary"
           [routerLink]="['/inventory/sensors', element?.id]"
           mat-button
-        >{{element?.station?.code + '.' + element?.location_code}} ({{element?.code}})</a>
+        >
+          {{element?.station?.code + '.' + element?.location_code}} ({{element?.code}})
+        </a>
       </td>
     </ng-container>
 
@@ -78,7 +105,8 @@
         *matCellDef="let element"
       >
         <a
-          matTooltip="Show station detail"
+          matTooltip="Open station detail"
+          matTooltipPosition="right"
           [matTooltipDisabled]="!element?.station"
           color="primary"
           mat-button
@@ -97,7 +125,8 @@
         *matCellDef="let element"
       >
         <a
-          matTooltip="Show borehole detail"
+          matTooltip="Open borehole detail"
+          matTooltipPosition="right"
           [matTooltipDisabled]="!element?.borehole"
           color="primary"
           [routerLink]="['/inventory/boreholes', element?.borehole?.id]"
@@ -108,10 +137,12 @@
 
     <ng-container matColumnDef="components">
       <th
+        class="text-center"
         mat-header-cell
         *matHeaderCellDef
       > Components</th>
       <td
+        class="text-center"
         mat-cell
         *matCellDef="let element"
       > {{element?.components?.length}}
@@ -149,9 +180,11 @@
         *matHeaderCellDef
       >
       </th>
+
       <td
         mat-cell
         *matCellDef="let element"
+        (click)="$event.preventDefault();$event.stopPropagation();"
       >
         <button
           mat-icon-button
@@ -187,6 +220,7 @@
       *matHeaderRowDef="displayedColumns"
     ></tr>
     <tr
+      (click)="rowClicked(row)"
       mat-row
       *matRowDef="let row; columns: displayedColumns;"
     ></tr>

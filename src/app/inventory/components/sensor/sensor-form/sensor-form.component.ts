@@ -21,8 +21,36 @@ import { Form } from '@core/classes/form.class';
 
 export class SensorFormComponent extends Form<Sensor> implements OnInit {
 
-  @Input() stations: Station[];
-  @Input() boreholes: Borehole[];
+
+  @Input()
+  set stations(v: Station[]) {
+    if (v && v.length > 0) {
+      this.myForm.controls['station'].enable({ onlySelf: true });
+      this._stations = v;
+    } else {
+      this.myForm.controls['station'].disable({ onlySelf: true });
+    }
+  }
+  get stations(): Station[] {
+    return this._stations;
+  }
+  private _stations: Station[] = [];
+
+
+  @Input()
+  set boreholes(v: Borehole[]) {
+    if (v && v.length > 0) {
+      this.myForm.controls['borehole'].enable({ onlySelf: true });
+      this._boreholes = v;
+    } else {
+      this.myForm.controls['borehole'].disable({ onlySelf: true });
+    }
+  }
+  get boreholes(): Borehole[] {
+    return this._boreholes;
+  }
+  private _boreholes: Borehole[] = [];
+
   @Input() stationId: number;
 
   public get code() {
@@ -72,12 +100,8 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
 
   private async _initEditableForm() {
     try {
-      if (!this.stations) {
-        this.stations = (await this._inventoryApiService.getStations({ page_size: 10000 }).toPromise()).results;
-      }
-      if (!this.boreholes) {
-        this.boreholes = (await this._inventoryApiService.getBoreholes({ page_size: 10000 }).toPromise()).results;
-      }
+      this.myForm.controls['station'].disable({ onlySelf: true });
+      this.myForm.controls['borehole'].disable({ onlySelf: true });
 
       this.filteredStations = this.myForm.get('station').valueChanges
         .pipe(
@@ -85,14 +109,13 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
           map(value => !value || typeof value === 'string' ? value : value.name),
           map(name => name ? this._filterStation(name) : this.stations.slice())
         );
-
       const fixedStation = this.stationId ? this.stations.find(station => station.id === +this.stationId) : null;
+
 
       if (fixedStation) {
         this.myForm.controls['station'].patchValue(fixedStation, { onlySelf: true });
         this.myForm.controls['station'].disable({ onlySelf: true });
       }
-
 
       this.filteredBoreholes = this.myForm.get('borehole').valueChanges
         .pipe(
@@ -100,6 +123,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
           map(value => !value || typeof value === 'string' ? value : value.name),
           map(name => name ? this._filterBorehole(name) : this.boreholes.slice())
         );
+
     } catch (err) {
       console.error(err);
     }
@@ -146,32 +170,30 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
     if (this.mode === PageMode.CREATE) {
       try {
         this.loading = true;
-        this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+        this.loadingStart();
         const response = await this._inventoryApiService.createSensor(dto).toPromise();
         await this._toastrNotificationService.success('Sensor created');
         this.modelCreated.emit(response);
-        this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
         await this._toastrNotificationService.error(err);
       } finally {
         this.loading = false;
-        this._ngxSpinnerService.hide('loadingCurrentEvent');
+        this.loadingStop();
       }
     } else if (this.mode === PageMode.EDIT) {
       try {
         this.loading = true;
-        this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+        this.loadingStart();
         const response = await this._inventoryApiService.updateSensor(this.model.id, dto).toPromise();
         this.modelEdited.emit(response);
         await this._toastrNotificationService.success('Sensor updated');
-        this._router.navigate(['/inventory/sensors', response.id]);
       } catch (err) {
         console.error(err);
         await this._toastrNotificationService.error(err);
       } finally {
         this.loading = false;
-        this._ngxSpinnerService.hide('loadingCurrentEvent');
+        this.loadingStop();
       }
     }
   }

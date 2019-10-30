@@ -1,7 +1,16 @@
+.mat-row:hover {
+  -webkit-transition: background-color 150ms linear;
+  -ms-transition: background-color 150ms linear;
+  transition: background-color 150ms linear;
+  background-color: #F7F7F7;
+  cursor: pointer;
+}
+
 td.mat-column-code {
   max-width: 75px;
   overflow: hidden;
-  .mat-button{
+
+  .mat-button {
     max-width: 100%;
   }
 }

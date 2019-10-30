@@ -7,7 +7,7 @@
       Loading...
     </ng-container>
     <ng-container *ngIf="dataSource?.length === 0">
-      No sensors
+      No boreholes
     </ng-container>
   </h3>
   <table
@@ -254,5 +254,4 @@
     [length]="count"
     (page)="onPageChange($event)"
   ></mat-paginator>
-  <ngx-spinner name="loadingTable"></ngx-spinner>
 </div>

@@ -9,7 +9,7 @@ import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData, BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData } from '@interfaces/dialogs.interface';
+import { ConfirmationDialogData, BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { DetailPage } from '@core/classes/detail-page.class';
@@ -17,6 +17,7 @@ import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { SensorsQueryOrdering, SensorsQuery } from '@interfaces/inventory-query.interface';
+import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
 
 @Component({
   selector: 'app-inventory-borehole-detail-page',
@@ -105,17 +106,15 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
 
   private async _initDetail() {
-    this.loadingTableStart();
+    this.loadingStart();
     forkJoin([
       this._inventoryApiService.getBorehole(this.boreholeId)
     ]).subscribe(
       result => {
         this.model = result[0];
-        this.loadingTableStop();
       }, err => {
         console.error(err);
-        this.loadingTableStop();
-      });
+      }).add(() => this.loadingStop());
   }
 
   delete(boreholeId: number) {
@@ -243,5 +242,23 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
       }
     }
     this.getSensors();
+  }
+
+  async openFormDialog($event: Sensor) {
+    const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
+      SensorFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.getSensors();
+      }
+    });
   }
 }

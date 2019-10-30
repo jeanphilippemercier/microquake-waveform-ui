@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 
-import { } from '@interfaces/core.interface';
-import { PaginationRequest } from '@interfaces/query.interface';
 import { Borehole } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -42,7 +40,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this.loadingTableStart();
+      this.loadingStart();
 
       const query: BoreholesQuery = {
         cursor,
@@ -63,7 +61,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
       console.error(err);
     } finally {
       this.loading = false;
-      this.loadingTableStop();
+      this.loadingStop();
     }
   }
 

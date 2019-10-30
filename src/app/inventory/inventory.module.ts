@@ -29,6 +29,7 @@ import { MicroquakeEventTypeTableComponent } from './components/microquake-event
 import { MicroquakeEventTypeFormDialogComponent } from './dialogs/microquake-event-type-form-dialog/microquake-event-type-form-dialog.component';
 import { BoreholeSurveyFileDialogComponent } from './dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeInterpolationDialogComponent } from './dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
+import { SensorFormDialogComponent } from './dialogs/sensor-form-dialog/sensor-form-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -116,7 +117,8 @@ const ROUTES: Routes = [
     InventoryMicroquakeEventTypeListPageComponent,
     MicroquakeEventTypeFormDialogComponent,
     BoreholeSurveyFileDialogComponent,
-    BoreholeInterpolationDialogComponent
+    BoreholeInterpolationDialogComponent,
+    SensorFormDialogComponent
   ],
   imports: [
     SharedModule,
@@ -127,7 +129,8 @@ const ROUTES: Routes = [
   entryComponents: [
     MicroquakeEventTypeFormDialogComponent,
     BoreholeSurveyFileDialogComponent,
-    BoreholeInterpolationDialogComponent
+    BoreholeInterpolationDialogComponent,
+    SensorFormDialogComponent
   ]
 })
 export class InventoryModule { }

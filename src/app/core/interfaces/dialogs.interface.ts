@@ -1,6 +1,6 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station, TakenEventType } from './inventory.interface';
+import { Site, Network, Station, TakenEventType, Borehole, Sensor } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
 import { PageMode } from './core.interface';
 
@@ -47,6 +47,13 @@ export interface MaintenanceFormDialogData {
   stations: Station[];
   maintenanceStatuses: MaintenanceStatus[];
   maintenanceCategories: MaintenanceCategory[];
+}
+
+export interface SensorFormDialogData {
+  mode: PageMode;
+  model: Sensor;
+  stations?: Station[];
+  boreholes?: Borehole[];
 }
 
 export interface MicroquakeEventTypeFormDialogData {

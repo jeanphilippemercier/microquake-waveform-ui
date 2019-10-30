@@ -118,6 +118,7 @@
                   >Create</button>
                 </div>
                 <app-sensor-table
+                  (rowClick)="openFormDialog($event)"
                   [dataSource]="sensorsDataSource"
                   [count]="sensorsCount"
                   (nextPage)="getSensors(sensorsCursorNext)"
@@ -134,4 +135,3 @@
     </div>
   </div>
 </form>
-<ngx-spinner name="loading"></ngx-spinner>

@@ -9,13 +9,14 @@ import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatTabChangeEvent, Sort } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { ConfirmationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceStatus, MaintenanceCategory, MaintenanceEvent } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
 import { RequestOptions } from '@interfaces/query.interface';
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
+import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
 
 @Component({
   selector: 'app-inventory-station-detail-page',
@@ -299,6 +300,45 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
   openDetail($event: Station) {
     this._router.navigate(['/inventory/stations', $event.id]);
+  }
+
+
+  async openSensorFormDialog($event: Sensor) {
+    const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
+      SensorFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event,
+          stations: [],
+          boreholes: []
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.getSensors();
+      }
+    });
+  }
+
+  async openFormDialog($event: Sensor) {
+    const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
+      SensorFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.getSensors();
+      }
+    });
   }
 }
 
