@@ -13,7 +13,7 @@ import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-di
 import { ConfirmationDialogData, MaintenanceFormDialogData } from '@interfaces/dialogs.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@interfaces/maintenance.interface';
 
-import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
+import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
 import { MaintenanceFormDialogComponent } from '@app/maintenance/dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
 
 @Component({
@@ -87,6 +87,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
       const query: MaintenanceEventQuery = {
         cursor,
         page_size: this.pageSize,
+        ordering: MaintenanceEventQueryOrdering.DATE_DESC
       };
 
       const response = await this._inventoryApiService.getMaintenanceEvents(query).toPromise();

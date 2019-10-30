@@ -13,7 +13,7 @@ import { ConfirmationDialogData, SensorFormDialogData } from '@interfaces/dialog
 import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceStatus, MaintenanceCategory, MaintenanceEvent } from '@interfaces/maintenance.interface';
-import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
+import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
 import { RequestOptions } from '@interfaces/query.interface';
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
@@ -217,7 +217,8 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
   getMaintenanceEvents(cursor: string | null = null) {
     const query: MaintenanceEventQuery = {
       station_id: this.stationId,
-      page_size: 15
+      page_size: 15,
+      ordering: MaintenanceEventQueryOrdering.DATE_DESC
     };
 
     if (cursor) {
