@@ -23,7 +23,7 @@ import { ToastrModule } from 'ngx-toastr';
 import { NgxFileDropModule } from 'ngx-file-drop';
 import { ClipboardModule } from 'ngx-clipboard';
 
-import { HeaderLayoutComponent } from './layouts/header-layout/header-layout.component';
+import { LayoutTopbarComponent } from './layouts/layout-topbar/layout-topbar.component';
 import { FooterLayoutComponent } from './layouts/footer-layout/footer-layout.component';
 import { EventTypeFieldComponent } from './forms/fields/event-type-field/event-type-field.component';
 import { EventStatusFieldComponent } from './forms/fields/event-status-field/event-status-field.component';
@@ -44,6 +44,9 @@ import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventWaveformFilterDialogComponent } from './dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
+import { LayoutHeaderComponent } from './layouts/layout-header/layout-header.component';
+import { LayoutFilterComponent } from './layouts/layout-filter/layout-filter.component';
+import { LayoutContentComponent } from './layouts/layout-content/layout-content.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -92,7 +95,10 @@ const CDK_MODULES = [
 ];
 
 const COMPONTENTS = [
-  HeaderLayoutComponent,
+  LayoutContentComponent,
+  LayoutHeaderComponent,
+  LayoutFilterComponent,
+  LayoutTopbarComponent,
   FooterLayoutComponent,
   EventTypeFieldComponent,
   EventModeFieldComponent,

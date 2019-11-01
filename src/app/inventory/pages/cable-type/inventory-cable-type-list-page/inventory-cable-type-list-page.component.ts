@@ -6,6 +6,7 @@ import { ListPage } from '@core/classes/list-page.class';
 import { CableType } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { MatDialog } from '@angular/material';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-inventory-cable-type-list-page',
@@ -19,6 +20,7 @@ export class InventoryCableTypeListPageComponent extends ListPage<CableType> {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
+    private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
@@ -30,13 +32,13 @@ export class InventoryCableTypeListPageComponent extends ListPage<CableType> {
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      this._loadingService.start();
       this.dataSource = await this._inventoryApiSevice.getCableTypes().toPromise();
     } catch (err) {
       console.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingTable');
+      this._loadingService.stop();
     }
   }
 

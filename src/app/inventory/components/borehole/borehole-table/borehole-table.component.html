@@ -1,4 +1,4 @@
-<div class=" position-relative">
+<div class=" position-relative overflow-auto">
   <h3
     class="text-center pt-5 pb-3"
     *ngIf="!dataSource || dataSource?.length === 0"
@@ -21,10 +21,7 @@
     [dataSource]="dataSource"
     class=" w-100"
   >
-    <ng-container
-      matColumnDef="id"
-      sticky
-    >
+    <ng-container matColumnDef="id">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -170,10 +167,7 @@
     </ng-container>
 
 
-    <ng-container
-      matColumnDef="actions"
-      stickyEnd
-    >
+    <ng-container matColumnDef="actions">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -249,6 +243,7 @@
     ></tr>
   </table>
   <mat-paginator
+    *ngIf="dataSource?.length > 0"
     [pageSizeOptions]="[15]"
     [pageSize]="pageSize"
     [length]="count"

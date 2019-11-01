@@ -15,6 +15,7 @@ import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@inter
 
 import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
 import { MaintenanceFormDialogComponent } from '@app/maintenance/dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-maintenance-list-page',
@@ -30,6 +31,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
 
   constructor(
     private _inventoryApiService: InventoryApiService,
+    private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
     protected _activatedRoute: ActivatedRoute,
@@ -49,7 +51,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
         }
 
         try {
-          await this.loadingStart();
+          await this._loadingService.start();
           await this.wiatForInitialization();
           const response = await this._inventoryApiService.getMaintenanceEvent(maintenanceEventId).toPromise();
           await this.openFormDialog(response);
@@ -57,7 +59,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
           console.error(err);
           this._toastrNotificationService.error(err);
         } finally {
-          await this.loadingStop();
+          await this._loadingService.stop();
         }
 
       });
@@ -82,7 +84,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      await this.loadingTableStart();
+      await this._loadingService.start();
 
       const query: MaintenanceEventQuery = {
         cursor,
@@ -100,7 +102,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
       console.error(err);
     } finally {
       this.loading = false;
-      await this.loadingTableStop();
+      await this._loadingService.stop();
     }
   }
 
@@ -132,20 +134,6 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
         }
       }
     });
-  }
-
-  async loadingStart() {
-    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
-  }
-  async loadingStop() {
-    await this._ngxSpinnerService.hide('loading');
-  }
-
-  async loadingTableStart() {
-    await this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-  }
-  async loadingTableStop() {
-    await this._ngxSpinnerService.hide('loadingTable');
   }
 
   async onCreatedMaintenanceEvent($event: MaintenanceEvent) {

@@ -39,9 +39,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   eventEndDate: Date = moment().endOf('day').toDate();
 
   displayedColumns: string[] = ['time', 'type', 'magnitude', 'picks', 'time_residual', 'corner_frequency', 'uncertainty', 'actions'];
-  dataSource: MatTableDataSource<any>;
-
-  events: IEvent[];
+  dataSource: IEvent[];
   eventListQuery: EventQuery = {};
 
   eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
@@ -128,7 +126,7 @@ export class EventListComponent implements OnInit, OnDestroy {
       this.eventsCount = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
-      this.events = response.results;
+      this.dataSource = response.results;
       this.pooling.next(true);
     } catch (err) {
       this._toastrNotificationService.error(err);
@@ -162,7 +160,7 @@ export class EventListComponent implements OnInit, OnDestroy {
 
   private async _addEvent($event: IEvent) {
     try {
-      if (this.events.findIndex(ev => ev.event_resource_id === $event.event_resource_id) > -1) {
+      if (this.dataSource.findIndex(ev => ev.event_resource_id === $event.event_resource_id) > -1) {
         this.waveformService.showNewEventToastrNotification($event, 'error');
         console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
         return;
@@ -173,11 +171,11 @@ export class EventListComponent implements OnInit, OnDestroy {
       }
 
       const eventDate = moment($event.time_utc);
-      const idx = this.events.findIndex(ev => eventDate.isAfter(ev.time_utc));
+      const idx = this.dataSource.findIndex(ev => eventDate.isAfter(ev.time_utc));
       if (idx > -1) {
-        this.events.splice(idx, 0, $event);
+        this.dataSource.splice(idx, 0, $event);
       } else {
-        this.events.push($event);
+        this.dataSource.push($event);
       }
       this.waveformService.showNewEventToastrNotification($event, 'success');
     } catch (err) {
@@ -190,9 +188,9 @@ export class EventListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.events.some((ev, idx) => {
+    this.dataSource.some((ev, idx) => {
       if (ev.event_resource_id === event.event_resource_id) {
-        this.events[idx] = Object.assign(ev, event);
+        this.dataSource[idx] = Object.assign(ev, event);
         return true;
       }
     });

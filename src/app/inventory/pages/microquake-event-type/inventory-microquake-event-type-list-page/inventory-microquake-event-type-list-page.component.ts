@@ -47,7 +47,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
         }
 
         try {
-          await this.loadingTableStart();
+          await this.loadingStart();
           await this.wiatForInitialization();
           const response = await this._inventoryApiService.getMicroquakeEventType(microquakeEventTypeId).toPromise();
           await this.openEditFormDialog(response);
@@ -55,7 +55,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
           console.error(err);
           this._toastrNotificationService.error(err);
         } finally {
-          await this.loadingTableStop();
+          await this.loadingStop();
         }
       });
   }
@@ -63,7 +63,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      await this.loadingTableStart();
+      await this.loadingStart();
       const response = await this._inventoryApiService.getMicroquakeEventTypes().toPromise();
       this.dataSource = response;
 
@@ -77,9 +77,10 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
 
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      await this.loadingTableStop();
+      await this.loadingStop();
     }
   }
 

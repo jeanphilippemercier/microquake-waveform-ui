@@ -6,6 +6,7 @@ import { User } from '@interfaces/user.interface';
 import { AuthService } from '@services/auth.service';
 import { MenuService } from '@services/menu.service';
 import { AuthDialogComponent } from '@app/auth/dialogs/auth-dialog/auth-dialog.component';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class AppComponent implements OnInit {
   user: User;
 
   constructor(
+    private _loadingService: LoadingService,
     private _dialog: MatDialog,
     private _authService: AuthService,
     public menuService: MenuService,
@@ -23,7 +25,9 @@ export class AppComponent implements OnInit {
   ) { }
 
   async ngOnInit() {
+    await this._loadingService.start();
     await this._authService.init();
+    await this._loadingService.stop();
 
     this._authService.loggedUser.subscribe(user => {
       this.user = user;

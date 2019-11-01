@@ -3,11 +3,11 @@ import { MenuService } from '@app/core/services/menu.service';
 import { MatDrawer } from '@angular/material/sidenav';
 
 @Component({
-  selector: 'app-header-layout',
-  templateUrl: './header-layout.component.html',
-  styleUrls: ['./header-layout.component.scss']
+  selector: 'app-layout-topbar',
+  templateUrl: './layout-topbar.component.html',
+  styleUrls: ['./layout-topbar.component.scss']
 })
-export class HeaderLayoutComponent {
+export class LayoutTopbarComponent {
 
   @ViewChild('drawer', { static: false }) drawer: MatDrawer;
   today = new Date();

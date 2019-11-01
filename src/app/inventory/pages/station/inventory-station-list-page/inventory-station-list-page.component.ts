@@ -9,6 +9,7 @@ import { ListPage } from '@core/classes/list-page.class';
 import { Station } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { StationsQuery, StationsQueryOrdering } from '@interfaces/inventory-query.interface';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-inventory-station-list-page',
@@ -23,6 +24,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
+    private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
     protected _matDialog: MatDialog,
@@ -35,7 +37,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this.loadingTableStart();
+      this._loadingService.start();
 
       const query: StationsQuery = {
         cursor,
@@ -60,7 +62,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
       console.error(err);
     } finally {
       this.loading = false;
-      this.loadingTableStop();
+      this._loadingService.stop();
     }
   }
 
