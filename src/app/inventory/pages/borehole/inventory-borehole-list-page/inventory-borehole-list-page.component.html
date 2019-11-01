@@ -1,65 +1,46 @@
 <mat-toolbar color="primary">
-  <app-header-layout></app-header-layout>
+  <app-layout-topbar></app-layout-topbar>
 </mat-toolbar>
 <div class="container-fluid">
 
-  <div class="row header">
-    <div class="col m-4">
-      <div class="row">
-        <div class="col">
-          <h1>Boreholes</h1>
-          <small>
-            Inventory > Boreholes
-          </small>
-        </div>
-        <div class="col d-flex">
-          <div class="mr-auto"></div>
-          <div class="d-flex flex-column">
-            <div class="mb-auto"></div>
-            <button
-              [routerLink]="['/inventory/boreholes', PageMode.CREATE]"
-              mat-raised-button
-              color="primary"
-            >Create</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-layout-header>
+    <ng-container headline>Boreholes</ng-container>
+    <ng-container breadcrumbs>Home > Inventory > Boreholes</ng-container>
+    <ng-container actions>
+      <button
+        [routerLink]="['/inventory/boreholes', PageMode.CREATE]"
+        mat-raised-button
+        color="primary"
+      >Create</button>
+    </ng-container>
 
-  <div class="row mt-3 ">
-    <div class="col">
-      <div class="filter px-4">
-        <div class="row pt-3">
-          <div class="col-sm-3">
-            <mat-form-field class="w-100">
-              <mat-label>Search</mat-label>
-              <input
-                autocomplete="off"
-                matInput
-                placeholder="Type to filer"
-                type="search"
-                [ngModel]="search"
-                (ngModelChange)="searchChange.next($event)"
-              >
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </app-layout-header>
 
-  <div class="row">
-    <div class="col mt-1 p-5 content">
-      <app-borehole-table
-        [dataSource]="dataSource"
-        [count]="count"
-        (previousPage)="loadData(cursorPrevious)"
-        (nextPage)="loadData(cursorNext)"
-        (surveyFile)="onUploadSurveyFile($event)"
-        (interpolate)="onInterpolateBorehole($event)"
-        (delete)="onDelete($event)"
-      ></app-borehole-table>
+  <app-layout-filter>
+    <div class="col-lg-3">
+      <mat-form-field class="w-100">
+        <mat-label>Search</mat-label>
+        <input
+          autocomplete="off"
+          matInput
+          placeholder="Type to filer"
+          type="search"
+          [ngModel]="search"
+          (ngModelChange)="searchChange.next($event)"
+        >
+      </mat-form-field>
     </div>
-  </div>
+  </app-layout-filter>
+
+  <app-layout-content>
+    <app-borehole-table
+      [dataSource]="dataSource"
+      [count]="count"
+      (previousPage)="loadData(cursorPrevious)"
+      (nextPage)="loadData(cursorNext)"
+      (surveyFile)="onUploadSurveyFile($event)"
+      (interpolate)="onInterpolateBorehole($event)"
+      (delete)="onDelete($event)"
+    ></app-borehole-table>
+  </app-layout-content>
 </div>

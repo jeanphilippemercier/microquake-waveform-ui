@@ -10,6 +10,7 @@ import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-di
 import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
 import { ListPage } from '@core/classes/list-page.class';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-inventory-sensor-type-list-page',
@@ -24,6 +25,7 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
+    private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _activatedRoute: ActivatedRoute,
     protected _matDialog: MatDialog,
@@ -36,15 +38,16 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      this._loadingService.start();
 
       const response = await this._inventoryApiSevice.getSensorTypes().toPromise();
       this.dataSource = response;
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingTable');
+      this._loadingService.stop();
     }
   }
 
@@ -67,13 +70,14 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          // await this._toastrNotificationService.error('Sensor type deletion is not active');
           const response = await this._inventoryApiSevice.deleteSensorType(id).toPromise();
-          console.log(response);
+          this._loadingService.start();
           await this._toastrNotificationService.success('Sensor type deleted');
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
+        } finally {
+          this._loadingService.stop();
         }
       }
     });

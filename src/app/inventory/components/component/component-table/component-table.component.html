@@ -1,4 +1,4 @@
-<div class=" position-relative content">
+<div class=" position-relative overflow-auto">
   <table
     mat-table
     [dataSource]="dataSource"
@@ -7,10 +7,7 @@
     *ngIf="dataSource?.length > 0"
     [class.something-expanded]="expandedElement !== null"
   >
-    <ng-container
-      matColumnDef="id"
-      sticky
-    >
+    <ng-container matColumnDef="id">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -175,10 +172,7 @@
       </td>
     </ng-container>
 
-    <ng-container
-      matColumnDef="detail"
-      stickyEnd
-    >
+    <ng-container matColumnDef="detail">
       <th
         mat-header-cell
         *matHeaderCellDef

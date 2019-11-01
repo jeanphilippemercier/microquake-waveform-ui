@@ -1,17 +1,25 @@
-<div class="position-relative content">
+<div class="position-relative overflow-auto">
+  <h3
+    class="text-center pt-5 pb-5"
+    *ngIf="!dataSource || dataSource?.length === 0"
+  >
+    <ng-container *ngIf="!dataSource">
+      Loading...
+    </ng-container>
+    <ng-container *ngIf="dataSource?.length === 0">
+      No maintenance events
+    </ng-container>
+  </h3>
   <table
     mat-table
+    *ngIf="dataSource"
     [dataSource]="dataSource"
     multiTemplateDataRows
     class=" w-100"
-    *ngIf="dataSource?.length > 0"
     [class.something-expanded]="expandedElement !== null"
   >
 
-    <ng-container
-      matColumnDef="detail"
-      stickyEnd
-    >
+    <ng-container matColumnDef="detail">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -33,10 +41,7 @@
       </td>
     </ng-container>
 
-    <ng-container
-      matColumnDef="id"
-      sticky
-    >
+    <ng-container matColumnDef="id">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -228,13 +233,6 @@
   </table>
   <div
     class="mt-3 w-100"
-    *ngIf="dataSource?.length === 0"
-  >
-    <h3 class="text-center pt-5 pb-5">No maintenance logs</h3>
-  </div>
-
-  <div
-    class="mt-3 w-100"
     *ngIf="dataSource?.length > 0"
   >
     <mat-paginator
@@ -244,5 +242,4 @@
       (page)="onPageChange($event)"
     ></mat-paginator>
   </div>
-  <ngx-spinner name="loadingTable"></ngx-spinner>
 </div>

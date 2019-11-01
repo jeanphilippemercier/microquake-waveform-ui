@@ -14,6 +14,8 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
 import { SensorFormDialogData } from '@interfaces/dialogs.interface';
+import { LoadingService } from '@services/loading.service';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
 
 @Component({
   selector: 'app-inventory-sensor-list-page',
@@ -28,6 +30,8 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
 
   constructor(
     private _inventoryApiSevice: InventoryApiService,
+    private _loadingService: LoadingService,
+    private _toastrNotificationService: ToastrNotificationService,
     protected _router: Router,
     protected _matDialog: MatDialog,
     protected _activatedRoute: ActivatedRoute,
@@ -40,7 +44,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
   async loadData(cursor?: string) {
     try {
       this.loading = true;
-      this._ngxSpinnerService.show('loadingTable', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      this._loadingService.start();
 
       const query: SensorsQuery = {
         cursor,
@@ -59,10 +63,11 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
     } catch (err) {
+      this._toastrNotificationService.error(err);
       console.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingTable');
+      this._loadingService.stop();
     }
   }
 

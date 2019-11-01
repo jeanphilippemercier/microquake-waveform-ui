@@ -1,248 +1,237 @@
 <mat-toolbar color="primary">
-  <app-header-layout></app-header-layout>
+  <app-layout-topbar></app-layout-topbar>
 </mat-toolbar>
 <form class="container-fluid">
-  <div class="row ">
-    <div class="col-12">
-      <div class="header mb-3">
-        <div class="row">
-          <div class="col-10 px-5 py-4">
-            <h1>Borehole {{model?.name}}</h1>
-            <small>
-              Inventory >
-              <a [routerLink]="['/inventory/boreholes']">Boreholes</a> >
-              {{model ? model?.name : 'Creating new borehole'}}
-            </small>
-          </div>
-          <div class="col-2 pr-4 py-4">
-            <button
-              class="float-right mt-3"
-              mat-icon-button
-              [matMenuTriggerFor]="menu"
-              aria-label="Sensor menu"
-            >
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <div
-                [matTooltipPosition]="'left'"
-                [matTooltip]="'Add survey file to enable'"
-                [matTooltipDisabled]="boreholeId && model?.trace"
-              >
-                <button
-                  mat-menu-item
-                  [disabled]="!boreholeId || !model?.trace"
-                  color="primary"
-                  (click)="interpolateBorehole()"
-                >
-                  <mat-icon>straighten</mat-icon>
-                  <span>Calculate sensor</span>
-                </button>
-              </div>
-              <button
-                [disabled]="!boreholeId"
-                mat-menu-item
-                color="primary"
-                (click)="uploadSurveyFile()"
-              >
-                <mat-icon>cloud_upload</mat-icon>
-                <span>Upload survey file</span>
-              </button>
-              <button
-                [disabled]="!boreholeId"
-                mat-menu-item
-                color="primary"
-                (click)="delete(boreholeId)"
-              >
-                <mat-icon>delete</mat-icon>
-                <span>Delete</span>
-              </button>
-            </mat-menu>
-
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="row ">
-    <div class="col ">
-      <div class=" content">
-
-        <mat-tab-group
-          class="w-100  px-5 py-4"
-          [selectedIndex]="selectedTabIndex"
-          (selectedTabChange)="tabChanged($event)"
+  <app-layout-header>
+    <ng-container headline>
+      Borehole {{model?.name}}
+    </ng-container>
+    <ng-container breadcrumbs>
+      Home > Inventory >
+      <a [routerLink]="['/inventory/boreholes']">Boreholes</a> >
+      {{model ? model?.name : 'Creating new borehole'}}
+    </ng-container>
+    <ng-container actions>
+      <button
+        class="float-right mt-3"
+        mat-icon-button
+        [matMenuTriggerFor]="menu"
+        aria-label="Sensor menu"
+      >
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <div
+          [matTooltipPosition]="'left'"
+          [matTooltip]="'Add survey file to enable'"
+          [matTooltipDisabled]="boreholeId && model?.trace"
         >
-          <mat-tab label="Details">
-            <ng-template matTabContent>
-              <app-borehole-form
-                [model]="model"
-                (modelEdited)="model = $event"
-                [mode]="pageMode"
-              ></app-borehole-form>
-            </ng-template>
-          </mat-tab>
-
-          <mat-tab label="Sensors">
-            <ng-template matTabContent>
-              <app-sensor-table
-                (rowClick)="openFormDialog($event)"
-                [dataSource]="sensorsDataSource"
-                [count]="sensorsCount"
-                (nextPage)="getSensors(sensorsCursorNext)"
-                (previousPage)="getSensors(sensorsCursorPrevious)"
-                (sort)="onSensorsSort($event)"
-              >
-              </app-sensor-table>
-            </ng-template>
-          </mat-tab>
-
-          <mat-tab
-            label="Files"
-            [disabled]="!model?.vtp_file && !model?.dxf_file && !model?.survey_file"
+          <button
+            mat-menu-item
+            [disabled]="!boreholeId || !model?.trace"
+            color="primary"
+            (click)="interpolateBorehole()"
           >
-            <ng-template matTabContent>
-              <div class="row">
-                <div class="col-sm-12">
-                  <mat-list>
-                    <mat-list-item>
-                      <mat-icon mat-list-icon>folder</mat-icon>
-                      <div mat-line>
-                        <span
-                          class="pl-3"
-                          style="width: 100px; display:inline-block;"
-                        >Survey</span>
-                        <a
-                          mat-button
-                          [href]="model?.survey_file"
-                          target="_blank"
-                        >
-                          {{model?.survey_file}}
-                        </a>
-                      </div>
-                    </mat-list-item>
-                    <mat-divider></mat-divider>
+            <mat-icon>straighten</mat-icon>
+            <span>Calculate sensor</span>
+          </button>
+        </div>
+        <button
+          [disabled]="!boreholeId"
+          mat-menu-item
+          color="primary"
+          (click)="uploadSurveyFile()"
+        >
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Upload survey file</span>
+        </button>
+        <button
+          [disabled]="!boreholeId"
+          mat-menu-item
+          color="primary"
+          (click)="delete(boreholeId)"
+        >
+          <mat-icon>delete</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+    </ng-container>
 
-                    <mat-list-item>
-                      <mat-icon mat-list-icon>folder</mat-icon>
-                      <div mat-line>
-                        <span
-                          class="pl-3"
-                          style="width: 100px; display:inline-block;"
-                        >Vtp</span>
-                        <a
-                          mat-button
-                          [href]="model?.vtp_file"
-                          target="_blank"
-                        >
-                          {{model?.vtp_file}}
-                        </a>
-                      </div>
-                    </mat-list-item>
-                    <mat-divider></mat-divider>
+  </app-layout-header>
 
-                    <mat-list-item>
-                      <mat-icon mat-list-icon>folder</mat-icon>
-                      <div mat-line>
-                        <span
-                          class="pl-3"
-                          style="width: 100px; display:inline-block;"
-                        >Dxf</span>
-                        <a
-                          mat-button
-                          [href]="model?.dxf_file"
-                          target="_blank"
-                        >
-                          {{model?.dxf_file}}
-                        </a>
-                      </div>
-                    </mat-list-item>
-                  </mat-list>
-                </div>
-              </div>
-            </ng-template>
-          </mat-tab>
+  <app-layout-content>
+    <mat-tab-group
+      class="w-100 "
+      [selectedIndex]="selectedTabIndex"
+      (selectedTabChange)="tabChanged($event)"
+    >
+      <mat-tab label="Details">
+        <ng-template matTabContent>
+          <app-borehole-form
+            [model]="model"
+            (modelEdited)="model = $event"
+            [mode]="pageMode"
+          ></app-borehole-form>
+        </ng-template>
+      </mat-tab>
 
-          <mat-tab
-            label="Trace"
-            [disabled]="!model?.trace"
+      <mat-tab label="Sensors">
+        <ng-template matTabContent>
+          <app-sensor-table
+            (rowClick)="openFormDialog($event)"
+            [dataSource]="sensorsDataSource"
+            [count]="sensorsCount"
+            (nextPage)="getSensors(sensorsCursorNext)"
+            (previousPage)="getSensors(sensorsCursorPrevious)"
+            (sort)="onSensorsSort($event)"
           >
-            <ng-template matTabContent>
+          </app-sensor-table>
+        </ng-template>
+      </mat-tab>
 
-              <table
-                mat-table
-                [dataSource]="model?.trace"
-                class="mat-elevation-z0 w-100"
+      <mat-tab
+        label="Files"
+        [disabled]="!model?.vtp_file && !model?.dxf_file && !model?.survey_file"
+      >
+        <ng-template matTabContent>
+          <div class="row">
+            <div class="col-sm-12">
+              <mat-list>
+                <mat-list-item>
+                  <mat-icon mat-list-icon>folder</mat-icon>
+                  <div mat-line>
+                    <span
+                      class="pl-3"
+                      style="width: 100px; display:inline-block;"
+                    >Survey</span>
+                    <a
+                      mat-button
+                      [href]="model?.survey_file"
+                      target="_blank"
+                    >
+                      {{model?.survey_file}}
+                    </a>
+                  </div>
+                </mat-list-item>
+                <mat-divider></mat-divider>
+
+                <mat-list-item>
+                  <mat-icon mat-list-icon>folder</mat-icon>
+                  <div mat-line>
+                    <span
+                      class="pl-3"
+                      style="width: 100px; display:inline-block;"
+                    >Vtp</span>
+                    <a
+                      mat-button
+                      [href]="model?.vtp_file"
+                      target="_blank"
+                    >
+                      {{model?.vtp_file}}
+                    </a>
+                  </div>
+                </mat-list-item>
+                <mat-divider></mat-divider>
+
+                <mat-list-item>
+                  <mat-icon mat-list-icon>folder</mat-icon>
+                  <div mat-line>
+                    <span
+                      class="pl-3"
+                      style="width: 100px; display:inline-block;"
+                    >Dxf</span>
+                    <a
+                      mat-button
+                      [href]="model?.dxf_file"
+                      target="_blank"
+                    >
+                      {{model?.dxf_file}}
+                    </a>
+                  </div>
+                </mat-list-item>
+              </mat-list>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab
+        label="Trace"
+        [disabled]="!model?.trace"
+      >
+        <ng-template matTabContent>
+
+          <table
+            mat-table
+            [dataSource]="model?.trace"
+            class="mat-elevation-z0 w-100"
+          >
+
+            <ng-container matColumnDef="d">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
               >
+                <strong>Depth</strong>
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let element"
+              > {{element.d}} </td>
+            </ng-container>
 
-                <ng-container matColumnDef="d">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                  >
-                    <strong>Depth</strong>
-                  </th>
-                  <td
-                    mat-cell
-                    *matCellDef="let element"
-                  > {{element.d}} </td>
-                </ng-container>
+            <ng-container matColumnDef="x">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+              >
+                <strong>X</strong>
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let element"
+              > {{element.x}} </td>
+            </ng-container>
 
-                <ng-container matColumnDef="x">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                  >
-                    <strong>X</strong>
-                  </th>
-                  <td
-                    mat-cell
-                    *matCellDef="let element"
-                  > {{element.x}} </td>
-                </ng-container>
+            <ng-container matColumnDef="y">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+              >
+                <strong>Y</strong>
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let element"
+              > {{element.y}} </td>
+            </ng-container>
 
-                <ng-container matColumnDef="y">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                  >
-                    <strong>Y</strong>
-                  </th>
-                  <td
-                    mat-cell
-                    *matCellDef="let element"
-                  > {{element.y}} </td>
-                </ng-container>
+            <ng-container matColumnDef="z">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+              >
+                <strong>Z</strong>
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let element"
+              > {{element.z}} </td>
+            </ng-container>
 
-                <ng-container matColumnDef="z">
-                  <th
-                    mat-header-cell
-                    *matHeaderCellDef
-                  >
-                    <strong>Z</strong>
-                  </th>
-                  <td
-                    mat-cell
-                    *matCellDef="let element"
-                  > {{element.z}} </td>
-                </ng-container>
+            <tr
+              mat-header-row
+              *matHeaderRowDef="traceDisplayedColumns"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: traceDisplayedColumns;"
+            ></tr>
+          </table>
 
-                <tr
-                  mat-header-row
-                  *matHeaderRowDef="traceDisplayedColumns"
-                ></tr>
-                <tr
-                  mat-row
-                  *matRowDef="let row; columns: traceDisplayedColumns;"
-                ></tr>
-              </table>
+        </ng-template>
+      </mat-tab>
 
-            </ng-template>
-          </mat-tab>
-
-        </mat-tab-group>
-
-      </div>
-    </div>
-  </div>
+    </mat-tab-group>
+  </app-layout-content>
 </form>

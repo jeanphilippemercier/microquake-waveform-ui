@@ -28,7 +28,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
   params$: Subscription;
   stationId: number;
-  station: Partial<Station>;
+  model: Partial<Station>;
   sites: Site[];
 
   pageMode: PageMode = PageMode.EDIT;
@@ -36,7 +36,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
   loading = false;
   maintenanceStatuses: MaintenanceStatus[] = [];
   maintenanceCategories: MaintenanceCategory[] = [];
-  maintenanceEvents: MaintenanceEvent[] = [];
+  maintenanceEvents: MaintenanceEvent[];
   maintenanceEventsCount = 0;
   maintenanceEventsCursorPrevious: string;
   maintenanceEventsCursorNext: string;
@@ -138,7 +138,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     ]).subscribe(
       result => {
         this.sites = result[0];
-        this.station = result[1];
+        this.model = result[1];
         this.detailInitialized = true;
         this.loadingStop();
       }, err => {
@@ -182,7 +182,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       const query: SensorsQuery = {
         cursor,
         page_size: 15,
-        station: this.station.id
+        station: this.model.id
       };
 
       if (this.sensorsOrdring) {

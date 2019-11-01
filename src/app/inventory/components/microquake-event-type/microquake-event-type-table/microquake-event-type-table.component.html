@@ -1,4 +1,15 @@
-<div class="position-relative content">
+<div class="position-relative overflow-auto">
+  <h3
+    class="text-center pt-5 pb-5"
+    *ngIf="!dataSource || dataSource?.length === 0"
+  >
+    <ng-container *ngIf="!dataSource">
+      Loading...
+    </ng-container>
+    <ng-container *ngIf="dataSource?.length === 0">
+      No microquake event types
+    </ng-container>
+  </h3>
   <table
     mat-table
     [dataSource]="dataSource"

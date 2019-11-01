@@ -1,14 +1,11 @@
 import { Component, Output, EventEmitter, Input } from '@angular/core';
 
-import { MatDialogRef, MatDialog, Sort } from '@angular/material';
+import { MatDialogRef, MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ActivatedRoute } from '@angular/router';
 import { Table } from '@core/classes/table.class';
 import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
-import { first } from 'rxjs/operators';
-import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
-import { SensorFormDialogData } from '@interfaces/dialogs.interface';
-import { PageMode } from '@interfaces/core.interface';
+
 
 @Component({
   selector: 'app-sensor-table',

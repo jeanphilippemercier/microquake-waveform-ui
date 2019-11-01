@@ -1,140 +1,129 @@
 <mat-toolbar color="primary">
-  <app-header-layout></app-header-layout>
+  <app-layout-topbar></app-layout-topbar>
 </mat-toolbar>
 <form class="container-fluid">
-  <div class="row ">
-    <div class="col-12">
-      <div class="header mb-3">
-        <div class="row">
-          <div class="col-10 px-5 py-4">
-            <h1>
-              <ng-container *ngIf="pageMode === PageMode.CREATE; then createTemplate; else editTemplate"></ng-container>
-              <ng-template #createTemplate>
-                Creating new sensor
-              </ng-template>
-              <ng-template #editTemplate>
-                Sensor {{model?.station?.code}}.{{model?.location_code ? model?.location_code : '??'}}
-              </ng-template>
-            </h1>
-            <small>
-              Inventory > Oyu Tolgoi > Hugo North Underground Network >
-              <ng-container *ngIf="model?.station?.id">
-                <a [routerLink]="['/inventory/stations',model?.station?.id]">Station {{model?.station?.code}}</a> >
-              </ng-container>
-              <a [routerLink]="['/inventory/sensors']">Sensors</a> >
-              {{model ? ('' + model?.station?.code +'.'+ (model?.location_code ? model?.location_code  : '??') + '') : 'Creating new sensor'}}
-            </small>
+  <app-layout-header>
+    <ng-container headline>
+      <ng-container *ngIf="pageMode === PageMode.CREATE; then createTemplate; else editTemplate"></ng-container>
+      <ng-template #createTemplate>
+        Creating new sensor
+      </ng-template>
+      <ng-template #editTemplate>
+        Sensor {{model?.station?.code}}.{{model?.location_code ? model?.location_code : '??'}}
+      </ng-template>
+    </ng-container>
+    <ng-container breadcrumbs>
+      Home > Inventory >
+      <ng-container *ngIf="model?.station?.id">
+        <a [routerLink]="['/inventory/stations',model?.station?.id]">Station {{model?.station?.code}}</a> >
+      </ng-container>
+      <a [routerLink]="['/inventory/sensors']">Sensors</a> >
+      {{model ? ('' + model?.station?.code +'.'+ (model?.location_code ? model?.location_code  : '??') + '') : 'Creating new sensor'}}
+    </ng-container>
+    <ng-container actions>
+      <ng-container *ngIf="pageMode === PageMode.EDIT">
+        <button
+          class="float-right mt-3"
+          mat-icon-button
+          [matMenuTriggerFor]="menu"
+          aria-label="Sensor menu"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button
+            *ngIf="sensorId"
+            mat-menu-item
+            color="primary"
+            (click)="delete(sensorId)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </ng-container>
+    </ng-container>
+
+  </app-layout-header>
+
+  <app-layout-content>
+
+    <mat-tab-group class="w-100">
+      <mat-tab label="Details">
+        <ng-template matTabContent>
+          <app-sensor-form
+            [model]="model"
+            [stations]="stations"
+            [boreholes]="boreholes"
+            [stationId]="queryParams ? queryParams['stationId'] : null"
+            (modelEdited)="model = $event"
+            (modelCreated)="openDetail($event)"
+            [mode]="pageMode"
+          ></app-sensor-form>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab
+        label="Components ({{model?.components?.length > 0 ? model?.components?.length : 0}})"
+        [disabled]="pageMode === PageMode.CREATE || !model"
+      >
+        <ng-template matTabContent>
+          <app-component-table
+            *ngIf="model?.components"
+            [dataSource]="model?.components"
+            [sensorId]="model?.id"
+            (delete)="deleteComponent($event)"
+          >
+          </app-component-table>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab
+        label="Signal quality"
+        [disabled]="!model?.signal_quality"
+      >
+        <ng-template matTabContent>
+          <div class="row">
+            <div class="col-2"></div>
+            <div class="col-8">
+
+              <table class="w-100 table">
+                <tbody>
+                  <tr>
+                    <th>Id</th>
+                    <td>{{model?.signal_quality?.id}}</td>
+                  </tr>
+                  <tr>
+                    <th>Update timestamp</th>
+                    <td>{{model?.signal_quality?.update_timestamp}}</td>
+                  </tr>
+                  <tr>
+                    <th>Energy</th>
+                    <td>{{model?.signal_quality?.energy}}</td>
+                  </tr>
+                  <tr>
+                    <th>Integrity</th>
+                    <td>{{model?.signal_quality?.integrity}}</td>
+                  </tr>
+                  <tr>
+                    <th>Sampling rate</th>
+                    <td>{{model?.signal_quality?.sampling_rate}}</td>
+                  </tr>
+                  <tr>
+                    <th>Number of samples</th>
+                    <td>{{model?.signal_quality?.num_samples}}</td>
+                  </tr>
+                  <tr>
+                    <th>Amplitude</th>
+                    <td>{{model?.signal_quality?.amplitude}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div
-            class="col-2 pr-4 py-4"
-            *ngIf="pageMode === PageMode.EDIT"
-          >
-            <button
-              class="float-right mt-3"
-              mat-icon-button
-              [matMenuTriggerFor]="menu"
-              aria-label="Sensor menu"
-            >
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button
-                *ngIf="sensorId"
-                mat-menu-item
-                color="primary"
-                (click)="delete(sensorId)"
-              >
-                <mat-icon>delete</mat-icon>
-                <span>Delete</span>
-              </button>
-            </mat-menu>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="row ">
-    <div class="col ">
-      <div class=" content">
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
 
-        <mat-tab-group class="w-100  px-5 py-4">
-          <mat-tab label="Details">
-            <ng-template matTabContent>
-              <app-sensor-form
-                [model]="model"
-                [stations]="stations"
-                [boreholes]="boreholes"
-                [stationId]="queryParams ? queryParams['stationId'] : null"
-                (modelEdited)="model = $event"
-                (modelCreated)="openDetail($event)"
-                [mode]="pageMode"
-              ></app-sensor-form>
-            </ng-template>
-          </mat-tab>
-
-          <mat-tab
-            label="Components ({{model?.components?.length > 0 ? model?.components?.length : 0}})"
-            [disabled]="pageMode === PageMode.CREATE || !model"
-          >
-            <ng-template matTabContent>
-              <app-component-table
-                *ngIf="model?.components"
-                [dataSource]="model?.components"
-                [sensorId]="model?.id"
-                (delete)="deleteComponent($event)"
-              >
-              </app-component-table>
-            </ng-template>
-          </mat-tab>
-
-          <mat-tab
-            label="Signal quality"
-            [disabled]="!model?.signal_quality"
-          >
-            <ng-template matTabContent>
-              <div class="row">
-                <div class="col-2"></div>
-                <div class="col-8">
-
-                  <table class="w-100 table">
-                    <tbody>
-                      <tr>
-                        <th>Id</th>
-                        <td>{{model?.signal_quality?.id}}</td>
-                      </tr>
-                      <tr>
-                        <th>Update timestamp</th>
-                        <td>{{model?.signal_quality?.update_timestamp}}</td>
-                      </tr>
-                      <tr>
-                        <th>Energy</th>
-                        <td>{{model?.signal_quality?.energy}}</td>
-                      </tr>
-                      <tr>
-                        <th>Integrity</th>
-                        <td>{{model?.signal_quality?.integrity}}</td>
-                      </tr>
-                      <tr>
-                        <th>Sampling rate</th>
-                        <td>{{model?.signal_quality?.sampling_rate}}</td>
-                      </tr>
-                      <tr>
-                        <th>Number of samples</th>
-                        <td>{{model?.signal_quality?.num_samples}}</td>
-                      </tr>
-                      <tr>
-                        <th>Amplitude</th>
-                        <td>{{model?.signal_quality?.amplitude}}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </ng-template>
-          </mat-tab>
-        </mat-tab-group>
-
-      </div>
-    </div>
-  </div>
+  </app-layout-content>
 </form>

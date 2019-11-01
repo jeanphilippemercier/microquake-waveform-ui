@@ -58,6 +58,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
     } catch (err) {
+      this._toastrNotificationService.error(err);
       console.error(err);
     } finally {
       this.loading = false;

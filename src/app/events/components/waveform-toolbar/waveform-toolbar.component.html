@@ -2,14 +2,14 @@
   color="primary"
   class="overflow-auto"
 >
-  <app-header-layout
+  <app-layout-topbar
     [showEventSidebarButton]="false"
     [eventSidebarOpened]="waveformService.sidebarOpened | async"
     (eventSidebarOpenedChange)="onEventSidebarCollapseClick()"
     [width]="'335px'"
   >
     <app-event-site-picker></app-event-site-picker>
-  </app-header-layout>
+  </app-layout-topbar>
 
   <div class="buttons-group ml-2">
     <div class="buttons-group-content">
