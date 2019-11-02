@@ -1,6 +1,5 @@
 import { Input, Output, EventEmitter, TemplateRef } from '@angular/core';
 import { MatDialog } from '@angular/material';
-import { FormGroup } from '@angular/forms';
 
 import { PageMode } from '@interfaces/core.interface';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -9,7 +8,7 @@ export class DetailPage<T> {
 
   @Input() mode: PageMode = PageMode.CREATE;
   @Output() cancel: EventEmitter<void> = new EventEmitter();
-  model: T;
+  model: T | null = null;
 
   editDisabled = false;
   PageMode = PageMode;

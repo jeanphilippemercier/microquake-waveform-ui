@@ -18,8 +18,8 @@ import { NgxSpinnerService } from 'ngx-spinner';
 export class BoreholeInterpolationDialogComponent {
   PageMode = PageMode;
 
-  response: InterpolateBoreholeResponse;
-  currentDepth: number;
+  response!: InterpolateBoreholeResponse;
+  currentDepth!: number;
 
   myForm = this._fb.group({
     alonghole_depth: [, Validators.required],

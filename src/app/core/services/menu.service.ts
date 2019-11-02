@@ -6,7 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class MenuService {
 
-  menuOpened: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  menuOpened: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   async open() {
     this.menuOpened.next(true);

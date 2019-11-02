@@ -15,11 +15,11 @@ import { UserCreateInput } from '@interfaces/user-dto.interface';
   providedIn: 'root'
 })
 export class AuthService {
-  private _loggedUser: BehaviorSubject<User> = new BehaviorSubject(undefined);
+  private _loggedUser: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(null);
 
-  public readonly loggedUser: Observable<User> = this._loggedUser.asObservable();
-  public readonly initialized: BehaviorSubject<boolean> = new BehaviorSubject(false); // TODO: implement APP_INITIALIZER
-  public readonly decodedToken: BehaviorSubject<Token> = new BehaviorSubject(undefined);
+  public readonly loggedUser: Observable<User | null> = this._loggedUser.asObservable();
+  public readonly initialized: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false); // TODO: implement APP_INITIALIZER
+  public readonly decodedToken: BehaviorSubject<Token | null> = new BehaviorSubject<Token | null>(null);
 
   constructor(
     private _httpClient: HttpClient,
@@ -28,15 +28,15 @@ export class AuthService {
     private _jwtHelperService: JwtHelperService
   ) { }
 
-  public static getAccessToken(): string {
+  public static getAccessToken() {
     return localStorage.getItem('access_token');
   }
 
-  public static getRefreshToken(): string {
+  public static getRefreshToken() {
     return localStorage.getItem('refresh_token');
   }
 
-  private _setUser(user: User): void {
+  private _setUser(user: User | null): void {
     this._loggedUser.next(user);
   }
 
@@ -51,7 +51,7 @@ export class AuthService {
     this._clearTokens();
   }
 
-  private _setAccessToken(accessToken: string): void {
+  private _setAccessToken(accessToken: string | null): void {
     if (!accessToken) {
       localStorage.removeItem('access_token');
     } else {
@@ -59,7 +59,7 @@ export class AuthService {
     }
   }
 
-  private _setRefreshToken(refreshToken: string): void {
+  private _setRefreshToken(refreshToken: string | null): void {
     if (!refreshToken) {
       localStorage.removeItem('refresh_token');
     } else {
@@ -71,7 +71,7 @@ export class AuthService {
     return this._jwtHelperService.decodeToken(encodedToken);
   }
 
-  private _setDecodedToken(decodedToken: Token): void {
+  private _setDecodedToken(decodedToken: Token | null): void {
     this.decodedToken.next(decodedToken);
   }
 
@@ -142,6 +142,7 @@ export class AuthService {
 
   refresh(): Observable<User> {
     const queryUrl = `${environment.url}api/token/refresh/`;
+
     const data: AuthRefreshInput = {
       refresh: AuthService.getRefreshToken()
     };

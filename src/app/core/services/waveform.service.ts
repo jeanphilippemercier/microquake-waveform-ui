@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, Renderer2, RendererFactory2 } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { first, take, skipWhile } from 'rxjs/operators';
@@ -21,7 +21,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { InventoryApiService } from './inventory-api.service';
 import { Site, Network, Station, Sensor } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
-import { EventTypeIconPipe } from '@app/shared/pipes/event-type-icon.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 
@@ -30,19 +29,19 @@ import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-wa
 })
 export class WaveformService implements OnDestroy {
 
-  currentEvent: BehaviorSubject<IEvent> = new BehaviorSubject(null);
+  currentEvent: BehaviorSubject<IEvent | null> = new BehaviorSubject<IEvent | null>(null);
 
-  commonTimeScale: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  zoomAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  displayComposite: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  displayRotated: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  batchPicks: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  batchPicksDisabled: BehaviorSubject<boolean> = new BehaviorSubject(true);
-  pickingMode: BehaviorSubject<PickingMode> = new BehaviorSubject(null);
-  loadedAll: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  commonTimeScale: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
+  commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  zoomAll: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  displayComposite: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
+  displayRotated: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
+  predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  batchPicks: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  batchPicksDisabled: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
+  pickingMode: BehaviorSubject<PickingMode | null> = new BehaviorSubject<PickingMode | null>(null);
+  loadedAll: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   undoLastZoomOrPanClicked: Subject<void> = new Subject;
   undoLastZoomOrPanClickedObs: Observable<void> = this.undoLastZoomOrPanClicked.asObservable();
@@ -64,36 +63,36 @@ export class WaveformService implements OnDestroy {
   pageChanged: Subject<number> = new Subject;
   pageChangedObs: Observable<number> = this.pageChanged.asObservable();
 
-  helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
+  helpDialogRef!: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
 
-  batchPicksDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  batchPicksDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
   batchPicksDialogOpened = false;
 
   site: BehaviorSubject<string> = new BehaviorSubject('');
   network: BehaviorSubject<string> = new BehaviorSubject('');
 
-  loadedSensors: BehaviorSubject<any[]> = new BehaviorSubject([]);
+  loadedSensors: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
 
   options: any = {};
-  sidebarOpened: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  sidebarOpened: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
 
   pageSize: BehaviorSubject<number> = new BehaviorSubject(globals.chartsPerPage);
   currentPage: BehaviorSubject<number> = new BehaviorSubject(1);
   maxPages: BehaviorSubject<number> = new BehaviorSubject(globals.max_num_pages);
   loadedPages: BehaviorSubject<number> = new BehaviorSubject(0);
 
-  loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  interactiveProcessLoading: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  interactiveProcessLoading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   waveformComponentInitialized: ReplaySubject<boolean> = new ReplaySubject(1);
   waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();
 
-  interactiveProcessingEnabled: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  interactiveProcessActiveList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject([]);
-  interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject([]);
+  interactiveProcessingEnabled: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  interactiveProcessActiveList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
+  interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
 
-  onServerEventSub: Subscription;
+  onServerEventSub!: Subscription;
 
   wsEventUpdated: Subject<IEvent> = new Subject;
   wsEventUpdatedObs: Observable<IEvent> = this.wsEventUpdated.asObservable();
@@ -104,14 +103,14 @@ export class WaveformService implements OnDestroy {
 
   eventUpdateDialogOpened = false;
   loadingCurrentEventAndList = false;
-  eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
-  eventInteractiveProcessDialogRef: MatDialogRef<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>;
+  eventUpdateDialogRef!: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
+  eventInteractiveProcessDialogRef!: MatDialogRef<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>;
 
   eventFilterDialogOpened = false;
-  eventFilterDialogRef: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
+  eventFilterDialogRef!: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
 
   eventWaveformFilterDialogOpened = false;
-  eventWaveformFilterDialogRef: MatDialogRef<EventWaveformFilterDialogComponent>;
+  eventWaveformFilterDialogRef!: MatDialogRef<EventWaveformFilterDialogComponent>;
 
   eventTypes: EventType[] = [];
   evaluationStatuses = Object.values(EvaluationStatus);
@@ -119,10 +118,10 @@ export class WaveformService implements OnDestroy {
   eventEvaluationModes = Object.values(EvaluationMode);
 
   numberOfChangesInFilter = 0;
-  eventListQuery: EventQuery;
+  eventListQuery!: EventQuery;
 
-  allSensorsOrig: Sensor[];
-  allStations: Station[];
+  allSensorsOrig: Sensor[] = [];
+  allStations: Station[] = [];
 
   allSensorsMap: { [key: string]: number } = {};
   allStationsMap: { [key: number]: number } = {};
@@ -139,9 +138,9 @@ export class WaveformService implements OnDestroy {
   public get currentSite(): Site {
     return this._currentSite;
   }
-  private _currentSite: Site;
+  private _currentSite!: Site;
 
-  currentNetwork: Network;
+  currentNetwork!: Network;
   // TODO: fix when resolved on API
   timezone = '+08:00';
 
@@ -205,14 +204,15 @@ export class WaveformService implements OnDestroy {
       });
 
       this.currentSite = this.sites[0];
-      this.currentNetwork = this.sites[0] && this.sites[0].networks ? this.sites[0].networks[0] : undefined;
+      this.currentNetwork = this.sites[0] && this.sites[0].networks && this.sites[0].networks[0];
     } catch (err) {
       console.error(err);
     }
   }
 
   private _loadPersistantData() {
-    this.options = JSON.parse(window.localStorage.getItem('viewer-options')) || {};
+    const data = window.localStorage.getItem('viewer-options');
+    this.options = data ? JSON.parse(data) : {};
     this.numPoles.next(this.options.numPoles ? this.options.numPoles : globals.numPoles);
     this.lowFreqCorner.next(this.options.lowFreqCorner ? this.options.lowFreqCorner : globals.lowFreqCorner);
     this.highFreqCorner.next(this.options.highFreqCorner ? this.options.highFreqCorner : globals.highFreqCorner);
@@ -241,15 +241,16 @@ export class WaveformService implements OnDestroy {
           case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
             let activeList = this.interactiveProcessActiveList.getValue();
             let currentList = this.interactiveProcessCurrentList.getValue();
-            let previousEventVer: IEvent = null;
+            let previousEventVer: IEvent | null = null;
+            const batchId = data.extra && data.extra.batch && data.extra.batch.id;
 
             // EVENT Reprocessing triggered on other instances
-            activeList = activeList.filter(val => val.batchId !== data.extra.batch.id);
+            activeList = activeList.filter(val => val.batchId !== batchId);
             this.interactiveProcessActiveList.next(activeList);
 
             // EVENT Reprocessing triggered on current instance
             currentList = currentList.filter(val => {
-              if (val.batchId !== data.extra.batch.id) {
+              if (val.batchId !== batchId) {
                 return true;
               }
               previousEventVer = val.event;
@@ -264,7 +265,7 @@ export class WaveformService implements OnDestroy {
                 this._toastrNotificationService.success('Interactive processing is ready');
                 this.openInteractiveProcessDialog(previousEventVer, data.event);
               } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
-                this.openInteractiveProcessDialog(previousEventVer, null);
+                this.openInteractiveProcessDialog(previousEventVer, undefined);
                 this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
               }
             }
@@ -342,7 +343,8 @@ export class WaveformService implements OnDestroy {
     this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
       try {
         this._ngxSpinnerService.show('loadingAcceptIntercativeProcessing', { fullScreen: false, bdColor: 'rgba(51,51,51,0.75)' });
-        const response = await this._eventApiService.acceptInteractiveProcessing(newEvent.event_resource_id).toPromise();
+        const eventId = newEvent ? newEvent.event_resource_id : '';
+        const response = await this._eventApiService.acceptInteractiveProcessing(eventId).toPromise();
         console.log(response);
       } catch (err) {
         console.error(err);
@@ -380,8 +382,9 @@ export class WaveformService implements OnDestroy {
       const ipCurrentList = this.interactiveProcessCurrentList.getValue();
       const removedBatch = ipCurrentList.pop();
       this.interactiveProcessCurrentList.next(ipCurrentList);
+      const eventId = removedBatch ? removedBatch.event.event_resource_id : '';
 
-      const response = await this._eventApiService.cancelInteractiveProcessing(removedBatch.event.event_resource_id).toPromise();
+      const response = await this._eventApiService.cancelInteractiveProcessing(eventId).toPromise();
       console.log(response);
 
       // IP triggered by other than current user instance
@@ -389,7 +392,8 @@ export class WaveformService implements OnDestroy {
       // and last element of ipActiveList is not same as last element of ipCurrentList.
       // We need to find exact position to be sure we remove right batch.
       const ipActiveList = this.interactiveProcessActiveList.getValue();
-      const idx = ipActiveList.findIndex(val => val.batchId === removedBatch.batchId);
+      const batchId = removedBatch ? removedBatch.batchId : '';
+      const idx = ipActiveList.findIndex(val => val.batchId === batchId);
       if (idx > -1) {
         ipActiveList.splice(idx, 1);
         this.interactiveProcessActiveList.next(ipActiveList);
@@ -482,7 +486,9 @@ export class WaveformService implements OnDestroy {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-        const result = await this._eventApiService.updateEventById(data.event_resource_id, data).toPromise();
+        const eventId = data && data.event_resource_id ? data.event_resource_id : '';
+
+        const result = await this._eventApiService.updateEventById(eventId, data).toPromise();
         this.wsEventUpdated.next(result);
         this.eventUpdateDialogRef.close();
       } catch (err) {

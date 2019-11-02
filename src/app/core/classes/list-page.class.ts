@@ -8,8 +8,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { skipWhile, take } from 'rxjs/operators';
 export class ListPage<T> implements OnInit, OnDestroy {
 
-  displayedColumns: string[];
-  dataSource: T[];
+  dataSource: T[] | null = null;
 
   loading = false;
   pageSize = 15;
@@ -33,7 +32,7 @@ export class ListPage<T> implements OnInit, OnDestroy {
   async ngOnInit() {
 
     this._activatedRoute.queryParams.subscribe(async (params) => {
-      let cursor: string;
+      let cursor: string | undefined;
       if (params) {
         if (params.cursor) {
           cursor = params.cursor;
@@ -69,10 +68,10 @@ export class ListPage<T> implements OnInit, OnDestroy {
     this._matDialog.closeAll();
   }
 
-  async loadData(cursor: string) { }
+  async loadData(cursor?: string) { }
 
 
-  async changePage(cursor: string) {
+  async changePage(cursor: string | null) {
     const queryParams: Params = { page_size: this.pageSize, cursor };
 
     this._router.navigate(

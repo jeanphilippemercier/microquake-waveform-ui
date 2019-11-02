@@ -34,6 +34,7 @@ declare namespace canvasjs {
 
     // ADDED
     readonly plotArea?: any;
+    readonly container?: any;
     /**
      * Initializes a new instance of CanvasJS Chart.
      * @param containerId the DOM ID of the location where the chart is to be rendered
@@ -646,6 +647,9 @@ declare namespace canvasjs {
   }
 
   interface ChartAxisOptions {
+    // ADDED
+    crosshair?: any;
+
     /**
      * Sets the Axis Title.
      * Default: null

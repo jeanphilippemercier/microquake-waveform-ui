@@ -22,8 +22,8 @@ import { Form } from '@core/classes/form.class';
 export class StationFormComponent extends Form<Station> implements OnInit {
 
   @Input() sites: Site[] = [];
-  networks: Network[];
-  filteredNetworks: Observable<Network[]>;
+  networks!: Network[];
+  filteredNetworks!: Observable<Network[]>;
 
   myForm = this._fb.group({
     name: [, [Validators.required]],
@@ -37,7 +37,7 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     power: [],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(
@@ -66,7 +66,12 @@ export class StationFormComponent extends Form<Station> implements OnInit {
         this.networks = [...this.networks, ...val.networks];
       });
 
-      this.filteredNetworks = this.myForm.get('network').valueChanges
+      const networkFormEl = this.myForm.get('network');
+      if (!networkFormEl) {
+        return;
+      }
+
+      this.filteredNetworks = networkFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.name),

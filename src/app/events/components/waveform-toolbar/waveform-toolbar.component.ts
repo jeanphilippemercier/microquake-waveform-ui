@@ -17,10 +17,10 @@ import { PickingMode, PickKey } from '@interfaces/event.interface';
 
 export class WaveformToolbarComponent implements OnInit, OnDestroy {
 
-  @ViewChild('options', { static: true }) optionsSelect: MatSelect;
+  @ViewChild('options', { static: true }) optionsSelect!: MatSelect;
 
   PickKey = PickKey;
-  helpDialogRef: MatDialogRef<EventHelpDialogComponent>;
+  helpDialogRef!: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
   interactiveProcessingDisabled = false;
   paginationPages: number[] = [];

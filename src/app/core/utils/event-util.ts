@@ -33,7 +33,7 @@ export default class EventUtil {
       params.event_type = eventListQuery.event_type.toString();
     }
 
-    if (eventListQuery.time_range > 0) {
+    if (eventListQuery.time_range && eventListQuery.time_range > 0) {
       params.time_range = eventListQuery.time_range;
     } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
       params.time_utc_after = eventListQuery.time_utc_after;

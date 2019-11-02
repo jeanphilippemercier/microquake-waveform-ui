@@ -4,7 +4,7 @@ export interface AuthLoginInput {
 }
 
 export interface AuthRefreshInput {
-  refresh: string;
+  refresh: string | null;
 }
 
 export interface RefreshResponseContext {

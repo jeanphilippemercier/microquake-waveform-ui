@@ -10,12 +10,12 @@ import { Network } from '@interfaces/inventory.interface';
 })
 export class SiteNetworkFieldComponent {
 
-  @Input() networks: Network[];
+  @Input() networks: Network[] = [];
 
-  @Input() network: Network;
+  @Input() network: Network | null = null;
   @Output() networkChange: EventEmitter<Network> = new EventEmitter();
 
-  @Input() network_code: string;
+  @Input() network_code: string | null = null;
   @Output() network_codeChange: EventEmitter<string> = new EventEmitter();
 
   onChangeNetwork(event: MatSelectChange) {

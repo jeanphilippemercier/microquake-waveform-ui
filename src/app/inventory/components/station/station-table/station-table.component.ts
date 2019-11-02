@@ -14,7 +14,7 @@ import { Station } from '@interfaces/inventory.interface';
 export class StationTableComponent extends Table<Station> {
 
   displayedColumns: string[] = ['code', 'name', 'sensors', 'communication', 'power', 'actions'];
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
   constructor(
     protected _matDialog: MatDialog,

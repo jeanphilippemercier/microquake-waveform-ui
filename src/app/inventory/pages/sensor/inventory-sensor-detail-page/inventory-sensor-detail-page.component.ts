@@ -22,20 +22,20 @@ import { DetailPage } from '@core/classes/detail-page.class';
 
 export class InventorySensorDetailPageComponent extends DetailPage<Sensor> implements OnInit, OnDestroy {
 
-  params$: Subscription;
-  sensorId: number;
+  params$!: Subscription;
+  sensorId!: number;
 
   pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
 
-  stations: Station[];
-  boreholes: Borehole[];
+  stations!: Station[];
+  boreholes!: Borehole[];
 
   detailInitialized = false;
 
-  queryParams: Params;
+  queryParams!: Params;
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(

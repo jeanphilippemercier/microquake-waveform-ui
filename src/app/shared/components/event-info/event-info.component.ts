@@ -8,7 +8,7 @@ import { IEvent, EventType, EvaluationStatus, EvaluationMode } from '@interfaces
 })
 export class EventInfoComponent implements OnInit {
 
-  private _event: IEvent;
+  private _event!: IEvent;
   @Input()
   set event(v: IEvent) {
     this._event = v;
@@ -21,17 +21,17 @@ export class EventInfoComponent implements OnInit {
   @Output() eventChange: EventEmitter<IEvent> = new EventEmitter();
   @Input() editEnabled = false;
   @Input() mode: 'updateDialog' | 'eventDetail' = 'eventDetail';
-  @Input() eventTypes: EventType[];
-  @Input() evaluationStatuses: EvaluationStatus[];
-  @Input() eventEvaluationModes: EvaluationMode[];
+  @Input() eventTypes: EventType[] = [];
+  @Input() evaluationStatuses: EvaluationStatus[] = [];
+  @Input() eventEvaluationModes: EvaluationMode[] = [];
   @Input() loading = false;
-  @Input() timezone: string;
+  @Input() timezone!: string;
   @Output() acceptClicked: EventEmitter<EventType> = new EventEmitter();
   @Output() rejectClicked: EventEmitter<EventType> = new EventEmitter();
 
-  selectedEventType: EventType;
-  selectedEvenStatus: EvaluationStatus;
-  selectedEvaluationMode: EvaluationMode;
+  selectedEventType: EventType | null = null;
+  selectedEvenStatus: EvaluationStatus | null = null;
+  selectedEvaluationMode: EvaluationMode | null = null;
   EvaluationStatus = EvaluationStatus;
 
   @HostListener('window:keydown', ['$event'])
@@ -43,10 +43,16 @@ export class EventInfoComponent implements OnInit {
     switch ($event.key) {
       case 'q':
       case 'Q':
+        if (!this.selectedEventType) {
+          return;
+        }
         this.onRejectClicked(this.selectedEventType);
         break;
       case 'w':
       case 'W':
+        if (!this.selectedEventType) {
+          return;
+        }
         this.onAcceptClicked(this.selectedEventType);
         break;
       default:
@@ -66,17 +72,18 @@ export class EventInfoComponent implements OnInit {
     }
 
     if (this.eventTypes && this.eventTypes.length > 0) {
-      this.selectedEventType = this.eventTypes.find(eventType => eventType.quakeml_type === event.event_type);
+      const val = this.eventTypes.find(eventType => eventType.quakeml_type === event.event_type);
+      this.selectedEventType = val ? val : null;
     }
 
     if (this.evaluationStatuses && this.evaluationStatuses.length > 0) {
-      this.selectedEvenStatus = this.evaluationStatuses.find(evaluationStatus => evaluationStatus === event.status);
+      const val = this.evaluationStatuses.find(evaluationStatus => evaluationStatus === event.status);
+      this.selectedEvenStatus = val ? val : null;
     }
 
     if (this.eventEvaluationModes && this.eventEvaluationModes.length > 0) {
-      this.selectedEvaluationMode = this.eventEvaluationModes.find(
-        eventEvaluationMode => eventEvaluationMode === event.evaluation_mode
-      );
+      const val = this.eventEvaluationModes.find(eventEvaluationMode => eventEvaluationMode === event.evaluation_mode);
+      this.selectedEvaluationMode = val ? val : null;
     }
   }
 
@@ -107,7 +114,12 @@ export class EventInfoComponent implements OnInit {
     this.eventChange.emit(this.event);
   }
 
-  onAcceptClicked($event: EventType) {
+  onAcceptClicked($event: EventType | null) {
+    if (!$event) {
+      console.error('No event type');
+      return;
+    }
+
     if (this.loading) {
       return;
     }
@@ -115,7 +127,12 @@ export class EventInfoComponent implements OnInit {
     this.acceptClicked.emit($event);
   }
 
-  onRejectClicked($event: EventType) {
+  onRejectClicked($event: EventType | null) {
+    if (!$event) {
+      console.error('No event type');
+      return;
+    }
+
     if (this.loading) {
       return;
     }

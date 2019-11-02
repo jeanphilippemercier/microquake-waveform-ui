@@ -12,7 +12,7 @@ import { MaintenanceEvent } from '@interfaces/maintenance.interface';
 })
 export class SensorFormDialogComponent {
   PageMode = PageMode;
-  model: MaintenanceEvent;
+  model!: MaintenanceEvent;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public dialogData: SensorFormDialogData,

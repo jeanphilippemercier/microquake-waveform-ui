@@ -21,7 +21,7 @@ export class BoreholeTableComponent extends Table<Sensor> {
   @Output() surveyFile: EventEmitter<Borehole> = new EventEmitter();
 
   displayedColumns: string[] = ['name', 'length', 'azimuth', 'dip', 'toe', 'collar', 'survey', 'actions'];
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
 
 

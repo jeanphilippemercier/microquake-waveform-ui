@@ -12,14 +12,14 @@ export class EventModeFieldComponent {
 
   @Input() label = `Event Mode`;
   @Input() multiple = true;
-  @Input() eventEvaluationModes: EvaluationMode[];
+  @Input() eventEvaluationModes: EvaluationMode[] = [];
 
   // for multiple === false
-  @Input() selectedEvaluationMode: EvaluationMode;
+  @Input() selectedEvaluationMode: EvaluationMode | null = null;
   @Output() selectedEvaluationModeChange: EventEmitter<EvaluationMode> = new EventEmitter();
 
   // for multiple === true
-  @Input() selectedEvaluationModes: EvaluationMode[];
+  @Input() selectedEvaluationModes: EvaluationMode[] = [];
   @Output() selectedEvaluationModesChange: EventEmitter<EvaluationMode[]> = new EventEmitter();
 
   onChangeEvaluationMode(event: MatSelectChange) {

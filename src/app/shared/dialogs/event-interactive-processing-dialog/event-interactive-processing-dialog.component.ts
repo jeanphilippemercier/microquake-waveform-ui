@@ -15,7 +15,7 @@ export class EventInteractiveProcessingDialogComponent {
   onRejectClicked: EventEmitter<void> = new EventEmitter();
 
   oldEvent: IEvent;
-  newEvent: IEvent;
+  newEvent!: IEvent;
 
   loading = false;
 
@@ -25,6 +25,7 @@ export class EventInteractiveProcessingDialogComponent {
   ) {
     this.oldEvent = { ...dialogData.oldEvent };
 
+    // if newEvent not defined, processing failed
     if (dialogData.newEvent) {
       this.newEvent = { ...dialogData.newEvent };
     }

@@ -22,13 +22,13 @@ import { TableWithExpandableRows } from '@core/classes/table-with-expandable-row
 })
 export class MaintenanceTableComponent extends TableWithExpandableRows<MaintenanceEvent> {
 
-  @Input() stations: Station[];
+  @Input() stations: Station[] = [];
   @Input() maintenanceStatuses: MaintenanceStatus[] = [];
   @Input() maintenanceCategories: MaintenanceCategory[] = [];
 
   // tslint:disable-next-line:max-line-length
   displayedColumns: string[] = ['detail', 'date', 'status', 'category', 'station', 'attachments', 'description', 'actions'];
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
   constructor(
     protected _matDialog: MatDialog,
@@ -47,7 +47,7 @@ export class MaintenanceTableComponent extends TableWithExpandableRows<Maintenan
     Object.assign(oldEvent, $event);
   }
 
-  editButtonClick(maintenanceEventId) {
+  editButtonClick(maintenanceEventId: string) {
     this._router.navigate(['maintenance', maintenanceEventId], { preserveQueryParams: true });
   }
 }

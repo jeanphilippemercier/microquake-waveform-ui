@@ -1,7 +1,7 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 
-import { EvaluationStatus, EvaluationStatusGroup } from '@interfaces/event.interface';
+import { EvaluationStatusGroup } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-status-field',
@@ -13,10 +13,10 @@ export class EventStatusFieldComponent {
   @Input() label = `Event Status`;
   @Input() multiple = true;
   @Input() type: 'select' | 'chip' = 'select';
-  @Input() evaluationStatuses: EvaluationStatusGroup[];
+  @Input() evaluationStatuses: EvaluationStatusGroup[] = [];
 
   // for multiple === false
-  @Input() selectedEvaluationStatus: EvaluationStatusGroup;
+  @Input() selectedEvaluationStatus: EvaluationStatusGroup | null = null;
   @Output() selectedEvaluationStatusChange: EventEmitter<EvaluationStatusGroup> = new EventEmitter();
 
   // for multiple === true

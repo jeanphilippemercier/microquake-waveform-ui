@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
 })
 export class MaintenanceFormDialogComponent {
   PageMode = PageMode;
-  model: MaintenanceEvent;
+  model!: MaintenanceEvent;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public dialogData: MaintenanceFormDialogData,

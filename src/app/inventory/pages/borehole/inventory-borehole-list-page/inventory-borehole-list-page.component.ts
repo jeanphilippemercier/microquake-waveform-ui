@@ -37,15 +37,18 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
     this._subscribeToSearch();
   }
 
-  async loadData(cursor?: string) {
+  async loadData(cursor?: string | null) {
     try {
       this.loading = true;
       this.loadingStart();
 
       const query: BoreholesQuery = {
-        cursor,
         page_size: this.pageSize
       };
+
+      if (cursor) {
+        query.cursor = cursor;
+      }
 
       if (this.search) {
         query.search = this.search;

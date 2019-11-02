@@ -2,7 +2,6 @@ import { Input, Output, EventEmitter } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
 import { PageMode } from '@interfaces/core.interface';
-import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 export class Form<T> {
@@ -17,10 +16,10 @@ export class Form<T> {
   public get model() {
     return this._model;
   }
-  private _model: T;
+  private _model!: T;
 
   @Input() mode: PageMode = PageMode.CREATE;
-  @Output() modelChange: EventEmitter<Partial<T>> = new EventEmitter();
+  @Output() modelChange: EventEmitter<Partial<T> | null> = new EventEmitter();
   @Output() modelCreated: EventEmitter<Partial<T>> = new EventEmitter();
   @Output() modelEdited: EventEmitter<Partial<T>> = new EventEmitter();
   @Output() cancel: EventEmitter<void> = new EventEmitter();
@@ -28,7 +27,7 @@ export class Form<T> {
   editDisabled = false;
   PageMode = PageMode;
   loading = false;
-  myForm: FormGroup;
+  myForm!: FormGroup;
 
   constructor(
     protected _ngxSpinnerService: NgxSpinnerService
@@ -36,7 +35,7 @@ export class Form<T> {
 
   protected _filter<U>(input: string, array: U[], name: string): U[] {
     const filterValue = input.toLowerCase();
-    return array.filter(option => option[name] && option[name].toLowerCase().indexOf(filterValue) === 0);
+    return array.filter((option: any) => option[name] && option[name].toLowerCase().indexOf(filterValue) === 0);
   }
 
   onCancel() {

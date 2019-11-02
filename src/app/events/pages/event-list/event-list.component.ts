@@ -17,6 +17,7 @@ import EventUtil from '@core/utils/event-util';
 import { WaveformService } from '@services/waveform.service';
 import { Subject, interval, BehaviorSubject } from 'rxjs';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { PageEvent } from '@angular/material';
 
 @Component({
   selector: 'app-event-list',
@@ -25,24 +26,19 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 })
 export class EventListComponent implements OnInit, OnDestroy {
 
-  sites: Site[];
-  site: Site;
-  network: Network;
-  networks: Network[];
-
-  selectedEventTypes: EventType[];
-  selectedEvaluationStatusGroups: EvaluationStatusGroup[];
+  selectedEventTypes!: EventType[];
+  selectedEvaluationStatusGroups!: EvaluationStatusGroup[];
   EvaluationStatus = EvaluationStatus;
-  eventEvaluationModes: EvaluationMode[];
+  eventEvaluationModes!: EvaluationMode[];
 
   eventStartDate: Date = moment().startOf('day').subtract(15, 'days').toDate();
   eventEndDate: Date = moment().endOf('day').toDate();
 
   displayedColumns: string[] = ['time', 'type', 'magnitude', 'picks', 'time_residual', 'corner_frequency', 'uncertainty', 'actions'];
-  dataSource: IEvent[];
+  dataSource!: IEvent[];
   eventListQuery: EventQuery = {};
 
-  eventUpdateDialogRef: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
+  eventUpdateDialogRef!: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
   eventUpdateDialogOpened = false;
   timezone = '+08:00';
 
@@ -50,10 +46,10 @@ export class EventListComponent implements OnInit, OnDestroy {
   timeRange = 3;
 
   eventsCount = 0;
-  cursorPrevious: string;
-  cursorNext: string;
+  cursorPrevious!: string | null;
+  cursorNext!: string | null;
 
-  pooling: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  pooling: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   private _unsubscribe = new Subject<void>();
 
   constructor(
@@ -201,15 +197,17 @@ export class EventListComponent implements OnInit, OnDestroy {
     this.eventListQuery.event_type = this.selectedEventTypes && this.selectedEventTypes.length > 0 ? this.selectedEventTypes.map((eventType: EventType) => eventType.quakeml_type) : undefined;
   }
 
-  pageChange($event) {
+  pageChange($event: PageEvent) {
     if ($event.pageIndex === 0) {
       delete this.eventListQuery.cursor;
     } else {
       let cursor = this.cursorNext;
-      if ($event.previousPageIndex > $event.pageIndex) {
+      if ($event.previousPageIndex && $event.previousPageIndex > $event.pageIndex) {
         cursor = this.cursorPrevious;
       }
-      this.eventListQuery.cursor = cursor;
+      if (cursor) {
+        this.eventListQuery.cursor = cursor;
+      }
     }
 
     this._router.navigate(

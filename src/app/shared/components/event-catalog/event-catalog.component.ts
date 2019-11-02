@@ -17,7 +17,7 @@ interface EventDay {
 })
 export class EventCatalogComponent {
 
-  private _eventsDailySummary: EventsDailySummary[];
+  private _eventsDailySummary!: EventsDailySummary[];
   @Input()
   set eventsDailySummary(eventsDailySummary: EventsDailySummary[]) {
 
@@ -68,9 +68,9 @@ export class EventCatalogComponent {
     return this._forceCD;
   }
 
-  @Input() currentEventInfo: IEvent;
+  @Input() currentEventInfo!: IEvent;
 
-  private _currentEvent: IEvent;
+  private _currentEvent!: IEvent;
   @Input()
   set currentEvent(event: IEvent) {
     this._currentEvent = event;
@@ -84,14 +84,14 @@ export class EventCatalogComponent {
 
 
 
-  @Input() timezone: string;
+  @Input() timezone!: string;
 
   @Output() eventClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
   @Output() chartClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
 
 
-  @Input() filterTimeAfter: moment.Moment;
-  @Input() filterTimeBefore: moment.Moment;
+  @Input() filterTimeAfter: moment.Moment | null = null;
+  @Input() filterTimeBefore: moment.Moment | null = null;
 
   @Input()
   public set interactiveProcessingEvents(v: { id: number; event: IEvent }[]) {
@@ -110,18 +110,17 @@ export class EventCatalogComponent {
     return this._interactiveProcessingEvents;
   }
 
-  private _interactiveProcessingEvents: { id: number; event: IEvent }[];
+  private _interactiveProcessingEvents: { id: number; event: IEvent }[] = [];
   interactiveProcessingEventsIds: string[] = [];
   daysMap: any = {};
-  openedDay: moment.Moment;
+  openedDay: moment.Moment | null = null;
   currentEventDayInList = false;
-  eventOutsideFiter: string;
   showCurrentDayBeforeCatalog = false;
   showCurrentDayAfterCatalog = false;
   currentEventDayOutsideCatalog = false;
-  currentEventDaySummaryOutsideCatalog: Partial<EventsDailySummary>;
-  currentEventDay: moment.Moment;
-  currentEventDate: moment.Moment;
+  currentEventDaySummaryOutsideCatalog: Partial<EventsDailySummary> | null = null;
+  currentEventDay: moment.Moment | null = null;
+  currentEventDate: moment.Moment | null = null;
   reopenDay = false;
   scrolledToEvent = false;
 
@@ -152,9 +151,14 @@ export class EventCatalogComponent {
           }
 
           const found = this.eventsDailySummary.some(day => {
+            if (!day.dayDate || !this.currentEventDay) {
+              return;
+            }
+
             if (!day.dayDate.isSame(this.currentEventDay)) {
               return false;
             }
+
             return day.events && day.events.some((ev, idx) => {
               if (this.currentEvent && this.currentEvent.event_resource_id === ev.event_resource_id) {
                 return true;
@@ -163,11 +167,11 @@ export class EventCatalogComponent {
               if (nextEvent) {
                 const nextDate = nextEvent.time_utc ? moment.utc(nextEvent.time_utc).utcOffset(this.timezone) : null;
 
-                if (this.currentEventDate.isAfter(nextDate)) {
-                  // console.log(`index: ${idx}`);
-                  // console.log(this.currentEventDate.format('YYYY-MM-DD HH:mm:ss.S'));
-                  // console.log(nextDate.format('YYYY-MM-DD HH:mm:ss.S'));
+                if (!day.events) {
+                  return;
+                }
 
+                if (this.currentEventDate && nextDate && this.currentEventDate.isAfter(nextDate)) {
                   day.events.splice(idx, 0, this.currentEvent);
                   this.currentEvent.outsideOfCurrentFilter = true;
                   return true;
@@ -187,7 +191,7 @@ export class EventCatalogComponent {
 
   mapEventsToDays(events: IEvent[]): [EventDay[], {}] {
     const eventDays: EventDay[] = [];
-    const daysMap = {};
+    const daysMap: { [key: string]: number } = {};
 
     events.forEach((event, idx) => {
 
@@ -199,7 +203,7 @@ export class EventCatalogComponent {
         dayOutsideFiterRange = true;
       }
 
-      if (this.filterTimeBefore && dayMoment.isBefore(this.filterTimeAfter)) {
+      if (this.filterTimeAfter && dayMoment.isBefore(this.filterTimeAfter)) {
         dayOutsideFiterRange = true;
       }
 

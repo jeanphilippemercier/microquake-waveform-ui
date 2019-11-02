@@ -30,7 +30,7 @@ interface MaintenanceInput {
 
 export class MaintenanceInputComponent implements OnInit {
 
-  @ViewChild('auto', { static: false }) autoCompleteEl: MatAutocomplete;
+  @ViewChild('auto', { static: false }) autoCompleteEl!: MatAutocomplete;
 
   @Input()
   public set maintenanceStatuses(v: MaintenanceStatus[]) {
@@ -59,16 +59,16 @@ export class MaintenanceInputComponent implements OnInit {
   public get stationFixed(): Station {
     return this._stationFixed;
   }
-  private _stationFixed: Station;
+  private _stationFixed!: Station;
 
   @Output() created: EventEmitter<MaintenanceEvent> = new EventEmitter();
 
-  @ViewChild('maintenanceForm', { static: false }) maintenanceForm: MaintenanceFormComponent;
+  @ViewChild('maintenanceForm', { static: false }) maintenanceForm!: MaintenanceFormComponent;
 
   editDisabled = false;
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
-  filteredStations: Observable<Station[]>;
+  filteredStations!: Observable<Station[]>;
 
   submited = false;
 
@@ -79,7 +79,7 @@ export class MaintenanceInputComponent implements OnInit {
   addingChip = false;
   separatorKeysCodes: number[] = [ENTER, TAB];
   fruitCtrl = new FormControl();
-  filteredFruits: Observable<MaintenanceInput[]>;
+  filteredFruits!: Observable<MaintenanceInput[]>;
   fruits: MaintenanceInput[] = [];
   model: Partial<MaintenanceEvent> = {};
 
@@ -87,8 +87,8 @@ export class MaintenanceInputComponent implements OnInit {
 
   openForm = false;
 
-  @ViewChild('fruitInput', { static: false }) fruitInput: ElementRef<HTMLInputElement>;
-  @ViewChild('auto', { static: false }) matAutocomplete: MatAutocomplete;
+  @ViewChild('fruitInput', { static: false }) fruitInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('auto', { static: false }) matAutocomplete!: MatAutocomplete;
 
 
   constructor(
@@ -99,6 +99,7 @@ export class MaintenanceInputComponent implements OnInit {
 
     this.filteredFruits = this.fruitCtrl.valueChanges.pipe(
       // startWith(null),
+      // @ts-ignore
       map((fruit: string | null) => this._filter(fruit)));
 
   }
@@ -124,10 +125,10 @@ export class MaintenanceInputComponent implements OnInit {
 
       switch (val.type) {
         case MaintenanceType.CATEGORY:
-          this.model.category = null;
+          this.model.category = undefined;
           break;
         case MaintenanceType.STATION:
-          this.model.station = null;
+          this.model.station = undefined;
           break;
 
       }
@@ -140,7 +141,7 @@ export class MaintenanceInputComponent implements OnInit {
     const val = $event.option.value;
     this._addChip(val);
 
-    setTimeout(_ => {
+    setTimeout((_: any) => {
       this.addingChip = false;
     }, 250);
   }
@@ -173,7 +174,7 @@ export class MaintenanceInputComponent implements OnInit {
     switch (filterAction) {
       case '#':
         if (this.model.category) {
-          return;
+          return [];
         }
 
         return this.maintenanceCategories
@@ -187,7 +188,7 @@ export class MaintenanceInputComponent implements OnInit {
         break;
       case '@':
         if (this.model.station) {
-          return;
+          return [];
         }
 
         return this.stations
@@ -209,10 +210,10 @@ export class MaintenanceInputComponent implements OnInit {
     return [];
   }
 
-  categoryChanged($event: string) {
-    this.model.category = $event;
+  categoryChanged($event: string | null) {
+    this.model.category = $event ? $event : undefined;
     const idx = this.fruits.findIndex(val => val.type === MaintenanceType.CATEGORY);
-    let chip: MaintenanceInput;
+    let chip: MaintenanceInput | undefined;
 
     if (idx > -1) {
       chip = this.fruits[idx];
@@ -227,7 +228,7 @@ export class MaintenanceInputComponent implements OnInit {
 
     if (!chip) {
       this._addChip({
-        name: $event,
+        name: $event ? $event : '',
         autocompleteLabel: `${$event}`,
         type: MaintenanceType.CATEGORY,
         obj: category
@@ -242,10 +243,10 @@ export class MaintenanceInputComponent implements OnInit {
     }
   }
 
-  stationChanged($event: Station) {
-    this.model.station = $event;
+  stationChanged($event: Station | null) {
+    this.model.station = $event ? $event : undefined;
     const idx = this.fruits.findIndex(val => val.type === MaintenanceType.STATION);
-    let chip: MaintenanceInput;
+    let chip: MaintenanceInput | undefined;
 
     if (idx > -1) {
       chip = this.fruits[idx];
@@ -253,6 +254,10 @@ export class MaintenanceInputComponent implements OnInit {
 
     if (!$event && idx > -1) {
       this.fruits.splice(idx, 1);
+      return;
+    }
+
+    if (!$event) {
       return;
     }
 

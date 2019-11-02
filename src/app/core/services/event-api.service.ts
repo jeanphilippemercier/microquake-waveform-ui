@@ -110,12 +110,14 @@ export class EventApiService {
     const url = `${environment.apiUrl}events/daily_summary`;
     let params = ApiUtil.getHttpParams(query);
 
-    if (query.event_type && query.event_type.length > 1) {
-      params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
-    }
+    if (query) {
+      if (query.event_type && query.event_type.length > 1) {
+        params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
+      }
 
-    if (query.status && query.status.length > 1) {
-      params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
+      if (query.status && query.status.length > 1) {
+        params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
+      }
     }
 
     return this._http.get<PaginationResponse<EventsDailySummary>>(url, { params });
@@ -139,34 +141,10 @@ export class EventApiService {
     return this._http.get<Ray[]>(url, { params });
   }
 
-  updatePartialOriginById(originId, dataObj): any {
-    const _httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    const API_URL = environment.apiUrl + globals.apiOrigins;
-    const data = JSON.stringify({
-      'origin_resource_id': originId,
-      'data': dataObj
-    });
-    return this._http.patch(API_URL, data, _httpOptions);
-  }
-
   getEventArrivalsById(query: EventArrivalsQuery): any {
     const url = `${environment.apiUrl}${globals.apiArrivals}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get(url, { params });
-  }
-
-  getReprocessEventById(site, network, eventId): any {
-    const API_URL = environment.apiUrl + globals.apiEvents + '/' + eventId +
-      '/' + globals.apiReprocess;
-    const params = new HttpParams()
-      .set('site_code', site)
-      .set('network_code', network)
-      .set('event_resource_id', eventId);
-    return this._http.get(API_URL, { params });
   }
 
   onServerEvent(): Observable<WebsocketEventResponse> {

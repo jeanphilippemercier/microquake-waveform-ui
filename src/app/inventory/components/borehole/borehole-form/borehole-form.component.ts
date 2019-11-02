@@ -33,7 +33,7 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
     toe_z: []
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(

@@ -31,7 +31,7 @@ export class SensorTypeFormComponent extends Form<ISensorType> implements OnInit
     motion_type: [],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(

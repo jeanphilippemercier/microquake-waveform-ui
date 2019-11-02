@@ -5,7 +5,7 @@ import { PageMode } from '@interfaces/core.interface';
 
 export class Table<T> implements OnInit {
 
-  displayedColumns: string[];
+  displayedColumns: string[] = [];
   previous: string | null = null;
   next: string | null = null;
   PageMode = PageMode;
@@ -14,7 +14,7 @@ export class Table<T> implements OnInit {
 
   initialized = false;
 
-  @Input() dataSource: T[];
+  @Input() dataSource: T[] | undefined;
   @Input() count = 0;
   @Input() pageSize = 15;
   @Input() showPagination = true;
@@ -48,7 +48,7 @@ export class Table<T> implements OnInit {
   }
 
   async onPageChange($event: PageEvent) {
-    if ($event.previousPageIndex > $event.pageIndex) {
+    if ($event.previousPageIndex && $event.previousPageIndex > $event.pageIndex) {
       this.previousPage.emit();
     } else {
       this.nextPage.emit();

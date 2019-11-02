@@ -41,16 +41,19 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
     this._subscribeOnSearch();
   }
 
-  async loadData(cursor?: string) {
+  async loadData(cursor?: string | null) {
     try {
       this.loading = true;
       this._loadingService.start();
 
       const query: SensorsQuery = {
-        cursor,
         ordering: this.ordring,
         page_size: this.pageSize
       };
+
+      if (cursor) {
+        query.cursor = cursor;
+      }
 
       if (this.search) {
         query.search = this.search;

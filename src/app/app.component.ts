@@ -14,7 +14,7 @@ import { LoadingService } from '@services/loading.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  user: User;
+  user: User | null = null;
 
   constructor(
     private _loadingService: LoadingService,
@@ -49,7 +49,7 @@ export class AppComponent implements OnInit {
     this._authService.logout();
   }
 
-  onMenuOpenedChange($event) {
+  onMenuOpenedChange($event: boolean) {
     if ($event) {
       this.menuService.open();
     } else {

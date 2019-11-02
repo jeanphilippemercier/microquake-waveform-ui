@@ -18,7 +18,7 @@ export class EventUpdateDialogComponent {
 
   event: IEvent;
   editedEvent: IEvent;
-  editedValues: EventUpdateInput;
+  editedValues: EventUpdateInput | null = null;
   eventTypes: EventType[];
   evaluationStatuses: EvaluationStatus[];
   eventEvaluationModes: EvaluationMode[];
@@ -47,10 +47,10 @@ export class EventUpdateDialogComponent {
     const eventUpdateInput: EventUpdateInput = {
       event_resource_id: origEvent.event_resource_id
     };
-    const keys = Object.keys(editedEvent);
+    const keys = <(keyof IEvent)[]>Object.keys(editedEvent);
     let changes = false;
 
-    keys.forEach(key => {
+    keys.forEach((key) => {
       const origVal = origEvent[key];
       const editedVal = editedEvent[key];
 

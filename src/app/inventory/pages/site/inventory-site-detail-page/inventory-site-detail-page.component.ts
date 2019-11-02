@@ -15,8 +15,8 @@ import { PageMode } from '@interfaces/core.interface';
 
 export class InventorySiteDetailPageComponent implements OnInit, OnDestroy {
 
-  params$: Subscription;
-  siteId: number;
+  params$!: Subscription;
+  siteId!: number;
   site: Site | SiteCreateInput = {};
   timezones: Timezone[] = Object.values(Timezone);
   coordinateSystems: CoordinateSystem[] = Object.values(CoordinateSystem);

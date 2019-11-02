@@ -34,10 +34,5 @@ export class EventSitePickerDialogComponent {
     }
   }
 
-  onAcceptClick() {
-
-  }
-
-  siteChanged($event) { }
-  networkChanged($event) { }
+  onAcceptClick() { }
 }

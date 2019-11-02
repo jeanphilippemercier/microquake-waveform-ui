@@ -24,7 +24,7 @@ import { TableWithExpandableRows } from '@core/classes/table-with-expandable-row
 })
 export class ComponentTableComponent extends TableWithExpandableRows<IComponent> implements OnInit {
 
-  @Input() sensorId: number;
+  @Input() sensorId!: number;
 
   sensorTypes: ISensorType[] = [];
   cables: CableType[] = [];
@@ -35,7 +35,7 @@ export class ComponentTableComponent extends TableWithExpandableRows<IComponent>
 
   allComponentCodes = Object.values(ComponentCode);
   missingComponentCodes: ComponentCode[] = [];
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
   @Output() created: EventEmitter<IComponent> = new EventEmitter();
   @Output() updated: EventEmitter<IComponent> = new EventEmitter();
 
@@ -63,7 +63,7 @@ export class ComponentTableComponent extends TableWithExpandableRows<IComponent>
   }
 
   async onPageChange($event: PageEvent) {
-    if ($event.previousPageIndex > $event.pageIndex) {
+    if ($event.previousPageIndex && $event.previousPageIndex > $event.pageIndex) {
       this.previousPage.emit();
     } else {
       this.nextPage.emit();
@@ -78,6 +78,8 @@ export class ComponentTableComponent extends TableWithExpandableRows<IComponent>
   componentCreated($event: IComponent) {
     this.expandedElement = null;
     this.addingNewComponent = false;
-    this.dataSource.push($event);
+    if (this.dataSource) {
+      this.dataSource.push($event);
+    }
   }
 }

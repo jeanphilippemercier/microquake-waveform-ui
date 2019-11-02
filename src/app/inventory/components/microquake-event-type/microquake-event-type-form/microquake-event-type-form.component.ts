@@ -24,11 +24,11 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
   @Input()
   sites: Site[] = [];
   @Input()
-  takenEventTypes: TakenEventType[];
+  takenEventTypes!: TakenEventType[];
   @Input()
-  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+  quakemlTypes!: QuakemlTypeWithMappedMicroquakeType[];
 
-  filteredSites: Observable<Site[]>;
+  filteredSites!: Observable<Site[]>;
 
   myForm = this._fb.group({
     microquake_type: [, [Validators.required]],
@@ -38,7 +38,7 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
     countable: [],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
   QuakemlType = QuakemlType;
   allQuakemlTypes = Object.values(QuakemlType);
@@ -68,7 +68,11 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
       this.myForm.patchValue({ quakeml_type: foundQuakemlType });
     }
 
-    this.filteredSites = this.myForm.get('site').valueChanges
+    const siteFormEl = this.myForm.get('site');
+    if (!siteFormEl) {
+      return;
+    }
+    this.filteredSites = siteFormEl.valueChanges
       .pipe(
         startWith(''),
         map(value => !value || typeof value === 'string' ? value : value.name),

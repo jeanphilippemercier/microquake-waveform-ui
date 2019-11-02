@@ -22,7 +22,7 @@ import { Form } from '@core/classes/form.class';
 
 export class ComponentFormComponent extends Form<IComponent> implements OnInit {
 
-  @Input() sensorId: number;
+  @Input() sensorId!: number;
   @Input() sensorTypes: ISensorType[] = [];
   @Input() cables: CableType[] = [];
   @Input() availableComponentCodes: ComponentCode[] = [];
@@ -31,10 +31,10 @@ export class ComponentFormComponent extends Form<IComponent> implements OnInit {
   ComponentCode = ComponentCode;
 
   allComponentCodes: ComponentCode[] = Object.values(ComponentCode);
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
-  filteredCables: Observable<CableType[]>;
-  filteredSensorTypes: Observable<ISensorType[]>;
+  filteredCables!: Observable<CableType[]>;
+  filteredSensorTypes!: Observable<ISensorType[]>;
 
   myForm = this._fb.group({
     enabled: [false],
@@ -70,7 +70,11 @@ export class ComponentFormComponent extends Form<IComponent> implements OnInit {
   private async _initEditableForm() {
 
     try {
-      this.filteredSensorTypes = this.myForm.get('sensor_type').valueChanges
+      const sensorTypeFormEl = this.myForm.get('sensor_type');
+      if (!sensorTypeFormEl) {
+        return;
+      }
+      this.filteredSensorTypes = sensorTypeFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.model),
@@ -82,7 +86,11 @@ export class ComponentFormComponent extends Form<IComponent> implements OnInit {
     }
 
     try {
-      this.filteredCables = this.myForm.get('cable').valueChanges
+      const cableFormEl = this.myForm.get('cable');
+      if (!cableFormEl) {
+        return;
+      }
+      this.filteredCables = cableFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.code),
