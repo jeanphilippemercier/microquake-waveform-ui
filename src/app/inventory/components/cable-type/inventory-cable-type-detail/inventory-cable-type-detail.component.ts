@@ -30,7 +30,7 @@ export class InventoryCableTypeDetailComponent extends Form<CableType> implement
     description: []
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(

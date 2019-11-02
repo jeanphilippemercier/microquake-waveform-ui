@@ -27,14 +27,14 @@ import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-di
 
 export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> implements OnInit, OnDestroy {
 
-  params$: Subscription;
-  boreholeId: number;
+  params$!: Subscription;
+  boreholeId!: number;
 
   pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
 
   detailInitialized = false;
-  files: NgxFileDropEntry[];
+  files!: NgxFileDropEntry[];
 
   collar_x = 0;
   collar_y = 0;
@@ -45,10 +45,10 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   /*
    * SENSORS
    */
-  sensorsDataSource: Sensor[];
+  sensorsDataSource!: Sensor[];
   sensorsCount = 0;
-  sensorsCursorPrevious: string;
-  sensorsCursorNext: string;
+  sensorsCursorPrevious!: string | null;
+  sensorsCursorNext!: string | null;
   sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
   sensorsInitialized = false;
 
@@ -58,7 +58,7 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
     collar_z: [, Validators.required],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
   selectedTabIndex = 0;
 
@@ -147,6 +147,11 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   }
 
   uploadSurveyFile() {
+    if (!this.model) {
+      this._toastrNotificationService.error('Borehole model is not loaded');
+      return;
+    }
+
     const surveyFileDialogRef = this._matDialog.open<BoreholeSurveyFileDialogComponent, BoreholeSurveyFileDialogData>(
       BoreholeSurveyFileDialogComponent, {
         hasBackdrop: true,
@@ -178,6 +183,11 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
 
   interpolateBorehole() {
+    if (!this.model) {
+      this._toastrNotificationService.error('Borehole model is not loaded');
+      return;
+    }
+
     const boreholeInterpolationDialogRef = this._matDialog.open<BoreholeInterpolationDialogComponent, BoreholeInterpolationDialogData>(
       BoreholeInterpolationDialogComponent, {
         hasBackdrop: true,

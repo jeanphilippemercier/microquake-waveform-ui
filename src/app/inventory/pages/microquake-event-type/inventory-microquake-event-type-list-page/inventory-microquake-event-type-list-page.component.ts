@@ -23,9 +23,9 @@ import { PageMode } from '@interfaces/core.interface';
 })
 export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<EventType> {
 
-  takenEventType: TakenEventType[];
-  sites: Site[];
-  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+  takenEventType: TakenEventType[] = [];
+  sites: Site[] = [];
+  quakemlTypes: QuakemlTypeWithMappedMicroquakeType[] = [];
 
   constructor(
     private _inventoryApiService: InventoryApiService,

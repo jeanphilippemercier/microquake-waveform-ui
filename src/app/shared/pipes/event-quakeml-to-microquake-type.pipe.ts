@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { EventType } from '@interfaces/event.interface';
 
 @Pipe({
   name: 'eventQuakemlToMicroquakeType',
@@ -6,7 +7,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class EventQuakemlToMicroquakeTypePipe implements PipeTransform {
 
-  transform(value: any, eventTypes: any): any {
+  transform(value: any, eventTypes: EventType[]): any {
     if (!eventTypes) {
       return value;
     }

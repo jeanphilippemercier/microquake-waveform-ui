@@ -5,14 +5,12 @@
       <app-site-select-field
         [sites]="sites"
         [(site)]="currentSite"
-        (siteChange)="siteChanged($event)"
       ></app-site-select-field>
     </div>
     <div class="col-12">
       <app-site-network-field
         [(networks)]="networks"
         [(network)]="currentNetwork"
-        (networkChange)="networkChanged($event)"
       ></app-site-network-field>
     </div>
   </div>

@@ -238,18 +238,18 @@ export interface Ray {
 }
 
 export interface Channel {
-  code_id?: string;
-  sensor_code?: string;
-  channel_id?: string;
-  sample_rate?: number;
-  start?: any;
-  microsec?: number;
-  duration?: number;
-  raw?: any;
-  rotated?: any;
-  data?: any[];
-  valid?: boolean;
-  enabled?: boolean;
+  code_id: string;
+  sensor_code: string;
+  channel_id: string;
+  sample_rate: number;
+  start: any;
+  microsec: number;
+  duration: number;
+  raw: any;
+  rotated: any;
+  data: any[];
+  valid: boolean;
+  enabled: boolean;
 }
 
 export interface ArrivalBase<T> {
@@ -311,10 +311,10 @@ export enum PickType {
 
 export interface EventsDailySummary {
   date: string;
-  count: number;
-  modification_timestamp_max: string;
+  count: number | null;
+  modification_timestamp_max: string | null;
   accepted_counts: {
-    [key in QuakemlType | '_total_']?: number;
+    [key in QuakemlType | '_total_']?: number | null;
   };
   dayDate?: moment.Moment;
   acceptedSum?: number;

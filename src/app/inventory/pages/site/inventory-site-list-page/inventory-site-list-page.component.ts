@@ -10,7 +10,7 @@ import { Site } from '@interfaces/inventory.interface';
 export class InventorySiteListPageComponent implements OnInit {
 
   displayedColumns: string[] = ['name', 'id', 'networks', 'actions'];
-  dataSource: Site[];
+  dataSource!: Site[];
 
   constructor(
     private _inventoryApiSevice: InventoryApiService

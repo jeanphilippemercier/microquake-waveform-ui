@@ -17,7 +17,7 @@ export class EventFilterDialogComponent {
   loading = false;
   somethingEdited = false;
   onFilter: EventEmitter<EventQuery> = new EventEmitter();
-  origQuery: EventQuery;
+  origQuery!: EventQuery;
   eventQuery: EventQuery;
   editedQuery: EventQuery;
   eventTypes: EventType[];
@@ -26,7 +26,7 @@ export class EventFilterDialogComponent {
   timezone: string;
   todayEnd: Date;
   numberOfChanges = 0;
-  selectedEventTypes: EventType[];
+  selectedEventTypes: EventType[] | null;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) private _dialogData: EventFilterDialogData
@@ -40,8 +40,10 @@ export class EventFilterDialogComponent {
     this.todayEnd = moment().utc().utcOffset(this.timezone).endOf('day').toDate();
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
     this.selectedEventTypes = this.eventQuery.event_type ?
-      this.eventQuery.event_type.map(event_type => (this.eventTypes.find(et => et.quakeml_type === event_type))) :
-      undefined;
+      this.eventQuery.event_type.map(event_type => {
+        const val = this.eventTypes.find(et => et.quakeml_type === event_type);
+        return val ? val : this.eventTypes[0]; // TODO: do better check!
+      }) : null;
   }
 
   async onFilterChange() {
@@ -64,7 +66,7 @@ export class EventFilterDialogComponent {
     this.editedQuery.time_utc_before = this.todayEnd.toISOString();
     this.editedQuery.status = [EvaluationStatusGroup.ACCEPTED];
     this.editedQuery.event_type = undefined;
-    this.selectedEventTypes = undefined;
+    this.selectedEventTypes = null;
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);
   }

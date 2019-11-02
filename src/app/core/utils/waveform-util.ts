@@ -1,4 +1,6 @@
+// @ts-ignore
 import * as miniseed from 'seisplotjs-miniseed';
+// @ts-ignore
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
@@ -15,41 +17,29 @@ export default class WaveformUtil {
   static convYUnits = 1000;
   static defaultUnits = 'mm';
 
-  static findValue(obj, key, value) {
-    return obj.find(v => v[key] === value);
+  static findValue(obj: any, key: string, value: any) {
+    return obj.find((v: any) => v[key] === value);
   }
 
-  static findNestedValue(obj, key, subkey, value, otherkey, othervalue) {
-    return obj.find(v => (v[key] && v[key][subkey] &&
+  static findNestedValue(obj: any, key: string, subkey: string, value: any, otherkey: string, othervalue: any) {
+    return obj.find((v: any) => (v[key] && v[key][subkey] &&
       v[key][subkey].toString() === value.toString() && v[otherkey] === othervalue));
   }
 
-  static sortArrayBy(field, reverse, primer) {
 
-    const key = primer ?
-      function (x) { return primer(x[field]); } :
-      function (x) { return x[field]; };
-
-    reverse = !reverse ? 1 : -1;
-
-    return function (a, b) {
-      const A = key(a), B = key(b);
-      return ((A < B) ? -1 : ((A > B) ? 1 : 0)) * [-1, 1][+!!reverse];
-    };
-  }
-
-  static parseMiniseed(file, isContext): any {
+  static parseMiniseed(file: any, isContext: boolean): any {
     const records = miniseed.parseDataRecords(file);
     const channelsMap = miniseed.byChannel(records);
-    const sensors = [];
-    let zTime = null, timeOrigin = null;
+    const sensors: Sensor[] = [];
+    let zTime: moment.Moment | null = null;
+    let timeOrigin = null;
     const eventData = {} as any;
     let changetimeOrigin = false;
-    channelsMap.forEach(function (this, value, key, map) {
+    channelsMap.forEach(function (this: any, value: any, key: string, map: any) {
       const sg = miniseed.createSeismogram(channelsMap.get(key));
       const header = channelsMap.get(key)[0].header;
       let valid = false;
-      if (isContext || (sg.y().includes(NaN) === false && sg.y().some(el => el !== 0))) {
+      if (isContext || (sg.y().includes(NaN) === false && sg.y().some((el: any) => el !== 0))) {
         valid = true;
       } else {
         // console.log('Warning - zero data channel: ' + sg.codes());
@@ -73,30 +63,48 @@ export default class WaveformUtil {
         console.error(sg.start());
       }
       const seismogram = valid ? filter.rMean(sg) : sg;
-      const channel: Channel = {};
-      channel.code_id = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
-      channel.sensor_code = sg.stationCode();
-      channel.channel_id = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
-      channel.sample_rate = sg.sampleRate();
-      channel.start = sg.start();  // moment object (good up to milisecond)
+
+      const code_id = isContext ? sg.codes() + '...CONTEXT' : sg.codes();
+      const sensor_code = sg.stationCode();
+      const channel_id = isContext ? sg.channelCode() + '...CONTEXT' : sg.channelCode();
+      const sample_rate = sg.sampleRate();
+      const start = sg.start();  // moment object (good up to milisecond)
       // microsecond stored separately, tenthMilli from startBTime + microsecond from Blockette 1001
-      channel.microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
-      channel.raw = seismogram;
-      channel.valid = valid;
-      channel.data = [];
+      const microsec = header.startBTime.tenthMilli * 100 + header.blocketteList[0].body.getInt8(5);
+      const raw = seismogram;
+      const data: any[] = [];
+      const duration = (seismogram.numPoints() - 1) * WaveformUtil.convXUnits / seismogram.sampleRate();  // in microseconds
+      const enabled = true;
+      const rotated = false;
       for (let k = 0; k < seismogram.numPoints(); k++) {
-        channel.data.push({
-          x: channel.microsec + (k * WaveformUtil.convXUnits / channel.sample_rate),   // trace microsecond offset
+        data.push({
+          x: microsec + (k * WaveformUtil.convXUnits / sample_rate),   // trace microsecond offset
           y: seismogram.y()[k],  // trace after mean removal
         });
       }
-      channel.duration = (seismogram.numPoints() - 1) * WaveformUtil.convXUnits / seismogram.sampleRate();  // in microseconds
-      let sensor = WaveformUtil.findValue(sensors, 'sensor_code', sg.stationCode());
+
+      const channel: Channel = {
+        code_id,
+        sensor_code,
+        channel_id,
+        sample_rate,
+        start,
+        microsec,
+        raw,
+        valid,
+        data,
+        duration,
+        enabled,
+        rotated
+      };
+
+      let sensor: any = WaveformUtil.findValue(sensors, 'sensor_code', sg.stationCode());
       if (!sensor) {
         sensor = { sensor_code: sg.stationCode(), channels: [] };
         sensors.push(sensor);
       }
-      const invalid = (sensor.channels).findIndex((x) => !x.valid);
+
+      const invalid = (sensor.channels).findIndex((x: any) => !x.valid);
       if (invalid >= 0) {
         sensor.channels[invalid] = channel;  // valid channel replaces invalid channel (placeholder)
       } else {
@@ -105,23 +113,27 @@ export default class WaveformUtil {
         }
       }
     });
-    if (zTime && zTime.isValid()) {
-      timeOrigin = moment(zTime);
-      if (changetimeOrigin) {
-        zTime.millisecond(0);
-        for (const sensor of sensors) {
-          for (const channel of sensor.channels) {
-            if (!channel.start.isSame(zTime, 'second')) {
-              console.log('***adjust time origin for sensor: ' + sensor.sensor_code + ' channel: ' + channel.channel_id);
-              const offset = channel.start.diff(zTime, 'seconds') * WaveformUtil.convXUnits;
-              channel.microsec += offset;
-              for (const datasample of channel.data) { // microsecond offset from new zeroTime
-                datasample['x'] += offset;
+
+    if (zTime) {
+      zTime = <moment.Moment>zTime;
+      if (zTime.isValid()) {
+        timeOrigin = moment(zTime);
+        if (changetimeOrigin) {
+          zTime.millisecond(0);
+          for (const sensor of sensors) {
+            for (const channel of sensor.channels) {
+              if (!channel.start.isSame(zTime, 'second')) {
+                console.log('***adjust time origin for sensor: ' + sensor.sensor_code + ' channel: ' + channel.channel_id);
+                const offset = channel.start.diff(zTime, 'seconds') * WaveformUtil.convXUnits;
+                channel.microsec += offset;
+                for (const datasample of channel.data) { // microsecond offset from new zeroTime
+                  datasample['x'] += offset;
+                }
               }
             }
           }
-        }
 
+        }
       }
     }
     eventData.sensors = sensors;
@@ -145,13 +157,13 @@ export default class WaveformUtil {
 
       for (const eventChannel of eventSensor.channels) {
         const channel = sensor.components.find(
-            el => el.code.toUpperCase() === eventChannel.channel_id.replace('...CONTEXT', '').toUpperCase());
+          el => el.code.toUpperCase() === eventChannel.channel_id.replace('...CONTEXT', '').toUpperCase());
         eventChannel.enabled = channel ? channel.enabled : true;
       }
     }
   }
 
-  static rotateComponents(seisX, seisY, seisZ, sensor: Sensor, backazimuth, incidence): any {
+  static rotateComponents(seisX: any, seisY: any, seisZ: any, sensor: Sensor, backazimuth: any, incidence: any): any {
 
     if (seisX.y().length !== seisY.y().length ||
       seisX.y().length !== seisZ.y().length ||
@@ -184,15 +196,15 @@ export default class WaveformUtil {
     const compY = sensor.components.find(el => el.code.toUpperCase() === 'Y');
     const compZ = sensor.components.find(el => el.code.toUpperCase() === 'Z');
     for (let i = 0; i < seisX.y().length; i++) {
-      const eVal = seisX.yAtIndex(i) * compX.orientation_x +
-        seisY.yAtIndex(i) * compY.orientation_x +
-        seisZ.yAtIndex(i) * compZ.orientation_x;
-      const nVal = seisX.yAtIndex(i) * compX.orientation_y +
-        seisY.yAtIndex(i) * compY.orientation_y +
-        seisZ.yAtIndex(i) * compZ.orientation_y;
-      const vVal = seisX.yAtIndex(i) * compX.orientation_z +
-        seisY.yAtIndex(i) * compY.orientation_z +
-        seisZ.yAtIndex(i) * compZ.orientation_z;
+      const eVal = seisX.yAtIndex(i) * (compX ? compX.orientation_x : 0) +
+        seisY.yAtIndex(i) * (compY ? compY.orientation_x : 0) +
+        seisZ.yAtIndex(i) * (compZ ? compZ.orientation_x : 0);
+      const nVal = seisX.yAtIndex(i) * (compX ? compX.orientation_y : 0) +
+        seisY.yAtIndex(i) * (compY ? compY.orientation_y : 0) +
+        seisZ.yAtIndex(i) * (compZ ? compZ.orientation_y : 0);
+      const vVal = seisX.yAtIndex(i) * (compX ? compX.orientation_z : 0) +
+        seisY.yAtIndex(i) * (compY ? compY.orientation_z : 0) +
+        seisZ.yAtIndex(i) * (compZ ? compZ.orientation_z : 0);
       if (backazimuth !== null && incidence !== null) { // XYZ => P SV SH
         x[i] = vVal * Math.cos(incidence)
           - eVal * Math.sin(incidence) * Math.sin(backazimuth)
@@ -263,11 +275,11 @@ export default class WaveformUtil {
       if (sensor.hasOwnProperty('orientation_valid') && sensor.orientation_valid) {
         if (xyzSensor.channels.length === 3) {
           const channelX = xyzSensor.channels.find(
-            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'X');
+            (el: any) => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'X');
           const channelY = xyzSensor.channels.find(
-            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Y');
+            (el: any) => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Y');
           const channelZ = xyzSensor.channels.find(
-            el => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
+            (el: any) => el.channel_id.replace('...CONTEXT', '').toUpperCase() === 'Z');
           if (channelX && channelY && channelZ &&
             channelX.hasOwnProperty('raw') && channelY.hasOwnProperty('raw') && channelZ.hasOwnProperty('raw') &&
             channelX.enabled && channelY.enabled && channelZ.enabled) {
@@ -287,7 +299,7 @@ export default class WaveformUtil {
   }
 
   static addCompositeTrace(sensors: Sensor[]): Sensor[] {
-    const toLower = function (x) {
+    const toLower = function (x: string) {
       return x.toLowerCase();
     };
     for (const sensor of sensors) {
@@ -309,15 +321,15 @@ export default class WaveformUtil {
       const comp3 = sensor.channels[2];
 
       if (comp1.hasOwnProperty('enabled') && !comp1.enabled ||
-          comp2.hasOwnProperty('enabled') && !comp2.enabled ||
-          comp3.hasOwnProperty('enabled') && !comp3.enabled) {
+        comp2.hasOwnProperty('enabled') && !comp2.enabled ||
+        comp3.hasOwnProperty('enabled') && !comp3.enabled) {
         console.log(`cannot create 3C composite trace for sensor with components disabled`);
         console.log(sensor);
         continue;
       }
 
       if (!comp1.start.isSame(comp2.start) || !comp1.start.isSame(comp3.start) ||
-          comp1.microsec !== comp2.microsec || comp1.microsec !== comp3.microsec) {
+        comp1.microsec !== comp2.microsec || comp1.microsec !== comp3.microsec) {
         console.log(`cannot create 3C composite trace for sensor with different channels start times`);
         console.log(sensor);
         continue;
@@ -335,19 +347,36 @@ export default class WaveformUtil {
         continue;
       }
 
-      const compositeTrace: Channel = {};
-      compositeTrace.code_id = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
+      const code_id = sensor.channels[0].code_id.endsWith('...CONTEXT') ?
         sensor.channels[0].code_id.slice(0, -11) + globals.compositeChannelCode + '...CONTEXT' :
         sensor.channels[0].code_id.slice(0, -1) + globals.compositeChannelCode;
-      compositeTrace.sensor_code = sensor.channels[0].sensor_code;
-      compositeTrace.channel_id = globals.compositeChannelCode +
+      const sensor_code = sensor.channels[0].sensor_code;
+      const channel_id = globals.compositeChannelCode +
         (sensor.channels[0].channel_id.endsWith('...CONTEXT') ? '...CONTEXT' : '');
-      compositeTrace.sample_rate = sensor.channels[0].sample_rate;
-      compositeTrace.start = sensor.channels[0].start;  // moment object (good up to milisecond)
-      compositeTrace.microsec = sensor.channels[0].microsec;
-      compositeTrace.data = [];
-      compositeTrace.duration = sensor.channels[0].duration;  // in microseconds
-      compositeTrace.enabled = true;
+      const sample_rate = sensor.channels[0].sample_rate;
+      const start = sensor.channels[0].start;  // moment object (good up to milisecond)
+      const microsec = sensor.channels[0].microsec;
+      const data: any[] = [];
+      const duration = sensor.channels[0].duration;  // in microseconds
+      const enabled = true;
+      const valid = true;
+      const rotated = true;
+      const raw = {};
+
+      const compositeTrace: Channel = {
+        code_id,
+        sensor_code,
+        channel_id,
+        sample_rate,
+        start,
+        microsec,
+        data,
+        duration,
+        enabled,
+        valid,
+        rotated,
+        raw
+      };
       for (let k = 0; k < sensor.channels[0].data.length; k++) {
         let compositeValue = 0, sign = 1;
         for (let j = 0; j < 3; j++) {
@@ -434,11 +463,12 @@ export default class WaveformUtil {
       }
 
       sensor.picks = Array.isArray(sensor.picks) ? sensor.picks : [];
-
-      for (const pickKey of Object.values(PredictedPickKey)) {
+      const predictedPickKeyValues = <PredictedPickKey[]>Object.values(PredictedPickKey);
+      for (const pickKey of predictedPickKeyValues) {
         let picktime_utc: string;
         const phase = pickKey.toUpperCase();
-        const ray = waveformSensor.preferred_ray[phase];
+        // @ts-ignore
+        const ray: any = waveformSensor.preferred_ray[phase];
 
         if (ray !== null && ray.phase === phase) {
           picktime_utc = WaveformUtil.addSecondsToUtc
@@ -450,7 +480,9 @@ export default class WaveformUtil {
             console.error(`Predicted picks outside the display time window`);
           }
 
+          // @ts-ignore
           sensor[pickKey + '_ray_length'] = ray.ray_length;
+          // @ts-ignore
           sensor[pickKey + '_predicted_time_utc'] = picktime_utc;
           sensor.picks.push({
             value: WaveformUtil.calculateTimeOffsetMicro(picktime_utc, timeStart),  // relative to timeOrigin's full second
@@ -460,7 +492,7 @@ export default class WaveformUtil {
             color: pickKey === PredictedPickKey.p ? 'blue' : pickKey === PredictedPickKey.s ? 'red' : 'black',
             label: pickKey,
             labelAlign: 'far',
-            labelFormatter: (e) => e.stripLine.opacity === 0 ? '' : e.stripLine.label,
+            labelFormatter: (e: any) => e.stripLine.opacity === 0 ? '' : e.stripLine.label,
             pickType: PickType.TRAVELTIME
           });
         }
@@ -477,7 +509,7 @@ export default class WaveformUtil {
 
     sensors.forEach(val => {
       if (val.picks) {
-        val.picks = val.picks.filter(pick => pick.pickType !== PickType.ARRIVAL);
+        val.picks = val.picks.filter((pick: any) => pick.pickType !== PickType.ARRIVAL);
       }
     });
 
@@ -486,7 +518,7 @@ export default class WaveformUtil {
 
 
   static addArrivalsPickDataToSensors(sensors: Sensor[], arrivals: Arrival[], origin: moment.Moment): Sensor[] {
-    const missingSensors = [];
+    const missingSensors: number[] = [];
     for (const arrival of arrivals) {
 
       if (!arrival.pick) {
@@ -558,10 +590,15 @@ export default class WaveformUtil {
         const predicted_key = pickKey + '_predicted_time_utc';
         const pick_key = pickKey.toUpperCase() + '_pick_time_utc';
         if (sensor.hasOwnProperty(predicted_key) && sensor.hasOwnProperty(pick_key)) {
+
+          // @ts-ignore
           const pickTime = moment(sensor[pick_key]);
+          // @ts-ignore
           const referenceTime = moment(sensor[predicted_key]);
           if (pickTime.isValid() && referenceTime.isValid()) {
+            // @ts-ignore
             const microsec = sensor[pick_key].slice(-7, -1);
+            // @ts-ignore
             const microsec_ref = sensor[predicted_key].slice(-7, -1);
             const offset = pickTime.millisecond(0)
               .diff(referenceTime.millisecond(0), 'seconds') * WaveformUtil.convXUnits;

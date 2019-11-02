@@ -10,7 +10,7 @@ export class WebSocketService {
 
   constructor() { }
 
-  private _subject: Subject<any>;
+  private _subject!: Subject<any>;
   private _connected$ = new Subject<boolean>();
 
   public connect<T>(url: string): Subject<T> {

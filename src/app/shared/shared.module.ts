@@ -119,8 +119,7 @@ const DIALOGS = [
   EventWaveformFilterDialogComponent
 ];
 
-const SHEETS = [
-];
+const SHEETS: any[] = [];
 
 const PIPES = [
   DiffNumber,

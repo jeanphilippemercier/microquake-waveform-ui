@@ -26,26 +26,26 @@ import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-di
 
 export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
-  params$: Subscription;
-  stationId: number;
-  model: Partial<Station>;
-  sites: Site[];
+  params$!: Subscription;
+  stationId!: number;
+  model!: Partial<Station>;
+  sites!: Site[];
 
   pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
   loading = false;
   maintenanceStatuses: MaintenanceStatus[] = [];
   maintenanceCategories: MaintenanceCategory[] = [];
-  maintenanceEvents: MaintenanceEvent[];
+  maintenanceEvents!: MaintenanceEvent[];
   maintenanceEventsCount = 0;
-  maintenanceEventsCursorPrevious: string;
-  maintenanceEventsCursorNext: string;
+  maintenanceEventsCursorPrevious!: string | null;
+  maintenanceEventsCursorNext!: string | null;
   maintenanceEventsInitialized = false;
 
-  sensorsDataSource: Sensor[];
+  sensorsDataSource!: Sensor[];
   sensorsCount = 0;
-  sensorsCursorPrevious: string;
-  sensorsCursorNext: string;
+  sensorsCursorPrevious!: string | null;
+  sensorsCursorNext!: string | null;
   sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
   sensorsInitialized = false;
 

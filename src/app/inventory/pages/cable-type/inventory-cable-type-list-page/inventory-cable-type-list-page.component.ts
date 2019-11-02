@@ -43,7 +43,9 @@ export class InventoryCableTypeListPageComponent extends ListPage<CableType> {
   }
 
   onModelCreated($event: CableType) {
-    this.dataSource.unshift($event);
+    if (this.dataSource) {
+      this.dataSource.unshift($event);
+    }
   }
 
 }

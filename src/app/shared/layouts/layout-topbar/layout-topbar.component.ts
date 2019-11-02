@@ -9,7 +9,7 @@ import { MatDrawer } from '@angular/material/sidenav';
 })
 export class LayoutTopbarComponent {
 
-  @ViewChild('drawer', { static: false }) drawer: MatDrawer;
+  @ViewChild('drawer', { static: false }) drawer!: MatDrawer;
   today = new Date();
 
   @Input() width = '100%';
@@ -25,9 +25,5 @@ export class LayoutTopbarComponent {
 
   async drawerClick() {
     await this._menuService.toggle();
-  }
-
-  onSidebarButtonClick($event) {
-    this.eventSidebarOpenedChange.emit($event);
   }
 }

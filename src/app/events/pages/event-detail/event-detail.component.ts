@@ -20,12 +20,10 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 })
 export class EventDetailComponent implements OnInit, OnDestroy {
 
-  paramsSub: Subscription;
-  events: IEvent[];
-  eventsDailySummary: EventsDailySummary[];
-  sites: Site[];
-  site: Site;
-  network: Network;
+  paramsSub!: Subscription;
+  events!: IEvent[];
+  eventsDailySummary!: EventsDailySummary[];
+
   today = moment().startOf('day');
 
   public set currentEvent(v: IEvent) {
@@ -37,12 +35,12 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return this._currentEvent;
   }
 
-  private _currentEvent: IEvent;
-  currentEventInfo: IEvent;
+  private _currentEvent!: IEvent;
+  currentEventInfo!: IEvent;
 
-  initialized: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  pooling: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  currentDay: BehaviorSubject<EventsDailySummary> = new BehaviorSubject(null);
+  initialized: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  pooling: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  currentDay: BehaviorSubject<EventsDailySummary | null> = new BehaviorSubject<EventsDailySummary | null>(null);
   eventUpdateDialogOpened = false;
   eventFilterDialogOpened = false;
 
@@ -50,7 +48,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   loadingEventList = false;
   loadingCurrentEventAndList = false;
 
-  eventListQuery: EventQuery;
+  eventListQuery!: EventQuery;
 
   numberOfChangesInFilter = 0;
 
@@ -58,7 +56,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   timezone = '+08:00';
 
   changeDetectCatalog = 0;
-  interactiveProcessingSub: Subscription;
+  interactiveProcessingSub!: Subscription;
 
   acceptedEvaluationStatuses: EvaluationStatus[] = [
     EvaluationStatus.CONFIRMED,
@@ -191,8 +189,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         const currentDay = this.currentDay.getValue();
 
         if (currentDay && !currentDay.upToDate) {
-          const found = this.eventsDailySummary ? this.eventsDailySummary.find(val => val.dayDate.isSame(currentDay.dayDate)) : null;
-          this.loadEventsForCurrentlySelectedDay(found);
+          const found = this.eventsDailySummary ? this.eventsDailySummary.find((val: EventsDailySummary) => val.dayDate && val.dayDate.isSame(currentDay.dayDate)) : null;
+          this.loadEventsForCurrentlySelectedDay(found ? found : null);
         }
 
       } else {
@@ -250,7 +248,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           try {
             this.loadingCurrentEvent = true;
             this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-            let clickedEvent: IEvent;
+            let clickedEvent: IEvent | null = null;
 
             // try to find event in catalog events (already loaded events)
             if (this.events) {
@@ -340,7 +338,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       const eventDayDate = moment.utc($event.time_utc).utcOffset(this.timezone).startOf('day');
       const addedEventInExistingDay = this.eventsDailySummary.some(day => {
 
-        if (!day.dayDate.isSame(eventDayDate)) {
+        if (day.dayDate && !day.dayDate.isSame(eventDayDate)) {
           return false;
         }
 
@@ -353,7 +351,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
         const addedEvent = day.events.some((ev, idx) => {
           if (eventDate.isAfter(moment.utc(ev.time_utc).utcOffset(this.timezone))) {
-            day.events.splice(idx, 0, $event);
+            if (day.events) {
+              day.events.splice(idx, 0, $event);
+            }
             return true;
           }
           return false;
@@ -409,6 +409,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return day.events && day.events.some(ev => {
         if (ev.event_resource_id === event.event_resource_id) {
           if (JSON.stringify(ev) !== JSON.stringify(event)) {
+            // @ts-ignore
             Object.keys(event).forEach((key) => (event[key] === null) && delete ev[key]);
             day.modification_timestamp_max = event.modification_timestamp;
 
@@ -471,7 +472,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   async dayChanged($event: moment.Moment) {
     try {
-      const found = this.eventsDailySummary ? this.eventsDailySummary.find(val => val.dayDate.isSame($event)) : null;
+      const found = this.eventsDailySummary ? this.eventsDailySummary.find((val: EventsDailySummary) => val.dayDate && val.dayDate.isSame($event)) : null;
 
       if (found) {
         this.currentDay.next(found);
@@ -488,7 +489,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadEventsForCurrentlySelectedDay(selectedDay: EventsDailySummary) {
+  async loadEventsForCurrentlySelectedDay(selectedDay: EventsDailySummary | null) {
 
     if (!selectedDay) {
       return;

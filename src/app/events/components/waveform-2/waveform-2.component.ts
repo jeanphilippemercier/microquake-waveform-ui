@@ -2,14 +2,16 @@ import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, OnDestroy }
 import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
+// @ts-ignore
 import * as CanvasJS from '../../../../assets/js/canvasjs.min.js';
+// @ts-ignore
 import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 
 import WaveformUtil from '@core/utils/waveform-util';
 import { globals } from '@src/globals';
 import {
-  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap, InteractiveProcessing
+  IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap, InteractiveProcessing, Channel
 } from '@interfaces/event.interface';
 import { Sensor, MotionType, GroundMotionType } from '@interfaces/inventory.interface';
 import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
@@ -51,16 +53,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
   get event(): IEvent {
     return this._event;
   }
-  private _event: IEvent;
+  private _event!: IEvent;
 
   @Input() timezone = '+00:00';
-  @ViewChild('contextMenuChart', { static: false }) private _menu: ElementRef;
-  @ViewChild('waveformContainer', { static: false }) private _waveformContainer: ElementRef;
+  @ViewChild('contextMenuChart', { static: false }) private _menu!: ElementRef;
+  @ViewChild('waveformContainer', { static: false }) private _waveformContainer!: ElementRef;
 
   private _passband = filter.BAND_PASS;
-  private _bHoldEventTrigger: boolean;
-  private _xViewPortMinStack: any[];
-  private _xViewportMaxStack: any[];
+  private _bHoldEventTrigger!: boolean;
+  private _xViewPortMinStack!: any[];
+  private _xViewportMaxStack!: any[];
   private _unsubscribe = new Subject<void>();
   contextMenuChartVisible = false;
   isContextPickingMenuVisible = true;
@@ -80,7 +82,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   // hashMap for all sensors {sensor_code: <position in allSensors array>}
   // allSensorsMap: { [key: string]: number } = {};
   // context sensor
-  contextSensor: Sensor[];
+  contextSensor!: Sensor[];
 
   /*
   * STATIONS
@@ -96,12 +98,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
   allArrivals: Arrival[] = [];
   allArrivalsChanged: ArrivalPartial[] = [];
 
-  waveformSensors: WaveformSensor[];
+  waveformSensors!: WaveformSensor[];
   lastPicksState: any = null;
-  timeOrigin: moment.Moment;
-  contextTimeOrigin: moment.Moment;
-  timeEnd: moment.Moment;
-  waveformOrigin: Origin;
+  timeOrigin!: moment.Moment;
+  contextTimeOrigin!: moment.Moment;
+  timeEnd!: moment.Moment;
+  waveformOrigin!: Origin;
   options: any;
   picksBias = 0;
 
@@ -110,16 +112,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
   lastSelectedXPosition = -1;
   lastDownTarget: any;  // last mouse down selection
   // lastMouseOver: any;  // last mouse over channel index
-  eventTimeOriginHeader: string;
+  eventTimeOriginHeader!: string;
 
-  chartHeight: number;
+  chartHeight!: number;
   pageOffsetX = 0;
   pageOffsetY = 30;
-  currentEventId: string;
+  currentEventId!: string;
 
   ContextMenuChartAction = ContextMenuChartAction;
   waveformShow = true;
-  waveformInfo: WaveformQueryResponse;
+  waveformInfo!: WaveformQueryResponse;
 
   constructor(
     public waveformService: WaveformService,
@@ -137,7 +139,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         skip(1),
         takeUntil(this._unsubscribe)
       )
-      .subscribe((val: IEvent) => {
+      .subscribe((val: IEvent | null) => {
+        if (val === null) {
+          return;
+        }
         this.event = val;
       });
 
@@ -612,8 +617,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (reset) { // first page , new event
       this._resetZoomStack();
     } else {             // remember zoom history
-      this._xViewPortMinStack = this.activeSensors[0].chart.options.viewportMinStack;
-      this._xViewportMaxStack = this.activeSensors[0].chart.options.viewportMaxStack;
+      if (
+        this.activeSensors &&
+        this.activeSensors[0] &&
+        this.activeSensors[0].chart &&
+        this.activeSensors[0].chart.options
+      ) {
+        if (this.activeSensors[0].chart.options.viewportMinStack) {
+          this._xViewPortMinStack = this.activeSensors[0].chart.options.viewportMinStack;
+        }
+        if (this.activeSensors[0].chart.options.viewportMaxStack) {
+          this._xViewportMaxStack = this.activeSensors[0].chart.options.viewportMaxStack;
+        }
+      }
     }
     this._destroyCharts();
     this._renderPage();
@@ -671,7 +687,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         if (activeSensor.chart !== undefined) {
           activeSensor.chart.destroy();
           const elem = document.getElementById(activeSensor.container);
-          if (elem) {
+          if (elem && elem.parentElement) {
             elem.parentElement.removeChild(elem);
           }
         }
@@ -696,7 +712,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       const data = [];
       const hasDisabledChannels = (!this.activeSensors[i].enabled) ||
-        (this.activeSensors[i].channels.findIndex(el => el.enabled === false) === -1 ? false : true);
+        (this.activeSensors[i].channels.findIndex((el: Channel) => el.enabled === false) === -1 ? false : true);
       for (const channel of this.activeSensors[i].channels) {
         if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode) ||
           (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
@@ -718,6 +734,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
                 channel.channel_id : channel.channel_id + ' (disabled)',
               type: 'line',
               markerType: 'none',
+              // @ts-ignore
               color: globals.linecolor[channel.channel_id.toUpperCase()],
               lineThickness: globals.lineThickness,
               showInLegend: true,
@@ -756,7 +773,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           zoomEnabled: true,
           zoomType: 'x',
           animationEnabled: false,
-          rangeChanged: (e) => {
+          rangeChanged: (e: any) => {
             this._bHoldEventTrigger = true;
             if (!e.chart.options.viewportMinStack) {
               e.chart.options.viewportMinStack = [];
@@ -811,13 +828,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
             includeZero: true,
             labelAutoFit: false,
             labelWrap: false,
-            labelFormatter: (e) => {
+            labelFormatter: (e: any) => {
               return e.value / WaveformUtil.convXUnits + ' s';
             },
             crosshair: {
               enabled: false,
               snapToDataPoint: true,
-              labelFormatter: (e) => {
+              labelFormatter: (e: any) => {
                 return e.value / WaveformUtil.convXUnits;
               },
             },
@@ -832,7 +849,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             lineColor: globals.axis.lineColor,
             interval: yMax / 2,
             includeZero: true,
-            labelFormatter: (e) => {
+            labelFormatter: (e: any) => {
               const val = e.value * scaleY;
               if (Math.abs(Number(val.toPrecision(1))) < 10) {
                 return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
@@ -842,7 +859,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             crosshair: {
               enabled: false,
               snapToDataPoint: true,
-              labelFormatter: (e) => {
+              labelFormatter: (e: any) => {
                 const val = e.value * scaleY;
                 return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
               },
@@ -852,6 +869,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         };
       }
       this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, options);
+      // @ts-ignore
       this.activeSensors[i].chart.render();
     }
   }
@@ -859,15 +877,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _getSensorTitle(sensor: Sensor) {
     let sensorTitleText = ``;
     try {
-      const station = this.waveformService.allStations[this.waveformService.allStationsMap[sensor.station.id]];
+      const station = sensor && sensor.station && sensor.station.id ? this.waveformService.allStations[this.waveformService.allStationsMap[sensor.station.id]] : null;
       sensorTitleText += station ? station.code : `??`;
     } catch (err) {
       sensorTitleText += `??`;
     }
 
-    const pkey = PredictedPickKey.p + '_ray_length';
-    const skey = PredictedPickKey.s + '_ray_length';
-    const distance = sensor[pkey] ? sensor[pkey] : sensor[skey] ? sensor[skey] : null;
+    const distance = sensor.p_ray_length ? sensor.p_ray_length : sensor.s_ray_length ? sensor.s_ray_length : null;
 
     sensorTitleText += `.`;
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
@@ -946,23 +962,25 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
 
         if (e.keyCode === 39) {  // right arrow moves pick to right
-          if (this.waveformService.pickingMode.getValue() !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
+          const pickingMode = this.waveformService.pickingMode.getValue();
+          if (pickingMode !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), step * 10, true, true);
+              this._movePick(this.lastDownTarget, pickingMode, step * 10, true, true);
             } else { // by step
-              this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), step, true, true);
+              this._movePick(this.lastDownTarget, pickingMode, step, true, true);
             }
           }
         }
 
         if (e.keyCode === 37) {  // left arrow moves pick to left
-          if (this.waveformService.pickingMode.getValue() !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
+          const pickingMode = this.waveformService.pickingMode.getValue();
+          if (pickingMode !== null && this.lastDownTarget !== null && this.lastDownTarget > -1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.shiftKey) { // shift key - fast mode - by 10 * step
-              this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), -step * 10, true, true);
+              this._movePick(this.lastDownTarget, pickingMode, -step * 10, true, true);
             } else { // by step
-              this._movePick(this.lastDownTarget, this.waveformService.pickingMode.getValue(), -step, true, true);
+              this._movePick(this.lastDownTarget, pickingMode, -step, true, true);
             }
           }
         }
@@ -1026,6 +1044,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             type: 'line',
             markerType: 'none',
             color: this.waveformService.displayComposite.getValue() ? globals.context.linecolor :
+              // @ts-ignore
               globals.linecolor[channel.channel_id.toUpperCase().replace('...CONTEXT', '')],
             lineThickness: globals.lineThickness,
             showInLegend: true,
@@ -1092,13 +1111,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
         includeZero: true,
         labelAutoFit: false,
         labelWrap: false,
-        labelFormatter: (e) => {
+        labelFormatter: (e: any) => {
           return e.value / WaveformUtil.convXUnits + ' s';
         },
         crosshair: {
           enabled: false,
           snapToDataPoint: true,
-          labelFormatter: (e) => {
+          labelFormatter: (e: any) => {
             return e.value / WaveformUtil.convXUnits;
           },
         },
@@ -1117,7 +1136,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         gridThickness: 0,
         interval: yMax / 2,
         includeZero: true,
-        labelFormatter: (e) => {
+        labelFormatter: (e: any) => {
           const val = e.value * scaleY;
           if (Math.abs(Number(val.toPrecision(1))) < 10) {
             return val === 0 ? 0 : Number(val.toPrecision(1)).toFixed(3);
@@ -1127,7 +1146,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         crosshair: {
           enabled: false,
           snapToDataPoint: true,
-          labelFormatter: (e) => {
+          labelFormatter: (e: any) => {
             const val = e.value * scaleY;
             return val === 0 ? 0 : CanvasJS.formatNumber(val, '##0.000');
           },
@@ -1136,7 +1155,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       data: data
     };
     this.activeSensors[i].chart = new CanvasJS.Chart(this.activeSensors[i].container, optionsContext);
-
+    // @ts-ignore
     this.activeSensors[i].chart.render();
   }
 
@@ -1156,35 +1175,36 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if (j < this.activeSensors.length - 1) {    // exclude context trace
 
         // Create or move picks
-        canvas.addEventListener('click', (e: MouseEvent) => {
+        canvas.addEventListener('click', ((e: MouseEvent) => {
 
           if (this.selected === -1) { // ignore if we have a drag event
             const ind = j;
             const chart = this.activeSensors[ind].chart;
-
-            const relX = e.offsetX; // - 0; // parentOffset.left;
-            if (this.waveformService.pickingMode.getValue() === 'P') {
-              // create or move P pick on Left mouse click in P picking mode
-              if (!this._bHoldEventTrigger) {
-                this._addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
-              }
-            } else if (this.waveformService.pickingMode.getValue() === 'S') {
-              // create or move S pick on Left mouse click in S picking mode
-              if (!this._bHoldEventTrigger) {
-                this._addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
-              }
-            } else {
-              if (e.ctrlKey) {  // create or move P on Ctrl + left mouse button click
-                this._addPick(ind, 'P', chart.axisX[0].convertPixelToValue(relX));
-              } else if (e.shiftKey) {   // create or move S pick on Shift + left mouse button click
-                this._addPick(ind, 'S', chart.axisX[0].convertPixelToValue(relX));
+            if (chart) {
+              const relX = e.offsetX; // - 0; // parentOffset.left;
+              if (this.waveformService.pickingMode.getValue() === PickKey.P) {
+                // create or move P pick on Left mouse click in P picking mode
+                if (!this._bHoldEventTrigger) {
+                  this._addPick(ind, PickKey.P, chart.axisX[0].convertPixelToValue(relX));
+                }
+              } else if (this.waveformService.pickingMode.getValue() === PickKey.S) {
+                // create or move S pick on Left mouse click in S picking mode
+                if (!this._bHoldEventTrigger) {
+                  this._addPick(ind, PickKey.S, chart.axisX[0].convertPixelToValue(relX));
+                }
+              } else {
+                if (e.ctrlKey) {  // create or move P on Ctrl + left mouse button click
+                  this._addPick(ind, PickKey.P, chart.axisX[0].convertPixelToValue(relX));
+                } else if (e.shiftKey) {   // create or move S pick on Shift + left mouse button click
+                  this._addPick(ind, PickKey.S, chart.axisX[0].convertPixelToValue(relX));
+                }
               }
             }
           }
-        });
+        }) as (e: Event) => void);
 
         // Drag picks
-        canvas.addEventListener('mousedown', (e: MouseEvent) => {
+        canvas.addEventListener('mousedown', ((e: MouseEvent) => {
           const idx = j;
           this.lastDownTarget = idx;
 
@@ -1198,80 +1218,87 @@ export class Waveform2Component implements OnInit, OnDestroy {
           const relX = e.offsetX;
           const relY = e.offsetY;
 
-          if (e.button === 0) {  // drag active on left mouse button only
-            // check if we are on a pick
-            // Get the selected stripLine & change the cursor
-            const pickLines = <canvasjs.ChartStrip[]>chart.axisX[0].stripLines;
-            for (let i = 0; i < pickLines.length; i++) {
-              const label = pickLines[i].label;
-              if (label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
-                const chartStripBounds = <canvasjs.ChartStripBounds>pickLines[i].get('bounds');
+          if (chart) {
+            if (e.button === 0) {  // drag active on left mouse button only
+              // check if we are on a pick
+              // Get the selected stripLine & change the cursor
+              const pickLines = <canvasjs.ChartStrip[]>chart.axisX[0].stripLines;
+              for (let i = 0; i < pickLines.length; i++) {
+                const label = pickLines[i].label;
+                if (label && label !== label.toLowerCase()) { // exclude predicted picks (lowercase labels)
+                  const chartStripBounds = <canvasjs.ChartStripBounds>pickLines[i].get('bounds');
 
-                if (chartStripBounds &&
-                  relX > chartStripBounds.x1 - globals.snapDistance &&
-                  relX < chartStripBounds.x2 + globals.snapDistance &&
-                  relY > chartStripBounds.y1 &&
-                  relY < chartStripBounds.y2) {  // move pick
-                  this._savePicksState(idx, this.activeSensors[idx].sensor_code, this.activeSensors[idx].picks);
+                  if (chartStripBounds &&
+                    relX > chartStripBounds.x1 - globals.snapDistance &&
+                    relX < chartStripBounds.x2 + globals.snapDistance &&
+                    relY > chartStripBounds.y1 &&
+                    relY < chartStripBounds.y2) {  // move pick
+                    this._savePicksState(idx, this.activeSensors[idx].sensor_code, this.activeSensors[idx].picks);
 
-                  this.selected = i;
-                  break;
+                    this.selected = i;
+                    break;
+                  }
                 }
               }
-            }
-          } else if (e.button === 2) {  // remove P or S on Right mouse Click
-            if (this.waveformService.pickingMode.getValue() === 'P') {
-              this._deletePicks(idx, 'P', null); // remove P picks on Right mouse click in P picking mode
-            } else if (this.waveformService.pickingMode.getValue() === 'S') {
-              this._deletePicks(idx, 'S', null); // remove S picks on Right mouse click in S picking mode
-            } else {
-              if (e.ctrlKey) {
-                this._deletePicks(idx, 'P', null); // remove P on Ctrl + Right mouse button click
-              } else if (e.shiftKey) {
-                this._deletePicks(idx, 'S', null); // remove S on Shift + Right mouse button click
+            } else if (e.button === 2) {  // remove P or S on Right mouse Click
+              if (this.waveformService.pickingMode.getValue() === PickKey.P) {
+                this._deletePicks(idx, PickKey.P, null); // remove P picks on Right mouse click in P picking mode
+              } else if (this.waveformService.pickingMode.getValue() === PickKey.S) {
+                this._deletePicks(idx, PickKey.S, null); // remove S picks on Right mouse click in S picking mode
+              } else {
+                if (e.ctrlKey) {
+                  this._deletePicks(idx, PickKey.P, null); // remove P on Ctrl + Right mouse button click
+                } else if (e.shiftKey) {
+                  this._deletePicks(idx, PickKey.S, null); // remove S on Shift + Right mouse button click
+                }
               }
+              this.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
             }
-            this.lastSelectedXPosition = chart.axisX[0].convertPixelToValue(relX);
           }
-        });
+        }) as (e: Event) => void);
 
         // move selected stripLine
-        canvas.addEventListener('mousemove', (e: MouseEvent) => {
+        canvas.addEventListener('mousemove', ((e: MouseEvent) => {
 
           if (this.selected !== -1) {
             this._bHoldEventTrigger = true;
             const idx = j;
             const chart = this.activeSensors[idx].chart; // this.activeSensors[idx].chart;
+            if (chart) {
 
-            const relX = e.offsetX;
-            const data = chart.options.data[0].dataPoints;
-            const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
-            const pickType = chart.options.axisX.stripLines[this.selected].label;
-            const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-            const otherPick = WaveformUtil.findValue(this.activeSensors[idx].picks, 'label', otherPickType);
+              const relX = e.offsetX;
+              const data = chart.options.data[0].dataPoints;
+              const position = Math.round(chart.axisX[0].convertPixelToValue(relX));
+              // @ts-ignore
+              const pickType = chart.options.axisX.stripLines[this.selected].label;
+              const otherPickType = pickType === PickKey.P ? PickKey.S : pickType === PickKey.S ? PickKey.P : '';
+              const otherPick = WaveformUtil.findValue(this.activeSensors[idx].picks, 'label', otherPickType);
 
-            if (otherPick) {
-              if (pickType === 'P') {
-                if (position > otherPick.value) {
-                  return;
-                }
-              } else if (pickType === 'S') {
-                if (position < otherPick.value) {
-                  return;
+              if (otherPick) {
+                if (pickType === PickKey.P) {
+                  if (position > otherPick.value) {
+                    return;
+                  }
+                } else if (pickType === PickKey.S) {
+                  if (position < otherPick.value) {
+                    return;
+                  }
                 }
               }
-            }
-            if (position >= data[0].x && position <= data[data.length - 1].x) {
-
-              chart.options.axisX.stripLines[this.selected].value = position;
-              this.activeSensors[idx].picks = chart.options.axisX.stripLines;
-              chart.options.zoomEnabled = false;
-              chart.render();
+              // @ts-ignore
+              if (position >= data[0].x && position <= data[data.length - 1].x) {
+                // @ts-ignore
+                chart.options.axisX.stripLines[this.selected].value = position;
+                // @ts-ignore
+                this.activeSensors[idx].picks = chart.options.axisX.stripLines;
+                chart.options.zoomEnabled = false;
+                chart.render();
+              }
             }
           }
-        });
+        }) as (e: Event) => void);
 
-        canvas.addEventListener('mouseup', (e: MouseEvent) => {
+        canvas.addEventListener('mouseup', ((e: MouseEvent) => {
           setTimeout(() => {
             this._bHoldEventTrigger = false;
           }, 500);
@@ -1282,14 +1309,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
             const idx = j;
             const chart = this.activeSensors[idx].chart;
             // chart.options.axisX.stripLines = this.activeSensors[i].picks;
-
-            chart.options.zoomEnabled = true;   // turn zoom back on
-            chart.render();
-            this._waveformContainer.nativeElement.focus();
+            if (chart) {
+              chart.options.zoomEnabled = true;   // turn zoom back on
+              chart.render();
+              this._waveformContainer.nativeElement.focus();
+            }
           }
-        });
+        }) as (e: Event) => void);
 
-        canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+        canvas.addEventListener('contextmenu', ((e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
             e.preventDefault();
@@ -1302,22 +1330,22 @@ export class Waveform2Component implements OnInit, OnDestroy {
             e.preventDefault();
             return false;
           }
-        });
+        }) as (e: Event) => boolean);
 
       }  // not on context trace
 
       if (j === this.activeSensors.length - 1) {       // on context trace
 
-        canvas.addEventListener('mousedown', (e: MouseEvent) => {
+        canvas.addEventListener('mousedown', ((e: MouseEvent) => {
 
           if (this.contextMenuChartVisible) {
             this.selectedContextMenu = -1;
             this._toggleContextMenuChart('hide');
             return;
           }
-        });
+        }) as (e: Event) => void);
 
-        canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+        canvas.addEventListener('contextmenu', ((e: MouseEvent) => {
           if (this.waveformService.pickingMode.getValue() !== 'P' &&
             this.waveformService.pickingMode.getValue() !== 'S') {
             e.preventDefault();
@@ -1330,22 +1358,23 @@ export class Waveform2Component implements OnInit, OnDestroy {
             e.preventDefault();
             return false;
           }
-        });
+        }) as (e: Event) => boolean);
 
       }
 
 
       // Wheel events: zoomp/pan, move picks in picking mode
-      canvas.addEventListener('wheel', (e: WheelEvent) => {
+      canvas.addEventListener('wheel', ((e: WheelEvent) => {
         const idx = j;
         // in pick mode wheel up moves pick left, wheel down moves pick right
-        if (this.waveformService.pickingMode.getValue() !== null && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        const pickMode = this.waveformService.pickingMode.getValue();
+        if (pickMode !== null && !e.ctrlKey && !e.shiftKey && !e.altKey) {
           if (idx < this.activeSensors.length - 1) {
             const step = globals.pickTimeStep * 1000; // in microseconds
             if (e.deltaY < 0) { // scrolling up
-              this._movePick(idx, this.waveformService.pickingMode.getValue(), -step, true, false);
+              this._movePick(idx, pickMode, -step, true, false);
             } else if (e.deltaY > 0) { // scrolling down
-              this._movePick(idx, this.waveformService.pickingMode.getValue(), step, true, false);
+              this._movePick(idx, pickMode, step, true, false);
             }
           }
         }
@@ -1355,78 +1384,89 @@ export class Waveform2Component implements OnInit, OnDestroy {
           e.preventDefault();
 
           const chart = this.activeSensors[idx].chart;
+          if (chart) {
 
-          const relOffsetX = e.clientX - this.pageOffsetX;
-          const relOffsetY = e.clientY - this.pageOffsetY - idx * this.chartHeight;
+            const relOffsetX = e.clientX - this.pageOffsetX;
+            const relOffsetY = e.clientY - this.pageOffsetY - idx * this.chartHeight;
 
-          if (relOffsetX < chart.plotArea.x1 ||
-            relOffsetX > chart.plotArea.x2 ||
-            relOffsetY < chart.plotArea.y1 ||
-            relOffsetY > chart.plotArea.y2) {
-            return;
-          }
-
-          const axis = (e.shiftKey || e.altKey) ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
-
-          const viewportMin = +axis.get('viewportMinimum'),
-            viewportMax = +axis.get('viewportMaximum'),
-            interval = (viewportMax - viewportMin) / globals.zoomSteps;  // control zoom step
-          // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
-
-          let newViewportMin, newViewportMax;
-
-          if (e.ctrlKey) { // amplitude zoom
-            if (e.deltaY < 0) { // wheel down
-              newViewportMin = viewportMin + interval;
-              newViewportMax = viewportMax - interval;
-            } else if (e.deltaY > 0) { // wheel up
-              newViewportMin = viewportMin - interval;
-              newViewportMax = viewportMax + interval;
+            if (relOffsetX < chart.plotArea.x1 ||
+              relOffsetX > chart.plotArea.x2 ||
+              relOffsetY < chart.plotArea.y1 ||
+              relOffsetY > chart.plotArea.y2) {
+              return;
             }
-          } else if (e.shiftKey) {  // time zoom
-            const frac = 2 * ((chart.plotArea.x1 + chart.plotArea.x2) / 2 - relOffsetX)
-              / (chart.plotArea.x2 - chart.plotArea.x1);
 
-            if (e.deltaY < 0) { // wheel down
-              newViewportMin = viewportMin + interval * (1 - frac);
-              newViewportMax = viewportMax - interval * (1 + frac);
-            } else if (e.deltaY > 0) { // wheel up
-              newViewportMin = viewportMin - interval * (1 - frac);
-              newViewportMax = viewportMax + interval * (1 + frac);
-            }
-          } else if (e.altKey) {  // time pan
-            if (e.deltaY < 0) {
-              newViewportMin = viewportMin - interval;
-              newViewportMax = viewportMax - interval;
-            } else if (e.deltaY > 0) {
-              newViewportMin = viewportMin + interval;
-              newViewportMax = viewportMax + interval;
-            }
-          }
+            const axis = (e.shiftKey || e.altKey) ? chart.axisX[0] : e.ctrlKey ? chart.axisY[0] : null;
 
-          if ((newViewportMax - newViewportMin) > (2 * interval)) {
-            if (this.waveformService.zoomAll.getValue()
-              && idx < this.activeSensors.length - 1) {  // exclude context trace
-              if (e.shiftKey || e.altKey) {
-                this._xZoomAllCharts(newViewportMin, newViewportMax);
-              } else {
-                const factor = newViewportMax / viewportMax;
-                this._yZoomAllCharts(factor);
+            const viewportMinimum = axis && +axis.get('viewportMinimum');
+            const viewportMaximum = axis && +axis.get('viewportMaximum');
+            const viewportMin = viewportMinimum ? viewportMinimum : 0;
+            const viewportMax = viewportMaximum ? viewportMaximum : 0;
+            const interval = (viewportMax - viewportMin) / globals.zoomSteps;  // control zoom step
+            // interval = (axis.get('maximum') - axis.get('minimum'))/zoomSteps;  // alternate control zoom step
+
+            let newViewportMin = 0;
+            let newViewportMax = 0;
+
+            if (e.ctrlKey) { // amplitude zoom
+              if (e.deltaY < 0) { // wheel down
+                newViewportMin = viewportMin + interval;
+                newViewportMax = viewportMax - interval;
+              } else if (e.deltaY > 0) { // wheel up
+                newViewportMin = viewportMin - interval;
+                newViewportMax = viewportMax + interval;
               }
-            } else {  // zoom selected trace only
-              if (newViewportMin >= axis.get('minimum') && newViewportMax <= axis.get('maximum')) {
-                axis.set('viewportMinimum', newViewportMin, false);
-                axis.set('viewportMaximum', newViewportMax, false);
-                if (e.ctrlKey) { // Y axis
-                  axis.set('interval', newViewportMax / 2, false);
+            } else if (e.shiftKey) {  // time zoom
+              const frac = 2 * ((chart.plotArea.x1 + chart.plotArea.x2) / 2 - relOffsetX)
+                / (chart.plotArea.x2 - chart.plotArea.x1);
+
+              if (e.deltaY < 0) { // wheel down
+                newViewportMin = viewportMin + interval * (1 - frac);
+                newViewportMax = viewportMax - interval * (1 + frac);
+              } else if (e.deltaY > 0) { // wheel up
+                newViewportMin = viewportMin - interval * (1 - frac);
+                newViewportMax = viewportMax + interval * (1 + frac);
+              }
+            } else if (e.altKey) {  // time pan
+              if (e.deltaY < 0) {
+                newViewportMin = viewportMin - interval;
+                newViewportMax = viewportMax - interval;
+              } else if (e.deltaY > 0) {
+                newViewportMin = viewportMin + interval;
+                newViewportMax = viewportMax + interval;
+              }
+            }
+
+            if ((newViewportMax - newViewportMin) > (2 * interval)) {
+              if (this.waveformService.zoomAll.getValue()
+                && idx < this.activeSensors.length - 1) {  // exclude context trace
+                if (e.shiftKey || e.altKey) {
+                  this._xZoomAllCharts(newViewportMin, newViewportMax);
+                } else {
+                  const factor = newViewportMax / viewportMax;
+                  this._yZoomAllCharts(factor);
                 }
-                chart.render();
+              } else {  // zoom selected trace only
+                const minimum = axis && axis.get('minimum') ? axis.get('minimum') : 0;
+                const maximum = axis && axis.get('maximum') ? axis.get('maximum') : 0;
+
+                if (newViewportMin >= minimum && newViewportMax <= maximum) {
+                  if (axis) {
+                    axis.set('viewportMinimum', newViewportMin, false);
+                    axis.set('viewportMaximum', newViewportMax, false);
+                    if (e.ctrlKey) { // Y axis
+                      axis.set('interval', newViewportMax / 2, false);
+                    }
+                  }
+
+                  chart.render();
+                }
               }
+              this._waveformContainer.nativeElement.focus();
             }
-            this._waveformContainer.nativeElement.focus();
           }
         }
-      });
+      }) as (e: Event) => void);
     }
   }
 
@@ -1454,21 +1494,26 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._xViewportMaxStack = [];
   }
 
-  private _updateZoomStackCharts(vpMin, vpMax) {
+  private _updateZoomStackCharts(vpMin: number, vpMax: number) {
 
     if (this._xViewPortMinStack.length === 0 || this._xViewPortMinStack[this._xViewPortMinStack.length - 1] !== vpMin) {
       this._xViewPortMinStack.push(vpMin);
       this._xViewportMaxStack.push(vpMax);
       for (let i = 0; i < this.activeSensors.length; i++) {
         const chart = this.activeSensors[i].chart;
-        if (!chart.options.viewportMinStack) {
-          chart.options.viewportMinStack = [];
-          chart.options.viewportMaxStack = [];
-        }
-        if (chart.options.viewportMinStack.length === 0 ||
-          chart.options.viewportMinStack[chart.options.viewportMinStack.length - 1] !== vpMin) {
-          chart.options.viewportMinStack.push(vpMin);
-          chart.options.viewportMaxStack.push(vpMax);
+        if (chart) {
+          if (!chart.options.viewportMinStack) {
+            chart.options.viewportMinStack = [];
+            chart.options.viewportMaxStack = [];
+          }
+          if (chart.options.viewportMinStack.length === 0 ||
+            chart.options.viewportMinStack[chart.options.viewportMinStack.length - 1] !== vpMin) {
+            chart.options.viewportMinStack.push(vpMin);
+
+            if (chart.options.viewportMaxStack && chart.options.viewportMaxStack.length > 0) {
+              chart.options.viewportMaxStack.push(vpMax);
+            }
+          }
         }
       }
     }
@@ -1498,83 +1543,137 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._resetChartViewXYContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
-  private _resetChartViewX(chart) {
+  private _resetChartViewX(chart: canvasjs.Chart | undefined) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
+    if (!chart.container) {
+      console.error(`No container for chart`);
+      return;
+    }
 
     const channel = parseInt(chart.container.id.replace('container', ''), 10);
-    chart.options.axisX.viewportMinimum = this._getXvpMin();
-    chart.options.axisX.viewportMaximum = this._getXvpMax();
-    chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
-    chart.options.axisX.maximum = this._getXmax(channel);
+
+    if (chart.options.axisX) {
+      chart.options.axisX.viewportMinimum = this._getXvpMin();
+      chart.options.axisX.viewportMaximum = this._getXvpMax();
+      chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
+      chart.options.axisX.maximum = this._getXmax(channel);
+    }
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
     chart.render();
   }
 
-  private _resetChartViewXContext(chart) {
+  private _resetChartViewXContext(chart: canvasjs.Chart | undefined) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
 
-    chart.options.axisX.viewportMinimum = null;
-    chart.options.axisX.viewportMaximum = null;
-    chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
-    chart.options.axisX.maximum = this._getXmaxContext();
-    chart.options.viewportMinStack = [];
-    chart.options.viewportMaxStack = [];
+    if (chart.options.axisX) {
+      chart.options.axisX.viewportMinimum = undefined;
+      chart.options.axisX.viewportMaximum = undefined;
+      chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
+      chart.options.axisX.maximum = this._getXmaxContext();
+      chart.options.viewportMinStack = [];
+      chart.options.viewportMaxStack = [];
+    }
     chart.render();
   }
 
-  private _resetChartViewY(chart, idx: number) {
+  private _resetChartViewY(chart: canvasjs.Chart | undefined, idx: number) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
 
-    chart.options.axisY.viewportMinimum = null;
-    chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = this._getYmax(idx);
-    chart.options.axisY.minimum = -chart.options.axisY.maximum;
-    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    if (chart.options.axisY) {
+      chart.options.axisY.viewportMinimum = undefined;
+      chart.options.axisY.viewportMaximum = undefined;
+      chart.options.axisY.maximum = this._getYmax(idx);
+      chart.options.axisY.minimum = -chart.options.axisY.maximum;
+      chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    }
     chart.render();
   }
 
-  private _resetChartViewYContext(chart) {
+  private _resetChartViewYContext(chart: canvasjs.Chart | undefined) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
 
-    chart.options.axisY.viewportMinimum = null;
-    chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = this._getYmaxContext();
-    chart.options.axisY.minimum = -chart.options.axisY.maximum;
-    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    if (chart.options.axisY) {
+      chart.options.axisY.viewportMinimum = undefined;
+      chart.options.axisY.viewportMaximum = undefined;
+      chart.options.axisY.maximum = this._getYmaxContext();
+      chart.options.axisY.minimum = -chart.options.axisY.maximum;
+      chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    }
+
     chart.render();
   }
 
-  private _resetChartViewXY(chart) {
+  private _resetChartViewXY(chart: canvasjs.Chart | undefined) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
+
+    if (!chart.container) {
+      console.error(`No container for chart`);
+      return;
+    }
 
     const channel = parseInt(chart.container.id.replace('container', ''), 10);
-    chart.options.axisX.viewportMinimum = this._getXvpMin();
-    chart.options.axisX.viewportMaximum = this._getXvpMax();
-    chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
-    chart.options.axisX.maximum = this._getXmax(channel);
+
+    if (chart.options.axisX) {
+      chart.options.axisX.viewportMinimum = this._getXvpMin();
+      chart.options.axisX.viewportMaximum = this._getXvpMax();
+      chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
+      chart.options.axisX.maximum = this._getXmax(channel);
+    }
+    if (chart.options.axisY) {
+      chart.options.axisY.viewportMinimum = undefined;
+      chart.options.axisY.viewportMaximum = undefined;
+      chart.options.axisY.maximum = this._getYmax(channel);
+      chart.options.axisY.minimum = -chart.options.axisY.maximum;
+      chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    }
+
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
-    chart.options.axisY.viewportMinimum = null;
-    chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = this._getYmax(channel);
-    chart.options.axisY.minimum = -chart.options.axisY.maximum;
-    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
-  private _resetChartViewXYContext(chart) {
+  private _resetChartViewXYContext(chart: canvasjs.Chart | undefined) {
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
 
-    chart.options.axisX.viewportMinimum = null;
-    chart.options.axisX.viewportMaximum = null;
-    chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
-    chart.options.axisX.maximum = this._getXmaxContext();
+    if (chart.options.axisX) {
+      chart.options.axisX.viewportMinimum = undefined;
+      chart.options.axisX.viewportMaximum = undefined;
+      chart.options.axisX.minimum = this.contextTimeOrigin.millisecond() * 1000;
+      chart.options.axisX.maximum = this._getXmaxContext();
+    }
+    if (chart.options.axisY) {
+      chart.options.axisY.viewportMinimum = undefined;
+      chart.options.axisY.viewportMaximum = undefined;
+      chart.options.axisY.maximum = this._getYmaxContext();
+      chart.options.axisY.minimum = -chart.options.axisY.maximum;
+      chart.options.axisY.interval = chart.options.axisY.maximum / 2;
+    }
+
     chart.options.viewportMinStack = [];
     chart.options.viewportMaxStack = [];
-    chart.options.axisY.viewportMinimum = null;
-    chart.options.axisY.viewportMaximum = null;
-    chart.options.axisY.maximum = this._getYmaxContext();
-    chart.options.axisY.minimum = -chart.options.axisY.maximum;
-    chart.options.axisY.interval = chart.options.axisY.maximum / 2;
     chart.render();
   }
 
-  private _getXmax(pos) {
+  private _getXmax(pos: number) {
     const endMicrosec = this.activeSensors[pos].channels[0].microsec + this.activeSensors[pos].channels[0].duration;
 
     if (this.waveformService.commonTimeScale.getValue()) {
@@ -1597,14 +1696,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * WaveformUtil.convXUnits;
     }
 
-    return null;
+    return undefined;
   }
 
   private _getXvpMin() {
-    return this.waveformService.commonTimeScale.getValue() ? 0 : null;
+    return this.waveformService.commonTimeScale.getValue() ? 0 : undefined;
   }
 
-  private _getValueMaxAll(motionType) {
+  private _getValueMaxAll(motionType: any) {
 
     let val = 0;
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
@@ -1644,66 +1743,88 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return val;
   }
 
-  private _getAxisMinAll(isXaxis: boolean) {
+  private _getAxisMinAll(isXaxis: boolean | undefined) {
 
-    let min;
+    let min: number | undefined;
     for (const activeSensor of this.activeSensors) {
       const chart = activeSensor.chart;
-      const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      if (axis !== undefined && axis.get('minimum') !== undefined) {
-        min = min === undefined ? axis.get('minimum') : Math.min(+axis.get('minimum'), min);
+      if (chart) {
+        const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+        if (typeof axis !== undefined && axis.get('minimum') !== undefined) {
+          if (min === undefined) {
+            min = +axis.get('minimum');
+          } else {
+            Math.min(+axis.get('minimum'), min);
+          }
+        }
       }
     }
     return min;
   }
 
-  private _getAxisMaxAll(isXaxis: boolean) {
+  private _getAxisMaxAll(isXaxis: boolean | undefined) {
 
-    let max;
+    let max: number | undefined;
     for (const activeSensor of this.activeSensors) {
       const chart = activeSensor.chart;
-      const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
-      if (axis !== undefined && axis.get('minimum') !== undefined) {
-        max = max === undefined ? axis.get('maximum') : Math.max(+axis.get('maximum'), max);
+      if (chart) {
+        const axis = isXaxis ? chart.axisX[0] : chart.axisY[0];
+        if (axis !== undefined && axis.get('maximum') !== undefined) {
+          if (max === undefined) {
+            max = +axis.get('maximum');
+          } else {
+            Math.max(+axis.get('maximum'), max);
+          }
+        }
       }
     }
     return max;
   }
 
-  private _xZoomAllCharts(vpMin, vpMax) {
+  private _xZoomAllCharts(vpMin: number, vpMax: number) {
 
     const isXaxis = true;
     this._updateZoomStackCharts(vpMin, vpMax);
-    if (vpMin >= this._getAxisMinAll(isXaxis) && vpMax <= this._getAxisMaxAll(isXaxis)) {
-      for (let i = 0; i < this.activeSensors.length - 1; i++) {
-        const chart = this.activeSensors[i].chart;
-        const axis = chart.axisX[0];
-        if (axis !== undefined) {
-          axis.set('viewportMinimum', vpMin, false);
-          axis.set('viewportMaximum', vpMax, false);
-          chart.render();
+    const axisMinAll = this._getAxisMinAll(isXaxis);
+    const axisMaxAll = this._getAxisMaxAll(isXaxis);
+    if (axisMinAll && axisMaxAll) {
+      if (vpMin >= axisMinAll && vpMax <= axisMaxAll) {
+        for (let i = 0; i < this.activeSensors.length - 1; i++) {
+          const chart = this.activeSensors[i].chart;
+          if (chart) {
+            const axis = chart.axisX[0];
+            if (axis !== undefined) {
+              axis.set('viewportMinimum', vpMin, false);
+              axis.set('viewportMaximum', vpMax, false);
+              chart.render();
+            }
+          }
         }
       }
     }
   }
 
-  private _yZoomAllCharts(factor) {
+  private _yZoomAllCharts(factor: number) {
 
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
       const chart = this.activeSensors[i].chart;
-      const axis = chart.axisY[0];
-      if (axis !== undefined) {
-        const vpMax = axis.viewportMaximum !== null ? axis.viewportMaximum * factor : null;
-        axis.set('viewportMinimum', -vpMax, false);
-        axis.set('viewportMaximum', vpMax, false);
-        axis.set('interval', vpMax / 2, false);
-        chart.render();
+      if (chart) {
+        const axis = chart.axisY[0];
+        if (axis !== undefined) {
+          const vpMax = axis.viewportMaximum !== null ? (axis && axis.viewportMaximum) && axis.viewportMaximum * factor : null;
+          if (vpMax) {
+            axis.set('viewportMinimum', -vpMax, false);
+            axis.set('viewportMaximum', vpMax, false);
+            axis.set('interval', vpMax / 2, false);
+            chart.render();
+          }
+        }
       }
     }
   }
 
 
-  private _savePicksState(ind, sensor, picks) {
+  private _savePicksState(ind: number, sensor: string, picks: any) {
 
     this.lastPicksState = {};
     this.lastPicksState.index = ind;
@@ -1718,134 +1839,165 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const sensor = this.activeSensors[ind];
       if (this.lastPicksState.sensor_code === sensor.sensor_code) {
         const chart = sensor.chart;
-        const picks = this.lastPicksState.picks;
-        this._savePicksState(ind, sensor.sensor_code, sensor.picks);
-        sensor.picks = picks;
+        if (chart) {
+          const picks = this.lastPicksState.picks;
+          this._savePicksState(ind, sensor.sensor_code, sensor.picks);
+          sensor.picks = picks;
+          if (chart.options.axisX) {
+            chart.options.axisX.stripLines = sensor.picks;
+          }
+          chart.render();
+        }
+      }
+    }
+  }
+
+  private _addPick(ind: number, pickType: PickKey, value: number | null) {
+
+    const sensor = this.activeSensors[ind];
+    const chart = sensor.chart;
+    if (chart) {
+      const data = chart.options.data[0].dataPoints;
+      const position = value ? Math.round(value) : Math.round(this.lastSelectedXPosition);
+      // @ts-ignore
+      if (position < data[0].x || position > data[data.length - 1].x) {
+        this._toastrNotificationService.warning(`Pick cannot be created outside of the current trace view`);
+        return;
+      }
+      sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
+      const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
+      const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
+      if (otherPick) {
+        if (pickType === 'P') {
+          if (position > otherPick.value) {
+            this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
+            return;
+          }
+        } else if (pickType === 'S') {
+          if (position < otherPick.value) {
+            this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
+            return;
+          }
+        }
+      }
+      this._savePicksState(ind, sensor.sensor_code, sensor.picks);
+      // remove any existing pick of this type
+      sensor.picks = sensor.picks.filter((el: any) => el.label !== pickType);
+      sensor.picks.push({
+        value: position,
+        thickness: globals.picksLineThickness,
+        color: pickType === PickKey.P ? 'blue' : pickType === PickKey.S ? 'red' : 'black',
+        label: pickType,
+        labelAlign: 'far'
+      });
+      if (chart.options.axisX) {
         chart.options.axisX.stripLines = sensor.picks;
+      }
+      chart.render();
+      this._waveformContainer.nativeElement.focus();
+    }
+  }
+
+  private _deletePicks(ind: number, pickType: PickKey, value: number | null) {
+
+    const sensor = this.activeSensors[ind];
+    this._savePicksState(ind, sensor.sensor_code, sensor.picks);
+    const chart = sensor.chart;
+    if (chart) {
+      if (value) {
+        sensor.picks = sensor.picks
+          .filter((el: any) => el.label !== pickType || el.label === pickType && el.value !== value);
+      } else {  // no value specified delete all picks of this type
+        sensor.picks = sensor.picks.filter((el: any) => el.label !== pickType);
+      }
+      if (chart.options.axisX) {
+        chart.options.axisX.stripLines = sensor.picks;
+      }
+      chart.render();
+    }
+    this._waveformContainer.nativeElement.focus();
+  }
+
+  private _movePick(ind: number, pickType: PickKey, value: number, fromCurrentPosition: boolean, issueWarning: boolean) {
+
+    const sensor = this.activeSensors[ind];
+    const chart = sensor.chart;
+    if (chart) {
+      sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
+      // find existing pick of this type
+      const pick = WaveformUtil.findValue(sensor.picks, 'label', pickType);
+      if (!pick) {
+        if (issueWarning) {
+          this._toastrNotificationService.warning(`No ${pickType} pick to move`);
+        }
+        return;
+      }
+      const data = chart.options.data[0].dataPoints;
+      if (data) {
+        const position = fromCurrentPosition ? Math.round(pick.value + value) : Math.round(value);
+        if (
+          // @ts-ignore
+          (position < data[0].x) || (position > data[data.length - 1].x)
+        ) {
+          this._toastrNotificationService.warning(`Pick cannot be moved outside of the current trace view`);
+          return;
+        }
+        const otherPickType = pickType === PickKey.P ? PickKey.S : pickType === PickKey.S ? PickKey.P : '';
+        const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
+        if (otherPick) {
+          if (pickType === PickKey.P) {
+            if (position > otherPick.value) {
+              this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
+              return;
+            }
+          } else if (pickType === PickKey.S) {
+            if (position < otherPick.value) {
+              this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
+              return;
+            }
+          }
+        }
+        this._savePicksState(ind, sensor.sensor_code, sensor.picks);
+        // move pick
+        pick.value = position;
+        sensor.picks = sensor.picks.filter((el: any) => el.label !== pickType);
+        sensor.picks.push(pick);
+        if (chart.options.axisX) {
+          chart.options.axisX.stripLines = sensor.picks;
+        }
         chart.render();
+        this._waveformContainer.nativeElement.focus();
       }
     }
   }
 
-  private _addPick(ind, pickType, value) {
-
-    const sensor = this.activeSensors[ind];
-    const chart = sensor.chart;
-    const data = chart.options.data[0].dataPoints;
-    const position = value ? Math.round(value) : Math.round(this.lastSelectedXPosition);
-    if (position < data[0].x || position > data[data.length - 1].x) {
-      this._toastrNotificationService.warning(`Pick cannot be created outside of the current trace view`);
-      return;
-    }
-    sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
-    const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-    const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
-    if (otherPick) {
-      if (pickType === 'P') {
-        if (position > otherPick.value) {
-          this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
-          return;
-        }
-      } else if (pickType === 'S') {
-        if (position < otherPick.value) {
-          this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
-          return;
-        }
-      }
-    }
-    this._savePicksState(ind, sensor.sensor_code, sensor.picks);
-    // remove any existing pick of this type
-    sensor.picks = sensor.picks.filter(el => el.label !== pickType);
-    sensor.picks.push({
-      value: position,
-      thickness: globals.picksLineThickness,
-      color: pickType === 'P' ? 'blue' : pickType === 'S' ? 'red' : 'black',
-      label: pickType,
-      labelAlign: 'far'
-    });
-    chart.options.axisX.stripLines = sensor.picks;
-    chart.render();
-    this._waveformContainer.nativeElement.focus();
-  }
-
-  private _deletePicks(ind, pickType, value) {
-
-    const sensor = this.activeSensors[ind];
-    this._savePicksState(ind, sensor.sensor_code, sensor.picks);
-    const chart = sensor.chart;
-    if (value) {
-      sensor.picks = sensor.picks
-        .filter(el => el.label !== pickType || el.label === pickType && el.value !== value);
-    } else {  // no value specified delete all picks of this type
-      sensor.picks = sensor.picks.filter(el => el.label !== pickType);
-    }
-    chart.options.axisX.stripLines = sensor.picks;
-    chart.render();
-    this._waveformContainer.nativeElement.focus();
-  }
-
-  private _movePick(ind, pickType, value, fromCurrentPosition, issueWarning) {
-
-    const sensor = this.activeSensors[ind];
-    const chart = sensor.chart;
-    sensor.picks = (typeof sensor.picks !== 'undefined' && sensor.picks instanceof Array) ? sensor.picks : [];
-    // find existing pick of this type
-    const pick = WaveformUtil.findValue(sensor.picks, 'label', pickType);
-    if (!pick) {
-      if (issueWarning) {
-        this._toastrNotificationService.warning(`No ${pickType} pick to move`);
-      }
-      return;
-    }
-    const data = chart.options.data[0].dataPoints;
-    const position = fromCurrentPosition ? Math.round(pick.value + value) : Math.round(value);
-    if (position < data[0].x || position > data[data.length - 1].x) {
-      this._toastrNotificationService.warning(`Pick cannot be moved outside of the current trace view`);
-      return;
-    }
-    const otherPickType = pickType === 'P' ? 'S' : pickType === 'S' ? 'P' : '';
-    const otherPick = WaveformUtil.findValue(sensor.picks, 'label', otherPickType);
-    if (otherPick) {
-      if (pickType === 'P') {
-        if (position > otherPick.value) {
-          this._toastrNotificationService.warning(`P Pick cannot be moved past S Pick`);
-          return;
-        }
-      } else if (pickType === 'S') {
-        if (position < otherPick.value) {
-          this._toastrNotificationService.warning(`S Pick cannot be moved before P Pick`);
-          return;
-        }
-      }
-    }
-    this._savePicksState(ind, sensor.sensor_code, sensor.picks);
-    // move pick
-    pick.value = position;
-    sensor.picks = sensor.picks.filter(el => el.label !== pickType);
-    sensor.picks.push(pick);
-    chart.options.axisX.stripLines = sensor.picks;
-    chart.render();
-    this._waveformContainer.nativeElement.focus();
-  }
-
-  private _toggleCrosshair(ind, value) {
-
+  private _toggleCrosshair(ind: number, value: boolean | null) {
     const chart = this.activeSensors[ind].chart;
-    value = value ? value : !chart.options.axisY['crosshair'].enabled;
-    chart.options.axisX['crosshair'].enabled = value;
-    chart.options.axisY['crosshair'].enabled = value;
+    if (!chart || !chart.options) {
+      console.error(`No chart or chart options`);
+      return;
+    }
+
+    if (!chart.options.axisX || !chart.options.axisY) {
+      console.error(`No chart options for axis`);
+      return;
+    }
+
+    value = value ? value : !chart.options.axisY.crosshair.enabled;
+    chart.options.axisX.crosshair.enabled = value;
+    chart.options.axisY.crosshair.enabled = value;
     if (value) {
       if (ind < this.activeSensors.length - 1) {
-        chart.options.axisX['crosshair'].color =
-          this.waveformService.pickingMode.getValue() === 'P' ? 'blue' :
-            this.waveformService.pickingMode.getValue() === 'S' ? 'red' : 'black';
-        chart.options.axisX['crosshair'].lineDashType = this.waveformService.pickingMode.getValue() === null ?
+        chart.options.axisX.crosshair.color =
+          this.waveformService.pickingMode.getValue() === PickKey.P ? 'blue' :
+            this.waveformService.pickingMode.getValue() === PickKey.S ? 'red' : 'black';
+        chart.options.axisX.crosshair.lineDashType = this.waveformService.pickingMode.getValue() === null ?
           'dash' : 'solid';
       } else {
-        chart.options.axisX['crosshair'].color = 'black';
-        chart.options.axisX['crosshair'].lineDashType = 'dash';
+        chart.options.axisX.crosshair.color = 'black';
+        chart.options.axisX.crosshair.lineDashType = 'dash';
       }
-      chart.options.axisX['crosshair'].thickness = 1;
+      chart.options.axisX.crosshair.thickness = 1;
     }
     chart.render();
     this._waveformContainer.nativeElement.focus();
@@ -1867,35 +2019,46 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
       for (let j = 0; j < this.activeSensors.length - 1; j++) {
         const chart = this.activeSensors[j].chart;
-        chart.options.viewportMinStack = this._xViewPortMinStack;
-        chart.options.viewportMaxStack = this._xViewportMaxStack;
-        if (!chart.options.axisX) {
-          chart.options.axisX = {};
-        }
-        if (this._xViewPortMinStack && this._xViewPortMinStack.length > 0) {
-          chart.options.axisX.viewportMinimum = this._xViewPortMinStack[this._xViewPortMinStack.length - 1];
-          chart.options.axisX.viewportMaximum = this._xViewportMaxStack[this._xViewportMaxStack.length - 1];
-          chart.render();
-        } else {
-          this._resetChartViewX(chart);
+        if (chart) {
+          chart.options.viewportMinStack = this._xViewPortMinStack;
+          chart.options.viewportMaxStack = this._xViewportMaxStack;
+          if (!chart.options.axisX) {
+            chart.options.axisX = {};
+          }
+          if (this._xViewPortMinStack && this._xViewPortMinStack.length > 0) {
+            chart.options.axisX.viewportMinimum = this._xViewPortMinStack[this._xViewPortMinStack.length - 1];
+            chart.options.axisX.viewportMaximum = this._xViewportMaxStack[this._xViewportMaxStack.length - 1];
+            chart.render();
+          } else {
+            this._resetChartViewX(chart);
+          }
         }
       }
     } else {
       if (this.lastDownTarget !== null && this.lastDownTarget > -1) {
         const chart = this.activeSensors[this.lastDownTarget].chart;
-        const viewportMinStack = chart.options.viewportMinStack;
-        const viewportMaxStack = chart.options.viewportMaxStack;
-        if (!chart.options.axisX) {
-          chart.options.axisX = {};
-        }
-        if (viewportMinStack && viewportMinStack.length > 0) {
-          viewportMinStack.pop();
-          viewportMaxStack.pop();
-          chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
-          chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
-          chart.render();
-        } else {
-          this._resetChartViewX(chart);
+        if (chart) {
+          const viewportMinStack = chart.options.viewportMinStack;
+          const viewportMaxStack = chart.options.viewportMaxStack;
+          if (!chart.options.axisX) {
+            chart.options.axisX = {};
+          }
+          if (
+            (viewportMinStack && viewportMinStack.length > 0) ||
+            (viewportMaxStack && viewportMaxStack.length > 0)
+          ) {
+            if (viewportMinStack && viewportMinStack.length > 0) {
+              viewportMinStack.pop();
+              chart.options.axisX.viewportMinimum = viewportMinStack[viewportMinStack.length - 1];
+            }
+            if (viewportMaxStack && viewportMaxStack.length > 0) {
+              viewportMaxStack.pop();
+              chart.options.axisX.viewportMaximum = viewportMaxStack[viewportMaxStack.length - 1];
+            }
+            chart.render();
+          } else {
+            this._resetChartViewX(chart);
+          }
         }
       }
     }
@@ -1926,18 +2089,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
           console.log(pick_time);
           arrpick.pick.evaluation_mode = 'manual';
           arrpick.pick.time_utc = pick_time;
-          arrpick.azimuth = null;
-          arrpick.distance = null;
-          arrpick.earth_model = null;
-          arrpick.time_correction = null;
-          arrpick.time_residual = null;
-          arrpick.takeoff_angle = null;
-          arrpick.pick.evaluation_status = null;
-          arrpick.pick.filter_id = null;
-          arrpick.pick.method_id = null;
-          arrpick.pick.onset = null;
-          arrpick.pick.polarity = null;
-          arrpick.pick.time_errors = null;
+          arrpick.azimuth = undefined;
+          arrpick.distance = undefined;
+          arrpick.earth_model = undefined;
+          arrpick.time_correction = undefined;
+          arrpick.time_residual = undefined;
+          arrpick.takeoff_angle = undefined;
+          arrpick.pick.evaluation_status = undefined;
+          arrpick.pick.filter_id = undefined;
+          arrpick.pick.method_id = undefined;
+          arrpick.pick.onset = undefined;
+          arrpick.pick.polarity = undefined;
+          arrpick.pick.time_errors = undefined;
           delete arrpick.origin;
           delete arrpick.arrival_resource_id;
           delete arrpick.event;
@@ -1946,25 +2109,25 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       } else {  // add pick
         const newpick: ArrivalPartial = {
-          azimuth: null,
-          distance: null,
-          earth_model: null,
+          azimuth: undefined,
+          distance: undefined,
+          earth_model: undefined,
           phase: picktype,
           pick: {
             evaluation_mode: EvaluationMode.MANUAL,
             phase_hint: picktype,
             sensor: sensor.id,
             time_utc: pick_time,
-            evaluation_status: null,
-            time_errors: null,
-            method_id: null,
-            filter_id: null,
-            onset: null,
-            polarity: null
+            evaluation_status: undefined,
+            time_errors: undefined,
+            method_id: undefined,
+            filter_id: undefined,
+            onset: undefined,
+            polarity: undefined
           },
-          time_correction: null,
-          time_residual: null,
-          takeoff_angle: null,
+          time_correction: undefined,
+          time_residual: undefined,
+          takeoff_angle: undefined,
         };
         console.log(sensor.sensor_code, sensor.id, picktype);
         console.log('add pick');
@@ -2004,7 +2167,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  private _createButterworthFilter(sample_rate): any {
+  private _createButterworthFilter(sample_rate: number): any {
     let butterworth = null;
     if (this.waveformService.lowFreqCorner.getValue() >= 0 && this.waveformService.highFreqCorner.getValue() <= sample_rate / 2) {
       butterworth = filter.createButterworth(
@@ -2032,12 +2195,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
-  private _filterData(sensors: Sensor[], isContext, bRotated): Sensor[] {
+  private _filterData(sensors: Sensor[], isContext: boolean, bRotated: boolean): Sensor[] {
     for (const sensor of sensors) {
       if (sensor.enabled) {
         // remove existing composite trace if 3 components are available, to be added back after filtering components
         if (sensor.channels.length > 3) {
-          const pos = sensor.channels.findIndex(v =>
+          const pos = sensor.channels.findIndex((v: any) =>
             (!isContext && v.channel_id === globals.compositeChannelCode) ||
             (isContext && v.channel_id.replace('...CONTEXT', '') === globals.compositeChannelCode));
           if (pos >= 0) {
@@ -2100,10 +2263,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
   contextMenuClick(action: ContextMenuChartAction) {
     if (this.selectedContextMenu !== -1) {
       switch (action) {
-        case ContextMenuChartAction.DELETE_P: this._deletePicks(this.selectedContextMenu, 'P', null); break;
-        case ContextMenuChartAction.DELETE_S: this._deletePicks(this.selectedContextMenu, 'S', null); break;
-        case ContextMenuChartAction.NEW_P: this._addPick(this.selectedContextMenu, 'P', null); break;
-        case ContextMenuChartAction.NEW_S: this._addPick(this.selectedContextMenu, 'S', null); break;
+        case ContextMenuChartAction.DELETE_P: this._deletePicks(this.selectedContextMenu, PickKey.P, null); break;
+        case ContextMenuChartAction.DELETE_S: this._deletePicks(this.selectedContextMenu, PickKey.S, null); break;
+        case ContextMenuChartAction.NEW_P: this._addPick(this.selectedContextMenu, PickKey.P, null); break;
+        case ContextMenuChartAction.NEW_S: this._addPick(this.selectedContextMenu, PickKey.S, null); break;
         case ContextMenuChartAction.SHOW_CROSSHAIR: this._toggleCrosshair(this.selectedContextMenu, null); break;
         default: break;
       }

@@ -21,9 +21,8 @@ enum DialogMode {
   styleUrls: ['./auth-dialog.component.scss']
 })
 export class AuthDialogComponent {
-  @ViewChild('authForm', { static: false }) authForm: NgForm;
+  @ViewChild('authForm', { static: false }) authForm!: NgForm;
 
-  error: string;
   DialogMode = DialogMode;
   mode: DialogMode = DialogMode.LOGIN;
   loading = false;
@@ -70,7 +69,8 @@ export class AuthDialogComponent {
   ) { }
 
   private validateAreEqual(fieldControl: FormControl) {
-    return this.myForm && fieldControl.value === this.myForm.get('password').value ? null : {
+    const passwordEl = this.myForm && this.myForm.get('password');
+    return this.myForm && passwordEl && fieldControl.value === passwordEl.value ? null : {
       notEqual: true
     };
   }
@@ -79,11 +79,16 @@ export class AuthDialogComponent {
   submitAuthForm() {
     this.submited = true;
 
+    if (this.username && this.username.errors) {
+      return;
+    }
+
+    if (this.password && this.password.errors) {
+      return;
+    }
+
     if (this.mode === DialogMode.LOGIN) {
 
-      if (this.username.errors || this.password.errors) {
-        return;
-      }
 
       const loginDto: AuthLoginInput = {
         username: this.myForm.value.username,
@@ -112,8 +117,7 @@ export class AuthDialogComponent {
         });
 
     } else {
-
-      if (this.username.errors || this.password.errors || this.password_repeat.errors) {
+      if (this.password_repeat && this.password_repeat.errors) {
         return;
       }
 

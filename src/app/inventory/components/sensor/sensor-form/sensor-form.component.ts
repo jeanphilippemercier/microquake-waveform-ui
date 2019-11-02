@@ -51,14 +51,14 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
   }
   private _boreholes: Borehole[] = [];
 
-  @Input() stationId: number;
+  @Input() stationId!: number;
 
   public get code() {
     return this.myForm.get('code');
   }
 
-  filteredStations: Observable<Station[]>;
-  filteredBoreholes: Observable<Borehole[]>;
+  filteredStations!: Observable<Station[]>;
+  filteredBoreholes!: Observable<Borehole[]>;
 
   myForm = this._fb.group({
     enabled: [false],
@@ -79,7 +79,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
     manufacturer: [],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm: NgForm;
+  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(
@@ -102,8 +102,11 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
     try {
       this.myForm.controls['station'].disable({ onlySelf: true });
       this.myForm.controls['borehole'].disable({ onlySelf: true });
-
-      this.filteredStations = this.myForm.get('station').valueChanges
+      const stationFormEl = this.myForm.get('station');
+      if (!stationFormEl) {
+        return;
+      }
+      this.filteredStations = stationFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.name),
@@ -117,7 +120,12 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
         this.myForm.controls['station'].disable({ onlySelf: true });
       }
 
-      this.filteredBoreholes = this.myForm.get('borehole').valueChanges
+      const boreholeFormEl = this.myForm.get('borehole');
+      if (!boreholeFormEl) {
+        return;
+      }
+
+      this.filteredBoreholes = boreholeFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.name),
@@ -199,9 +207,6 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
   }
 
   createDtoObject(formValues: any) {
-    if (!formValues) {
-      return;
-    }
 
     const dto: SensorCreateInput = formValues;
 

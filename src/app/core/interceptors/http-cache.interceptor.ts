@@ -29,7 +29,7 @@ export class HttpCacheInterceptor implements HttpInterceptor {
 
     let refreshCache = false;
     let saveCache = false;
-    let customCacheTimeout;
+    let customCacheTimeout: number | undefined;
 
     if (req.headers.get('x-cache-refresh')) {
       req = req.clone({ headers: req.headers.delete('x-cache-refresh') });
@@ -41,8 +41,9 @@ export class HttpCacheInterceptor implements HttpInterceptor {
       saveCache = true;
     }
 
-    if (req.headers.get('x-cache-timeout')) {
-      customCacheTimeout = req.headers.get('x-cache-timeout');
+    if (req.headers.get('x-cache-timeout') !== null) {
+      const cacheTimeout = <string>req.headers.get('x-cache-timeout');
+      customCacheTimeout = +cacheTimeout;
       req = req.clone({ headers: req.headers.delete('x-cache-timeout') });
     }
 
@@ -56,7 +57,7 @@ export class HttpCacheInterceptor implements HttpInterceptor {
     return cachedResponse ? of(cachedResponse) : this._sendRequest(req, next, saveCache, customCacheTimeout);
   }
 
-  private _sendRequest(req: HttpRequest<any>, next: HttpHandler, saveCache = false, customCacheTimeout?: number): Observable<HttpEvent<any>> {
+  private _sendRequest(req: HttpRequest<any>, next: HttpHandler, saveCache = false, customCacheTimeout: number | undefined): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       tap(event => {
         if (event instanceof HttpResponse) {

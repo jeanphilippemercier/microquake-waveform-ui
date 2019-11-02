@@ -10,11 +10,11 @@ import { Site } from '@interfaces/inventory.interface';
 })
 export class SiteSelectFieldComponent {
 
-  @Input() sites: Site[];
-  @Input() site: Site;
+  @Input() sites: Site[] = [];
+  @Input() site: Site | null = null;
   @Output() siteChange: EventEmitter<Site> = new EventEmitter();
 
-  @Input() site_code: string;
+  @Input() site_code: string | null = null;
   @Output() site_codeChange: EventEmitter<string> = new EventEmitter();
 
   @Output() clearSelection: EventEmitter<boolean> = new EventEmitter();

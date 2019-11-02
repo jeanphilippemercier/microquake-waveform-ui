@@ -17,8 +17,8 @@ import { NgxSpinnerService } from 'ngx-spinner';
 })
 export class BoreholeSurveyFileDialogComponent {
   PageMode = PageMode;
-  model: MaintenanceEvent;
-  files: NgxFileDropEntry[];
+  model!: MaintenanceEvent;
+  files!: NgxFileDropEntry[];
   unuploadedFile: any;
 
   myForm = this._fb.group({

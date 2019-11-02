@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import * as moment from 'moment';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Sensor, ISensorType, CableType, Station } from '@interfaces/inventory.interface';
+import { Sensor, Station } from '@interfaces/inventory.interface';
 import { MaintenanceEventCreateInput, MaintenanceEventUpdateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -14,8 +14,8 @@ import { MatDialog, MatDialogRef, MatAutocompleteSelectedEvent, MatSelectChange 
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { Form } from '@core/classes/form.class';
-import { MaintenanceEvent, MaintenanceCategory, MaintenanceStatus } from '@interfaces/maintenance.interface';
-import { FileSystemDirectoryEntry, FileSystemFileEntry, NgxFileDropEntry } from 'ngx-file-drop';
+import { MaintenanceEvent, MaintenanceCategory, MaintenanceStatus, MaintenanceEventAttachment } from '@interfaces/maintenance.interface';
+import { FileSystemFileEntry, NgxFileDropEntry } from 'ngx-file-drop';
 
 @Component({
   selector: 'app-maintenance-form',
@@ -36,7 +36,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   public get stationFixed(): Station {
     return this._stationFixed;
   }
-  private _stationFixed: Station;
+  private _stationFixed!: Station;
 
   @Input() stations: Station[] = [];
   @Input() maintenanceStatuses: MaintenanceStatus[] = [];
@@ -50,9 +50,9 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   @Output() cancelClicked: EventEmitter<void> = new EventEmitter();
 
   editDisabled = false;
-  deleteDialogRef: MatDialogRef<ConfirmationDialogComponent>;
+  deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
-  filteredStations: Observable<Station[]>;
+  filteredStations!: Observable<Station[]>;
 
   myForm = this._fb.group({
     date: [new Date(), [Validators.required]],
@@ -75,7 +75,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       uploading: true,
       error: false
     }));
-    this.model.attachments = [...unuploaed, ...this.model.attachments];
+    this.model.attachments = <MaintenanceEventAttachment[]>[...unuploaed, ...this.model.attachments];
     const tmpFiles = [...this.files];
 
     for (let i = 0; i < unuploaed.length; i++) {
@@ -128,7 +128,12 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   private async _initEditableForm() {
 
     try {
-      this.filteredStations = this.myForm.get('station').valueChanges
+      const stationFormEl = this.myForm.get('station');
+      if (!stationFormEl) {
+        return;
+      }
+
+      this.filteredStations = stationFormEl.valueChanges
         .pipe(
           startWith(''),
           map(value => !value || typeof value === 'string' ? value : value.name),
@@ -223,7 +228,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
     this.maintenanceStationChanged.emit($event.option.value);
   }
 
-  descriptionChange($event) {
+  descriptionChange($event: any) {
     const val = $event.target.value;
     this.descriptionChanged.emit(val);
   }

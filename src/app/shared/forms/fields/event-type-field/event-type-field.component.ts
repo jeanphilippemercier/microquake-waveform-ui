@@ -13,10 +13,10 @@ export class EventTypeFieldComponent {
   @Input() label = `Event Type`;
   @Input() multiple = true;
   @Input() type: 'select' | 'chip' = 'select';
-  @Input() eventTypes: EventType[];
+  @Input() eventTypes: EventType[] = [];
 
   // for multiple === false
-  @Input() selectedEventType: EventType;
+  @Input() selectedEventType: EventType | null = null;
   @Output() selectedEventTypeChange: EventEmitter<EventType> = new EventEmitter();
 
   // for multiple === true
