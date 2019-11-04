@@ -79,6 +79,7 @@ export interface SensorBase {
   location_x: number;
   location_y: number;
   location_z: number;
+  along_hole_z: number;
   part_number?: any;
   manufacturer: string;
   enabled: boolean;
@@ -164,7 +165,11 @@ export enum ComponentCode {
 
 export enum SensorType {
   GEOPHONE = 'geophone',
-  ACCELEROMETER = 'accelerometer'
+  ACCELEROMETER = 'accelerometer',
+  STRONG_GROUND_MOTION = 'strong_ground_motion',
+  SHORT_PERIOD = 'short_period',
+  LONG_PERIOD = 'long_period',
+  BROADBAND = 'broadband'
 }
 
 export enum MotionType {
