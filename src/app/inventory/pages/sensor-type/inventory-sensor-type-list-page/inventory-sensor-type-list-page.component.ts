@@ -7,10 +7,12 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
-import { first } from 'rxjs/operators';
+import { ConfirmationDialogData, SensorTypeFormDialogData } from '@interfaces/dialogs.interface';
+import { first, takeUntil } from 'rxjs/operators';
 import { ListPage } from '@core/classes/list-page.class';
 import { LoadingService } from '@services/loading.service';
+import { SensorTypeFormDialogComponent } from '@app/inventory/dialogs/sensor-type-form-dialog/sensor-type-form-dialog.component';
+import { PageMode } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-inventory-sensor-type-list-page',
@@ -19,12 +21,9 @@ import { LoadingService } from '@services/loading.service';
 })
 export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> {
 
-  // tslint:disable-next-line:max-line-length
-  displayedColumns: string[] = ['model', 'manufacturer', 'sensorType', 'motionType', 'resonanceFrequency', 'shuntResistance', 'id', 'actions'];
-  paginationEnabled = false;
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService,
+    private _inventoryApiService: InventoryApiService,
     private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _activatedRoute: ActivatedRoute,
@@ -35,12 +34,42 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
   }
 
+  async afterNgOnInit() {
+    this._activatedRoute.params
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(async params => {
+
+        const sensorTypeId = +params['sensorTypeId'];
+        if (!sensorTypeId) {
+          return;
+        }
+
+        try {
+          await this.loadingStart();
+
+          let data: ISensorType | undefined;
+          if (this.dataSource) {
+            data = this.dataSource.find(ev => ev.id === sensorTypeId);
+          }
+          if (!data) {
+            data = await this._inventoryApiService.getSensorType(sensorTypeId).toPromise();
+          }
+          await this.openEditFormDialog(data);
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        } finally {
+          await this.loadingStop();
+        }
+      });
+  }
+
   async loadData(cursor?: string) {
     try {
       this.loading = true;
       this._loadingService.start();
 
-      const response = await this._inventoryApiSevice.getSensorTypes().toPromise();
+      const response = await this._inventoryApiService.getSensorTypes().toPromise();
       this.dataSource = response;
     } catch (err) {
       console.error(err);
@@ -70,9 +99,10 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          const response = await this._inventoryApiSevice.deleteSensorType(id).toPromise();
           this._loadingService.start();
+          const response = await this._inventoryApiService.deleteSensorType(id).toPromise();
           await this._toastrNotificationService.success('Sensor type deleted');
+          await this.loadData();
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
@@ -81,6 +111,49 @@ export class InventorySensorTypeListPageComponent extends ListPage<ISensorType> 
         }
       }
     });
+  }
+
+  async openEditFormDialog($event: ISensorType) {
+    const formDialogRef = this._matDialog.open<SensorTypeFormDialogComponent, SensorTypeFormDialogData>(
+      SensorTypeFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          model: $event,
+          mode: PageMode.EDIT,
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+      this._router.navigate(['inventory/sensor-types'], { preserveQueryParams: true });
+    });
+  }
+
+  async openCreateFormDialog() {
+    const model: Partial<ISensorType> = {};
+    const formDialogRef = this._matDialog.open<SensorTypeFormDialogComponent, SensorTypeFormDialogData>(
+      SensorTypeFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          model: model,
+          mode: PageMode.CREATE
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+      this._router.navigate(['inventory/sensor-types'], { preserveQueryParams: true });
+    });
+  }
+
+  onRowClicked(ev: ISensorType) {
+    this._router.navigate(['/inventory/sensor-types', ev.id]);
   }
 
 }

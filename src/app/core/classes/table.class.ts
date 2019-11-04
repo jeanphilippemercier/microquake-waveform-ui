@@ -23,6 +23,7 @@ export class Table<T> implements OnInit {
   @Output() sort: EventEmitter<Sort> = new EventEmitter();
   @Output() delete: EventEmitter<number> = new EventEmitter();
   @Output() reloadDataSource: EventEmitter<void> = new EventEmitter();
+  @Output() rowClick: EventEmitter<T> = new EventEmitter();
 
   constructor(
     protected _matDialog: MatDialog

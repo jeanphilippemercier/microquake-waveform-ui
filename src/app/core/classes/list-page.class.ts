@@ -44,12 +44,16 @@ export class ListPage<T> implements OnInit, OnDestroy {
 
       await this.loadData(cursor);
     });
+
+    this.afterNgOnInit();
   }
 
   ngOnDestroy() {
     this._unsubscribe.next();
     this._unsubscribe.complete();
   }
+
+  async afterNgOnInit() { }
 
   public wiatForInitialization(): Promise<void> {
     return new Promise(resolve => {
