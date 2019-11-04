@@ -430,8 +430,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this.waveformService.loadedPages.next(1);
         this.timeOrigin = eventData.timeOrigin;
 
-        if (!this.timeOrigin) {
-          console.error(`no timeOrigin`);
+        if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
+          console.error(`invalid timeOrigin`);
+          const msg_str = `Invalid traces origin time`;
+          this._toastrNotificationService.warning(msg_str);
           return;
         }
 
@@ -512,6 +514,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
             if (contextFile) {
               const contextData = WaveformUtil.parseMiniseed(contextFile, true);
 
+              if (!moment.isMoment(contextData.timeOrigin) || !contextData.timeOrigin.isValid()) {
+                console.error(`invalid contextTimeOrigin`);
+                const msg_str = `Invalid context trace origin time`;
+                this._toastrNotificationService.warning(msg_str);
+              }
+
               if (contextData && contextData.sensors) {
                 WaveformUtil.setSensorsEnabled(contextData.sensors, this.allSensors);
                 WaveformUtil.rotateSensors(contextData.sensors, this.allSensors, this.waveformSensors);
@@ -556,6 +564,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
+
+      if (!moment.isMoment(eventData.timeOrigin) || !eventData.timeOrigin.isValid()) {
+        console.error(`invalid timeOrigin`);
+        const msg_str = `Invalid traces origin time on page`;
+        this._toastrNotificationService.warning(msg_str);
+      }
+
       if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
@@ -696,7 +711,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _renderCharts() {
+
     // Chart Options, Render
+    if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
+      const msg_str = `Invalid traces origin time`;
+      this._toastrNotificationService.warning(msg_str);
+      console.log(msg_str);
+      return;
+    }
+
     for (let i = 0; i < this.activeSensors.length - 1; i++) {
 
       this.activeSensors[i].container = 'container' + i.toString();
@@ -817,7 +840,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             enabled: false
           },
           axisX: {
-            minimum: this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0,
+            minimum: this.timeOrigin.millisecond() * 1000,
             maximum: this._getXmax(i),
             lineThickness: globals.axis.lineThickness,
             lineColor: globals.axis.lineColor,
@@ -1013,9 +1036,19 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private _renderContextChart() {
 
     // Chart Options, Render
-
     if (this.contextSensor.length === 0 || this.contextSensor[0].channels.length === 0) {
       this._toastrNotificationService.warning(`Invalid context trace`);
+      return;
+    }
+
+    if (!moment.isMoment(this.contextTimeOrigin) || !this.contextTimeOrigin.isValid()) {
+      const msg_str = `Invalid context trace origin time`;
+      this._toastrNotificationService.warning(msg_str);
+      console.log(msg_str);
+      return;
+    }
+
+    if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
       return;
     }
 
@@ -1037,7 +1070,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       if ((!this.waveformService.displayComposite.getValue()
         && channel.channel_id !== globals.compositeChannelCode + '...CONTEXT')
         || (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode + '...CONTEXT')
-        || (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length === 1)) {
+        || this.activeSensors[i].channels.length === 1) {
         data.push(
           {
             name: channel.channel_id,
@@ -1069,8 +1102,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
       uom = uom.replace(WaveformUtil.defaultUnits, 'm');
     }
 
+
     const timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
-    const startTimeLabel = moment(this.contextSensor[0].channels[0].start).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss');
+    const startTime = this.contextSensor[0].channels[0].start;
+    const startTimeLabel = moment.isMoment(startTime) && startTime.isValid() ?
+      startTime.utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss') : '';
     const optionsContext = {
       zoomEnabled: true,
       animationEnabled: false,
@@ -2210,7 +2246,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         for (const channel of sensor.channels) {
           if (channel.hasOwnProperty('raw')) {
             if (channel.valid && channel.enabled) {
-              const sg = (bRotated && channel.hasOwnProperty('rotated')) ?
+              const sg = (bRotated && channel.rotated.hasOwnProperty('_channelCode')) ?
                 channel.rotated.clone() : channel.raw.clone();
               let seis = null;
               const butterworth = this._createButterworthFilter(channel.sample_rate);

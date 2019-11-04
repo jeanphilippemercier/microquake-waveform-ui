@@ -39,13 +39,8 @@ export default class WaveformUtil {
       const sg = miniseed.createSeismogram(channelsMap.get(key));
       const header = channelsMap.get(key)[0].header;
       let valid = false;
-      if (isContext || (sg.y().includes(NaN) === false && sg.y().some((el: any) => el !== 0))) {
+      if (sg.y().includes(NaN) === false && sg.y().some((el: any) => el !== 0)) {
         valid = true;
-      } else {
-        // console.log('Warning - zero data channel: ' + sg.codes());
-        // const tracesInfo = this.tracesInfo ?
-        //   (this.tracesInfo.includes(sg.codes()) ? this.tracesInfo : this.tracesInfo + ', ' + sg.codes()) :
-        //   'Zero traces: ' + sg.codes();
       }
       if (sg.start().isValid()) {
         if (!zTime) {
@@ -75,7 +70,7 @@ export default class WaveformUtil {
       const data: any[] = [];
       const duration = (seismogram.numPoints() - 1) * WaveformUtil.convXUnits / seismogram.sampleRate();  // in microseconds
       const enabled = true;
-      const rotated = false;
+      const rotated = {};
       for (let k = 0; k < seismogram.numPoints(); k++) {
         data.push({
           x: microsec + (k * WaveformUtil.convXUnits / sample_rate),   // trace microsecond offset
@@ -104,6 +99,11 @@ export default class WaveformUtil {
         sensors.push(sensor);
       }
 
+      if (valid) {
+        sensor.channels.push(channel);
+      }
+
+      /*
       const invalid = (sensor.channels).findIndex((x: any) => !x.valid);
       if (invalid >= 0) {
         sensor.channels[invalid] = channel;  // valid channel replaces invalid channel (placeholder)
@@ -112,6 +112,7 @@ export default class WaveformUtil {
           sensor.channels.push(channel);
         }
       }
+      */
     });
 
     if (zTime) {
@@ -360,7 +361,7 @@ export default class WaveformUtil {
       const duration = sensor.channels[0].duration;  // in microseconds
       const enabled = true;
       const valid = true;
-      const rotated = true;
+      const rotated = {};
       const raw = {};
 
       const compositeTrace: Channel = {
