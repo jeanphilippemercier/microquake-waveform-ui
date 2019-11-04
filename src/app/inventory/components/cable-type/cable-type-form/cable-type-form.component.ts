@@ -12,12 +12,12 @@ import { MatDialog } from '@angular/material';
 import { Form } from '@core/classes/form.class';
 
 @Component({
-  selector: 'app-inventory-cable-type-detail',
-  templateUrl: './inventory-cable-type-detail.component.html',
-  styleUrls: ['./inventory-cable-type-detail.component.scss']
+  selector: 'app-cable-type-form',
+  templateUrl: './cable-type-form.component.html',
+  styleUrls: ['./cable-type-form.component.scss']
 })
 
-export class InventoryCableTypeDetailComponent extends Form<CableType> implements OnInit {
+export class CableTypeFormComponent extends Form<CableType> implements OnInit {
 
   myForm = this._fb.group({
     code: [, [Validators.required]],
