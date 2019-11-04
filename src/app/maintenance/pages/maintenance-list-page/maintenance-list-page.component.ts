@@ -100,6 +100,7 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
 
     } catch (err) {
       console.error(err);
+      this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
       await this._loadingService.stop();

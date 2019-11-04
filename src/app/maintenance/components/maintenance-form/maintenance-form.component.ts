@@ -194,7 +194,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       this.submited = true;
       let response: any;
       this.loading = true;
-      await this.loadingFormStart(this.loadingElName);
+      await this.loadingStart(this.loadingElName);
 
       if (this.mode === PageMode.CREATE) {
         const dto = this._buildCreateDtoObject(this.myForm.getRawValue());
@@ -216,7 +216,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      await this.loadingFormStop(this.loadingElName);
+      await this.loadingStop(this.loadingElName);
     }
   }
 

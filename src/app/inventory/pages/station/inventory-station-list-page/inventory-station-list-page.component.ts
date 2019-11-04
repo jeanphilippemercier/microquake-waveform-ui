@@ -23,7 +23,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
   searchChange = new Subject<string>();
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService,
+    private _inventoryApiService: InventoryApiService,
     private _loadingService: LoadingService,
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
@@ -52,7 +52,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
         query.search = this.search;
       }
 
-      const response = await this._inventoryApiSevice.getStations(query).toPromise();
+      const response = await this._inventoryApiService.getStations(query).toPromise();
 
       this.dataSource = response.results;
       this.count = response.count;

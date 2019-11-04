@@ -29,7 +29,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
   searchChange = new Subject<string>();
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService,
+    private _inventoryApiService: InventoryApiService,
     private _loadingService: LoadingService,
     private _toastrNotificationService: ToastrNotificationService,
     protected _router: Router,
@@ -59,7 +59,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
         query.search = this.search;
       }
 
-      const response = await this._inventoryApiSevice.getSensors(query).toPromise();
+      const response = await this._inventoryApiService.getSensors(query).toPromise();
 
       this.dataSource = response.results;
       this.count = response.count;

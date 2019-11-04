@@ -115,7 +115,7 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
     try {
 
       let response: any;
-      this.loadingFormStart();
+      this.loadingStart();
       this.loading = true;
 
       if (this.mode === PageMode.CREATE) {
@@ -136,7 +136,7 @@ export class MicroquakeEventTypeFormComponent extends Form<EventType> implements
       this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this.loadingFormStop();
+      this.loadingStop();
     }
   }
 

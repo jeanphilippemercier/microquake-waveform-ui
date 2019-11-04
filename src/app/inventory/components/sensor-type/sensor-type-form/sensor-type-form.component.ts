@@ -3,7 +3,7 @@ import { NgForm, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
-import { ISensorType } from '@interfaces/inventory.interface';
+import { ISensorType, SensorType } from '@interfaces/inventory.interface';
 import { ISensorTypeUpdateInput, ISensorTypeCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -28,8 +28,9 @@ export class SensorTypeFormComponent extends Form<ISensorType> implements OnInit
     shunt_resistance: [],
     gain: [],
     description: [],
-    motion_type: [],
   });
+
+  allSensorTypes: SensorType[] = Object.values(SensorType);
 
   @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;

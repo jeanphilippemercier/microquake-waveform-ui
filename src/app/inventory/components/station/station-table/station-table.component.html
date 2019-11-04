@@ -11,7 +11,7 @@
     </ng-container>
   </h3>
   <table
-    *ngIf="dataSource"
+    *ngIf="dataSource?.length > 0"
     mat-table
     matSort
     matSortActive="code"
@@ -21,10 +21,7 @@
     [dataSource]="dataSource"
     class=" w-100"
   >
-    <ng-container
-      matColumnDef="id"
-
-    >
+    <ng-container matColumnDef="id">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -127,10 +124,7 @@
       </td>
     </ng-container>
 
-    <ng-container
-      matColumnDef="actions"
-
-    >
+    <ng-container matColumnDef="actions">
       <th
         mat-header-cell
         *matHeaderCellDef
@@ -170,6 +164,7 @@
     ></tr>
   </table>
   <mat-paginator
+    *ngIf="dataSource?.length > 0"
     [pageSizeOptions]="[15]"
     [pageSize]="pageSize"
     [length]="count"

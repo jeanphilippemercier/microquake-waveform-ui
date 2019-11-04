@@ -75,7 +75,7 @@
         </ng-template>
       </mat-tab>
 
-      <mat-tab label="Sensors">
+      <mat-tab label="Sensors" [disabled]="!boreholeId">
         <ng-template matTabContent>
           <app-sensor-table
             (rowClick)="openFormDialog($event)"
