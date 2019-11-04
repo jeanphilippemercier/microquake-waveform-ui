@@ -515,7 +515,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
               const contextData = WaveformUtil.parseMiniseed(contextFile, true);
 
               if (!moment.isMoment(contextData.timeOrigin) || !contextData.timeOrigin.isValid()) {
-                console.error(`invalid contextTimeOrigin`);
+                console.log(`invalid contextTimeOrigin`);
                 const msg_str = `Invalid context trace origin time`;
                 this._toastrNotificationService.warning(msg_str);
               }
@@ -566,7 +566,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
 
       if (!moment.isMoment(eventData.timeOrigin) || !eventData.timeOrigin.isValid()) {
-        console.error(`invalid timeOrigin`);
+        console.log(`invalid timeOrigin`);
         const msg_str = `Invalid traces origin time on page`;
         this._toastrNotificationService.warning(msg_str);
       }
@@ -714,9 +714,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     // Chart Options, Render
     if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
+      console.error('invalid timeOrigin');
       const msg_str = `Invalid traces origin time`;
       this._toastrNotificationService.warning(msg_str);
-      console.log(msg_str);
       return;
     }
 
@@ -1042,13 +1042,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     if (!moment.isMoment(this.contextTimeOrigin) || !this.contextTimeOrigin.isValid()) {
+      console.error('invalid contextTimeOrigin');
       const msg_str = `Invalid context trace origin time`;
       this._toastrNotificationService.warning(msg_str);
-      console.log(msg_str);
       return;
     }
 
     if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
+      console.error('invalid timeOrigin');
+      const msg_str = `Invalid traces origin time`;
+      this._toastrNotificationService.warning(msg_str);
       return;
     }
 
