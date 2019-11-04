@@ -30,15 +30,6 @@
         *matCellDef="let element"
       >
         {{element?.site_code}}
-        <button
-          *ngIf=""
-          matTooltip="Show site detail"
-          color="primary"
-          [routerLink]="['/inventory/sites', element?.site]"
-          mat-button
-        >
-          {{element?.site_code}}
-        </button>
       </td>
     </ng-container>
 
@@ -60,13 +51,14 @@
         mat-header-cell
         *matHeaderCellDef
       >
-        <span class="pl-3">Microquake event type</span>
+        <span class="">Microquake event type</span>
       </th>
       <td
         mat-cell
         *matCellDef="let element"
       >
         <button
+          *ngIf=""
           matTooltip="Show detail"
           color="primary"
           [routerLink]="['/inventory/microquake-event-types', element?.id]"
@@ -74,6 +66,20 @@
         >
           {{element?.microquake_type}}
         </button>
+        {{element?.microquake_type}}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="identifier">
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+      > Identifier</th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+      >
+        {{element?.identifier}}
       </td>
     </ng-container>
 
@@ -98,6 +104,7 @@
       >
       </th>
       <td
+        (click)="$event.preventDefault();$event.stopPropagation();"
         mat-cell
         *matCellDef="let element"
       >
@@ -135,8 +142,9 @@
       *matHeaderRowDef="displayedColumns"
     ></tr>
     <tr
+      (click)="rowClicked(row)"
       mat-row
-      *matRowDef="let element; columns: displayedColumns;"
+      *matRowDef="let row; columns: displayedColumns;"
     ></tr>
   </table>
   <div

@@ -13,7 +13,7 @@ import { EventType } from '@interfaces/event.interface';
 })
 export class MicroquakeEventTypeTableComponent extends Table<EventType> {
 
-  displayedColumns: string[] = ['microquake_type', 'quakeml_type', 'site', 'countable', 'actions'];
+  displayedColumns: string[] = ['identifier', 'microquake_type', 'quakeml_type', 'site', 'countable', 'actions'];
   deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
   constructor(
@@ -35,5 +35,9 @@ export class MicroquakeEventTypeTableComponent extends Table<EventType> {
 
   editButtonClick(microquakeEventTypeId: number) {
     this._router.navigate(['inventory/microquake-event-types', microquakeEventTypeId], { preserveQueryParams: true });
+  }
+
+  rowClicked($event: EventType) {
+    this.rowClick.emit($event);
   }
 }
