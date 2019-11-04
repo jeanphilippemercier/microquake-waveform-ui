@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>
+  <ng-container *ngIf="dialogData.mode === PageMode.CREATE; else editTemplate">
+    Creating cable type
+  </ng-container>
+  <ng-template #editTemplate>
+    Editing cable type
+  </ng-template>
+</h1>
+<mat-dialog-content>
+  <app-cable-type-form
+    [mode]="dialogData.mode"
+    [model]="dialogData.model"
+    (modelEdited)="onSaveClicked()"
+    (modelCreated)="onSaveClicked()"
+    (cancel)="onCancelClicked()"
+  ></app-cable-type-form>
+</mat-dialog-content>

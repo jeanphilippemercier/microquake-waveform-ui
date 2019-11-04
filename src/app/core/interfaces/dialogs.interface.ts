@@ -1,6 +1,6 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station, TakenEventType, Borehole, Sensor } from './inventory.interface';
+import { Site, Network, Station, TakenEventType, Borehole, Sensor, CableType, ISensorType } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
 import { PageMode } from './core.interface';
 
@@ -62,6 +62,16 @@ export interface MicroquakeEventTypeFormDialogData {
   sites: Site[];
   takenEventType: TakenEventType[];
   quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+}
+
+export interface CableTypeFormDialogData {
+  model: CableType | Partial<CableType>;
+  mode: PageMode;
+}
+
+export interface SensorTypeFormDialogData {
+  model: ISensorType | Partial<ISensorType>;
+  mode: PageMode;
 }
 
 export interface BoreholeSurveyFileDialogData {
