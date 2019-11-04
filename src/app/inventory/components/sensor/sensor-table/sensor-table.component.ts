@@ -16,7 +16,6 @@ export class SensorTableComponent extends Table<Sensor> {
 
   @Input() stations: Station[] = [];
   @Input() boreholes: Borehole[] = [];
-  @Output() rowClick: EventEmitter<Sensor> = new EventEmitter();
 
   displayedColumns: string[] = ['enabled', 'sensor', 'station', 'borehole', 'components', 'actions'];
   deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;

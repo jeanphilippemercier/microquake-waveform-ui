@@ -1,3 +1,11 @@
+.mat-row:hover {
+  -webkit-transition: background-color 150ms linear;
+  -ms-transition: background-color 150ms linear;
+  transition: background-color 150ms linear;
+  background-color: #F7F7F7;
+  cursor: pointer;
+}
+
 td.mat-column-actions {
   width: 30px;
   padding-right: 8px;
@@ -11,17 +19,4 @@ td.mat-column-id {
 th.mat-header-cell,
 td.mat-cell {
   padding-left: 15px;
-}
-
-// .mat-table-sticky:first-child {
-//   border-right: 1px solid #e0e0e0;
-// }
-
-// .mat-table-sticky:last-child {
-//   border-left: 1px solid #e0e0e0;
-// }
-
-.content,
-.header {
-  background: #fff;
 }

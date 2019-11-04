@@ -15,7 +15,7 @@ import { StationFormComponent } from './components/station/station-form/station-
 import { InventorySensorTypeListPageComponent } from './pages/sensor-type/inventory-sensor-type-list-page/inventory-sensor-type-list-page.component';
 import { SensorTypeFormComponent } from './components/sensor-type/sensor-type-form/sensor-type-form.component';
 import { InventoryCableTypeListPageComponent } from './pages/cable-type/inventory-cable-type-list-page/inventory-cable-type-list-page.component';
-import { InventoryCableTypeDetailComponent } from './components/cable-type/inventory-cable-type-detail/inventory-cable-type-detail.component';
+import { CableTypeFormComponent } from './components/cable-type/cable-type-form/cable-type-form.component';
 import { MaintenanceModule } from '@app/maintenance/maintenance.module';
 import { StationTableComponent } from './components/station/station-table/station-table.component';
 import { SensorTableComponent } from './components/sensor/sensor-table/sensor-table.component';
@@ -30,6 +30,10 @@ import { MicroquakeEventTypeFormDialogComponent } from './dialogs/microquake-eve
 import { BoreholeSurveyFileDialogComponent } from './dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeInterpolationDialogComponent } from './dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { SensorFormDialogComponent } from './dialogs/sensor-form-dialog/sensor-form-dialog.component';
+import { CableTypeTableComponent } from './components/cable-type/cable-type-table/cable-type-table.component';
+import { CableTypeFormDialogComponent } from './dialogs/cable-type-form-dialog/cable-type-form-dialog.component';
+import { SensorTypeFormDialogComponent } from './dialogs/sensor-type-form-dialog/sensor-type-form-dialog.component';
+import { SensorTypeTableComponent } from './components/sensor-type/sensor-type-table/sensor-type-table.component';
 
 const ROUTES: Routes = [
   {
@@ -67,10 +71,18 @@ const ROUTES: Routes = [
   },
   {
     path: 'inventory/sensor-types',
+    redirectTo: 'inventory/sensor-types/',
+  },
+  {
+    path: 'inventory/sensor-types/:sensorTypeId',
     component: InventorySensorTypeListPageComponent,
   },
   {
     path: 'inventory/cable-types',
+    redirectTo: 'inventory/cable-types/',
+  },
+  {
+    path: 'inventory/cable-types/:cableTypeId',
     component: InventoryCableTypeListPageComponent,
   },
   {
@@ -100,7 +112,7 @@ const ROUTES: Routes = [
     InventorySensorDetailPageComponent,
     InventorySensorTypeListPageComponent,
     InventoryCableTypeListPageComponent,
-    InventoryCableTypeDetailComponent,
+    CableTypeFormComponent,
     StationFormComponent,
     SensorFormComponent,
     ComponentTableComponent,
@@ -118,7 +130,11 @@ const ROUTES: Routes = [
     MicroquakeEventTypeFormDialogComponent,
     BoreholeSurveyFileDialogComponent,
     BoreholeInterpolationDialogComponent,
-    SensorFormDialogComponent
+    SensorFormDialogComponent,
+    CableTypeTableComponent,
+    CableTypeFormDialogComponent,
+    SensorTypeFormDialogComponent,
+    SensorTypeTableComponent
   ],
   imports: [
     SharedModule,
@@ -130,7 +146,9 @@ const ROUTES: Routes = [
     MicroquakeEventTypeFormDialogComponent,
     BoreholeSurveyFileDialogComponent,
     BoreholeInterpolationDialogComponent,
-    SensorFormDialogComponent
+    SensorFormDialogComponent,
+    CableTypeFormDialogComponent,
+    SensorTypeFormDialogComponent
   ]
 })
 export class InventoryModule { }

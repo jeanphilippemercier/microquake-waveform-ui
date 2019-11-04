@@ -81,7 +81,7 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
 
     try {
       this.loading = true;
-      this.loadingFormStart();
+      this.loadingStart();
       if (this.mode === PageMode.CREATE) {
         const response = await this._inventoryApiService.createBorehole(dto).toPromise();
         await this._toastrNotificationService.success('Borehole created');
@@ -100,7 +100,7 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
       await this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this.loadingFormStop();
+      this.loadingStop();
     }
   }
 

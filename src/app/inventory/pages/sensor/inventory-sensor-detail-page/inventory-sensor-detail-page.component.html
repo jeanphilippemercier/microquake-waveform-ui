@@ -14,9 +14,6 @@
     </ng-container>
     <ng-container breadcrumbs>
       Home > Inventory >
-      <ng-container *ngIf="model?.station?.id">
-        <a [routerLink]="['/inventory/stations',model?.station?.id]">Station {{model?.station?.code}}</a> >
-      </ng-container>
       <a [routerLink]="['/inventory/sensors']">Sensors</a> >
       {{model ? ('' + model?.station?.code +'.'+ (model?.location_code ? model?.location_code  : '??') + '') : 'Creating new sensor'}}
     </ng-container>
@@ -32,6 +29,14 @@
         </button>
         <mat-menu #menu="matMenu">
           <button
+            *ngIf="sensorId"
+            mat-menu-item
+            color="primary"
+            (click)="calculateLocation()"
+          >
+            <mat-icon>straighten</mat-icon>
+            <span>Calulate location</span>
+          </button><button
             *ngIf="sensorId"
             mat-menu-item
             color="primary"
@@ -59,6 +64,7 @@
             (modelEdited)="model = $event"
             (modelCreated)="openDetail($event)"
             [mode]="pageMode"
+            (alongHoleZ)="alongHoleZChanged($event)"
           ></app-sensor-form>
         </ng-template>
       </mat-tab>

@@ -13,11 +13,11 @@ export class InventorySiteListPageComponent implements OnInit {
   dataSource!: Site[];
 
   constructor(
-    private _inventoryApiSevice: InventoryApiService
+    private _inventoryApiService: InventoryApiService
   ) { }
 
   async ngOnInit() {
-    this.dataSource = await this._inventoryApiSevice.getSites().toPromise();
+    this.dataSource = await this._inventoryApiService.getSites().toPromise();
   }
 
 }

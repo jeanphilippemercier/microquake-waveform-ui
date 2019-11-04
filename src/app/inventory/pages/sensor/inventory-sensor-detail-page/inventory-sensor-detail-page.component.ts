@@ -13,6 +13,8 @@ import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { DetailPage } from '@core/classes/detail-page.class';
+import { InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
+import { LoadingService } from '@services/loading.service';
 
 @Component({
   selector: 'app-inventory-sensor-detail-page',
@@ -45,7 +47,8 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> imple
     private _router: Router,
     protected _matDialog: MatDialog,
     protected _ngxSpinnerService: NgxSpinnerService,
-    private _toastrNotificationService: ToastrNotificationService
+    private _toastrNotificationService: ToastrNotificationService,
+    private _loadingService: LoadingService
   ) {
     super(_matDialog, _ngxSpinnerService);
   }
@@ -157,5 +160,53 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> imple
 
   openDetail($event: Sensor) {
     this._router.navigate(['/inventory/sensors', $event.id]);
+  }
+
+  async calculateLocation() {
+    try {
+      if (!this.model) {
+        this._toastrNotificationService.error('No model is defined');
+        return;
+      }
+
+      if (this.model.along_hole_z === null) {
+        this._toastrNotificationService.error('Please define depth along the borehole (Along hole z)');
+        return;
+      }
+
+      if (!this.model.borehole) {
+        this._toastrNotificationService.error('No borehole is defined');
+        return;
+      }
+
+      const query: InterpolateBoreholeQuery = {
+        alonghole_depth: this.model.along_hole_z
+      };
+      this._loadingService.start();
+      const response = await this._inventoryApiService.interpolateBorehole(this.model.borehole.id, query).toPromise();
+
+      this.model = {
+        ...this.model,
+        location_x: response.location.x,
+        location_y: response.location.y,
+        location_z: response.location.z
+      };
+      this._toastrNotificationService.success(`Location calculated. Click on Save button to save calculated values`);
+      console.log(response);
+
+    } catch (err) {
+      console.error(err);
+      const errMsg = err.error && err.error.alonghole_depth && err.error.alonghole_depth[0] ? err.error.alonghole_depth[0] : err;
+      this._toastrNotificationService.error(errMsg);
+      return;
+    } finally {
+      this._loadingService.stop();
+    }
+  }
+
+  alongHoleZChanged($event: any) {
+    if (this.model) {
+      this.model.along_hole_z = $event;
+    }
   }
 }

@@ -47,6 +47,7 @@ import { EventWaveformFilterDialogComponent } from './dialogs/event-waveform-fil
 import { LayoutHeaderComponent } from './layouts/layout-header/layout-header.component';
 import { LayoutFilterComponent } from './layouts/layout-filter/layout-filter.component';
 import { LayoutContentComponent } from './layouts/layout-content/layout-content.component';
+import { SensorTypePipe } from './pipes/sensor-type.pipe';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -126,7 +127,8 @@ const PIPES = [
   OrdinalPipe,
   EventQuakemlToMicroquakeTypePipe,
   EventTypeIconPipe,
-  EventMagnitudePipe
+  EventMagnitudePipe,
+  SensorTypePipe
 ];
 
 

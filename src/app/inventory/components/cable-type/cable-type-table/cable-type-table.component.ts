@@ -5,15 +5,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Table } from '@core/classes/table.class';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventType } from '@interfaces/event.interface';
+import { CableType } from '@interfaces/inventory.interface';
 
 @Component({
-  selector: 'app-microquake-event-type-table',
-  templateUrl: './microquake-event-type-table.component.html',
-  styleUrls: ['./microquake-event-type-table.component.scss'],
+  selector: 'app-cable-type-table',
+  templateUrl: './cable-type-table.component.html',
+  styleUrls: ['./cable-type-table.component.scss'],
 })
-export class MicroquakeEventTypeTableComponent extends Table<EventType> {
+export class CableTypeTableComponent  extends Table<CableType> {
 
-  displayedColumns: string[] = ['identifier', 'microquake_type', 'quakeml_type', 'site', 'countable', 'actions'];
+  displayedColumns: string[] = ['code', 'manufacturer', 'part_number', 'r', 'l', 'g', 'c', 'actions'];
   deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
   constructor(
@@ -25,7 +26,7 @@ export class MicroquakeEventTypeTableComponent extends Table<EventType> {
   }
 
   generateCopyUrl(id: number) {
-    const url = window.location.origin + this._router.createUrlTree(['inventory/microquake-event-types', id]);
+    const url = window.location.origin + this._router.createUrlTree(['inventory/cable-types', id]);
     return url;
   }
 
@@ -33,11 +34,11 @@ export class MicroquakeEventTypeTableComponent extends Table<EventType> {
     Object.assign(oldEvent, $event);
   }
 
-  editButtonClick(microquakeEventTypeId: number) {
-    this._router.navigate(['inventory/microquake-event-types', microquakeEventTypeId], { preserveQueryParams: true });
+  editButtonClick(cableTypeId: number) {
+    this._router.navigate(['inventory/cable-types', cableTypeId], { preserveQueryParams: true });
   }
 
-  rowClicked($event: EventType) {
+  rowClicked($event: CableType) {
     this.rowClick.emit($event);
   }
 }

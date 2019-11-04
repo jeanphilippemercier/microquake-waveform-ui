@@ -32,11 +32,17 @@
         <div class="col">
           <mat-form-field>
             <mat-label>Sensor type</mat-label>
-            <input
-              [required]="true"
-              matInput
+            <mat-select
               formControlName="sensor_type"
+              [required]="true"
             >
+              <mat-option
+                *ngFor="let sensorType of allSensorTypes"
+                [value]="sensorType"
+              >
+                {{sensorType | sensorType}}
+              </mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
       </div>
@@ -90,16 +96,6 @@
 
     <div class="col-lg-3 pl-lg-4">
       <div class="row">
-
-        <div class="col">
-          <mat-form-field>
-            <mat-label>Motion type</mat-label>
-            <input
-              matInput
-              formControlName="motion_type"
-            >
-          </mat-form-field>
-        </div>
 
         <div class="col">
           <mat-form-field>

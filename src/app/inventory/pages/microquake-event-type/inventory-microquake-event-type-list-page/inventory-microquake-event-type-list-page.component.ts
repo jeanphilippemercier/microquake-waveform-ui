@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material';
 import { NgxSpinnerService } from 'ngx-spinner';
@@ -36,12 +36,14 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
     private _toastrNotificationService: ToastrNotificationService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
-    this._initFormData();
+  }
 
+  async afterNgOnInit() {
+    this._initFormData();
     this._activatedRoute.params
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(async params => {
-        const microquakeEventTypeId = params['microquakeEventTypeId'];
+        const microquakeEventTypeId = +params['microquakeEventTypeId'];
         if (!microquakeEventTypeId) {
           return;
         }
@@ -49,8 +51,15 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
         try {
           await this.loadingStart();
           await this.wiatForInitialization();
-          const response = await this._inventoryApiService.getMicroquakeEventType(microquakeEventTypeId).toPromise();
-          await this.openEditFormDialog(response);
+
+          let data: EventType | undefined;
+          if (this.dataSource) {
+            data = this.dataSource.find(ev => ev.id === microquakeEventTypeId);
+          }
+          if (!data) {
+            data = await this._inventoryApiService.getMicroquakeEventType(microquakeEventTypeId).toPromise();
+          }
+          await this.openEditFormDialog(data);
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
@@ -173,4 +182,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
     });
   }
 
+  onRowClicked(ev: EventType) {
+    this._router.navigate(['/inventory/microquake-event-types', ev.id]);
+  }
 }

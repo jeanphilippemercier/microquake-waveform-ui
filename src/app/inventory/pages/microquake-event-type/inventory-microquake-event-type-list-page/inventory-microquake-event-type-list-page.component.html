@@ -22,6 +22,7 @@
       [dataSource]="dataSource"
       [showPagination]="false"
       (delete)="delete($event)"
+      (rowClick)="onRowClicked($event)"
     ></app-microquake-event-type-table>
   </app-layout-content>
 

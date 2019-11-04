@@ -3,7 +3,6 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 import { PageMode } from '@interfaces/core.interface';
 import { SensorFormDialogData } from '@interfaces/dialogs.interface';
-import { MaintenanceEvent } from '@interfaces/maintenance.interface';
 
 @Component({
   selector: 'app-sensor-form-dialog',
@@ -12,7 +11,6 @@ import { MaintenanceEvent } from '@interfaces/maintenance.interface';
 })
 export class SensorFormDialogComponent {
   PageMode = PageMode;
-  model!: MaintenanceEvent;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public dialogData: SensorFormDialogData,
