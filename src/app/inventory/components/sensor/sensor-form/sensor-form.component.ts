@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewChild, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, Output, EventEmitter, TemplateRef, OnDestroy } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
 import { startWith, map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
@@ -19,7 +19,7 @@ import { Form } from '@core/classes/form.class';
   styleUrls: ['./sensor-form.component.scss']
 })
 
-export class SensorFormComponent extends Form<Sensor> implements OnInit {
+export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestroy {
 
 
   @Input()
@@ -57,6 +57,8 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
     return this.myForm.get('code');
   }
 
+  @Output() alongHoleZ: EventEmitter<number> = new EventEmitter<number>();
+
   filteredStations!: Observable<Station[]>;
   filteredBoreholes!: Observable<Borehole[]>;
 
@@ -81,6 +83,7 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
 
   @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
+  alongHoleZFormElSub!: Subscription;
 
   constructor(
     private _activatedRoute: ActivatedRoute,
@@ -96,6 +99,13 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
 
   ngOnInit() {
     this._initEditableForm();
+  }
+
+  ngOnDestroy() {
+    if (this.alongHoleZFormElSub) {
+      this.alongHoleZFormElSub.unsubscribe();
+      delete this.alongHoleZFormElSub;
+    }
   }
 
   private async _initEditableForm() {
@@ -131,6 +141,16 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit {
           map(value => !value || typeof value === 'string' ? value : value.name),
           map(name => name ? this._filterBorehole(name) : this.boreholes.slice())
         );
+
+
+      const alongHoleZFormEl = this.myForm.get('along_hole_z');
+      if (!alongHoleZFormEl) {
+        return;
+      }
+
+      this.alongHoleZFormElSub = alongHoleZFormEl.valueChanges.subscribe(val => {
+        this.alongHoleZ.emit(val);
+      });
 
     } catch (err) {
       console.error(err);
