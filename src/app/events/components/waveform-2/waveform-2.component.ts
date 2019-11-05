@@ -2236,6 +2236,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _filterData(sensors: Sensor[], isContext: boolean, bRotated: boolean): Sensor[] {
     for (const sensor of sensors) {
+
+      if (!sensor) {
+        continue;
+      }
+
       if (sensor.enabled) {
         // remove existing composite trace if 3 components are available, to be added back after filtering components
         if (sensor.channels.length > 3) {

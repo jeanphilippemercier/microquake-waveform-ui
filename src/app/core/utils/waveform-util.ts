@@ -305,6 +305,10 @@ export default class WaveformUtil {
     };
     for (const sensor of sensors) {
 
+      if (!sensor) {
+        continue;
+      }
+
       if (sensor.hasOwnProperty('enabled') && !sensor.enabled) {
         console.log(`cannot create 3C composite trace for sensor not enabled`);
         console.log(sensor);
