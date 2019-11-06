@@ -39,12 +39,13 @@
               [matTooltipClass]="'break-line-tooltip'"
               [matTooltipPosition]="'right'"
               [matTooltip]="
-          (day?.dayDate | date:' MMM dd yyyy:timezone') + '\n'+
-          day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?' + ' accepted seismic events\n '+
-          day?.count ? day?.count !== null: '?' +' total events in current filter'
-          "
+              (!!day?.dayDate ? (day?.dayDate | date:' MMM dd yyyy':timezone) : '') + '\n' +
+              (day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?') + ' accepted seismic events\n '+
+              (day?.count !== null ? day?.count : '?') + ' total events in current filter'
+              "
             >
-              {{day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?'}} / {{day?.count !== null ? day?.count : '?'}}
+              {{day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?'}} /
+              {{day?.count !== null ? day?.count : '?'}}
             </div>
           </ng-template>
           <ng-template #partialTemplate>
