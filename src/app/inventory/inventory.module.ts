@@ -153,7 +153,6 @@ const otherDialogComponents = [
   BoreholeSurveyFileDialogComponent,
   BoreholeInterpolationDialogComponent
 ];
-
 @NgModule({
   declarations: [
     ...pageDetailComponents,

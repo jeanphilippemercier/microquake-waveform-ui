@@ -3,13 +3,16 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog, Sort } from '@angular/material';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 
 import { ListPage } from '@core/classes/list-page.class';
 import { Station } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { StationsQuery, StationsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { LoadingService } from '@services/loading.service';
+import { StationFormDialogComponent } from '@app/inventory/dialogs/station-form-dialog/station-form-dialog.component';
+import { StationFormDialogData } from '@interfaces/dialogs.interface';
+import { PageMode } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-inventory-station-list-page',
@@ -91,5 +94,23 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
         this.search = value;
         this.loadData();
       });
+  }
+
+  async openFormDialog($event: Station) {
+    const formDialogRef = this._matDialog.open<StationFormDialogComponent, StationFormDialogData>(
+      StationFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+    });
   }
 }

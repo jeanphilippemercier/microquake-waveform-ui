@@ -56,4 +56,7 @@ export class Table<T> implements OnInit {
     }
   }
 
+  rowClicked($event: T) {
+    this.rowClick.emit($event);
+  }
 }
