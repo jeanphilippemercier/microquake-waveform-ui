@@ -78,6 +78,10 @@ export interface StationFormDialogData {
   model: Station | Partial<Station>;
   mode: PageMode;
 }
+export interface BoreholeFormDialogData {
+  model: Borehole | Partial<Borehole>;
+  mode: PageMode;
+}
 
 export interface BoreholeSurveyFileDialogData {
   id: number;

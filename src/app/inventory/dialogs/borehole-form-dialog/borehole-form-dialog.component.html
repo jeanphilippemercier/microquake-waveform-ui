@@ -1,17 +1,17 @@
 <h1 mat-dialog-title>
   <ng-container *ngIf="dialogData.mode === PageMode.CREATE; else editTemplate">
-    Creating new station
+    Creating new borehole
   </ng-container>
   <ng-template #editTemplate>
-    Quick view station
+    Quick view borehole
   </ng-template>
 </h1>
 <mat-dialog-content>
-  <app-station-form
+  <app-borehole-form
     [mode]="dialogData.mode"
     [model]="dialogData.model"
     (modelEdited)="onSaveClicked()"
     (modelCreated)="onSaveClicked()"
   >
-  </app-station-form>
+  </app-borehole-form>
 </mat-dialog-content>

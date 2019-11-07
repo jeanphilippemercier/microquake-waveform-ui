@@ -8,12 +8,14 @@ import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material';
 import { first, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
-import { BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, ConfirmationDialogData, BoreholeFormDialogData } from '@interfaces/dialogs.interface';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { Subject } from 'rxjs';
 import { BoreholesQuery } from '@interfaces/inventory-query.interface';
+import { BoreholeFormDialogComponent } from '@app/inventory/dialogs/borehole-form-dialog/borehole-form-dialog.component';
+import { PageMode } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-inventory-borehole-list-page',
@@ -139,4 +141,23 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
         this.loadData();
       });
   }
+
+  async openFormDialog($event: Borehole) {
+    const formDialogRef = this._matDialog.open<BoreholeFormDialogComponent, BoreholeFormDialogData>(
+      BoreholeFormDialogComponent, {
+        hasBackdrop: true,
+        autoFocus: false,
+        data: {
+          mode: PageMode.EDIT,
+          model: $event
+        }
+      });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadData();
+      }
+    });
+  }
+
 }

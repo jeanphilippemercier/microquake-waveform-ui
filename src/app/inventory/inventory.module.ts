@@ -35,6 +35,7 @@ import { CableTypeFormDialogComponent } from './dialogs/cable-type-form-dialog/c
 import { SensorTypeFormDialogComponent } from './dialogs/sensor-type-form-dialog/sensor-type-form-dialog.component';
 import { SensorTypeTableComponent } from './components/sensor-type/sensor-type-table/sensor-type-table.component';
 import { StationFormDialogComponent } from './dialogs/station-form-dialog/station-form-dialog.component';
+import { BoreholeFormDialogComponent } from './dialogs/borehole-form-dialog/borehole-form-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -146,7 +147,8 @@ const formDialogComponents = [
   SensorFormDialogComponent,
   CableTypeFormDialogComponent,
   SensorTypeFormDialogComponent,
-  StationFormDialogComponent
+  StationFormDialogComponent,
+  BoreholeFormDialogComponent
 ];
 
 const otherDialogComponents = [

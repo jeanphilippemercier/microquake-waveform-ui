@@ -36,6 +36,7 @@
     <app-borehole-table
       [dataSource]="dataSource"
       [count]="count"
+      (rowClick)="openFormDialog($event)"
       (previousPage)="loadData(cursorPrevious)"
       (nextPage)="loadData(cursorNext)"
       (surveyFile)="onUploadSurveyFile($event)"
