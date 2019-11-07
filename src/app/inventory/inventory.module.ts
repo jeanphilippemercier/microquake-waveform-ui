@@ -160,6 +160,8 @@ const otherDialogComponents = [
     ...pageListComponents,
     ...formComponents,
     ...tableComponents,
+    ...formDialogComponents,
+    ...otherDialogComponents
   ],
   imports: [
     SharedModule,
