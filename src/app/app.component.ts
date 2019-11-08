@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, RouterEvent, RouteConfigLoadStart, RouteConfigLoadEnd, Event } from '@angular/router';
 
 import { User } from '@interfaces/user.interface';
 import { AuthService } from '@services/auth.service';
@@ -15,6 +15,7 @@ import { LoadingService } from '@services/loading.service';
 })
 export class AppComponent implements OnInit {
   user: User | null = null;
+  private _asyncLoadCount = 0;
 
   constructor(
     private _loadingService: LoadingService,
@@ -35,6 +36,23 @@ export class AppComponent implements OnInit {
         this.menuService.close();
         this._router.navigate(['..']);
         this.openAuthDialog();
+      }
+    });
+
+    this._router.events.subscribe((val: Event): void => {
+      if (val instanceof RouteConfigLoadStart || val instanceof RouteConfigLoadEnd) {
+        if (val instanceof RouteConfigLoadStart) {
+          this._asyncLoadCount++;
+
+        } else if (val instanceof RouteConfigLoadEnd) {
+          this._asyncLoadCount--;
+        }
+
+        if (this._asyncLoadCount > 0) {
+          this._loadingService.start();
+        } else {
+          this._loadingService.stop();
+        }
       }
     });
   }
