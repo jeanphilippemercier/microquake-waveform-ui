@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { first, take, skipWhile } from 'rxjs/operators';
 import * as moment from 'moment';
@@ -126,8 +126,11 @@ export class WaveformService implements OnDestroy {
   allSensorsMap: { [key: string]: number } = {};
   allStationsMap: { [key: number]: number } = {};
 
-  initialized: ReplaySubject<boolean> = new ReplaySubject(1);
-  initializedObs: Observable<boolean> = this.initialized.asObservable();
+  initializedPrimary: ReplaySubject<boolean> = new ReplaySubject(1);
+  initializedPrimaryObs: Observable<boolean> = this.initializedPrimary.asObservable();
+
+  initializedSecondary: ReplaySubject<boolean> = new ReplaySubject(1);
+  initializedSecondaryObs: Observable<boolean> = this.initializedSecondary.asObservable();
 
   public set currentSite(v: Site) {
     this._currentSite = v;
@@ -158,7 +161,8 @@ export class WaveformService implements OnDestroy {
     private _activatedRoute: ActivatedRoute,
     private _eventQuakemlToMicroquakeTypePipe: EventQuakemlToMicroquakeTypePipe,
   ) {
-    this._init();
+    this._initPrimary();
+    this._initSecondary();
   }
 
   ngOnDestroy() {
@@ -169,24 +173,49 @@ export class WaveformService implements OnDestroy {
 
   public isInitialized(): Promise<void> {
     return new Promise(resolve => {
-      this.initialized.pipe(
+      forkJoin([
+        this.isInitializedPrimary(),
+        this.isInitializedSecondary()
+      ]).subscribe(val => resolve());
+    });
+  }
+
+  public isInitializedPrimary(): Promise<void> {
+    return new Promise(resolve => {
+      this.initializedPrimary.pipe(
         skipWhile(val => val !== true),
         take(1)
       ).subscribe(val => resolve());
     });
   }
 
-  private async _init() {
+  public isInitializedSecondary(): Promise<void> {
+    return new Promise(resolve => {
+      this.initializedSecondary.pipe(
+        skipWhile(val => val !== true),
+        take(1)
+      ).subscribe(val => resolve());
+    });
+  }
+
+  private async _initPrimary() {
     await Promise.all([
       this._loadPersistantData(),
       this._watchServerEventUpdates(),
       this._loadEventTypes(),
-      this._getAllSitesAndNetworks(),
+      this._getAllSitesAndNetworks()
+    ]);
+
+    this.initializedPrimary.next(true);
+  }
+
+  private async _initSecondary() {
+    await Promise.all([
       this._loadAllSensors(),
       this._loadAllStations()
     ]);
 
-    this.initialized.next(true);
+    this.initializedSecondary.next(true);
   }
 
   private async _loadEventTypes() {
