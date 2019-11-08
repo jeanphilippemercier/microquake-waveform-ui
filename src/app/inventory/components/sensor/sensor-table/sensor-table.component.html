@@ -214,9 +214,9 @@
       *matHeaderRowDef="displayedColumns"
     ></tr>
     <tr
-      (click)="rowClicked(row)"
       mat-row
       *matRowDef="let row; columns: displayedColumns;"
+      (click)="rowClicked(row)"
     ></tr>
   </table>
   <mat-paginator

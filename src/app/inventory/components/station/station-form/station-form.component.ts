@@ -130,9 +130,8 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     }
 
     try {
-
       let response: any;
-      await this._ngxSpinnerService.show('loadingForm', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+      await this.loadingStart();
       this.loading = true;
 
       if (this.mode === PageMode.CREATE) {
@@ -140,13 +139,12 @@ export class StationFormComponent extends Form<Station> implements OnInit {
         response = await this._inventoryApiService.createStation(dto).toPromise();
         this._toastrNotificationService.success('Station created');
         this.modelCreated.emit(response);
-
       } else if (this.mode === PageMode.EDIT) {
         const dto = this._buildUpdateDtoObject(this.myForm.value);
         response = await this._inventoryApiService.updateStation(this.model.id, dto).toPromise();
-
         this._toastrNotificationService.success('Station updated');
         this.modelEdited.emit(response);
+        this.modelChange.emit(response);
       }
 
     } catch (err) {
@@ -154,7 +152,7 @@ export class StationFormComponent extends Form<Station> implements OnInit {
       this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingForm');
+      await this.loadingStop();
     }
   }
 

@@ -70,6 +70,7 @@
           <app-borehole-form
             [model]="model"
             (modelEdited)="model = $event"
+            (modelCreated)="openDetail($event)"
             [mode]="pageMode"
           ></app-borehole-form>
         </ng-template>
