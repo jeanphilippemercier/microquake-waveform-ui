@@ -5,7 +5,7 @@ import { MatDialog, PageEvent } from '@angular/material';
 import { PageMode } from '@interfaces/core.interface';
 import { ReplaySubject, Subject } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { skipWhile, take } from 'rxjs/operators';
+import { skipWhile, take, debounceTime, takeUntil } from 'rxjs/operators';
 export class ListPage<T> implements OnInit, OnDestroy {
 
   dataSource: T[] | null = null;
@@ -22,6 +22,10 @@ export class ListPage<T> implements OnInit, OnDestroy {
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
   protected _unsubscribe = new Subject<void>();
+
+  // search filter
+  search = '';
+  searchChange = new Subject<string>();
 
   constructor(
     protected _activatedRoute: ActivatedRoute,
@@ -40,6 +44,11 @@ export class ListPage<T> implements OnInit, OnDestroy {
         }
         if (params.page_size) {
           this.pageSize = params.page_size;
+        }
+        if (params.search) {
+          this.search = params.search;
+        } else {
+          this.search = '';
         }
       }
 
@@ -62,6 +71,27 @@ export class ListPage<T> implements OnInit, OnDestroy {
         skipWhile(val => val !== true),
         take(1)
       ).subscribe(val => resolve());
+    });
+  }
+
+  protected _subscribeToSearch() {
+    this.searchChange.pipe(
+      debounceTime(400),
+      takeUntil(this._unsubscribe)
+    ).subscribe(value => {
+      this.search = value;
+      const queryParams: Params = {};
+
+      if (this.search) {
+        queryParams.search = this.search;
+      }
+
+      this._router.navigate(
+        [],
+        {
+          relativeTo: this._activatedRoute,
+          queryParams: queryParams
+        });
     });
   }
 
@@ -100,5 +130,14 @@ export class ListPage<T> implements OnInit, OnDestroy {
   }
   async loadingStop() {
     await this._ngxSpinnerService.hide('loading');
+  }
+
+  clearFilter() {
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: {},
+      });
   }
 }

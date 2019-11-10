@@ -25,8 +25,6 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 export class InventorySensorListPageComponent extends ListPage<Sensor> implements OnInit {
 
   ordring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
-  search = '';
-  searchChange = new Subject<string>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -38,7 +36,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
     protected _ngxSpinnerService: NgxSpinnerService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
-    this._subscribeOnSearch();
+    this._subscribeToSearch();
   }
 
   async loadData(cursor?: string | null) {
@@ -84,25 +82,6 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
       }
     }
     this.loadData();
-  }
-
-  private _subscribeOnSearch() {
-    this.searchChange.pipe(
-      debounceTime(400),
-      distinctUntilChanged())
-      .subscribe(value => {
-        this.search = value;
-        // this.loadData();
-
-        const queryParams: Params = { search: this.search };
-
-        this._router.navigate(
-          [],
-          {
-            relativeTo: this._activatedRoute,
-            queryParams: queryParams
-          });
-      });
   }
 
   async openFormDialog($event: Sensor) {

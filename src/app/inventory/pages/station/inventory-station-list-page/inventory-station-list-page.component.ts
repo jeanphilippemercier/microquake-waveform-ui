@@ -22,8 +22,6 @@ import { PageMode } from '@interfaces/core.interface';
 export class InventoryStationListPageComponent extends ListPage<Station> {
 
   ordering: StationsQueryOrdering = StationsQueryOrdering.codeASC;
-  search = '';
-  searchChange = new Subject<string>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -85,16 +83,6 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
       }
     }
     this.loadData();
-  }
-
-  private _subscribeToSearch() {
-    this.searchChange.pipe(
-      debounceTime(400),
-      distinctUntilChanged())
-      .subscribe(value => {
-        this.search = value;
-        this.loadData();
-      });
   }
 
   async openFormDialog($event: Station) {
