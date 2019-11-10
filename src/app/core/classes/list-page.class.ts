@@ -90,7 +90,8 @@ export class ListPage<T> implements OnInit, OnDestroy {
         [],
         {
           relativeTo: this._activatedRoute,
-          queryParams: queryParams
+          queryParams: queryParams,
+          replaceUrl: true
         });
     });
   }
@@ -115,6 +116,7 @@ export class ListPage<T> implements OnInit, OnDestroy {
         relativeTo: this._activatedRoute,
         queryParams: queryParams,
         queryParamsHandling: 'merge',
+        replaceUrl: true
       });
   }
 
