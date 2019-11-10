@@ -61,6 +61,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
       this.count = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
+      this.currentPage = response.current_page - 1;
     } catch (err) {
       console.error(err);
     } finally {
@@ -99,13 +100,13 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
   async openFormDialog($event: Station) {
     const formDialogRef = this._matDialog.open<StationFormDialogComponent, StationFormDialogData>(
       StationFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event
-        }
-      });
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {

@@ -15,6 +15,7 @@ export class ListPage<T> implements OnInit, OnDestroy {
   count = 0;
   cursorPrevious: string | null = null;
   cursorNext: string | null = null;
+  currentPage = 0;
   PageMode = PageMode;
   paginationEnabled = true;
   initialized: ReplaySubject<boolean> = new ReplaySubject(1);

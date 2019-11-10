@@ -38,6 +38,7 @@
     <app-station-table
       [dataSource]="dataSource"
       [count]="count"
+      [page]="currentPage"
       (rowClick)="openFormDialog($event)"
       (previousPage)="changePage(cursorPrevious)"
       (nextPage)="changePage(cursorNext)"
