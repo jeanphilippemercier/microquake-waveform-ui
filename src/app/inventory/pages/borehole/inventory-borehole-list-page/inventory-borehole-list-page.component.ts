@@ -1,21 +1,20 @@
 import { Component, OnInit } from '@angular/core';
-
-import { Borehole } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material';
-import { first, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { first } from 'rxjs/operators';
+
+import { PageMode } from '@interfaces/core.interface';
+import { ListPage } from '@core/classes/list-page.class';
+import { Borehole } from '@interfaces/inventory.interface';
+import { InventoryApiService } from '@services/inventory-api.service';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, ConfirmationDialogData, BoreholeFormDialogData } from '@interfaces/dialogs.interface';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { Subject } from 'rxjs';
 import { BoreholesQuery } from '@interfaces/inventory-query.interface';
 import { BoreholeFormDialogComponent } from '@app/inventory/dialogs/borehole-form-dialog/borehole-form-dialog.component';
-import { PageMode } from '@interfaces/core.interface';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-inventory-borehole-list-page',
@@ -23,9 +22,6 @@ import { PageMode } from '@interfaces/core.interface';
   styleUrls: ['./inventory-borehole-list-page.component.scss']
 })
 export class InventoryBoreholeListPageComponent extends ListPage<Borehole> implements OnInit {
-
-  search = '';
-  searchChange = new Subject<string>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -62,6 +58,7 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
       this.count = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
+      this.currentPage = response.current_page;
     } catch (err) {
       this._toastrNotificationService.error(err);
       console.error(err);
@@ -74,15 +71,15 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
   onUploadSurveyFile($event: Borehole) {
     const surveyFileDialogRef = this._matDialog.open<BoreholeSurveyFileDialogComponent, BoreholeSurveyFileDialogData>(
       BoreholeSurveyFileDialogComponent, {
-        hasBackdrop: true,
-        disableClose: true,
-        data: {
-          id: $event.id,
-          colar_x: $event.collar_x,
-          colar_y: $event.collar_y,
-          colar_z: $event.collar_z,
-        }
-      });
+      hasBackdrop: true,
+      disableClose: true,
+      data: {
+        id: $event.id,
+        colar_x: $event.collar_x,
+        colar_y: $event.collar_y,
+        colar_z: $event.collar_z,
+      }
+    });
 
     surveyFileDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -94,12 +91,12 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
   onInterpolateBorehole($event: Borehole) {
     const boreholeInterpolationDialogRef = this._matDialog.open<BoreholeInterpolationDialogComponent, BoreholeInterpolationDialogData>(
       BoreholeInterpolationDialogComponent, {
-        hasBackdrop: true,
-        disableClose: true,
-        data: {
-          id: $event.id
-        }
-      });
+      hasBackdrop: true,
+      disableClose: true,
+      data: {
+        id: $event.id
+      }
+    });
   }
 
   onDelete(boreholeId: number) {
@@ -110,13 +107,13 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this borehole? Borehole id: ${boreholeId}`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this borehole? Borehole id: ${boreholeId}`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -132,26 +129,16 @@ export class InventoryBoreholeListPageComponent extends ListPage<Borehole> imple
     });
   }
 
-  private _subscribeToSearch() {
-    this.searchChange.pipe(
-      debounceTime(400),
-      distinctUntilChanged())
-      .subscribe(value => {
-        this.search = value;
-        this.loadData();
-      });
-  }
-
   async openFormDialog($event: Borehole) {
     const formDialogRef = this._matDialog.open<BoreholeFormDialogComponent, BoreholeFormDialogData>(
       BoreholeFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event
-        }
-      });
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
