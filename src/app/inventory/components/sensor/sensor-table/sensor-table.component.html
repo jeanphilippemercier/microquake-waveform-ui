@@ -223,6 +223,7 @@
     *ngIf="dataSource?.length > 0"
     [pageSizeOptions]="[15]"
     [pageSize]="pageSize"
+    [pageIndex]="page"
     [length]="count"
     (page)="onPageChange($event)"
   ></mat-paginator>

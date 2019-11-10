@@ -36,9 +36,10 @@
     <app-sensor-table
       [dataSource]="dataSource"
       [count]="count"
+      [page]="currentPage"
       (rowClick)="openFormDialog($event)"
-      (previousPage)="loadData(cursorPrevious)"
-      (nextPage)="loadData(cursorNext)"
+      (previousPage)="changePage(cursorPrevious)"
+      (nextPage)="changePage(cursorNext)"
       (sort)="onSort($event)"
     ></app-sensor-table>
   </app-layout-content>

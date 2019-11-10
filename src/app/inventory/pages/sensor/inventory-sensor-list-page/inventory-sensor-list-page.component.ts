@@ -65,6 +65,7 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
       this.count = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
+      this.currentPage = response.current_page - 1;
     } catch (err) {
       this._toastrNotificationService.error(err);
       console.error(err);
@@ -91,20 +92,29 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
       distinctUntilChanged())
       .subscribe(value => {
         this.search = value;
-        this.loadData();
+        // this.loadData();
+
+        const queryParams: Params = { search: this.search };
+
+        this._router.navigate(
+          [],
+          {
+            relativeTo: this._activatedRoute,
+            queryParams: queryParams
+          });
       });
   }
 
   async openFormDialog($event: Sensor) {
     const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
       SensorFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event
-        }
-      });
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
