@@ -56,7 +56,11 @@ const ROUTES: Routes = [
     component: InventoryStationListPageComponent,
   },
   {
-    path: 'inventory/stations/:stationId',
+    path: 'inventory/stations/:id',
+    redirectTo: 'inventory/stations/:id/',
+  },
+  {
+    path: 'inventory/stations/:id/:tabId',
     component: InventoryStationDetailPageComponent,
   },
   {
@@ -64,11 +68,11 @@ const ROUTES: Routes = [
     component: InventorySensorListPageComponent,
   },
   {
-    path: 'inventory/sensors/:sensorId',
-    component: InventorySensorDetailPageComponent,
+    path: 'inventory/sensors/:id',
+    redirectTo: 'inventory/sensors/:id/',
   },
   {
-    path: 'inventory/sensors/:sensorId/:pageMode',
+    path: 'inventory/sensors/:id/:tabId',
     component: InventorySensorDetailPageComponent,
   },
   {
@@ -92,7 +96,11 @@ const ROUTES: Routes = [
     component: InventoryBoreholeListPageComponent,
   },
   {
-    path: 'inventory/boreholes/:boreholeId',
+    path: 'inventory/boreholes/:id',
+    redirectTo: 'inventory/boreholes/:id/'
+  },
+  {
+    path: 'inventory/boreholes/:id/:tabId',
     component: InventoryBoreholeDetailPageComponent,
   },
   {
