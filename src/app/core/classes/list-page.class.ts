@@ -5,7 +5,7 @@ import { MatDialog, PageEvent } from '@angular/material';
 import { PageMode } from '@interfaces/core.interface';
 import { ReplaySubject, Subject } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { skipWhile, take } from 'rxjs/operators';
+import { skipWhile, take, debounceTime, takeUntil } from 'rxjs/operators';
 export class ListPage<T> implements OnInit, OnDestroy {
 
   dataSource: T[] | null = null;
@@ -15,12 +15,17 @@ export class ListPage<T> implements OnInit, OnDestroy {
   count = 0;
   cursorPrevious: string | null = null;
   cursorNext: string | null = null;
+  currentPage = 0;
   PageMode = PageMode;
   paginationEnabled = true;
   initialized: ReplaySubject<boolean> = new ReplaySubject(1);
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
   protected _unsubscribe = new Subject<void>();
+
+  // search filter
+  search = '';
+  searchChange = new Subject<string>();
 
   constructor(
     protected _activatedRoute: ActivatedRoute,
@@ -39,6 +44,11 @@ export class ListPage<T> implements OnInit, OnDestroy {
         }
         if (params.page_size) {
           this.pageSize = params.page_size;
+        }
+        if (params.search) {
+          this.search = params.search;
+        } else {
+          this.search = '';
         }
       }
 
@@ -64,6 +74,28 @@ export class ListPage<T> implements OnInit, OnDestroy {
     });
   }
 
+  protected _subscribeToSearch() {
+    this.searchChange.pipe(
+      debounceTime(400),
+      takeUntil(this._unsubscribe)
+    ).subscribe(value => {
+      this.search = value;
+      const queryParams: Params = {};
+
+      if (this.search) {
+        queryParams.search = this.search;
+      }
+
+      this._router.navigate(
+        [],
+        {
+          relativeTo: this._activatedRoute,
+          queryParams: queryParams,
+          replaceUrl: true
+        });
+    });
+  }
+
   openDialog(templateRef: TemplateRef<any>) {
     this._matDialog.open(templateRef);
   }
@@ -84,6 +116,7 @@ export class ListPage<T> implements OnInit, OnDestroy {
         relativeTo: this._activatedRoute,
         queryParams: queryParams,
         queryParamsHandling: 'merge',
+        replaceUrl: true
       });
   }
 
@@ -99,5 +132,14 @@ export class ListPage<T> implements OnInit, OnDestroy {
   }
   async loadingStop() {
     await this._ngxSpinnerService.hide('loading');
+  }
+
+  clearFilter() {
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: {},
+      });
   }
 }

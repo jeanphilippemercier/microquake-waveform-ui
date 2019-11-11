@@ -29,7 +29,7 @@
         </button>
         <mat-menu #menu="matMenu">
           <button
-            *ngIf="sensorId"
+            *ngIf="id"
             mat-menu-item
             color="primary"
             (click)="calculateLocation()"
@@ -37,10 +37,10 @@
             <mat-icon>straighten</mat-icon>
             <span>Calulate location</span>
           </button><button
-            *ngIf="sensorId"
+            *ngIf="id"
             mat-menu-item
             color="primary"
-            (click)="delete(sensorId)"
+            (click)="delete(id)"
           >
             <mat-icon>delete</mat-icon>
             <span>Delete</span>
@@ -53,7 +53,11 @@
 
   <app-layout-content>
 
-    <mat-tab-group class="w-100">
+    <mat-tab-group
+      class="w-100"
+      [selectedIndex]="currentTabId"
+      (selectedTabChange)="tabChanged($event)"
+    >
       <mat-tab label="Details">
         <ng-template matTabContent>
           <app-sensor-form

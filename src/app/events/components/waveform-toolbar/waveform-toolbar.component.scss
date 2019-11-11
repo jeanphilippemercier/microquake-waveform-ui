@@ -61,6 +61,10 @@ mat-paginator {
 }
 
 .pagination-pages {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 40px;
   cursor: pointer;
   width: 40px;
   font-size: 12px;

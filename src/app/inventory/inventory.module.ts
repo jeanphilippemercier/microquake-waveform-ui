@@ -34,6 +34,8 @@ import { CableTypeTableComponent } from './components/cable-type/cable-type-tabl
 import { CableTypeFormDialogComponent } from './dialogs/cable-type-form-dialog/cable-type-form-dialog.component';
 import { SensorTypeFormDialogComponent } from './dialogs/sensor-type-form-dialog/sensor-type-form-dialog.component';
 import { SensorTypeTableComponent } from './components/sensor-type/sensor-type-table/sensor-type-table.component';
+import { StationFormDialogComponent } from './dialogs/station-form-dialog/station-form-dialog.component';
+import { BoreholeFormDialogComponent } from './dialogs/borehole-form-dialog/borehole-form-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -54,7 +56,11 @@ const ROUTES: Routes = [
     component: InventoryStationListPageComponent,
   },
   {
-    path: 'inventory/stations/:stationId',
+    path: 'inventory/stations/:id',
+    redirectTo: 'inventory/stations/:id/',
+  },
+  {
+    path: 'inventory/stations/:id/:tabId',
     component: InventoryStationDetailPageComponent,
   },
   {
@@ -62,11 +68,11 @@ const ROUTES: Routes = [
     component: InventorySensorListPageComponent,
   },
   {
-    path: 'inventory/sensors/:sensorId',
-    component: InventorySensorDetailPageComponent,
+    path: 'inventory/sensors/:id',
+    redirectTo: 'inventory/sensors/:id/',
   },
   {
-    path: 'inventory/sensors/:sensorId/:pageMode',
+    path: 'inventory/sensors/:id/:tabId',
     component: InventorySensorDetailPageComponent,
   },
   {
@@ -90,7 +96,11 @@ const ROUTES: Routes = [
     component: InventoryBoreholeListPageComponent,
   },
   {
-    path: 'inventory/boreholes/:boreholeId',
+    path: 'inventory/boreholes/:id',
+    redirectTo: 'inventory/boreholes/:id/'
+  },
+  {
+    path: 'inventory/boreholes/:id/:tabId',
     component: InventoryBoreholeDetailPageComponent,
   },
   {
@@ -102,39 +112,65 @@ const ROUTES: Routes = [
     component: InventoryMicroquakeEventTypeListPageComponent,
   },
 ];
+
+const pageDetailComponents = [
+  InventorySiteDetailPageComponent,
+  InventoryStationDetailPageComponent,
+  InventorySensorDetailPageComponent,
+  InventoryBoreholeDetailPageComponent
+];
+
+const pageListComponents = [
+  InventorySiteListPageComponent,
+  InventoryStationListPageComponent,
+  InventorySensorListPageComponent,
+  InventorySensorTypeListPageComponent,
+  InventoryCableTypeListPageComponent,
+  InventoryBoreholeListPageComponent,
+  InventoryMicroquakeEventTypeListPageComponent
+];
+
+const formComponents = [
+  CableTypeFormComponent,
+  StationFormComponent,
+  SensorFormComponent,
+  ComponentFormComponent,
+  SensorTypeFormComponent,
+  BoreholeFormComponent,
+  MicroquakeEventTypeFormComponent
+];
+
+const tableComponents = [
+  ComponentTableComponent,
+  StationTableComponent,
+  SensorTableComponent,
+  BoreholeTableComponent,
+  MicroquakeEventTypeTableComponent,
+  CableTypeTableComponent,
+  SensorTypeTableComponent
+];
+
+const formDialogComponents = [
+  MicroquakeEventTypeFormDialogComponent,
+  SensorFormDialogComponent,
+  CableTypeFormDialogComponent,
+  SensorTypeFormDialogComponent,
+  StationFormDialogComponent,
+  BoreholeFormDialogComponent
+];
+
+const otherDialogComponents = [
+  BoreholeSurveyFileDialogComponent,
+  BoreholeInterpolationDialogComponent
+];
 @NgModule({
   declarations: [
-    InventorySiteListPageComponent,
-    InventorySiteDetailPageComponent,
-    InventoryStationListPageComponent,
-    InventoryStationDetailPageComponent,
-    InventorySensorListPageComponent,
-    InventorySensorDetailPageComponent,
-    InventorySensorTypeListPageComponent,
-    InventoryCableTypeListPageComponent,
-    CableTypeFormComponent,
-    StationFormComponent,
-    SensorFormComponent,
-    ComponentTableComponent,
-    ComponentFormComponent,
-    SensorTypeFormComponent,
-    StationTableComponent,
-    SensorTableComponent,
-    InventoryBoreholeDetailPageComponent,
-    InventoryBoreholeListPageComponent,
-    BoreholeFormComponent,
-    BoreholeTableComponent,
-    MicroquakeEventTypeTableComponent,
-    MicroquakeEventTypeFormComponent,
-    InventoryMicroquakeEventTypeListPageComponent,
-    MicroquakeEventTypeFormDialogComponent,
-    BoreholeSurveyFileDialogComponent,
-    BoreholeInterpolationDialogComponent,
-    SensorFormDialogComponent,
-    CableTypeTableComponent,
-    CableTypeFormDialogComponent,
-    SensorTypeFormDialogComponent,
-    SensorTypeTableComponent
+    ...pageDetailComponents,
+    ...pageListComponents,
+    ...formComponents,
+    ...tableComponents,
+    ...formDialogComponents,
+    ...otherDialogComponents
   ],
   imports: [
     SharedModule,
@@ -143,12 +179,8 @@ const ROUTES: Routes = [
   ],
   exports: [RouterModule],
   entryComponents: [
-    MicroquakeEventTypeFormDialogComponent,
-    BoreholeSurveyFileDialogComponent,
-    BoreholeInterpolationDialogComponent,
-    SensorFormDialogComponent,
-    CableTypeFormDialogComponent,
-    SensorTypeFormDialogComponent
+    ...formDialogComponents,
+    ...otherDialogComponents
   ]
 })
 export class InventoryModule { }

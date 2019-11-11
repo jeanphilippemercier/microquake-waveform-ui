@@ -23,11 +23,13 @@
             <strong class="text-uppercase align-self-center">Event list</strong>
 
             <button
+              *ngIf=""
               class="ml-1"
               mat-button
               color="primary"
               [routerLink]="['/events']"
               queryParamsHandling="merge"
+              matTooltip="Back to event list page"
             >
               <mat-icon class="mat-18">reorder</mat-icon>
               <small>List</small>
@@ -39,6 +41,8 @@
               color="primary"
               mat-button
               (click)="waveformService.openEventFilterDialog();$event.stopPropagation()"
+              matTooltip="Open filter dialog"
+              matTooltipPosition="right"
             >
               <mat-icon
                 class="mat-18"
@@ -126,8 +130,10 @@
               color="primary"
               mat-button
               (click)="waveformService.openEventUpdateDialog(currentEventInfo);$event.stopPropagation()"
+              matTooltip="Open udpate dialog"
+              matTooltipPosition="right"
             >
-              <mat-icon class="mat-18">edit</mat-icon>
+              <mat-icon>edit</mat-icon>
               <small class="align-self-center">
                 Edit
               </small>
@@ -154,6 +160,7 @@
       class="collapse-button"
       [ngClass]="{'outside': !(waveformService.sidebarOpened | async)}"
       matTooltip="Collapse Sidebar"
+      matTooltipPosition="right"
     >
       <button
         [color]="!(waveformService.sidebarOpened | async) ? 'primary' : 'primary'"

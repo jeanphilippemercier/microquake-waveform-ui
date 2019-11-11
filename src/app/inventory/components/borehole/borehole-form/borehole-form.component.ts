@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
 import { Borehole } from '@interfaces/inventory.interface';
-import { SensorCreateInput } from '@interfaces/inventory-dto.interface';
+import { SensorCreateInput, BoreholeCreateInput, BoreholeUpdateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
@@ -71,47 +71,49 @@ export class BoreholeFormComponent extends Form<Borehole> implements OnInit {
   }
 
   async onSubmit() {
-    const dto = this.createDtoObject(this.myForm.value);
 
     this.submited = true;
     if (this.myForm.invalid) {
-      console.log(`invalid`);
+      this._toastrNotificationService.error('Form is not valid');
       return;
     }
 
     try {
       this.loading = true;
-      this.loadingStart();
+      await this.loadingStart();
       if (this.mode === PageMode.CREATE) {
+        const dto = this._buildCreateDtoObject(this.myForm.value);
         const response = await this._inventoryApiService.createBorehole(dto).toPromise();
-        await this._toastrNotificationService.success('Borehole created');
+        this._toastrNotificationService.success('Borehole created');
         this.modelCreated.emit(response);
-        this._router.navigate(['/inventory/boreholes', response.id]);
       } else if (this.mode === PageMode.EDIT) {
-        this.loading = true;
+        const dto = this._buildUpdateDtoObject(this.myForm.value);
         const response = await this._inventoryApiService.updateBorehole(this.model.id, dto).toPromise();
-        await this._toastrNotificationService.success('Borehole updated');
+        this._toastrNotificationService.success('Borehole updated');
         this.modelEdited.emit(response);
         this.modelChange.emit(response);
-        this._router.navigate(['/inventory/boreholes', response.id]);
       }
     } catch (err) {
       console.error(err);
-      await this._toastrNotificationService.error(err);
+      this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this.loadingStop();
+      await this.loadingStop();
     }
   }
 
+  private _buildUpdateDtoObject(formValues: any): BoreholeUpdateInput {
+    const dto: BoreholeUpdateInput = formValues;
 
-  createDtoObject(formValues: any) {
     if (!formValues) {
-      return;
+      throw new Error('No form is defined');
     }
 
-    const dto: any = formValues;
+    return dto;
+  }
 
+  private _buildCreateDtoObject(formValues: any): BoreholeCreateInput {
+    const dto: BoreholeCreateInput = <BoreholeCreateInput>this._buildUpdateDtoObject(formValues);
     return dto;
   }
 

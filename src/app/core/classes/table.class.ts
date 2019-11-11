@@ -17,6 +17,7 @@ export class Table<T> implements OnInit {
   @Input() dataSource: T[] | undefined;
   @Input() count = 0;
   @Input() pageSize = 15;
+  @Input() page = 0;
   @Input() showPagination = true;
   @Output() nextPage = new EventEmitter();
   @Output() previousPage = new EventEmitter();
@@ -56,4 +57,7 @@ export class Table<T> implements OnInit {
     }
   }
 
+  rowClicked($event: T) {
+    this.rowClick.emit($event);
+  }
 }

@@ -30,14 +30,27 @@
         >
       </mat-form-field>
     </div>
+    <div
+      class="col-lg-2"
+      *ngIf="search"
+    >
+      <button
+        (click)="clearFilter()"
+        class="mt-lg-3 mb-lg-0 mb-3"
+        mat-raised-button
+        color="warn"
+      >Clear filter</button>
+    </div>
   </app-layout-filter>
 
   <app-layout-content>
     <app-borehole-table
       [dataSource]="dataSource"
       [count]="count"
-      (previousPage)="loadData(cursorPrevious)"
-      (nextPage)="loadData(cursorNext)"
+      [page]="currentPage"
+      (rowClick)="openFormDialog($event)"
+      (previousPage)="changePage(cursorPrevious)"
+      (nextPage)="changePage(cursorNext)"
       (surveyFile)="onUploadSurveyFile($event)"
       (interpolate)="onInterpolateBorehole($event)"
       (delete)="onDelete($event)"

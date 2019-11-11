@@ -27,8 +27,4 @@ export class SensorTableComponent extends Table<Sensor> {
     super(_matDialog);
   }
 
-  rowClicked($event: Sensor) {
-    this.rowClick.emit($event);
-  }
-
 }

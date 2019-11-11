@@ -21,8 +21,22 @@ import { Form } from '@core/classes/form.class';
 
 export class StationFormComponent extends Form<Station> implements OnInit {
 
-  @Input() sites: Site[] = [];
-  networks!: Network[];
+  @Input()
+  set sites(v: Site[]) {
+    this._sites = v;
+    this.networks = [];
+    if (this._sites) {
+      this._sites.map(val => {
+        this.networks = [...this.networks, ...val.networks];
+      });
+    }
+  }
+  get sites(): Site[] {
+    return this._sites;
+  }
+  private _sites: Site[] = [];
+
+  networks: Network[] = [];
   filteredNetworks!: Observable<Network[]>;
 
   myForm = this._fb.group({
@@ -58,14 +72,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
 
   private async _initEditableForm() {
     try {
-      if (!this.sites) {
-        this.sites = (await this._inventoryApiService.getSites().toPromise());
-      }
-      this.networks = [];
-      const networks = this.sites.map(val => {
-        this.networks = [...this.networks, ...val.networks];
-      });
-
       const networkFormEl = this.myForm.get('network');
       if (!networkFormEl) {
         return;
@@ -130,9 +136,8 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     }
 
     try {
-
       let response: any;
-      await this._ngxSpinnerService.show('loadingForm', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+      await this.loadingStart();
       this.loading = true;
 
       if (this.mode === PageMode.CREATE) {
@@ -140,13 +145,12 @@ export class StationFormComponent extends Form<Station> implements OnInit {
         response = await this._inventoryApiService.createStation(dto).toPromise();
         this._toastrNotificationService.success('Station created');
         this.modelCreated.emit(response);
-
       } else if (this.mode === PageMode.EDIT) {
         const dto = this._buildUpdateDtoObject(this.myForm.value);
         response = await this._inventoryApiService.updateStation(this.model.id, dto).toPromise();
-
         this._toastrNotificationService.success('Station updated');
         this.modelEdited.emit(response);
+        this.modelChange.emit(response);
       }
 
     } catch (err) {
@@ -154,7 +158,7 @@ export class StationFormComponent extends Form<Station> implements OnInit {
       this._toastrNotificationService.error(err);
     } finally {
       this.loading = false;
-      this._ngxSpinnerService.hide('loadingForm');
+      await this.loadingStop();
     }
   }
 

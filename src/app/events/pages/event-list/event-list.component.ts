@@ -1,23 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { PageEvent } from '@angular/material';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatTableDataSource } from '@angular/material/table';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NgxSpinnerService } from 'ngx-spinner';
 import * as moment from 'moment';
+import { Subject, interval, BehaviorSubject } from 'rxjs';
 import { takeUntil, take, filter } from 'rxjs/operators';
 
+import EventUtil from '@core/utils/event-util';
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
-import { Site, Network } from '@interfaces/inventory.interface';
 import { EventType, EvaluationStatus, IEvent, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
 import { EventApiService } from '@services/event-api.service';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventQuery } from '@interfaces/event-query.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
-import { NgxSpinnerService } from 'ngx-spinner';
-import { ActivatedRoute, Router } from '@angular/router';
-import EventUtil from '@core/utils/event-util';
 import { WaveformService } from '@services/waveform.service';
-import { Subject, interval, BehaviorSubject } from 'rxjs';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { PageEvent } from '@angular/material';
 
 @Component({
   selector: 'app-event-list',
@@ -54,7 +51,6 @@ export class EventListComponent implements OnInit, OnDestroy {
 
   constructor(
     private _eventApiService: EventApiService,
-    private _inventoryApiService: InventoryApiService,
     private _ngxSpinnerService: NgxSpinnerService,
     private _activatedRoute: ActivatedRoute,
     public waveformService: WaveformService,
@@ -63,7 +59,10 @@ export class EventListComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-
+    const initQueryParams = this._activatedRoute.snapshot.queryParams;
+    this.eventListQuery = EventUtil.buildEventListQuery(initQueryParams, this.timezone);
+    await this.loadingStart();
+    await this.waveformService.isInitializedPrimary();
 
     // default values
     this.selectedEventTypes = [];
@@ -116,7 +115,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   private async _loadEvents(showLoading = true) {
     try {
       if (showLoading) {
-        this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+        await this.loadingStart();
       }
       const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
       this.eventsCount = response.count;
@@ -128,7 +127,7 @@ export class EventListComponent implements OnInit, OnDestroy {
       this._toastrNotificationService.error(err);
       console.error(err);
     } finally {
-      this._ngxSpinnerService.hide('loading');
+      await this.loadingStop();
     }
 
   }
@@ -236,4 +235,14 @@ export class EventListComponent implements OnInit, OnDestroy {
       queryParams
     });
   }
+
+  loadingStart() {
+    return this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
+  }
+
+
+  loadingStop() {
+    return this._ngxSpinnerService.hide('loading');
+  }
 }
+

@@ -1,0 +1,17 @@
+<h1 mat-dialog-title>
+  <ng-container *ngIf="dialogData.mode === PageMode.CREATE; else editTemplate">
+    Creating new station
+  </ng-container>
+  <ng-template #editTemplate>
+    Quick view station
+  </ng-template>
+</h1>
+<mat-dialog-content>
+  <app-station-form
+    [mode]="dialogData.mode"
+    [model]="dialogData.model"
+    (modelEdited)="onSaveClicked()"
+    (modelCreated)="onSaveClicked()"
+  >
+  </app-station-form>
+</mat-dialog-content>

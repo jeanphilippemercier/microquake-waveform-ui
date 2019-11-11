@@ -3,13 +3,18 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog, Sort } from '@angular/material';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 
 import { ListPage } from '@core/classes/list-page.class';
 import { Station } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { StationsQuery, StationsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { LoadingService } from '@services/loading.service';
+import { StationFormDialogComponent } from '@app/inventory/dialogs/station-form-dialog/station-form-dialog.component';
+import { StationFormDialogData, ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { PageMode } from '@interfaces/core.interface';
+import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-inventory-station-list-page',
@@ -19,8 +24,6 @@ import { LoadingService } from '@services/loading.service';
 export class InventoryStationListPageComponent extends ListPage<Station> {
 
   ordering: StationsQueryOrdering = StationsQueryOrdering.codeASC;
-  search = '';
-  searchChange = new Subject<string>();
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -28,7 +31,8 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
     protected _ngxSpinnerService: NgxSpinnerService,
     protected _router: Router,
     protected _matDialog: MatDialog,
-    protected _activatedRoute: ActivatedRoute
+    protected _activatedRoute: ActivatedRoute,
+    private _toastrNotificationService: ToastrNotificationService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
     this._subscribeToSearch();
@@ -58,6 +62,7 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
       this.count = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
+      this.currentPage = response.current_page - 1;
     } catch (err) {
       console.error(err);
     } finally {
@@ -83,13 +88,55 @@ export class InventoryStationListPageComponent extends ListPage<Station> {
     this.loadData();
   }
 
-  private _subscribeToSearch() {
-    this.searchChange.pipe(
-      debounceTime(400),
-      distinctUntilChanged())
-      .subscribe(value => {
-        this.search = value;
+  async openFormDialog($event: Station) {
+    const formDialogRef = this._matDialog.open<StationFormDialogComponent, StationFormDialogData>(
+      StationFormDialogComponent, {
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
         this.loadData();
-      });
+      }
+    });
+  }
+
+  onDelete(stationId: number) {
+    if (!stationId) {
+      console.error(`No stationId`);
+      this._toastrNotificationService.error('No station is defined');
+    }
+
+    const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
+      ConfirmationDialogComponent, {
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this station?`
+      }
+    });
+
+    deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      if (val) {
+        try {
+
+          await this.loadingStart();
+          const response = await this._inventoryApiService.deleteStation(stationId).toPromise();
+          await this._toastrNotificationService.success('Station deleted');
+          this._router.navigate(['/inventory/stations']);
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        } finally {
+          await this.loadingStop();
+        }
+      }
+    });
   }
 }

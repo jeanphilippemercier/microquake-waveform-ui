@@ -1,19 +1,19 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
-import { Subscription, Observable, forkJoin } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
+import { first } from 'rxjs/operators';
+import { NgxFileDropEntry } from 'ngx-file-drop';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
 
+import { DetailPage } from '@core/classes/detail-page.class';
 import { PageMode } from '@interfaces/core.interface';
 import { Borehole, Sensor } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
-import { NgxSpinnerService } from 'ngx-spinner';
-import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
-import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { DetailPage } from '@core/classes/detail-page.class';
-import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';
 import { SensorsQueryOrdering, SensorsQuery } from '@interfaces/inventory-query.interface';
@@ -25,21 +25,12 @@ import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-di
   styleUrls: ['./inventory-borehole-detail-page.component.scss']
 })
 
-export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> implements OnInit, OnDestroy {
+export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> {
 
-  params$!: Subscription;
-  boreholeId!: number;
-
-  pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
+  basePageUrlArr = ['/inventory/boreholes'];
 
-  detailInitialized = false;
   files!: NgxFileDropEntry[];
-
-  collar_x = 0;
-  collar_y = 0;
-  collar_z = 0;
-
   traceDisplayedColumns: string[] = ['d', 'x', 'y', 'z'];
 
   /*
@@ -52,69 +43,54 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
   sensorsInitialized = false;
 
-  myForm = this._fb.group({
-    collar_x: [, Validators.required],
-    collar_y: [, Validators.required],
-    collar_z: [, Validators.required],
-  });
-
-  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
   selectedTabIndex = 0;
 
+  mapTabs = [
+    '',
+    'sensors',
+    'files',
+    'trace'
+  ];
+
   constructor(
-    private _activatedRoute: ActivatedRoute,
+    protected _activatedRoute: ActivatedRoute,
     private _inventoryApiService: InventoryApiService,
-    private _fb: FormBuilder,
-    private _router: Router,
+    protected _router: Router,
     protected _matDialog: MatDialog,
     protected _ngxSpinnerService: NgxSpinnerService,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super(_matDialog, _ngxSpinnerService);
+    super(_activatedRoute, _router, _matDialog, _ngxSpinnerService);
   }
 
-  async ngOnInit() {
-
-    this.params$ = this._activatedRoute.params.subscribe(async params => {
-      if (params['boreholeId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
-        this.pageMode = PageMode.CREATE;
-      } else {
-        this.pageMode = PageMode.EDIT;
-        this.boreholeId = params['boreholeId'];
-        if (!this.detailInitialized) {
-          this._initDetail();
-        }
+  handleTabInit(idx: number) {
+    if ([0, 2, 3].indexOf(idx) > -1) {
+      if (!this.detailInitialized.getValue()) {
+        this._initDetail();
       }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
-    }
-  }
-
-  tabChanged($event: MatTabChangeEvent) {
-    const idx = $event.index;
-    if (idx === 1) {
+    } else if (idx === 1) {
       if (!this.sensorsInitialized) {
         this._initSensors();
       }
     }
   }
 
-
   private async _initDetail() {
     this.loadingStart();
     forkJoin([
-      this._inventoryApiService.getBorehole(this.boreholeId)
+      this._inventoryApiService.getBorehole(this.id)
     ]).subscribe(
       result => {
         this.model = result[0];
+        this.detailInitialized.next(true);
       }, err => {
         console.error(err);
       }).add(() => this.loadingStop());
+  }
+
+  openDetail($event: Borehole) {
+    this._router.navigate(['/inventory/boreholes', $event.id]);
   }
 
   delete(boreholeId: number) {
@@ -125,19 +101,19 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this borehole?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this borehole?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
-          const response = await this._inventoryApiService.deleteBorehole(boreholeId).toPromise();
-          await this._toastrNotificationService.success('Borehole deleted');
+          await this._inventoryApiService.deleteBorehole(boreholeId).toPromise();
+          this._toastrNotificationService.success('Borehole deleted');
         } catch (err) {
           this._toastrNotificationService.error(err);
           console.error(err);
@@ -154,22 +130,21 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
     const surveyFileDialogRef = this._matDialog.open<BoreholeSurveyFileDialogComponent, BoreholeSurveyFileDialogData>(
       BoreholeSurveyFileDialogComponent, {
-        hasBackdrop: true,
-        disableClose: true,
-        // width: '350px',
-        data: {
-          id: this.model.id,
-          colar_x: this.model.collar_x,
-          colar_y: this.model.collar_y,
-          colar_z: this.model.collar_z,
-        }
-      });
+      hasBackdrop: true,
+      disableClose: true,
+      data: {
+        id: this.model.id,
+        colar_x: this.model.collar_x,
+        colar_y: this.model.collar_y,
+        colar_z: this.model.collar_z,
+      }
+    });
 
     surveyFileDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
         try {
           this.loadingStart();
-          this.model = await this._inventoryApiService.getBorehole(this.boreholeId).toPromise();
+          this.model = await this._inventoryApiService.getBorehole(this.id).toPromise();
           this.selectedTabIndex = 1;
         } catch (err) {
           console.error(err);
@@ -190,13 +165,13 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
 
     const boreholeInterpolationDialogRef = this._matDialog.open<BoreholeInterpolationDialogComponent, BoreholeInterpolationDialogData>(
       BoreholeInterpolationDialogComponent, {
-        hasBackdrop: true,
-        disableClose: true,
-        // width: '350px',
-        data: {
-          id: this.model.id
-        }
-      });
+      hasBackdrop: true,
+      disableClose: true,
+      // width: '350px',
+      data: {
+        id: this.model.id
+      }
+    });
 
     boreholeInterpolationDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -222,7 +197,7 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
       const query: SensorsQuery = {
         cursor,
         page_size: 15,
-        borehole: this.boreholeId
+        borehole: this.id
       };
 
       if (this.sensorsOrdring) {
@@ -257,13 +232,13 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   async openFormDialog($event: Sensor) {
     const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
       SensorFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event
-        }
-      });
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {

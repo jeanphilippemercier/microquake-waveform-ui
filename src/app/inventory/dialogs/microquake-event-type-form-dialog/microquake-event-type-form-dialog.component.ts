@@ -1,33 +1,20 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
-import { PageMode } from '@interfaces/core.interface';
-import { MaintenanceFormDialogData, MicroquakeEventTypeFormDialogData } from '@interfaces/dialogs.interface';
-import { MaintenanceEvent } from '@interfaces/maintenance.interface';
+import { FormDialog } from '@core/classes/form-dialog.class';
+import { MicroquakeEventTypeFormDialogData } from '@interfaces/dialogs.interface';
 
 @Component({
   selector: 'app-microquake-event-type-form-dialog',
   templateUrl: './microquake-event-type-form-dialog.component.html',
   styleUrls: ['./microquake-event-type-form-dialog.component.scss']
 })
-export class MicroquakeEventTypeFormDialogComponent {
-  PageMode = PageMode;
-  model!: MaintenanceEvent;
+export class MicroquakeEventTypeFormDialogComponent extends FormDialog<MicroquakeEventTypeFormDialogComponent, MicroquakeEventTypeFormDialogData> {
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public dialogData: MicroquakeEventTypeFormDialogData,
-    private _matDialogRef: MatDialogRef<MicroquakeEventTypeFormDialogComponent, boolean>,
-  ) { }
-
-  close() {
-    this._matDialogRef.close();
-  }
-
-  onCancelClicked() {
-    this._matDialogRef.close();
-  }
-
-  onSaveClicked() {
-    this._matDialogRef.close(true);
+    protected _matDialogRef: MatDialogRef<MicroquakeEventTypeFormDialogComponent, boolean>,
+    @Inject(MAT_DIALOG_DATA) public dialogData: MicroquakeEventTypeFormDialogData
+  ) {
+    super(_matDialogRef, dialogData);
   }
 }

@@ -167,21 +167,24 @@
     (waveformService.loading | async)
     "
         (click)="onAddPage(-1)"
+        matTooltip="Previous page"
       >
         <mat-icon>chevron_left</mat-icon>
       </button>
-      <small
+      <div
         class="pagination-pages"
         (click)="pagination.open()"
-        matTooltip="Waveform page"
+        matTooltip="Select specific waveform page"
       >
-        <span class="current">{{waveformService.currentPage | async}}</span> / {{waveformService.maxPages | async}}<br>
+        <span>
+          <span class="current">{{waveformService.currentPage | async}}</span> /
+          {{waveformService.maxPages | async}}<br>
+        </span>
         <span class="suffix-label">pages</span>
-      </small>
+      </div>
       <button
         class="pagination-button"
         mat-icon-button
-        matTooltip="Waveform data page"
         (click)="pagination.open()"
       >
         <mat-select
@@ -203,6 +206,7 @@
     (waveformService.loading | async)
     "
         (click)="onAddPage(1)"
+        matTooltip="Next page"
       >
         <mat-icon>chevron_right</mat-icon>
       </button>

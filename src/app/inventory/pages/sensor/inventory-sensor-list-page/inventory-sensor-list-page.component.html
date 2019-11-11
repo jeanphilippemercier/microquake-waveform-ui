@@ -23,12 +23,23 @@
         <input
           autocomplete="off"
           matInput
-          placeholder="Type to filer"
+          placeholder="Type to filter"
           type="search"
           [ngModel]="search"
           (ngModelChange)="searchChange.next($event)"
         >
       </mat-form-field>
+    </div>
+    <div
+      class="col-lg-2"
+      *ngIf="search"
+    >
+      <button
+        (click)="clearFilter()"
+        class="mt-lg-3 mb-lg-0 mb-3"
+        mat-raised-button
+        color="warn"
+      >Clear filter</button>
     </div>
   </app-layout-filter>
 
@@ -36,10 +47,12 @@
     <app-sensor-table
       [dataSource]="dataSource"
       [count]="count"
+      [page]="currentPage"
       (rowClick)="openFormDialog($event)"
-      (previousPage)="loadData(cursorPrevious)"
-      (nextPage)="loadData(cursorNext)"
+      (previousPage)="changePage(cursorPrevious)"
+      (nextPage)="changePage(cursorNext)"
       (sort)="onSort($event)"
+      (delete)="onDelete($event)"
     ></app-sensor-table>
   </app-layout-content>
 

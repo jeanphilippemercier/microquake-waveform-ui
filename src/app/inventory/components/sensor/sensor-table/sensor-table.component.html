@@ -101,14 +101,20 @@
         mat-cell
         *matCellDef="let element"
       >
-        <a
-          matTooltip="Open station detail"
-          matTooltipPosition="right"
-          [matTooltipDisabled]="!element?.station"
-          color="primary"
-          mat-button
-          [routerLink]="['/inventory/stations', element?.station?.id]"
-        >{{element?.station?.name}}</a>
+        <ng-container *ngIf="element?.station; then dataTemplate else noDataTemplate"></ng-container>
+        <ng-template #dataTemplate>
+          <a
+            matTooltip="Open station detail"
+            matTooltipPosition="right"
+            [matTooltipDisabled]="!element?.station"
+            color="primary"
+            mat-button
+            [routerLink]="['/inventory/stations', element?.station?.id]"
+          >{{element?.station?.name}}</a>
+        </ng-template>
+        <ng-template #noDataTemplate>
+          <span class="pl-3">none</span>
+        </ng-template>
       </td>
     </ng-container>
 
@@ -121,16 +127,25 @@
         mat-cell
         *matCellDef="let element"
       >
-        <a
-          matTooltip="Open borehole detail"
-          matTooltipPosition="right"
-          [matTooltipDisabled]="!element?.borehole"
-          color="primary"
-          [routerLink]="['/inventory/boreholes', element?.borehole?.id]"
-          mat-button
-        >{{element?.borehole ? element?.borehole?.name : 'none'}}</a>
+        <ng-container *ngIf="element?.borehole; then dataTemplate else noDataTemplate"></ng-container>
+        <ng-template #dataTemplate>
+          <a
+            matTooltip="Open borehole detail"
+            matTooltipPosition="right"
+            [matTooltipDisabled]="!element?.borehole"
+            color="primary"
+            [routerLink]="['/inventory/boreholes', element?.borehole?.id]"
+            mat-button
+          >
+            {{element?.borehole?.name}}
+          </a>
+        </ng-template>
+        <ng-template #noDataTemplate>
+          <span class="pl-3">none</span>
+        </ng-template>
       </td>
     </ng-container>
+
 
     <ng-container matColumnDef="components">
       <th
@@ -197,14 +212,42 @@
             <mat-icon>visibility</mat-icon>
             <span>Detail</span>
           </button>
+
           <button
             mat-menu-item
             color="primary"
             [routerLink]="['/inventory/sensors', element.id]"
           >
-            <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <mat-icon>visibility</mat-icon>
+            <span>Detail</span>
           </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/sensors', element.id, 'components']"
+          >
+            <mat-icon>settings_input_component</mat-icon>
+            <span>Components</span>
+          </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/sensors', element.id, 'signalQuality']"
+          >
+            <mat-icon>wifi</mat-icon>
+            <span>Signal quality</span>
+          </button>
+
+          <button
+            mat-menu-item
+            (click)="onDelete(element.id)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+
         </mat-menu>
       </td>
     </ng-container>
@@ -214,15 +257,16 @@
       *matHeaderRowDef="displayedColumns"
     ></tr>
     <tr
-      (click)="rowClicked(row)"
       mat-row
       *matRowDef="let row; columns: displayedColumns;"
+      (click)="rowClicked(row)"
     ></tr>
   </table>
   <mat-paginator
     *ngIf="dataSource?.length > 0"
     [pageSizeOptions]="[15]"
     [pageSize]="pageSize"
+    [pageIndex]="page"
     [length]="count"
     (page)="onPageChange($event)"
   ></mat-paginator>

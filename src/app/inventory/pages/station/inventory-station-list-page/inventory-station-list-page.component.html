@@ -19,7 +19,7 @@
   </app-layout-header>
 
   <app-layout-filter>
-    <div class="col-sm-3">
+    <div class="col-lg-3">
       <mat-form-field class="w-100">
         <mat-label>Search</mat-label>
         <input
@@ -32,15 +32,29 @@
         >
       </mat-form-field>
     </div>
+    <div
+      class="col-lg-2"
+      *ngIf="search"
+    >
+      <button
+        (click)="clearFilter()"
+        class="mt-lg-3 mb-lg-0 mb-3"
+        mat-raised-button
+        color="warn"
+      >Clear filter</button>
+    </div>
   </app-layout-filter>
 
   <app-layout-content>
     <app-station-table
       [dataSource]="dataSource"
       [count]="count"
+      [page]="currentPage"
+      (rowClick)="openFormDialog($event)"
       (previousPage)="changePage(cursorPrevious)"
       (nextPage)="changePage(cursorNext)"
       (sort)="onSort($event)"
+      (delete)="onDelete($event)"
     ></app-station-table>
   </app-layout-content>
 
