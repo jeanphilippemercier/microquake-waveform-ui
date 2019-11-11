@@ -44,6 +44,7 @@
 
   <app-layout-content>
     <mat-tab-group
+      [selectedIndex]="currentTabId"
       (selectedTabChange)="tabChanged($event)"
       class="w-100 "
     >
@@ -60,8 +61,8 @@
         </ng-template>
       </mat-tab>
       <mat-tab
-        label="Maintenance log"
-        [disabled]="!model || pageMode === PageMode.CREATE"
+        label="Maintenance"
+        [disabled]="pageMode === PageMode.CREATE"
       >
         <ng-template matTabContent>
           <div class="mt-3 w-100">
@@ -98,15 +99,15 @@
         </ng-template>
       </mat-tab>
       <mat-tab
-        label="Sensors ({{model?.sensors_count ? model?.sensors_count : 0}})"
-        [disabled]="!model || pageMode === PageMode.CREATE"
+        label="Sensors ({{model?.sensors_count ? model?.sensors_count : (sensorsCount ? sensorsCount : 0)}})"
+        [disabled]="pageMode === PageMode.CREATE"
       >
         <ng-template matTabContent>
           <div class="mt-3 w-100">
             <div class="w-100 d-flex justify-content-end">
               <button
                 [routerLink]="['/inventory/sensors', PageMode.CREATE]"
-                [queryParams]="{ stationId: stationId}"
+                [queryParams]="{ id: id}"
                 color="primary"
                 mat-raised-button
               >Create</button>

@@ -1,22 +1,21 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { NgForm, FormBuilder, Validators } from '@angular/forms';
-import { Subscription, Observable, forkJoin } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
+import { Subscription, forkJoin } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Sensor, Station, Borehole, Network, Site } from '@interfaces/inventory.interface';
+import { Sensor, Station, Site } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatTabChangeEvent, Sort } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
-import { first } from 'rxjs/operators';
+import { first, filter, take, takeUntil } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceStatus, MaintenanceCategory, MaintenanceEvent } from '@interfaces/maintenance.interface';
 import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
-import { RequestOptions } from '@interfaces/query.interface';
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
+import { DetailPage } from '@core/classes/detail-page.class';
 
 @Component({
   selector: 'app-inventory-station-detail-page',
@@ -24,16 +23,13 @@ import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-di
   styleUrls: ['./inventory-station-detail-page.component.scss']
 })
 
-export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
+export class InventoryStationDetailPageComponent extends DetailPage<Station> {
 
-  params$!: Subscription;
-  stationId!: number;
-  model!: Partial<Station>;
+  PageMode = PageMode;
+  basePageUrlArr = ['/inventory/stations'];
+
   sites!: Site[];
 
-  pageMode: PageMode = PageMode.EDIT;
-  PageMode = PageMode;
-  loading = false;
   maintenanceStatuses: MaintenanceStatus[] = [];
   maintenanceCategories: MaintenanceCategory[] = [];
   maintenanceEvents!: MaintenanceEvent[];
@@ -49,38 +45,21 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
   sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
   sensorsInitialized = false;
 
-  detailInitialized = false;
-
+  mapTabs = [
+    '',
+    'maintenance',
+    'sensors',
+  ];
 
   constructor(
-    private _activatedRoute: ActivatedRoute,
+    protected _activatedRoute: ActivatedRoute,
+    protected _router: Router,
+    protected _ngxSpinnerService: NgxSpinnerService,
+    protected _matDialog: MatDialog,
     private _inventoryApiService: InventoryApiService,
-    private _fb: FormBuilder,
-    private _router: Router,
-    private _ngxSpinnerService: NgxSpinnerService,
-    private _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService
-  ) { }
-
-  async ngOnInit() {
-
-    this.params$ = this._activatedRoute.params.subscribe(async params => {
-      if (params['stationId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
-        this.pageMode = PageMode.CREATE;
-      } else {
-        this.pageMode = PageMode.EDIT;
-        this.stationId = params['stationId'];
-        if (!this.detailInitialized) {
-          this._initDetail();
-        }
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
-    }
+  ) {
+    super(_activatedRoute, _router, _matDialog, _ngxSpinnerService);
   }
 
   delete(stationId: number) {
@@ -91,13 +70,13 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this station?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this station?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -117,9 +96,12 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  tabChanged($event: MatTabChangeEvent) {
-    const idx = $event.index;
-    if (idx === 1) {
+  handleTabInit(idx: number) {
+    if (idx === 0) {
+      if (!this.detailInitialized.getValue()) {
+        this._initDetail();
+      }
+    } else if (idx === 1) {
       if (!this.maintenanceEventsInitialized) {
         this._initMaintenanceLogs();
       }
@@ -134,17 +116,15 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     this.loadingStart();
     forkJoin([
       this._inventoryApiService.getSites(),
-      this._inventoryApiService.getStation(this.stationId),
+      this._inventoryApiService.getStation(this.id),
     ]).subscribe(
       result => {
         this.sites = result[0];
         this.model = result[1];
-        this.detailInitialized = true;
-        this.loadingStop();
+        this.detailInitialized.next(true);
       }, err => {
         console.error(err);
-        this.loadingStop();
-      });
+      }).add(() => this.loadingStop());
   }
 
   private async _initMaintenanceLogs() {
@@ -182,7 +162,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       const query: SensorsQuery = {
         cursor,
         page_size: 15,
-        station: this.model.id
+        station: this.id
       };
 
       if (this.sensorsOrdring) {
@@ -216,7 +196,7 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
   getMaintenanceEvents(cursor: string | null = null) {
     const query: MaintenanceEventQuery = {
-      station_id: this.stationId,
+      station_id: this.id,
       page_size: 15,
       ordering: MaintenanceEventQueryOrdering.DATE_DESC
     };
@@ -251,13 +231,13 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -274,13 +254,6 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
         }
       }
     });
-  }
-
-  async loadingStart() {
-    await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
-  }
-  async loadingStop() {
-    await this._ngxSpinnerService.hide('loading');
   }
 
   async onCreatedMaintenanceEvent($event: MaintenanceEvent) {
@@ -303,37 +276,16 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
     this._router.navigate(['/inventory/stations', $event.id]);
   }
 
-
-  async openSensorFormDialog($event: Sensor) {
-    const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
-      SensorFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event,
-          stations: [],
-          boreholes: []
-        }
-      });
-
-    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
-      if (val) {
-        this.getSensors();
-      }
-    });
-  }
-
   async openFormDialog($event: Sensor) {
     const formDialogRef = this._matDialog.open<SensorFormDialogComponent, SensorFormDialogData>(
       SensorFormDialogComponent, {
-        hasBackdrop: true,
-        autoFocus: false,
-        data: {
-          mode: PageMode.EDIT,
-          model: $event
-        }
-      });
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: PageMode.EDIT,
+        model: $event
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
@@ -341,5 +293,6 @@ export class InventoryStationDetailPageComponent implements OnInit, OnDestroy {
       }
     });
   }
+
 }
 
