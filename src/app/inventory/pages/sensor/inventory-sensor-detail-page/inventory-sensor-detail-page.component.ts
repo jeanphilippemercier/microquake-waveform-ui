@@ -1,16 +1,15 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { NgForm, FormBuilder, Validators } from '@angular/forms';
-import { Subscription, Observable, forkJoin, of } from 'rxjs';
+import { Component } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
+import { first } from 'rxjs/operators';
 import { ActivatedRoute, Router, Params } from '@angular/router';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 import { PageMode } from '@interfaces/core.interface';
 import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
-import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
-import { first } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { DetailPage } from '@core/classes/detail-page.class';
 import { InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
@@ -21,78 +20,59 @@ import { LoadingService } from '@services/loading.service';
   templateUrl: './inventory-sensor-detail-page.component.html',
   styleUrls: ['./inventory-sensor-detail-page.component.scss']
 })
+export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
 
-export class InventorySensorDetailPageComponent extends DetailPage<Sensor> implements OnInit, OnDestroy {
-
-  params$!: Subscription;
-  sensorId!: number;
-
-  pageMode: PageMode = PageMode.EDIT;
+  basePageUrlArr = ['/inventory/sensors'];
   PageMode = PageMode;
-
   stations!: Station[];
   boreholes!: Borehole[];
-
-  detailInitialized = false;
-
   queryParams!: Params;
-
-  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
+  mapTabs = [
+    '',
+    'components',
+    'signalQuality',
+  ];
+
   constructor(
-    private _activatedRoute: ActivatedRoute,
-    private _inventoryApiService: InventoryApiService,
-    private _fb: FormBuilder,
-    private _router: Router,
+    protected _activatedRoute: ActivatedRoute,
+    protected _router: Router,
     protected _matDialog: MatDialog,
     protected _ngxSpinnerService: NgxSpinnerService,
+    private _inventoryApiService: InventoryApiService,
     private _toastrNotificationService: ToastrNotificationService,
     private _loadingService: LoadingService
   ) {
-    super(_matDialog, _ngxSpinnerService);
+    super(_activatedRoute, _router, _matDialog, _ngxSpinnerService);
   }
 
-  async ngOnInit() {
-
-    this.queryParams = this._activatedRoute.snapshot.queryParams;
-
-    this.params$ = this._activatedRoute.params.subscribe(async params => {
-      if (params['sensorId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
-        this.pageMode = PageMode.CREATE;
-      } else {
-        this.pageMode = PageMode.EDIT;
-        this.sensorId = params['sensorId'];
-      }
-      if (!this.detailInitialized) {
+  handleTabInit(idx: number) {
+    if ([0, 1, 2].indexOf(idx) > -1) {
+      if (!this.detailInitialized.getValue()) {
         this._initDetail();
       }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
     }
   }
-
 
   private async _initDetail() {
     this.loadingStart();
 
     forkJoin([
-      (this.sensorId ? this._inventoryApiService.getSensor(this.sensorId) : of(null)),
+      (this.id ? this._inventoryApiService.getSensor(this.id) : of(null)),
       this._inventoryApiService.getStations({ page_size: 10000 }),
       this._inventoryApiService.getBoreholes({ page_size: 10000 }),
     ]).subscribe(
       result => {
         this.model = result[0];
         this.stations = result[1].results;
-        this.boreholes = result[2].results; console.log(`here1`);
+        this.boreholes = result[2].results;
+        this.detailInitialized.next(true);
       }, err => {
+        this._toastrNotificationService.error(err);
         console.error(err);
       }).add(() => {
-        this.loadingStop(); console.log(`here`);
+        this.loadingStop();
       });
   }
 
@@ -104,13 +84,13 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> imple
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this sensor?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this sensor?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -135,13 +115,13 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> imple
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete this component?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this component?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
