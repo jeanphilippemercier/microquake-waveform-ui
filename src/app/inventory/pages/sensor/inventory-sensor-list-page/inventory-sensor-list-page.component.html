@@ -30,7 +30,10 @@
         >
       </mat-form-field>
     </div>
-    <div class="col-lg-2" *ngIf="search">
+    <div
+      class="col-lg-2"
+      *ngIf="search"
+    >
       <button
         (click)="clearFilter()"
         class="mt-lg-3 mb-lg-0 mb-3"
@@ -49,6 +52,7 @@
       (previousPage)="changePage(cursorPrevious)"
       (nextPage)="changePage(cursorNext)"
       (sort)="onSort($event)"
+      (delete)="onDelete($event)"
     ></app-sensor-table>
   </app-layout-content>
 

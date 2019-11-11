@@ -13,9 +13,10 @@ import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
-import { SensorFormDialogData } from '@interfaces/dialogs.interface';
+import { SensorFormDialogData, ConfirmationDialogData } from '@interfaces/dialogs.interface';
 import { LoadingService } from '@services/loading.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-inventory-sensor-list-page',
@@ -98,6 +99,40 @@ export class InventorySensorListPageComponent extends ListPage<Sensor> implement
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
         this.loadData();
+      }
+    });
+  }
+
+
+  onDelete(sensorId: number) {
+    if (!sensorId) {
+      console.error(`No sensorId`);
+      this._toastrNotificationService.error('No sensor is defined');
+    }
+
+    const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
+      ConfirmationDialogComponent, {
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete this sensor?`
+      }
+    });
+
+    deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      if (val) {
+        try {
+          this.loadingStart();
+          const response = await this._inventoryApiService.deleteSensor(sensorId).toPromise();
+          await this._toastrNotificationService.success('Sensor deleted');
+          this.loadData();
+        } catch (err) {
+          this._toastrNotificationService.error(err);
+          console.error(err);
+        } finally {
+          this.loadingStop();
+        }
       }
     });
   }
