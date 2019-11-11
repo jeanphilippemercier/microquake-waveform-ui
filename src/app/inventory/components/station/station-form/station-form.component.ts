@@ -21,8 +21,22 @@ import { Form } from '@core/classes/form.class';
 
 export class StationFormComponent extends Form<Station> implements OnInit {
 
-  @Input() sites: Site[] = [];
-  networks!: Network[];
+  @Input()
+  set sites(v: Site[]) {
+    this._sites = v;
+    this.networks = [];
+    if (this._sites) {
+      this._sites.map(val => {
+        this.networks = [...this.networks, ...val.networks];
+      });
+    }
+  }
+  get sites(): Site[] {
+    return this._sites;
+  }
+  private _sites: Site[] = [];
+
+  networks: Network[] = [];
   filteredNetworks!: Observable<Network[]>;
 
   myForm = this._fb.group({
@@ -58,14 +72,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
 
   private async _initEditableForm() {
     try {
-      if (!this.sites) {
-        this.sites = (await this._inventoryApiService.getSites().toPromise());
-      }
-      this.networks = [];
-      const networks = this.sites.map(val => {
-        this.networks = [...this.networks, ...val.networks];
-      });
-
       const networkFormEl = this.myForm.get('network');
       if (!networkFormEl) {
         return;
