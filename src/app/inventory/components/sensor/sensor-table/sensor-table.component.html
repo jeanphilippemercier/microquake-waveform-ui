@@ -212,14 +212,42 @@
             <mat-icon>visibility</mat-icon>
             <span>Detail</span>
           </button>
+
           <button
             mat-menu-item
             color="primary"
             [routerLink]="['/inventory/sensors', element.id]"
           >
-            <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <mat-icon>visibility</mat-icon>
+            <span>Detail</span>
           </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/sensors', element.id, 'components']"
+          >
+            <mat-icon>settings_input_component</mat-icon>
+            <span>Components</span>
+          </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/sensors', element.id, 'signalQuality']"
+          >
+            <mat-icon>wifi</mat-icon>
+            <span>Signal quality</span>
+          </button>
+
+          <button
+            mat-menu-item
+            (click)="onDelete(element.id)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+
         </mat-menu>
       </td>
     </ng-container>

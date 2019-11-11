@@ -142,15 +142,43 @@
         >
           <mat-icon>more_vert</mat-icon>
         </button>
+
         <mat-menu #menu="matMenu">
           <button
             mat-menu-item
             color="primary"
             [routerLink]="['/inventory/stations', element.id]"
           >
-            <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <mat-icon>visibility</mat-icon>
+            <span>Detail</span>
           </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/stations', element.id, 'maintenance']"
+          >
+            <mat-icon>build</mat-icon>
+            <span>Maintenace</span>
+          </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/stations', element.id, 'sensors']"
+          >
+            <mat-icon>settings_input_antenna</mat-icon>
+            <span>Sensors</span>
+          </button>
+
+          <button
+            mat-menu-item
+            (click)="onDelete(element.id)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+
         </mat-menu>
       </td>
     </ng-container>

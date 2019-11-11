@@ -186,15 +186,15 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
+
           <button
-            *ngIf=""
             mat-menu-item
-            color="primary"
             [routerLink]="['/inventory/boreholes', element.id]"
           >
             <mat-icon>visibility</mat-icon>
             <span>Detail</span>
           </button>
+
           <div
             [matTooltipPosition]="'left'"
             [matTooltip]="'Add survey file to enable'"
@@ -216,13 +216,34 @@
             <mat-icon>cloud_upload</mat-icon>
             <span>Upload survey file</span>
           </button>
+
           <button
             mat-menu-item
-            [routerLink]="['/inventory/boreholes', element.id]"
+            color="primary"
+            [routerLink]="['/inventory/boreholes', element.id, 'sensors']"
           >
-            <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <mat-icon>settings_input_antenna</mat-icon>
+            <span>Sensors</span>
           </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/boreholes', element.id, 'files']"
+          >
+            <mat-icon>folder</mat-icon>
+            <span>Files</span>
+          </button>
+
+          <button
+            mat-menu-item
+            color="primary"
+            [routerLink]="['/inventory/boreholes', element.id, 'trace']"
+          >
+            <mat-icon>graphic_eq</mat-icon>
+            <span>Trace</span>
+          </button>
+
           <button
             mat-menu-item
             (click)="onDelete(element.id)"
@@ -230,6 +251,7 @@
             <mat-icon>delete</mat-icon>
             <span>Delete</span>
           </button>
+
         </mat-menu>
       </td>
     </ng-container>
