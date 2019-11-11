@@ -670,7 +670,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       this.waveformService.interactiveProcessLoading.next(true);
       this._updateArrivalWithPickData();
       this.waveformService.interactiveProcessingEnabled.next(false);
-      console.log("batch starting:", this.currentEventId, this.allArrivalsChanged);
+      console.log('batch starting:', this.currentEventId, this.allArrivalsChanged);
       const response = await this._eventApiService.startInteractiveProcessing(this.currentEventId, { data: this.allArrivalsChanged }).toPromise();
       const newData: EventBatchMap = {
         batchId: response.id,
@@ -683,7 +683,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const interactiveProcessCurrentList = this.waveformService.interactiveProcessCurrentList.getValue();
       this.waveformService.interactiveProcessCurrentList.next([...interactiveProcessCurrentList, newData]);
 
-      console.log("batch started:", response);
+      console.log('batch started:', response);
     } catch (err) {
       console.error(err);
       this._toastrNotificationService.error(`${err.error.message}`, 'Error on Interactive Processing');
