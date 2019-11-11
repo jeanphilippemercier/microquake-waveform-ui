@@ -25,21 +25,12 @@ import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-di
   styleUrls: ['./inventory-borehole-detail-page.component.scss']
 })
 
-export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> implements OnInit, OnDestroy {
+export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> {
 
-  params$!: Subscription;
-  boreholeId!: number;
-
-  pageMode: PageMode = PageMode.EDIT;
   PageMode = PageMode;
+  basePageUrlArr = ['/inventory/boreholes'];
 
-  detailInitialized = false;
   files!: NgxFileDropEntry[];
-
-  collar_x = 0;
-  collar_y = 0;
-  collar_z = 0;
-
   traceDisplayedColumns: string[] = ['d', 'x', 'y', 'z'];
 
   /*
@@ -52,52 +43,33 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   sensorsOrdring: SensorsQueryOrdering = SensorsQueryOrdering.station_location_codeASC;
   sensorsInitialized = false;
 
-  myForm = this._fb.group({
-    collar_x: [, Validators.required],
-    collar_y: [, Validators.required],
-    collar_z: [, Validators.required],
-  });
-
-  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
   selectedTabIndex = 0;
 
+  mapTabs = [
+    '',
+    'sensors',
+    'files',
+    'trace'
+  ];
+
   constructor(
-    private _activatedRoute: ActivatedRoute,
+    protected _activatedRoute: ActivatedRoute,
     private _inventoryApiService: InventoryApiService,
-    private _fb: FormBuilder,
-    private _router: Router,
+    protected _router: Router,
     protected _matDialog: MatDialog,
     protected _ngxSpinnerService: NgxSpinnerService,
     private _toastrNotificationService: ToastrNotificationService
   ) {
-    super(_matDialog, _ngxSpinnerService);
+    super(_activatedRoute, _router, _matDialog, _ngxSpinnerService);
   }
 
-  async ngOnInit() {
-
-    this.params$ = this._activatedRoute.params.subscribe(async params => {
-      if (params['boreholeId'] === PageMode.CREATE || params['pageMode'] === PageMode.CREATE) {
-        this.pageMode = PageMode.CREATE;
-      } else {
-        this.pageMode = PageMode.EDIT;
-        this.boreholeId = params['boreholeId'];
-        if (!this.detailInitialized) {
-          this._initDetail();
-        }
+  handleTabInit(idx: number) {
+    if ([0, 2, 3].indexOf(idx) > -1) {
+      if (!this.detailInitialized.getValue()) {
+        this._initDetail();
       }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.params$) {
-      this.params$.unsubscribe();
-    }
-  }
-
-  tabChanged($event: MatTabChangeEvent) {
-    const idx = $event.index;
-    if (idx === 1) {
+    } else if (idx === 1) {
       if (!this.sensorsInitialized) {
         this._initSensors();
       }
@@ -107,10 +79,11 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
   private async _initDetail() {
     this.loadingStart();
     forkJoin([
-      this._inventoryApiService.getBorehole(this.boreholeId)
+      this._inventoryApiService.getBorehole(this.id)
     ]).subscribe(
       result => {
         this.model = result[0];
+        this.detailInitialized.next(true);
       }, err => {
         console.error(err);
       }).add(() => this.loadingStop());
@@ -171,7 +144,7 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
       if (val) {
         try {
           this.loadingStart();
-          this.model = await this._inventoryApiService.getBorehole(this.boreholeId).toPromise();
+          this.model = await this._inventoryApiService.getBorehole(this.id).toPromise();
           this.selectedTabIndex = 1;
         } catch (err) {
           console.error(err);
@@ -224,7 +197,7 @@ export class InventoryBoreholeDetailPageComponent extends DetailPage<Borehole> i
       const query: SensorsQuery = {
         cursor,
         page_size: 15,
-        borehole: this.boreholeId
+        borehole: this.id
       };
 
       if (this.sensorsOrdring) {
