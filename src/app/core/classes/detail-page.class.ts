@@ -21,6 +21,8 @@ export class DetailPage<T> implements OnInit, OnDestroy {
   mapTabs = [
     ''
   ];
+  loadingQueue = 0;
+
   protected _unsubscribe = new Subject<void>();
 
   constructor(
@@ -85,9 +87,15 @@ export class DetailPage<T> implements OnInit, OnDestroy {
   }
 
   async loadingStart() {
+    this.loadingQueue++;
     await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
   }
+
   async loadingStop() {
-    await this._ngxSpinnerService.hide('loading');
+    this.loadingQueue--;
+    this.loadingQueue = Math.max(this.loadingQueue, 0);
+    if (this.loadingQueue === 0) {
+      await this._ngxSpinnerService.hide('loading');
+    }
   }
 }
