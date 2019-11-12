@@ -44,7 +44,8 @@ export interface EventWaveformFilterDialogData {
 
 export interface MaintenanceFormDialogData {
   model: MaintenanceEvent;
-  stations: Station[];
+  stations?: Station[];
+  stationFixed?: number;
   maintenanceStatuses: MaintenanceStatus[];
   maintenanceCategories: MaintenanceCategory[];
 }
