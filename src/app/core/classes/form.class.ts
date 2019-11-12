@@ -1,10 +1,11 @@
-import { Input, Output, EventEmitter } from '@angular/core';
+import { Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
 import { PageMode } from '@interfaces/core.interface';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { Subject } from 'rxjs';
 
-export class Form<T> {
+export class Form<T> implements OnDestroy {
 
   @Input()
   public set model(v: T) {
@@ -17,6 +18,7 @@ export class Form<T> {
     return this._model;
   }
   private _model!: T;
+  protected _unsubscribe = new Subject<void>();
 
   @Input() mode: PageMode = PageMode.CREATE;
   @Output() modelChange: EventEmitter<Partial<T> | null> = new EventEmitter();
@@ -32,6 +34,12 @@ export class Form<T> {
   constructor(
     protected _ngxSpinnerService: NgxSpinnerService
   ) { }
+
+
+  ngOnDestroy() {
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
+  }
 
   protected _filter<U>(input: string, array: U[], name: string): U[] {
     const filterValue = input.toLowerCase();
