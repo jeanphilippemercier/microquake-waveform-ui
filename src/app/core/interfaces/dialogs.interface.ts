@@ -1,6 +1,6 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station, TakenEventType, Borehole, Sensor, CableType, ISensorType } from './inventory.interface';
+import { Site, Network, Station, TakenEventType, Borehole, Sensor, CableType, ISensorType, IComponent } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
 import { PageMode } from './core.interface';
 
@@ -81,6 +81,11 @@ export interface StationFormDialogData {
 }
 export interface BoreholeFormDialogData {
   model: Borehole | Partial<Borehole>;
+  mode: PageMode;
+}
+
+export interface ComponentFormDialogData {
+  model: IComponent | Partial<IComponent>;
   mode: PageMode;
 }
 
