@@ -47,7 +47,7 @@ export class EventApiService {
     return this._http.get(url, { params, responseType });
   }
 
-  getWaveformInfo(eventId: string, query: EventWaveformQuery = {}): Observable<WaveformQueryResponse> {
+  getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformQueryResponse> {
     const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get<WaveformQueryResponse>(url, { params });

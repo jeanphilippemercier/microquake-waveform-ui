@@ -41,6 +41,7 @@ export interface EventArrivalsQuery {
 
 export interface EventWaveformQuery {
   traces_per_page?: number;
+  sampling_rate?: number;
 }
 
 export interface EventRayQuery {

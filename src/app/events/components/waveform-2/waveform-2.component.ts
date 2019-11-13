@@ -14,7 +14,7 @@ import {
   IEvent, Origin, Arrival, EvaluationMode, PickKey, PredictedPickKey, WaveformSensor, ArrivalPartial, BatchStatus, EventBatchMap, InteractiveProcessing, Channel
 } from '@interfaces/event.interface';
 import { Sensor, MotionType, GroundMotionType } from '@interfaces/inventory.interface';
-import { EventOriginsQuery, EventArrivalsQuery } from '@interfaces/event-query.interface';
+import { EventOriginsQuery, EventArrivalsQuery, EventWaveformQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/event-api.service';
@@ -77,6 +77,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   allSensors: Sensor[] = [];
   // currently loaded sensors with waveform data
   loadedSensors: Sensor[] = [];
+  // currently loaded sensors with all waveform data decimated at a reduced sample rate
+  loadedSensorsAll: Sensor[] = [];
   // currently active sensors (shown on screen)
   activeSensors: Sensor[] = [];
   // hashMap for all sensors {sensor_code: <position in allSensors array>}
@@ -99,6 +101,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   allArrivalsChanged: ArrivalPartial[] = [];
 
   waveformSensors!: WaveformSensor[];
+  waveformSensorsAll!: WaveformSensor[];
   lastPicksState: any = null;
   timeOrigin!: moment.Moment;
   contextTimeOrigin!: moment.Moment;
@@ -122,6 +125,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   ContextMenuChartAction = ContextMenuChartAction;
   waveformShow = true;
   waveformInfo!: WaveformQueryResponse;
+  waveformInfoAll!: WaveformQueryResponse;
 
   constructor(
     public waveformService: WaveformService,
@@ -243,6 +247,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       )
       .subscribe((val: boolean) => {
         this._applyFilter();
+      });
+
+    this.waveformService.displayDistanceTime
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe((val: boolean) => {
+        this._loadEventSinglePage(this._event);
       });
 
     this.waveformService.predictedPicks
@@ -384,13 +398,18 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
 
     const preferred_origin_id = event.preferred_origin_id;
+    this.waveformService.displayDistanceTime.next(false);
     this.waveformService.loading.next(true);
     this.waveformService.loadedAll.next(false);
     this.waveformService.currentPage.next(1);
 
     try {
 
-      this.waveformInfo = await this._eventApiService.getWaveformInfo(event.event_resource_id).toPromise();
+      // get waveform query
+      const waveformQuery: EventWaveformQuery = {
+      };
+
+      this.waveformInfo = await this._eventApiService.getWaveformInfo(event.event_resource_id, waveformQuery).toPromise();
 
       if (!this.waveformInfo) {
         console.error(`no waveformInfo`);
@@ -427,6 +446,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this._filterData(eventData.sensors, false, this.waveformService.displayRotated.getValue()));
 
         this.waveformService.loadedSensors.next(this.loadedSensors);
+        this.loadedSensorsAll = [];
+        this.waveformService.loadedSensorsAll.next(this.loadedSensorsAll);
         this.waveformService.loadedPages.next(1);
         this.timeOrigin = eventData.timeOrigin;
 
@@ -594,6 +615,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _renderPage() {
 
+    if (this.waveformService.displayDistanceTime.getValue()) {
+      this.activeSensors = this.loadedSensorsAll;
+      this._renderDistanceTimeChart();
+      return;
+    }
+
     const pageNumber = this.waveformService.currentPage.getValue();
     const pageSize = this.waveformService.pageSize.getValue() - 1;
     const numPages = this.waveformService.maxPages.getValue();
@@ -649,6 +676,87 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._destroyCharts();
     this._renderPage();
   }
+
+  private async _loadEventSinglePage(event: IEvent) {
+    if (!event) {
+      console.error(`No event`);
+      return;
+    }
+
+    if (!event.waveform_file) {
+      console.error(`No waveform_file in event`);
+      return;
+    }
+
+    this.waveformService.loading.next(true);
+
+    try {
+
+      if (this.loadedSensorsAll.length === 0) {
+        // get waveform query (decimated data set)
+        const waveformQuery: EventWaveformQuery = {
+          traces_per_page: 500,
+          sampling_rate: 500
+        };
+
+        this.waveformInfoAll = await this._eventApiService.getWaveformInfo(this.currentEventId, waveformQuery).toPromise();
+
+        if (!this.waveformInfoAll) {
+          console.error(`no waveformInfoAll`);
+          return;
+        }
+
+        const waveformUrl = this.waveformInfoAll.pages[0];
+        const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+        this.waveformSensorsAll = this.waveformInfoAll.sensors;
+
+        if (!eventFile) {
+          console.error(`no eventFile`);
+          return;
+        }
+
+        if (this.currentEventId !== event.event_resource_id) {
+          console.log(`changed event during loading`);
+          return;
+        }
+
+        const eventData = WaveformUtil.parseMiniseed(eventFile, false);
+
+        if (eventData && eventData.sensors) {
+
+          WaveformUtil.setSensorsEnabled(eventData.sensors, this.allSensors);
+
+          WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensorsAll);
+
+          // filter and recompute composite traces
+          this.loadedSensorsAll = WaveformUtil.addCompositeTrace(
+            this._filterData(eventData.sensors, false, this.waveformService.displayRotated.getValue()));
+
+          this.waveformService.loadedSensorsAll.next(this.loadedSensorsAll);
+
+          if (this.loadedSensorsAll.length > 0) {
+
+            this.loadedSensorsAll = WaveformUtil.mapSensorInfoToLoadedSensors(this.loadedSensorsAll, this.allSensors, this.waveformService.allSensorsMap);
+          }
+        }
+
+      }
+
+      if (this.loadedSensorsAll.length > 0) {
+        this._destroyCharts();
+        this._renderPage();
+      }
+
+    } catch (err) {
+      console.error(err);
+      this._toastrNotificationService.error(err, 'Could not load decimated waveform data');
+    } finally {
+      if (this.currentEventId === event.event_resource_id) {
+        this.waveformService.loading.next(false);
+      }
+    }
+  }
+
 
   private async _toggleBatchPicks() {
     if (this.waveformService.batchPicks.getValue()) {
@@ -708,6 +816,139 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
+  }
+
+  private _renderDistanceTimeChart() {
+
+    // Chart Options, Render
+    if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
+      console.error('invalid timeOrigin');
+      const msg_str = `Invalid traces origin time`;
+      this._toastrNotificationService.warning(msg_str);
+      return;
+    }
+
+    this.activeSensors[0].container = 'container0';
+    const pageHeight = this.chartHeight * globals.chartsPerPage;
+
+    if (document.querySelectorAll('#' + this.activeSensors[0].container).length === 0) {
+      const div = document.createElement('div');
+      div.id = this.activeSensors[0].container;
+      div.style.height = pageHeight + 'px';
+      div.style.maxWidth = '2000px';
+      div.style.margin = '0px auto';
+      this._renderer.appendChild(this._waveformContainer.nativeElement, div);
+    }
+
+    const data = [];
+    const maxTraceHeight = this._getMaxDistanceAxisY() / 100; // scaling factor
+    for (let i = 0; i < this.activeSensors.length - 1; i++) {
+      const yMax = this._getYmax(i);
+      const distance = this.activeSensors[i].p_ray_length ?
+        this.activeSensors[i].p_ray_length : this.activeSensors[i].s_ray_length ?
+        this.activeSensors[i].s_ray_length : null;
+      const hasDisabledChannels = (!this.activeSensors[i].enabled) ||
+        (this.activeSensors[i].channels.findIndex((el: Channel) => el.enabled === false) === -1 ? false : true);
+      for (const channel of this.activeSensors[i].channels) {
+        if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode) ||
+          (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
+          (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length < 3) ||
+          (this.waveformService.displayComposite.getValue() && hasDisabledChannels)) {
+          const dataArray = [];
+          if (channel.enabled && this.activeSensors[i].enabled && distance) {
+            for (const [index, el] of channel.data.entries()) {
+              dataArray.push({
+                x: el.x,
+                y: el.y * maxTraceHeight / yMax +  distance,
+              });
+            }
+            data.push(
+              {
+                index: i,
+                name: this._getSensorComponentDistanceTitle(this.activeSensors[i], channel.channel_id),
+                type: 'line',
+                markerType: 'none',
+                // @ts-ignore
+                color: globals.linecolor[channel.channel_id.toUpperCase()],
+                lineThickness: globals.lineThickness,
+                // highlightEnabled: true,
+                dataPoints: dataArray,
+                /*
+                mouseover: function(e) {
+                  this.lastMouseOver = e.dataSeries.index;
+                }*/
+              });
+          }
+        }
+      }
+    }
+    const options = {
+      zoomEnabled: true,
+      zoomType: 'xy',
+      animationEnabled: false,
+      toolTip: {
+        shared: false,
+        contentFormatter: function (e: any) {
+          const content = e && e.entries && e.entries.length > 0 ? '<strong>' + e.entries[0].dataSeries.name + '</strong>' : '';
+          return content;
+        }
+      },
+      subtitles: [{
+        text: moment(this.timeOrigin).utc().utcOffset(this.timezone).format('YYYY-MM-DD HH:mm:ss'),
+        dockInsidePlotArea: true,
+        fontSize: 14,
+        fontFamily: 'tahoma',
+        fontColor: 'black',
+        horizontalAlign: 'left',
+        verticalAlign: 'bottom'
+      }],
+      axisX: {
+        minimum: this.timeOrigin.millisecond() * 1000,
+        maximum: this._getXmax(0),
+        lineThickness: globals.axis.lineThickness,
+        lineColor: globals.axis.lineColor,
+        gridThickness: 0,
+        includeZero: true,
+        labelFontSize: 16,
+        labelAutoFit: false,
+        labelWrap: false,
+        labelFormatter: (e: any) => {
+          return e.value / WaveformUtil.convXUnits + ' s';
+        },
+        crosshair: {
+          enabled: true,
+          snapToDataPoint: true,
+          labelFormatter: (e: any) => {
+            return e.value / WaveformUtil.convXUnits;
+          },
+        }
+      },
+      axisY: {
+        minimum: 0,
+        maximum: this._getMaxDistanceAxisY() + maxTraceHeight,
+        title: 'Distance (m)',
+        titleFontSize: 18,
+        labelFontSize: 16,
+        gridThickness: 0,
+        lineThickness: globals.axis.lineThickness,
+        lineColor: globals.axis.lineColor,
+        includeZero: true,
+        crosshair: {
+          enabled: true,
+          snapToDataPoint: true
+        }
+      },
+      data: data
+    };
+
+    this.activeSensors[0].chart = new CanvasJS.Chart(this.activeSensors[0].container, options);
+    // @ts-ignore
+    this.activeSensors[0].chart.render();
+  }
+
+  private _getMaxDistanceAxisY() {
+    const maxDistance = Math.max(...this.activeSensors.map(o => o.p_ray_length ? o.p_ray_length : 0), 0);
+    return maxDistance;
   }
 
   private _renderCharts() {
@@ -817,7 +1058,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
           },
           title: {
-            text: this._getSensorTitle(this.activeSensors[i]),
+            text: this._getSensorDistanceTitle(this.activeSensors[i]),
             dockInsidePlotArea: true,
             fontSize: 12,
             fontFamily: 'tahoma',
@@ -897,6 +1138,28 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
+  private _getSensorDistanceTitle(sensor: Sensor) {
+    let sensorTitleText = this._getSensorTitle(sensor);
+    const sensorDistance = this._getSensorDistance(sensor);
+    sensorTitleText += sensorDistance ? ' -- ' + sensorDistance : ``;
+    return sensorTitleText;
+  }
+
+  private _getSensorComponentDistanceTitle(sensor: Sensor, component: String) {
+    let sensorTitleText = this._getSensorTitle(sensor);
+    const sensorDistance = this._getSensorDistance(sensor);
+    sensorTitleText += component ? ': ' + component : ``;
+    sensorTitleText += sensorDistance ? ' -- ' + sensorDistance : ``;
+    return sensorTitleText;
+  }
+
+  private _getSensorDistance(sensor: Sensor) {
+    let sensorDistanceText = '';
+    const distance = sensor.p_ray_length ? sensor.p_ray_length : sensor.s_ray_length ? sensor.s_ray_length : null;
+    sensorDistanceText += sensor && distance ? distance.toFixed(0) + 'm' : ``;
+    return sensorDistanceText;
+  }
+
   private _getSensorTitle(sensor: Sensor) {
     let sensorTitleText = ``;
     try {
@@ -906,13 +1169,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
       sensorTitleText += `??`;
     }
 
-    const distance = sensor.p_ray_length ? sensor.p_ray_length : sensor.s_ray_length ? sensor.s_ray_length : null;
-
     sensorTitleText += `.`;
     sensorTitleText += sensor && sensor.location_code ? sensor.location_code : `??`;
     sensorTitleText += ` `;
     sensorTitleText += sensor && sensor.code ? `(${sensor.code})` : (sensor.sensor_code ? `(${sensor.sensor_code})` : `(??)`);
-    sensorTitleText += sensor && distance ? ' -- ' + distance.toFixed(0) + 'm' : ``;
 
     return sensorTitleText;
   }
@@ -1114,7 +1374,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       zoomEnabled: true,
       animationEnabled: false,
       title: {
-        text: this._getSensorTitle(this.activeSensors[i]),
+        text: this._getSensorDistanceTitle(this.activeSensors[i]),
         dockInsidePlotArea: true,
         fontSize: 12,
         fontFamily: 'tahoma',
@@ -1560,26 +1820,39 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _resetAllChartsViewX() {
 
-    for (let i = 0; i < this.activeSensors.length - 1; i++) {
-      this._resetChartViewX(this.activeSensors[i].chart);
+    for (const [index, el] of this.activeSensors.entries()) {
+      if (index < this.activeSensors.length - 1) {
+        this._resetChartViewX(el.chart);
+      } else {
+        this._resetChartViewXContext(el.chart);
+      }
     }
-    this._resetChartViewXContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
   private _resetAllChartsViewY() {
 
-    for (let i = 0; i < this.activeSensors.length - 1; i++) {
-      this._resetChartViewY(this.activeSensors[i].chart, i);
+    for (const [index, el] of this.activeSensors.entries()) {
+      if (index < this.activeSensors.length - 1) {
+        this._resetChartViewY(el.chart, index);
+      } else {
+        this._resetChartViewYContext(el.chart);
+      }
     }
-    this._resetChartViewYContext(this.activeSensors[this.activeSensors.length - 1].chart);
   }
 
   private _resetAllChartsViewXY() {
 
-    for (let i = 0; i < this.activeSensors.length - 1; i++) {
-      this._resetChartViewXY(this.activeSensors[i].chart);
+    if (this.waveformService.displayDistanceTime.getValue()) {
+      return;
     }
-    this._resetChartViewXYContext(this.activeSensors[this.activeSensors.length - 1].chart);
+
+    for (const [index, el] of this.activeSensors.entries()) {
+      if (index < this.activeSensors.length - 1) {
+        this._resetChartViewXY(el.chart);
+      } else {
+        this._resetChartViewXYContext(el.chart);
+      }
+    }
   }
 
   private _resetChartViewX(chart: canvasjs.Chart | undefined) {
