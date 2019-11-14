@@ -293,7 +293,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         takeUntil(this._unsubscribe)
       )
       .subscribe(() => {
-        this._onPickingModeChange();
+        this._setPickingCursor();
       });
 
     this.waveformService.undoLastPickingClickedObs
@@ -670,6 +670,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
     this._destroyCharts();
     this._renderPage();
+    this._setPickingCursor();
   }
 
   private async _loadEventSinglePage(event: IEvent) {
@@ -2291,9 +2292,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
 
-    value = value ? value : !chart.options.axisY.crosshair.enabled;
+    value = value ? value : !chart.options.axisX.crosshair.enabled;
     chart.options.axisX.crosshair.enabled = value;
-    chart.options.axisY.crosshair.enabled = value;
+    // keep Y asix crosshair line off
+    chart.options.axisY.crosshair.enabled = false;
     if (value) {
       if (ind < this.activeSensors.length - 1) {
         chart.options.axisX.crosshair.color =
@@ -2311,7 +2313,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._waveformContainer.nativeElement.focus();
   }
 
-  private _onPickingModeChange() {
+  private _setPickingCursor() {
     const value = this.waveformService.pickingMode.getValue() === null ? false : true;
     for (let j = 0; j < this.activeSensors.length; j++) {
       this._toggleCrosshair(j, value);
