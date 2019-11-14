@@ -2292,7 +2292,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
 
-    value = value ? value : !chart.options.axisX.crosshair.enabled;
+    value = value !== null ? value : !chart.options.axisX.crosshair.enabled;
     chart.options.axisX.crosshair.enabled = value;
     // keep Y asix crosshair line off
     chart.options.axisY.crosshair.enabled = false;
