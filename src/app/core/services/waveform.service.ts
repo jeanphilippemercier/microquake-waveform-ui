@@ -36,6 +36,7 @@ export class WaveformService implements OnDestroy {
   zoomAll: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   displayComposite: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
   displayRotated: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  displayDistanceTime: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   predictedPicks: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
   predictedPicksBias: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   batchPicks: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
@@ -73,6 +74,7 @@ export class WaveformService implements OnDestroy {
   network: BehaviorSubject<string> = new BehaviorSubject('');
 
   loadedSensors: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
+  loadedSensorsAll: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
 
   options: any = {};
   sidebarOpened: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);

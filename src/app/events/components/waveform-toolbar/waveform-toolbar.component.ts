@@ -76,6 +76,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       this.waveformService.zoomAll,
       this.waveformService.displayComposite,
       this.waveformService.displayRotated,
+      this.waveformService.displayDistanceTime,
       this.waveformService.predictedPicks,
       this.waveformService.predictedPicksBias,
     ]).pipe(
@@ -87,6 +88,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       zoomAll,
       displayComposite,
       displayRotated,
+      displayDistanceTime,
       predictedPicks,
       predictedPicksBias
     ]) => {
@@ -97,6 +99,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       values.push(zoomAll ? 'zoomAll' : '');
       values.push(displayComposite ? 'displayComposite' : '');
       values.push(displayRotated ? 'displayRotated' : '');
+      values.push(displayDistanceTime ? 'displayDistanceTime' : '');
       values.push(predictedPicks ? 'predictedPicks' : '');
       values.push(predictedPicksBias ? 'predictedPicksBias' : '');
       values = values.filter(val => val !== '');
@@ -128,6 +131,9 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
         break;
       case 'displayRotated':
         this.waveformService.displayRotated.next(selected);
+        break;
+      case 'displayDistanceTime':
+        this.waveformService.displayDistanceTime.next(selected);
         break;
       case 'predictedPicks':
         this.waveformService.predictedPicks.next(selected);
@@ -166,6 +172,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
 
   onDisplayRotatedClick() {
     this.waveformService.displayRotated.next(!this.waveformService.displayRotated.getValue());
+  }
+
+  onDisplayDistanceTimeClick() {
+    this.waveformService.displayDistanceTime.next(!this.waveformService.displayDistanceTime.getValue());
   }
 
   onPredictedPicksClick() {
