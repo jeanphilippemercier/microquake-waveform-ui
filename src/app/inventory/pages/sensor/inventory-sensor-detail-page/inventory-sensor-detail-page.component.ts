@@ -1,19 +1,20 @@
 import { Component } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, BehaviorSubject } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { ActivatedRoute, Router, Params } from '@angular/router';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import { PageMode } from '@interfaces/core.interface';
-import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
+import { Sensor, Station, Borehole, IComponent, ComponentCode, SensorType, CableType, ISensorType } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData } from '@interfaces/dialogs.interface';
+import { ConfirmationDialogData, ComponentFormDialogData } from '@interfaces/dialogs.interface';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { DetailPage } from '@core/classes/detail-page.class';
 import { InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
 import { LoadingService } from '@services/loading.service';
+import { ComponentFormDialogComponent } from '@app/inventory/dialogs/component-form-dialog/component-form-dialog.component';
 
 @Component({
   selector: 'app-inventory-sensor-detail-page',
@@ -22,18 +23,50 @@ import { LoadingService } from '@services/loading.service';
 })
 export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
 
+
+
+  public get model(): Sensor | null {
+    return this._model;
+  }
+
+  public set model(v: Sensor | null) {
+    this._model = v;
+
+    this.availableComponentCodes = Object.values(ComponentCode);
+    if (this.model && this.model.components) {
+      this.model.components.map(val => {
+        const idx = this.availableComponentCodes.findIndex(componentCode => componentCode === val.code);
+
+        if (idx > -1) {
+          this.availableComponentCodes.splice(idx, 1);
+        }
+      });
+    }
+  }
+
+
+  private _model: Sensor | null = null;
+
   basePageUrlArr = ['/inventory/sensors'];
   PageMode = PageMode;
   stations!: Station[];
   boreholes!: Borehole[];
-  queryParams!: Params;
+  queryParams: Params = {};
   submited = false;
+  availableComponentCodes: ComponentCode[] = Object.values(ComponentCode);
+
+  sensorTypes: ISensorType[] = [];
+  cableTypes: CableType[] = [];
+
+  componentslInitialized: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   mapTabs = [
     '',
     'components',
     'signalQuality',
   ];
+
+
 
   constructor(
     protected _activatedRoute: ActivatedRoute,
@@ -45,12 +78,19 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
     private _loadingService: LoadingService
   ) {
     super(_activatedRoute, _router, _matDialog, _ngxSpinnerService);
+    this.queryParams = this._activatedRoute.snapshot.queryParams;
   }
 
   handleTabInit(idx: number) {
     if ([0, 1, 2].indexOf(idx) > -1) {
       if (!this.detailInitialized.getValue()) {
         this._initDetail();
+      }
+    }
+
+    if (idx === 1) {
+      if (!this.componentslInitialized.getValue()) {
+        this._initComponents();
       }
     }
   }
@@ -68,6 +108,24 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
         this.stations = result[1].results;
         this.boreholes = result[2].results;
         this.detailInitialized.next(true);
+      }, err => {
+        this._toastrNotificationService.error(err);
+        console.error(err);
+      }).add(() => {
+        this.loadingStop();
+      });
+  }
+
+  private async _initComponents() {
+    this.loadingStart();
+    forkJoin([
+      this._inventoryApiService.getSensorTypes(),
+      this._inventoryApiService.getCableTypes(),
+    ]).subscribe(
+      result => {
+        this.sensorTypes = result[0];
+        this.cableTypes = result[1];
+        this.componentslInitialized.next(true);
       }, err => {
         this._toastrNotificationService.error(err);
         console.error(err);
@@ -127,11 +185,14 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
       if (val) {
         try {
           this.loadingStart();
-          const response = await this._inventoryApiService.deleteComponent(componentId).toPromise();
+          await this._inventoryApiService.deleteComponent(componentId).toPromise();
+          const response = await this._inventoryApiService.getSensor(this.id).toPromise();
+          this.model = response;
           this._toastrNotificationService.success('Component deleted');
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
+        } finally {
           this.loadingStop();
         }
       }
@@ -188,5 +249,38 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
     if (this.model) {
       this.model.along_hole_z = $event;
     }
+  }
+
+  async openComponentFormDialog($event?: IComponent) {
+
+
+    const formDialogRef = this._matDialog.open<ComponentFormDialogComponent, ComponentFormDialogData>(
+      ComponentFormDialogComponent, {
+      hasBackdrop: true,
+      autoFocus: false,
+      data: {
+        mode: $event ? PageMode.EDIT : PageMode.CREATE,
+        model: $event ? $event : {},
+        sensorId: this.id,
+        sensorTypes: this.sensorTypes,
+        cables: this.cableTypes,
+        availableComponentCodes: this.availableComponentCodes
+      }
+    });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(async (val) => {
+      if (val) {
+        try {
+          this.loadingStart();
+          const response = await this._inventoryApiService.getSensor(this.id).toPromise();
+          this.model = response;
+        } catch (err) {
+          console.error(err);
+          this._toastrNotificationService.error(err);
+        } finally {
+          this.loadingStop();
+        }
+      }
+    });
   }
 }

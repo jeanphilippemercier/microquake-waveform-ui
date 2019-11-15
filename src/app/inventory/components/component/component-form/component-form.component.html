@@ -44,22 +44,6 @@
                       formControlName="sensor_type"
                       [matAutocomplete]="autoSensorType"
                     >
-                    <button
-                      (click)="openDialog(sensorTypeUpdate);$event.stopPropagation();$event.preventDefault()"
-                      matSuffix
-                      mat-icon-button
-                    >
-                      <mat-icon>info_outlined</mat-icon>
-                    </button>
-                    <ng-template #sensorTypeUpdate>
-                      <h2 matDialogTitle>Sensor type {{myForm?.value?.sensor_type?.model}}</h2>
-                      <mat-dialog-content>
-                        <app-sensor-type-form
-                          [mode]="PageMode.EDIT"
-                          [id]="myForm?.value?.sensor_type?.id"
-                        ></app-sensor-type-form>
-                      </mat-dialog-content>
-                    </ng-template>
                     <mat-autocomplete
                       #autoSensorType="matAutocomplete"
                       [displayWith]="sensorTypeDisplayFn"

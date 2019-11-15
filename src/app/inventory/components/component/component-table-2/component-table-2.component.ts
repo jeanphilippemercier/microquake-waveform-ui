@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
 import { IComponent, ISensorType, ComponentCode, CableType } from '@interfaces/inventory.interface';
-import {  MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material';
 import { Table } from '@core/classes/table.class';
 import { Router } from '@angular/router';
 
@@ -18,7 +18,7 @@ export class ComponentTable2Component extends Table<IComponent> implements OnIni
   sensorTypes: ISensorType[] = [];
   cables: CableType[] = [];
 
-  displayedColumns: string[] = ['detail', 'enabled', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'id', 'actions'];
+  displayedColumns: string[] = ['enabled', 'component', 'cable', 'cableLength', 'sensorType', 'motionType', 'actions'];
   addingNewComponent = false;
   initialized = false;
 
@@ -43,10 +43,6 @@ export class ComponentTable2Component extends Table<IComponent> implements OnIni
   onModelEdited($event: IComponent, oldEvent: IComponent) {
     Object.assign(oldEvent, $event);
   }
-
-  // editButtonClick(microquakeEventTypeId: number) {
-  //   this._router.navigate(['inventory/microquake-event-types', microquakeEventTypeId], { preserveQueryParams: true });
-  // }
 
   rowClicked($event: IComponent) {
     this.rowClick.emit($event);

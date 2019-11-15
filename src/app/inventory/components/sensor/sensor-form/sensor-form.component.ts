@@ -30,6 +30,8 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
     } else {
       this.myForm.controls['station'].disable({ onlySelf: true });
     }
+
+    this.checkFixedStation();
   }
   get stations(): Station[] {
     return this._stations;
@@ -51,7 +53,17 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
   }
   private _boreholes: Borehole[] = [];
 
-  @Input() stationId!: number;
+
+  @Input()
+  public set stationId(v: number) {
+    this._stationId = v;
+    this.checkFixedStation();
+  }
+
+  public get stationId(): number {
+    return this._stationId;
+  }
+  private _stationId!: number;
 
   public get code() {
     return this.myForm.get('code');
@@ -122,13 +134,6 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
           map(value => !value || typeof value === 'string' ? value : value.name),
           map(name => name ? this._filterStation(name) : this.stations.slice())
         );
-      const fixedStation = this.stationId ? this.stations.find(station => station.id === +this.stationId) : null;
-
-
-      if (fixedStation) {
-        this.myForm.controls['station'].patchValue(fixedStation, { onlySelf: true });
-        this.myForm.controls['station'].disable({ onlySelf: true });
-      }
 
       const boreholeFormEl = this.myForm.get('borehole');
       if (!boreholeFormEl) {
@@ -245,5 +250,15 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
 
   openDialog(templateRef: TemplateRef<any>) {
     this._matDialog.open(templateRef);
+  }
+
+  checkFixedStation() {
+
+    const fixedStation = this.stationId && this.stations ? this.stations.find(station => station.id === +this.stationId) : null;
+
+    if (fixedStation) {
+      this.myForm.controls['station'].patchValue(fixedStation, { onlySelf: true });
+      this.myForm.controls['station'].disable({ onlySelf: true });
+    }
   }
 }

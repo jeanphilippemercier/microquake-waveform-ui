@@ -7,7 +7,7 @@
       Loading...
     </ng-container>
     <ng-container *ngIf="dataSource?.length === 0">
-      No microquake event types
+      No components
     </ng-container>
   </h3>
   <table
@@ -29,19 +29,20 @@
 
     <ng-container matColumnDef="cable">
       <th
-        class="pl-3"
         mat-header-cell
         *matHeaderCellDef
-      > Cable</th>
+      >
+        <span class="pl-3">Cable</span>
+      </th>
       <td
         mat-cell
         *matCellDef="let element"
       >
         <button
-          [disabled]="true"
           matTooltip="Show cable detail"
+          matTooltipPosition="right"
           color="primary"
-          [routerLink]="['/inventory/sensors', element?.id]"
+          [routerLink]="['/inventory/cable-types', element?.cable?.id]"
           mat-button
         >
           {{element?.cable?.code}}
@@ -88,19 +89,20 @@
 
     <ng-container matColumnDef="sensorType">
       <th
-        class="pl-3"
         mat-header-cell
         *matHeaderCellDef
-      > Sensor Type</th>
+      >
+        <span class="pl-3">Sensor Type</span>
+      </th>
       <td
         mat-cell
         *matCellDef="let element"
       >
         <button
-          [disabled]="true"
           matTooltip="Show sensor type detail"
+          matTooltipPosition="right"
           color="primary"
-          [routerLink]="['/inventory/sensors', element?.id]"
+          [routerLink]="['/inventory/sensor-types', element?.sensor_type?.id]"
           mat-button
         >
           {{element?.sensor_type?.model}}
@@ -151,11 +153,14 @@
       <td
         mat-cell
         *matCellDef="let element"
+        (click)="$event.preventDefault();$event.stopPropagation();"
       >
         <button
           mat-icon-button
+          aria-label="Component menu"
           [matMenuTriggerFor]="menu"
-          aria-label="Sensor menu"
+          matTooltip="More options"
+          matTooltipPosition="left"
         >
           <mat-icon>more_vert</mat-icon>
         </button>
