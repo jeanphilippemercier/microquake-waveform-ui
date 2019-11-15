@@ -256,7 +256,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         takeUntil(this._unsubscribe)
       )
       .subscribe((val: boolean) => {
-        this._loadEventSinglePage(this._event);
+        this._loadEventPage(this._event);
       });
 
     this.waveformService.predictedPicks
@@ -673,7 +673,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._setPickingCursor();
   }
 
-  private async _loadEventSinglePage(event: IEvent) {
+  private async _loadEventPage(event: IEvent) {
     if (!event) {
       console.error(`No event`);
       return;
@@ -688,7 +688,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     try {
 
-      if (this.loadedSensorsAll.length === 0) {
+      if (this.waveformService.displayDistanceTime.getValue() && this.loadedSensorsAll.length === 0) {
         // get waveform query (decimated data set)
         const waveformQuery: EventWaveformQuery = {
           traces_per_page: 500,
@@ -738,14 +738,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       }
 
-      if (this.loadedSensorsAll.length > 0) {
-        this._destroyCharts();
-        this._renderPage();
-      }
+      this._destroyCharts();
+      this._renderPage();
+      this._setPickingCursor();
 
     } catch (err) {
       console.error(err);
-      this._toastrNotificationService.error(err, 'Could not load decimated waveform data');
+      this._toastrNotificationService.error(err, 'Could not load waveform data');
     } finally {
       if (this.currentEventId === event.event_resource_id) {
         this.waveformService.loading.next(false);
@@ -874,6 +873,49 @@ export class Waveform2Component implements OnInit, OnDestroy {
                 mouseover: function(e) {
                   this.lastMouseOver = e.dataSeries.index;
                 }*/
+              });
+          }
+        }
+      }
+      if (distance) {
+        const picksP = [];
+        const picksS = [];
+        for (const pick of this.activeSensors[i].picks) {
+          if (pick.label === PickKey.P) {
+            picksP.push({
+              x: pick.value,
+              y: distance + maxTraceHeight / 2,
+            });
+            picksP.push({
+              x: pick.value,
+              y: distance - maxTraceHeight / 2,
+            });
+            data.push(
+              {
+                type: 'line',
+                markerType: 'none',
+                // @ts-ignore
+                color: pick.color,
+                lineThickness: pick.thickness,
+                dataPoints: picksP,
+              });
+          } else if (pick.label === PickKey.S) {
+            picksS.push({
+              x: pick.value,
+              y: distance + maxTraceHeight / 2,
+            });
+            picksS.push({
+              x: pick.value,
+              y: distance - maxTraceHeight / 2,
+            });
+            data.push(
+              {
+                type: 'line',
+                markerType: 'none',
+                // @ts-ignore
+                color: pick.color,
+                lineThickness: pick.thickness,
+                dataPoints: picksS,
               });
           }
         }
@@ -2314,6 +2356,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _setPickingCursor() {
+    if (this.waveformService.displayDistanceTime.getValue()) {
+      return;
+    }
+
     const value = this.waveformService.pickingMode.getValue() === null ? false : true;
     for (let j = 0; j < this.activeSensors.length; j++) {
       this._toggleCrosshair(j, value);
