@@ -73,7 +73,7 @@
           [routerLink]="['/inventory/sensors', element?.id]"
           mat-button
         >
-          {{element?.station?.code + '.' + element?.location_code}} ({{element?.code}})
+          {{element?.station?.code + '.' + (element?.location_code ? element?.location_code : '??')}} ({{element?.code}})
         </a>
       </td>
     </ng-container>

@@ -100,13 +100,9 @@ export class InventorySensorDetailPageComponent extends DetailPage<Sensor> {
 
     forkJoin([
       (this.id ? this._inventoryApiService.getSensor(this.id) : of(null)),
-      this._inventoryApiService.getStations({ page_size: 10000 }),
-      this._inventoryApiService.getBoreholes({ page_size: 10000 }),
     ]).subscribe(
       result => {
         this.model = result[0];
-        this.stations = result[1].results;
-        this.boreholes = result[2].results;
         this.detailInitialized.next(true);
       }, err => {
         this._toastrNotificationService.error(err);

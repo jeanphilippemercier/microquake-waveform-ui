@@ -62,8 +62,6 @@
         <ng-template matTabContent>
           <app-sensor-form
             [model]="model"
-            [stations]="stations"
-            [boreholes]="boreholes"
             [stationId]="queryParams ? queryParams['stationId'] : null"
             (modelEdited)="model = $event"
             (modelCreated)="openDetail($event)"

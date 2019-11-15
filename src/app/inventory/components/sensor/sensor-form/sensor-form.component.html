@@ -10,7 +10,7 @@
 
             <div class="col-lg-3 pr-lg-4">
               <div class="row">
-                <div class="col">
+                <div class="col-12">
 
                   <mat-slide-toggle
                     class="mt-2 mb-5"
@@ -18,82 +18,75 @@
                   > Enabled?
                   </mat-slide-toggle>
                 </div>
-                <div class="col">
+                <div class="col-12">
                   <mat-form-field>
                     <mat-label>Station</mat-label>
                     <input
+                      (focus)="autoStationFocused()"
                       [required]="true"
                       matInput
                       type="text"
                       formControlName="station"
-                      [matAutocomplete]="autoSensor"
+                      [matAutocomplete]="autoStation"
                     >
-                    <button
-                      *ngIf=""
-                      (click)="openDialog(stationUpdate);$event.stopPropagation();$event.preventDefault()"
-                      matSuffix
-                      mat-icon-button
-                    >
-                      <mat-icon>info_outlined</mat-icon>
-                    </button>
                     <mat-autocomplete
-                      #autoSensor="matAutocomplete"
+                      #autoStation="matAutocomplete"
                       [displayWith]="stationDisplayFn"
+                      (optionSelected)="autoStationSelected($event)"
                     >
                       <mat-option
                         *ngFor="let option of (filteredStations | async)"
                         [value]="option"
-                      >{{option.name}}</mat-option>
+                      >{{option.code}}</mat-option>
                     </mat-autocomplete>
+                    <mat-progress-spinner
+                      matSuffix
+                      *ngIf="autoStationLoading"
+                      [diameter]="20"
+                      [strokeWidth]="2"
+                      mode="indeterminate"
+                    ></mat-progress-spinner>
                   </mat-form-field>
-
-                  <ng-template #stationUpdate>
-                    <h2 matDialogTitle>Station {{myForm?.value?.station?.code}}</h2>
-                    <mat-dialog-content>
-                      <app-station-form
-                        [mode]="PageMode.EDIT"
-                        [id]="myForm?.value?.station?.id"
-                      ></app-station-form>
-                    </mat-dialog-content>
-                  </ng-template>
                 </div>
 
-                <div class="col">
+                <div class="col-12">
                   <mat-form-field>
                     <mat-label>Borehole</mat-label>
                     <input
+                      (focus)="autoBoreholeFocused()"
                       [required]="true"
                       matInput
                       type="text"
                       formControlName="borehole"
                       [matAutocomplete]="autoBorehole"
                     >
-                    <button
-                      *ngIf=""
-                      [disabled]="true"
-                      matSuffix
-                      mat-icon-button
-                    >
-                      <mat-icon>info_outlined</mat-icon>
-                    </button>
                     <mat-autocomplete
                       #autoBorehole="matAutocomplete"
-                      [displayWith]="stationDisplayFn"
+                      [displayWith]="boreholeDisplayFn"
+                      (optionSelected)="autoBoreholeSelected($event)"
                     >
                       <mat-option
                         *ngFor="let option of (filteredBoreholes | async)"
                         [value]="option"
                       >{{option.name}}</mat-option>
                     </mat-autocomplete>
+                    <mat-progress-spinner
+                      matSuffix
+                      *ngIf="autoBoreholeLoading"
+                      [diameter]="20"
+                      [strokeWidth]="2"
+                      mode="indeterminate"
+                    ></mat-progress-spinner>
                   </mat-form-field>
                 </div>
 
-                <div class="col">
+                <div class="col-12">
                   <mat-form-field>
                     <mat-label>Name</mat-label>
                     <input
                       [required]="true"
                       matInput
+                      type="text"
                       formControlName="name"
                     >
                   </mat-form-field>
