@@ -34,7 +34,9 @@ export class DetailPage<T> implements OnInit, OnDestroy {
 
   async ngOnInit() {
     const params = this._activatedRoute.snapshot.params;
-    if (params['id'] === PageMode.CREATE) {
+    const data = this._activatedRoute.snapshot.data;
+
+    if (params['id'] === PageMode.CREATE || data['mode'] === PageMode.CREATE) {
       this.pageMode = PageMode.CREATE;
     } else {
       this.pageMode = PageMode.EDIT;

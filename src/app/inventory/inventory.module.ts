@@ -38,6 +38,7 @@ import { StationFormDialogComponent } from './dialogs/station-form-dialog/statio
 import { BoreholeFormDialogComponent } from './dialogs/borehole-form-dialog/borehole-form-dialog.component';
 import { ComponentTable2Component } from './components/component/component-table-2/component-table-2.component';
 import { ComponentFormDialogComponent } from './dialogs/component-form-dialog/component-form-dialog.component';
+import { PageMode } from '@interfaces/core.interface';
 
 const ROUTES: Routes = [
   {
@@ -56,6 +57,13 @@ const ROUTES: Routes = [
   {
     path: 'inventory/stations',
     component: InventoryStationListPageComponent,
+  },
+  {
+    path: 'inventory/stations/create',
+    component: InventoryStationDetailPageComponent,
+    data: {
+      mode: PageMode.CREATE
+    }
   },
   {
     path: 'inventory/stations/:id',

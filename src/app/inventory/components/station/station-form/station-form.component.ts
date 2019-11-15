@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, Input, Output, EventEmitter } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
-import { startWith, map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { startWith, map, takeUntil, tap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
@@ -30,6 +30,23 @@ export class StationFormComponent extends Form<Station> implements OnInit {
         this.networks = [...this.networks, ...val.networks];
       });
     }
+
+    try {
+      const networkFormEl = this.myForm.get('network');
+      if (!networkFormEl) {
+        return;
+      }
+
+      this.filteredNetworks = networkFormEl.valueChanges
+        .pipe(
+          startWith(''),
+          takeUntil(this._unsubscribe),
+          map(value => !value || typeof value === 'string' ? value : value.name),
+          map(input => input ? this._filter<Network>(input, this.networks, 'code') : this.networks.slice())
+        );
+    } catch (err) {
+      console.error(err);
+    }
   }
   get sites(): Site[] {
     return this._sites;
@@ -42,7 +59,7 @@ export class StationFormComponent extends Form<Station> implements OnInit {
   myForm = this._fb.group({
     name: [, [Validators.required]],
     code: [, [Validators.required]],
-    network: [, [Validators.required]],
+    network: ['', [Validators.required]],
     description: [],
     location_x: [],
     location_y: [],
@@ -51,7 +68,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     power: [],
   });
 
-  @ViewChild('inventoryForm', { static: false }) inventoryForm!: NgForm;
   submited = false;
 
   constructor(
@@ -66,27 +82,7 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     super(_ngxSpinnerService);
   }
 
-  ngOnInit() {
-    this._initEditableForm();
-  }
-
-  private async _initEditableForm() {
-    try {
-      const networkFormEl = this.myForm.get('network');
-      if (!networkFormEl) {
-        return;
-      }
-
-      this.filteredNetworks = networkFormEl.valueChanges
-        .pipe(
-          startWith(''),
-          map(value => !value || typeof value === 'string' ? value : value.name),
-          map(input => input ? this._filter<Network>(input, this.networks, 'code') : this.networks.slice())
-        );
-    } catch (err) {
-      console.error(err);
-    }
-  }
+  ngOnInit() { }
 
   openEditMode() {
     this._router.navigate(
@@ -103,7 +99,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
   }
 
   private _buildUpdateDtoObject(formValues: any): StationUpdateInput {
-
     const dto: StationUpdateInput = formValues;
 
     if (!dto) {
@@ -111,8 +106,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
     }
 
     if (formValues.network && formValues.network.id) {
-      dto.network_id = formValues.network.id;
-      delete formValues.network;
     } else {
       throw new Error('No network is defined');
     }
@@ -128,7 +121,6 @@ export class StationFormComponent extends Form<Station> implements OnInit {
   }
 
   async onSubmit() {
-
     this.submited = true;
     if (this.myForm.invalid) {
       this._toastrNotificationService.error('Form is not valid');
@@ -142,11 +134,13 @@ export class StationFormComponent extends Form<Station> implements OnInit {
 
       if (this.mode === PageMode.CREATE) {
         const dto = this._buildCreateDtoObject(this.myForm.value);
+
         response = await this._inventoryApiService.createStation(dto).toPromise();
         this._toastrNotificationService.success('Station created');
         this.modelCreated.emit(response);
       } else if (this.mode === PageMode.EDIT) {
         const dto = this._buildUpdateDtoObject(this.myForm.value);
+
         response = await this._inventoryApiService.updateStation(this.model.id, dto).toPromise();
         this._toastrNotificationService.success('Station updated');
         this.modelEdited.emit(response);

@@ -55,7 +55,7 @@
               [sites]="sites"
               [(model)]="model"
               [mode]="pageMode"
-              (modelCreated)="openDetail($event)"
+              (modelCreated)="onCreated($event)"
             ></app-station-form>
           </div>
         </ng-template>
@@ -84,8 +84,9 @@
               </div>
             </div>
             <div class="mt-5">
-              <app-maintenance-table
+              <app-maintenance-table-2
                 [dataSource]="maintenanceEvents"
+                (rowClick)="openMaintenanceFormDialog($event)"
                 [count]="maintenanceEventsCount"
                 [maintenanceCategories]="maintenanceCategories"
                 [maintenanceStatuses]="maintenanceStatuses"
@@ -93,7 +94,7 @@
                 (previousPage)="changeMaintenanceEventsPage(maintenanceEventsCursorPrevious)"
                 (delete)="onDeleteMaintenanceEvents($event)"
               >
-              </app-maintenance-table>
+              </app-maintenance-table-2>
             </div>
           </div>
         </ng-template>
