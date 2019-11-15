@@ -24,6 +24,7 @@
                     <mat-autocomplete
                       #autoNetwork="matAutocomplete"
                       [displayWith]="networkDisplayFn"
+                      [autoActiveFirstOption]="true"
                     >
                       <mat-option
                         *ngFor="let option of (filteredNetworks | async)"

@@ -126,14 +126,12 @@ export class ComponentFormComponent extends Form<IComponent> implements OnInit {
 
     if (formValues.sensor_type && formValues.sensor_type.id) {
       dto.sensor_type_id = formValues.sensor_type.id;
-      delete formValues.sensor_type;
     } else {
       throw new Error('No sensor_type is defined');
     }
 
     if (formValues.cable && formValues.cable.id) {
       dto.cable_id = formValues.cable.id;
-      delete formValues.cable;
     } else {
       throw new Error('No cable is defined');
     }
@@ -180,8 +178,6 @@ export class ComponentFormComponent extends Form<IComponent> implements OnInit {
         this._toastrNotificationService.success('Component updated');
         this.modelEdited.emit(response);
       }
-      console.log(response);
-      // this._router.navigate(['/inventory/sensors', response.id]);
 
     } catch (err) {
       console.error(err);

@@ -23,17 +23,18 @@
     </div>
     <div class="row mt-lg-5">
       <div class="col">
-        <app-maintenance-table
+        <app-maintenance-table-2
           [dataSource]="dataSource"
+          (rowClick)="onRowClicked($event)"
           [count]="count"
           [stations]="stations"
           [maintenanceCategories]="maintenanceCategories"
           [maintenanceStatuses]="maintenanceStatuses"
           (previousPage)="changePage(cursorPrevious)"
-          (delete)="delete($event)"
           (nextPage)="changePage(cursorNext)"
+          (delete)="delete($event)"
         >
-        </app-maintenance-table>
+        </app-maintenance-table-2>
       </div>
     </div>
   </app-layout-content>

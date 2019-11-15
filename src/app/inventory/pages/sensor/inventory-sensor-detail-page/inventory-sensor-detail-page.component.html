@@ -62,8 +62,6 @@
         <ng-template matTabContent>
           <app-sensor-form
             [model]="model"
-            [stations]="stations"
-            [boreholes]="boreholes"
             [stationId]="queryParams ? queryParams['stationId'] : null"
             (modelEdited)="model = $event"
             (modelCreated)="openDetail($event)"
@@ -78,13 +76,30 @@
         [disabled]="pageMode === PageMode.CREATE || !model"
       >
         <ng-template matTabContent>
-          <app-component-table
-            *ngIf="model?.components"
-            [dataSource]="model?.components"
-            [sensorId]="model?.id"
-            (delete)="deleteComponent($event)"
-          >
-          </app-component-table>
+          <div class="mt-3 w-100">
+            <div class="w-100 d-flex justify-content-end">
+              <div
+                [matTooltip]="availableComponentCodes?.length === 0 ? 'All component codes are reserved':''"
+                [matTooltipDisabled]="availableComponentCodes?.length > 0"
+                matTooltipPosition="left"
+              >
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="openComponentFormDialog()"
+                  [disabled]="availableComponentCodes?.length === 0"
+                >Add component</button>
+              </div>
+            </div>
+            <app-component-table-2
+              *ngIf="model?.components"
+              (rowClick)="openComponentFormDialog($event)"
+              [dataSource]="model?.components"
+              [sensorId]="model?.id"
+              (delete)="deleteComponent($event)"
+            >
+            </app-component-table-2>
+          </div>
         </ng-template>
       </mat-tab>
 

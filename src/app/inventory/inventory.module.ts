@@ -36,6 +36,9 @@ import { SensorTypeFormDialogComponent } from './dialogs/sensor-type-form-dialog
 import { SensorTypeTableComponent } from './components/sensor-type/sensor-type-table/sensor-type-table.component';
 import { StationFormDialogComponent } from './dialogs/station-form-dialog/station-form-dialog.component';
 import { BoreholeFormDialogComponent } from './dialogs/borehole-form-dialog/borehole-form-dialog.component';
+import { ComponentTable2Component } from './components/component/component-table-2/component-table-2.component';
+import { ComponentFormDialogComponent } from './dialogs/component-form-dialog/component-form-dialog.component';
+import { PageMode } from '@interfaces/core.interface';
 
 const ROUTES: Routes = [
   {
@@ -54,6 +57,13 @@ const ROUTES: Routes = [
   {
     path: 'inventory/stations',
     component: InventoryStationListPageComponent,
+  },
+  {
+    path: 'inventory/stations/create',
+    component: InventoryStationDetailPageComponent,
+    data: {
+      mode: PageMode.CREATE
+    }
   },
   {
     path: 'inventory/stations/:id',
@@ -142,6 +152,7 @@ const formComponents = [
 
 const tableComponents = [
   ComponentTableComponent,
+  ComponentTable2Component,
   StationTableComponent,
   SensorTableComponent,
   BoreholeTableComponent,
@@ -156,7 +167,8 @@ const formDialogComponents = [
   CableTypeFormDialogComponent,
   SensorTypeFormDialogComponent,
   StationFormDialogComponent,
-  BoreholeFormDialogComponent
+  BoreholeFormDialogComponent,
+  ComponentFormDialogComponent
 ];
 
 const otherDialogComponents = [

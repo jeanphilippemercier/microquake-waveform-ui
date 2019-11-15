@@ -1,0 +1,17 @@
+.mat-row:hover {
+  -webkit-transition: background-color 150ms linear;
+  -ms-transition: background-color 150ms linear;
+  transition: background-color 150ms linear;
+  background-color: #F7F7F7;
+  cursor: pointer;
+}
+
+td.mat-column-actions {
+  width: 30px;
+  padding-right: 8px;
+}
+
+th.mat-header-cell,
+td.mat-cell {
+  padding-left: 15px;
+}

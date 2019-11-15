@@ -1,4 +1,4 @@
-import { SiteBase, SensorBase, IComponentBase, StationBase, ISensorTypeBase, CableTypeBase, Borehole } from './inventory.interface';
+import { SiteBase, SensorBase, IComponentBase, StationBase, ISensorTypeBase, CableTypeBase, Borehole, Network } from './inventory.interface';
 import { MaintenanceEventBase } from './maintenance.interface';
 import { EventType } from './event.interface';
 
@@ -22,7 +22,7 @@ export interface ComponentUpdateInput extends Partial<IComponentBase> {
 }
 
 export interface StationCreateInput extends Partial<StationBase> {
-  network_id: number;
+  network: { id: number };
 }
 export interface StationUpdateInput extends Partial<StationCreateInput> { }
 

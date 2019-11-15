@@ -1,0 +1,49 @@
+.mat-row:hover {
+  -webkit-transition: background-color 150ms linear;
+  -ms-transition: background-color 150ms linear;
+  transition: background-color 150ms linear;
+  background-color: #F7F7F7;
+  cursor: pointer;
+}
+
+td.mat-column-actions:last-of-type {
+  width: 30px;
+  padding-right: 8px;
+}
+
+td {
+  &.mat-column-actions {
+    width: 30px;
+    padding-right: 8px;
+  }
+
+  &.mat-column-date {
+    width: 125px;
+  }
+
+  &.mat-column-status {
+    width: 100px;
+  }
+
+  &.mat-column-category {
+    width: 150px;
+  }
+
+  &.mat-column-station {
+    width: 80px;
+  }
+
+  &.mat-column-attachments {
+    width: 125px;
+  }
+
+  &.mat-column-description {
+    .description-wrap {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+  }
+
+}

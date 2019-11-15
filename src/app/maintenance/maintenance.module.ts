@@ -1,12 +1,14 @@
 import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+
 import { SharedModule } from '@app/shared/shared.module';
 import { MaintenanceFormComponent } from './components/maintenance-form/maintenance-form.component';
-import { RouterModule, Routes } from '@angular/router';
 import { MaintenanceListPageComponent } from './pages/maintenance-list-page/maintenance-list-page.component';
 import { MaintenanceTableComponent } from './components/maintenance-table/maintenance-table.component';
 import { MaintenanceInputComponent } from './components/maintenance-input/maintenance-input.component';
 import { MaintenanceDialogComponent } from './dialogs/maintenance-dialog/maintenance-dialog.component';
 import { MaintenanceFormDialogComponent } from './dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
+import { MaintenanceTable2Component } from './components/maintenance-table-2/maintenance-table-2.component';
 
 
 const ROUTES: Routes = [
@@ -25,6 +27,7 @@ const ROUTES: Routes = [
   declarations: [
     MaintenanceFormComponent,
     MaintenanceTableComponent,
+    MaintenanceTable2Component,
     MaintenanceListPageComponent,
     MaintenanceInputComponent,
     MaintenanceDialogComponent,
@@ -36,6 +39,7 @@ const ROUTES: Routes = [
   ],
   exports: [
     MaintenanceTableComponent,
+    MaintenanceTable2Component,
     MaintenanceFormComponent,
     MaintenanceListPageComponent,
     MaintenanceInputComponent,

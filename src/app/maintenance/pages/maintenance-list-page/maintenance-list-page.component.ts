@@ -39,29 +39,36 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
     private _toastrNotificationService: ToastrNotificationService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
-    this._initFormData();
+  }
 
+  async afterNgOnInit() {
+    this._initFormData();
     this._activatedRoute.params
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(async params => {
 
-        const maintenanceEventId = params['maintenanceEventId'];
+        const maintenanceEventId = +params['maintenanceEventId'];
         if (!maintenanceEventId) {
           return;
         }
 
         try {
-          await this._loadingService.start();
-          await this.wiatForInitialization();
-          const response = await this._inventoryApiService.getMaintenanceEvent(maintenanceEventId).toPromise();
-          await this.openFormDialog(response);
+          await this.loadingStart();
+
+          let data: MaintenanceEvent | undefined;
+          if (this.dataSource) {
+            data = this.dataSource.find(ev => ev.id === maintenanceEventId);
+          }
+          if (!data) {
+            data = await this._inventoryApiService.getMaintenanceEvent(maintenanceEventId).toPromise();
+          }
+          await this.openFormDialog(data);
         } catch (err) {
           console.error(err);
           this._toastrNotificationService.error(err);
         } finally {
-          await this._loadingService.stop();
+          await this.loadingStop();
         }
-
       });
   }
 
@@ -115,13 +122,13 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
 
     const deleteDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(
       ConfirmationDialogComponent, {
-        hasBackdrop: true,
-        width: '350px',
-        data: {
-          header: `Are you sure?`,
-          text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
-        }
-      });
+      hasBackdrop: true,
+      width: '350px',
+      data: {
+        header: `Are you sure?`,
+        text: `Do you want to proceed and delete maintenance event (ID: ${id})?`
+      }
+    });
 
     deleteDialogRef.afterClosed().pipe(first()).subscribe(async val => {
       if (val) {
@@ -144,14 +151,14 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   async openFormDialog($event: MaintenanceEvent) {
     const formDialogRef = this._matDialog.open<MaintenanceFormDialogComponent, MaintenanceFormDialogData>(
       MaintenanceFormDialogComponent, {
-        hasBackdrop: true,
-        data: {
-          model: $event,
-          stations: this.stations,
-          maintenanceCategories: this.maintenanceCategories,
-          maintenanceStatuses: this.maintenanceStatuses
-        }
-      });
+      hasBackdrop: true,
+      data: {
+        model: $event,
+        stations: this.stations,
+        maintenanceCategories: this.maintenanceCategories,
+        maintenanceStatuses: this.maintenanceStatuses
+      }
+    });
 
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
@@ -161,5 +168,8 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
     });
   }
 
+  onRowClicked(ev: MaintenanceEvent) {
+    this._router.navigate(['maintenance', ev.id]);
+  }
 
 }

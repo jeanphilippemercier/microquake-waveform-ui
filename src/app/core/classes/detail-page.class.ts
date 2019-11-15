@@ -21,6 +21,8 @@ export class DetailPage<T> implements OnInit, OnDestroy {
   mapTabs = [
     ''
   ];
+  loadingQueue = 0;
+
   protected _unsubscribe = new Subject<void>();
 
   constructor(
@@ -32,7 +34,9 @@ export class DetailPage<T> implements OnInit, OnDestroy {
 
   async ngOnInit() {
     const params = this._activatedRoute.snapshot.params;
-    if (params['id'] === PageMode.CREATE) {
+    const data = this._activatedRoute.snapshot.data;
+
+    if (params['id'] === PageMode.CREATE || data['mode'] === PageMode.CREATE) {
       this.pageMode = PageMode.CREATE;
     } else {
       this.pageMode = PageMode.EDIT;
@@ -85,9 +89,15 @@ export class DetailPage<T> implements OnInit, OnDestroy {
   }
 
   async loadingStart() {
+    this.loadingQueue++;
     await this._ngxSpinnerService.show('loading', { fullScreen: true, bdColor: 'rgba(51,51,51,0.25)' });
   }
+
   async loadingStop() {
-    await this._ngxSpinnerService.hide('loading');
+    this.loadingQueue--;
+    this.loadingQueue = Math.max(this.loadingQueue, 0);
+    if (this.loadingQueue === 0) {
+      await this._ngxSpinnerService.hide('loading');
+    }
   }
 }

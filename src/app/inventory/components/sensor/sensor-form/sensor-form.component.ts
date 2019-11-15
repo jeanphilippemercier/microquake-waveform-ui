@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, Input, Output, EventEmitter, TemplateRef, OnDestroy } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
-import { startWith, map } from 'rxjs/operators';
-import { Observable, Subscription } from 'rxjs';
+import { startWith, map, debounceTime, switchMap, tap, filter, catchError, take } from 'rxjs/operators';
+import { Observable, Subscription, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
@@ -10,7 +10,7 @@ import { SensorCreateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { MatDialog } from '@angular/material';
+import { MatDialog, MatAutocompleteTrigger, MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material';
 import { Form } from '@core/classes/form.class';
 
 @Component({
@@ -21,37 +21,43 @@ import { Form } from '@core/classes/form.class';
 
 export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestroy {
 
-
   @Input()
   set stations(v: Station[]) {
-    if (v && v.length > 0) {
-      this.myForm.controls['station'].enable({ onlySelf: true });
-      this._stations = v;
-    } else {
-      this.myForm.controls['station'].disable({ onlySelf: true });
-    }
+
+    // this.checkFixedStation();
   }
   get stations(): Station[] {
     return this._stations;
   }
   private _stations: Station[] = [];
-
+  autoStationLoading = false;
+  autoStationValue!: Sensor;
+  autoStationInitialized = false;
 
   @Input()
   set boreholes(v: Borehole[]) {
-    if (v && v.length > 0) {
-      this.myForm.controls['borehole'].enable({ onlySelf: true });
-      this._boreholes = v;
-    } else {
-      this.myForm.controls['borehole'].disable({ onlySelf: true });
-    }
+
   }
   get boreholes(): Borehole[] {
     return this._boreholes;
   }
   private _boreholes: Borehole[] = [];
+  autoBoreholeLoading = false;
+  autoBoreholeValue!: Borehole;
+  autoBoreholeInitialized = false;
 
-  @Input() stationId!: number;
+  @Input()
+  public set stationId(v: number) {
+    this._stationId = v;
+    if (this._stationId) {
+      this.getStation(this._stationId);
+    }
+  }
+
+  public get stationId(): number {
+    return this._stationId;
+  }
+  private _stationId!: number;
 
   public get code() {
     return this.myForm.get('code');
@@ -68,8 +74,8 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
     code: [, [Validators.required, Validators.maxLength(3)]],
     alternate_code: [],
     location_code: [],
-    station: [, Validators.required],
-    borehole: [, [Validators.required]],
+    station: ['', Validators.required],
+    borehole: ['', [Validators.required]],
     commissioning_date: [],
     decommissioning_date: [],
     location_x: [],
@@ -97,6 +103,14 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
     super(_ngxSpinnerService);
   }
 
+  autoStationSelected($event: MatAutocompleteSelectedEvent) {
+    this.autoStationValue = $event.option.value;
+  }
+
+  autoBoreholeSelected($event: MatAutocompleteSelectedEvent) {
+    this.autoBoreholeValue = $event.option.value;
+  }
+
   ngOnInit() {
     this._initEditableForm();
   }
@@ -108,28 +122,47 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
     }
   }
 
-  private async _initEditableForm() {
+  async autoStationFocused() {
+    if (!this.autoStationInitialized) {
+      this.autoStationInitialized = true;
+      await this._initAutoStation();
+    }
+  }
+
+  private async _initAutoStation() {
+    return new Promise((resolve, reject) => {
+      try {
+        const stationFormEl = this.myForm.get('station');
+        if (!stationFormEl) {
+          return;
+        }
+        this.filteredStations = stationFormEl.valueChanges
+          .pipe(
+            startWith(this.myForm.value['station'] ? this.myForm.value['station'] : ''),
+            map(value => !value || typeof value === 'string' ? value : value.code),
+            debounceTime(400),
+            tap(val => this.autoStationLoading = true),
+            switchMap(value => (!this.autoStationValue || this.autoStationValue.code !== value) ? this._inventoryApiService.getStations({ search: value, page_size: 5 }) : of({ results: [] })),
+            tap(val => this.autoStationLoading = false),
+            map(value => value.results),
+            tap(val => resolve()),
+          );
+      } catch (err) {
+        console.error(err);
+        reject();
+      }
+    });
+  }
+
+
+  async autoBoreholeFocused() {
+    if (!this.autoBoreholeInitialized) {
+      await this._initAutoBorehole();
+      this.autoBoreholeInitialized = true;
+    }
+  }
+  private async _initAutoBorehole() {
     try {
-      this.myForm.controls['station'].disable({ onlySelf: true });
-      this.myForm.controls['borehole'].disable({ onlySelf: true });
-      const stationFormEl = this.myForm.get('station');
-      if (!stationFormEl) {
-        return;
-      }
-      this.filteredStations = stationFormEl.valueChanges
-        .pipe(
-          startWith(''),
-          map(value => !value || typeof value === 'string' ? value : value.name),
-          map(name => name ? this._filterStation(name) : this.stations.slice())
-        );
-      const fixedStation = this.stationId ? this.stations.find(station => station.id === +this.stationId) : null;
-
-
-      if (fixedStation) {
-        this.myForm.controls['station'].patchValue(fixedStation, { onlySelf: true });
-        this.myForm.controls['station'].disable({ onlySelf: true });
-      }
-
       const boreholeFormEl = this.myForm.get('borehole');
       if (!boreholeFormEl) {
         return;
@@ -137,11 +170,22 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
 
       this.filteredBoreholes = boreholeFormEl.valueChanges
         .pipe(
-          startWith(''),
+          startWith(this.myForm.value['borehole'] ? this.myForm.value['borehole'] : ''),
           map(value => !value || typeof value === 'string' ? value : value.name),
-          map(name => name ? this._filterBorehole(name) : this.boreholes.slice())
+          debounceTime(400),
+          tap(val => this.autoBoreholeLoading = true),
+          switchMap(value => (!this.autoBoreholeValue || this.autoBoreholeValue.name !== value) ? this._inventoryApiService.getBoreholes({ search: value, page_size: 5 }) : of({ results: [] })),
+          tap(val => this.autoBoreholeLoading = false),
+          map(value => value.results)
         );
 
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  private async _initEditableForm() {
+    try {
 
       const alongHoleZFormEl = this.myForm.get('along_hole_z');
       if (!alongHoleZFormEl) {
@@ -181,8 +225,12 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
     return site ? site.name : undefined;
   }
 
-  stationDisplayFn(sensor?: Sensor): string | undefined {
-    return sensor ? sensor.name : undefined;
+  stationDisplayFn(station?: Station): string | undefined {
+    return station ? station.code : undefined;
+  }
+
+  boreholeDisplayFn(borehole?: Borehole): string | undefined {
+    return borehole ? borehole.name : undefined;
   }
 
   async onSubmit() {
@@ -229,21 +277,22 @@ export class SensorFormComponent extends Form<Sensor> implements OnInit, OnDestr
   createDtoObject(formValues: any) {
 
     const dto: SensorCreateInput = formValues;
-
-    if (formValues.borehole && formValues.borehole.id) {
-      dto.borehole_id = formValues.borehole.id;
-      delete formValues.borehole;
-    }
-
-    if (formValues.station && formValues.station.id) {
-      dto.station_id = formValues.station.id;
-      delete formValues.station;
-    }
-
     return dto;
   }
 
   openDialog(templateRef: TemplateRef<any>) {
     this._matDialog.open(templateRef);
+  }
+
+  async getStation(id: number) {
+    try {
+      if (!id) {
+        return;
+      }
+      const response = await this._inventoryApiService.getStation(id).toPromise();
+      this.myForm.patchValue({ station: response }, { emitEvent: false, onlySelf: false });
+    } catch (err) {
+      console.log(err);
+    }
   }
 }

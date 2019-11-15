@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Subscription, forkJoin } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { PageMode } from '@interfaces/core.interface';
@@ -8,7 +8,7 @@ import { InventoryApiService } from '@services/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatTabChangeEvent, Sort } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { ConfirmationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
+import { ConfirmationDialogData, SensorFormDialogData, MaintenanceFormDialogData } from '@interfaces/dialogs.interface';
 import { first, filter, take, takeUntil } from 'rxjs/operators';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MaintenanceStatus, MaintenanceCategory, MaintenanceEvent } from '@interfaces/maintenance.interface';
@@ -16,6 +16,7 @@ import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interface
 import { SensorsQuery, SensorsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { SensorFormDialogComponent } from '@app/inventory/dialogs/sensor-form-dialog/sensor-form-dialog.component';
 import { DetailPage } from '@core/classes/detail-page.class';
+import { MaintenanceFormDialogComponent } from '@app/maintenance/dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
 
 @Component({
   selector: 'app-inventory-station-detail-page',
@@ -97,11 +98,11 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
   }
 
   handleTabInit(idx: number) {
-    if (idx === 0) {
-      if (!this.detailInitialized.getValue()) {
-        this._initDetail();
-      }
-    } else if (idx === 1) {
+    if (!this.detailInitialized.getValue()) {
+      this._initDetail();
+    }
+
+    if (idx === 1) {
       if (!this.maintenanceEventsInitialized) {
         this._initMaintenanceLogs();
       }
@@ -115,12 +116,12 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
   private async _initDetail() {
     this.loadingStart();
     forkJoin([
-      this._inventoryApiService.getSites(),
-      this._inventoryApiService.getStation(this.id),
+      (this.id ? this._inventoryApiService.getStation(this.id) : of(null)),
+      this._inventoryApiService.getSites()
     ]).subscribe(
       result => {
-        this.sites = result[0];
-        this.model = result[1];
+        this.model = result[0];
+        this.sites = result[1];
         this.detailInitialized.next(true);
       }, err => {
         console.error(err);
@@ -132,7 +133,7 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
     forkJoin([
       this._inventoryApiService.getMaintenanceStatuses(),
       this._inventoryApiService.getMaintenanceCategories(),
-      this.getMaintenanceEvents(),
+      this.loadMaintenanceEvents(),
     ]).subscribe(
       result => {
         this.maintenanceStatuses = result[0];
@@ -194,7 +195,7 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
     this.getSensors();
   }
 
-  getMaintenanceEvents(cursor: string | null = null) {
+  loadMaintenanceEvents(cursor: string | null = null) {
     const query: MaintenanceEventQuery = {
       station_id: this.id,
       page_size: 15,
@@ -211,7 +212,7 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
   async changeMaintenanceEventsPage(cursor?: string) {
     try {
       await this.loadingStart();
-      const response = await this.getMaintenanceEvents(cursor).toPromise();
+      const response = await this.loadMaintenanceEvents(cursor).toPromise();
       this.maintenanceEvents = response.results;
       this.maintenanceEventsCount = response.count;
       this.maintenanceEventsCursorPrevious = response.cursor_previous;
@@ -260,7 +261,7 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
 
     try {
       await this.loadingStart();
-      const response = await this.getMaintenanceEvents(null).toPromise();
+      const response = await this.loadMaintenanceEvents(null).toPromise();
       this.maintenanceEvents = response.results;
       this.maintenanceEventsCount = response.count;
       this.maintenanceEventsCursorPrevious = response.cursor_previous;
@@ -272,7 +273,7 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
     }
   }
 
-  openDetail($event: Station) {
+  onCreated($event: Station) {
     this._router.navigate(['/inventory/stations', $event.id]);
   }
 
@@ -290,6 +291,26 @@ export class InventoryStationDetailPageComponent extends DetailPage<Station> {
     formDialogRef.afterClosed().pipe(first()).subscribe(val => {
       if (val) {
         this.getSensors();
+      }
+    });
+  }
+
+
+  async openMaintenanceFormDialog($event: MaintenanceEvent) {
+    const formDialogRef = this._matDialog.open<MaintenanceFormDialogComponent, MaintenanceFormDialogData>(
+      MaintenanceFormDialogComponent, {
+      hasBackdrop: true,
+      data: {
+        model: $event,
+        stationFixed: this.id,
+        maintenanceCategories: this.maintenanceCategories,
+        maintenanceStatuses: this.maintenanceStatuses
+      }
+    });
+
+    formDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      if (val) {
+        this.loadMaintenanceEvents();
       }
     });
   }

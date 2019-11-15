@@ -2,6 +2,7 @@
 <mat-dialog-content>
   <app-maintenance-form
     [mode]="PageMode.EDIT"
+    [stationFixed]="dialogData.stationFixed"
     [stations]="dialogData.stations"
     [maintenanceStatuses]="dialogData.maintenanceStatuses"
     [maintenanceCategories]="dialogData.maintenanceCategories"
