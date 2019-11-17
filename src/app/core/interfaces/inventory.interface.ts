@@ -255,3 +255,8 @@ export interface InterpolateBoreholeResponse {
     z: number;
   };
 }
+
+export interface Heartbeat {
+  source: string;
+  last_heard: string;
+}

@@ -1,4 +1,5 @@
 import * as moment from 'moment';
+import { Heartbeat } from './inventory.interface';
 
 export enum QuakemlType {
   NOT_EXISTING = 'not existing',
@@ -132,12 +133,14 @@ export enum WebsocketResponseOperation {
 
 export enum WebsocketResponseType {
   EVENT = 'event',
+  HEARTBEAT = 'heartbeat'
 }
 
 export interface WebsocketEventResponse {
   type: WebsocketResponseType;
   operation: WebsocketResponseOperation;
   event: IEvent;
+  heartbeat?: Heartbeat;
   extra: EventExtra;
 }
 
@@ -155,6 +158,12 @@ export enum BatchStatus {
   PROCESSING = 'processing',
   ERROR = 'error',
   READY = 'ready',
+}
+
+export enum HeartbeatStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  INACTIVE = 'inactive'
 }
 
 export interface EventBatchMap {
