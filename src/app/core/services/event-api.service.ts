@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '@env/environment';
 import { globals } from '../../../globals';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, pipe } from 'rxjs';
 import {
   IEvent, Boundaries, Origin, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing, Ray, EventsDailySummary
 } from '@interfaces/event.interface';
@@ -15,7 +15,7 @@ import {
   EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput
 } from '@interfaces/event-dto.interface';
 import { WebSocketService } from './websocket.service';
-import { filter, retry } from 'rxjs/operators';
+import { filter, retry, tap, catchError, repeat, repeatWhen, delay, map, retryWhen } from 'rxjs/operators';
 import { PaginationResponse } from '@interfaces/dto.interface';
 
 @Injectable({
@@ -147,13 +147,34 @@ export class EventApiService {
     return this._http.get(url, { params });
   }
 
-  onServerEvent(): Observable<WebsocketEventResponse> {
+  onWebsocketNotification(): Observable<WebsocketEventResponse> {
     const url = environment.wss;
 
     return this._websocket.connect<WebsocketEventResponse>(url).pipe(
-      retry(),
-      filter((val: WebsocketEventResponse) => val.type === WebsocketResponseType.EVENT)
+      retryWhen(errors => errors.pipe(
+        delay(1000),
+        filter(val => this._websocket.isClosing.getValue() === false)
+      )),
+      repeatWhen(compleated => compleated.pipe(
+        delay(1000),
+        filter(val => this._websocket.isClosing.getValue() === false)
+      )
+      )
     );
+  }
+
+  // used only to reinit websockets!
+  // After losing connection to ws, we need to reconect to start receiving notifications again.
+  // After successfuly closing ws connection, onWebsocketNotification() fn automatically reinits the connection.
+  // timeout - minimal allowed time difference from last successfull connection
+  closeWebsocketNotification(timeout = 30000, reasonToClose: { code: number, reason: string }) {
+    if (
+      this._websocket.subject &&
+      this._websocket.isClosing.getValue() === false &&
+      (new Date().getTime() - this._websocket.lastConnectionInitTimestamp.getValue() > timeout)
+    ) {
+      this._websocket.subject.error(reasonToClose);
+    }
   }
 
 }
