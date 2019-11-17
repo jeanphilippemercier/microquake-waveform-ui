@@ -1,12 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
-import { first, take, skipWhile } from 'rxjs/operators';
+import { first, take, skipWhile, retry, retryWhen, delay, tap, repeatWhen, repeat } from 'rxjs/operators';
 import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode, WebsocketResponseType, HeartbeatStatus } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
@@ -19,11 +19,12 @@ import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dia
 import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
 import { InventoryApiService } from './inventory-api.service';
-import { Site, Network, Station, Sensor } from '@interfaces/inventory.interface';
+import { Site, Network, Station, Sensor, Heartbeat } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 
+const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
   providedIn: 'root'
 })
@@ -102,7 +103,6 @@ export class WaveformService implements OnDestroy {
   wsEventCreated: Subject<IEvent> = new Subject;
   wsEventCreatedObs: Observable<IEvent> = this.wsEventCreated.asObservable();
 
-
   eventUpdateDialogOpened = false;
   loadingCurrentEventAndList = false;
   eventUpdateDialogRef!: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
@@ -133,6 +133,17 @@ export class WaveformService implements OnDestroy {
 
   initializedSecondary: ReplaySubject<boolean> = new ReplaySubject(1);
   initializedSecondaryObs: Observable<boolean> = this.initializedSecondary.asObservable();
+
+  heartbeat: BehaviorSubject<Heartbeat | null> = new BehaviorSubject<Heartbeat | null>(null);
+  heartbeatStatus: BehaviorSubject<HeartbeatStatus> = new BehaviorSubject<HeartbeatStatus>(HeartbeatStatus.INACTIVE);
+  lastHeard: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+  heartbeatIntervalSub!: Subscription;
+  // in miliseconds
+  heartbeatCheckTimeout = 5000;
+  // in seconds
+  pendingTimeout = 5 * 60;
+  inactiveTimeout = 15 * 60;
+  websocketReinitTimeout = 30;
 
   public set currentSite(v: Site) {
     this._currentSite = v;
@@ -170,6 +181,12 @@ export class WaveformService implements OnDestroy {
   ngOnDestroy() {
     if (this.onServerEventSub) {
       this.onServerEventSub.unsubscribe();
+      delete this.onServerEventSub;
+    }
+
+    if (this.heartbeatIntervalSub) {
+      this.heartbeatIntervalSub.unsubscribe();
+      delete this.heartbeatIntervalSub;
     }
   }
 
@@ -203,9 +220,10 @@ export class WaveformService implements OnDestroy {
   private async _initPrimary() {
     await Promise.all([
       this._loadPersistantData(),
-      this._watchServerEventUpdates(),
+      this._watchWebsocketNotifications(),
       this._loadEventTypes(),
-      this._getAllSitesAndNetworks()
+      this._getAllSitesAndNetworks(),
+      this._getLastHeartbeatAndWatch()
     ]);
 
     this.initializedPrimary.next(true);
@@ -223,6 +241,20 @@ export class WaveformService implements OnDestroy {
   private async _loadEventTypes() {
     // TODO: add real site code from site picker
     this.eventTypes = await this._inventoryApiService.getMicroquakeEventTypes().toPromise();
+  }
+
+  private async _getLastHeartbeatAndWatch() {
+    try {
+      const response = await this._inventoryApiService.getHeartbeat(HEARTBEAT_NAME).toPromise();
+      this.heartbeat.next(response);
+      this.checkHeartbeat();
+    } catch (err) {
+      console.error(err);
+    }
+
+    this.heartbeatIntervalSub = interval(this.heartbeatCheckTimeout).subscribe(_ => {
+      this.checkHeartbeat();
+    });
   }
 
   private async _getAllSitesAndNetworks() {
@@ -256,61 +288,96 @@ export class WaveformService implements OnDestroy {
     window.localStorage.setItem('viewer-options', JSON.stringify(this.options));
   }
 
+  private _watchWebsocketNotifications() {
+    this.onServerEventSub = this._eventApiService.onWebsocketNotification().subscribe(data => {
 
-  private _watchServerEventUpdates() {
-    this.onServerEventSub = this._eventApiService.onServerEvent().subscribe(data => {
       try {
+        if (data.type === WebsocketResponseType.EVENT) {
+          switch (data.operation) {
+            case WebsocketResponseOperation.UPDATED:
+              this.wsEventUpdated.next(data.event);
+              break;
+            case WebsocketResponseOperation.CREATED:
+              this.wsEventCreated.next(data.event);
+              break;
+            case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
+            case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
+              let activeList = this.interactiveProcessActiveList.getValue();
+              let currentList = this.interactiveProcessCurrentList.getValue();
+              let previousEventVer: IEvent | null = null;
+              const batchId = data.extra && data.extra.batch && data.extra.batch.id;
 
-        switch (data.operation) {
-          case WebsocketResponseOperation.UPDATED:
-            this.wsEventUpdated.next(data.event);
-            break;
-          case WebsocketResponseOperation.CREATED:
-            this.wsEventCreated.next(data.event);
-            break;
-          case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
-          case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
-            let activeList = this.interactiveProcessActiveList.getValue();
-            let currentList = this.interactiveProcessCurrentList.getValue();
-            let previousEventVer: IEvent | null = null;
-            const batchId = data.extra && data.extra.batch && data.extra.batch.id;
+              // EVENT Reprocessing triggered on other instances
+              activeList = activeList.filter(val => val.batchId !== batchId);
+              this.interactiveProcessActiveList.next(activeList);
 
-            // EVENT Reprocessing triggered on other instances
-            activeList = activeList.filter(val => val.batchId !== batchId);
-            this.interactiveProcessActiveList.next(activeList);
+              // EVENT Reprocessing triggered on current instance
+              currentList = currentList.filter(val => {
+                if (val.batchId !== batchId) {
+                  return true;
+                }
+                previousEventVer = val.event;
+                return false;
+              });
+              this.interactiveProcessCurrentList.next(currentList);
 
-            // EVENT Reprocessing triggered on current instance
-            currentList = currentList.filter(val => {
-              if (val.batchId !== batchId) {
-                return true;
+              if (previousEventVer) {
+                this.interactiveProcessLoading.next(false);
+
+                if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
+                  this._toastrNotificationService.success('Interactive processing is ready');
+                  this.openInteractiveProcessDialog(previousEventVer, data.event);
+                } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
+                  this.openInteractiveProcessDialog(previousEventVer, undefined);
+                  this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
+                }
               }
-              previousEventVer = val.event;
-              return false;
-            });
-            this.interactiveProcessCurrentList.next(currentList);
-
-            if (previousEventVer) {
-              this.interactiveProcessLoading.next(false);
-
-              if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
-                this._toastrNotificationService.success('Interactive processing is ready');
-                this.openInteractiveProcessDialog(previousEventVer, data.event);
-              } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
-                this.openInteractiveProcessDialog(previousEventVer, undefined);
-                this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
-              }
-            }
-            break;
-          default:
-            console.log(`unknown websocket operation`);
-            break;
+              break;
+            default:
+              console.log(`unknown websocket operation`);
+              break;
+          }
+        } else if (data.type === WebsocketResponseType.HEARTBEAT) {
+          if (data.heartbeat && data.heartbeat.source === HEARTBEAT_NAME) {
+            this.heartbeat.next(data.heartbeat);
+            this.checkHeartbeat();
+          }
         }
       } catch (err) {
         console.error(err);
       }
-    });
+    },
+      (err) => console.error(err)
+    );
   }
 
+  checkHeartbeat() {
+    const val = this.heartbeat.getValue();
+
+    if (val) {
+      const lastHeard = val.last_heard;
+      const now = moment();
+      const diff = now.diff(moment.utc(lastHeard), 'seconds');
+
+      if (diff > this.websocketReinitTimeout) {
+        this._eventApiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
+      }
+
+      if (diff > this.inactiveTimeout) {
+        this.heartbeatStatus.next(HeartbeatStatus.INACTIVE);
+      } else if (diff > this.pendingTimeout) {
+        this.heartbeatStatus.next(HeartbeatStatus.PENDING);
+      } else {
+        if (this.lastHeard.getValue() !== lastHeard) {
+          this.heartbeatStatus.next(HeartbeatStatus.ACTIVE);
+        }
+      }
+
+      if (this.lastHeard.getValue() !== lastHeard) {
+        this.lastHeard.next(lastHeard);
+      }
+    }
+  }
 
   async openWaveformFilterDialog() {
     if (this.eventWaveformFilterDialogOpened || this.eventWaveformFilterDialogRef) {
@@ -371,7 +438,7 @@ export class WaveformService implements OnDestroy {
       }
     });
 
-    this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.subscribe(async () => {
+    this.eventInteractiveProcessDialogRef.componentInstance.onAcceptClicked.pipe(first()).subscribe(async () => {
       try {
         this._ngxSpinnerService.show('loadingAcceptIntercativeProcessing', { fullScreen: false, bdColor: 'rgba(51,51,51,0.75)' });
         const eventId = newEvent ? newEvent.event_resource_id : '';
@@ -513,7 +580,7 @@ export class WaveformService implements OnDestroy {
       }
     });
 
-    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.subscribe(async (data: EventUpdateInput) => {
+    const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.pipe(first()).subscribe(async (data: EventUpdateInput) => {
       try {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
@@ -530,7 +597,7 @@ export class WaveformService implements OnDestroy {
       }
     });
 
-    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.subscribe(async (data: EventType) => {
+    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.pipe(first()).subscribe(async (data: EventType) => {
       this.eventUpdateDialogRef.componentInstance.loading = true;
       this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
@@ -542,7 +609,7 @@ export class WaveformService implements OnDestroy {
       this._ngxSpinnerService.hide('loadingEventUpdate');
     });
 
-    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.subscribe(async (data: EventType) => {
+    const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.pipe(first()).subscribe(async (data: EventType) => {
       this.eventUpdateDialogRef.componentInstance.loading = true;
       this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 

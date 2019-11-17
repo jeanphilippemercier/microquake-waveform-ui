@@ -1,16 +1,45 @@
 <div
   *ngIf="waveformService?.currentSite"
   class="wrap d-flex flex-row"
-  (click)="openDialog()"
-  matTooltip="Site and Network picker"
 >
-  <div class="left d-flex">
-    <button mat-icon-button>
+  <div
+    class="left d-flex"
+    [matTooltipClass]="'break-line-tooltip'"
+    [matTooltip]="
+    'Connector is ' + (hearbeatStatus === HeartbeatStatus.PENDING ? 'having connection problems' : hearbeatStatus) +'
+    Updated ' + ((this.waveformService.lastHeard | async) | amTimeAgo)"
+  >
+    <div class="position-relative w-100 h-100">
+      <div
+        class="pulsating-circle"
+        [ngClass]="{
+          'pulse': pulseAnimation && hearbeatStatus === HeartbeatStatus.ACTIVE,
+          'status-active': hearbeatStatus  === HeartbeatStatus.ACTIVE,
+          'status-pending': hearbeatStatus === HeartbeatStatus.PENDING,
+          'status-inactive': hearbeatStatus === HeartbeatStatus.INACTIVE
+        }"
+      ></div>
+    </div>
+    <button
+      mat-icon-button
+      *ngIf=""
+    >
       <mat-icon>location_searching</mat-icon>
     </button>
   </div>
-  <div class="right d-flex flex-column">
+  <div
+    class="middle d-flex flex-column"
+    matTooltip="Site and Network picker"
+    (click)="openDialog()"
+  >
     <div class="site">{{waveformService?.currentSite?.name}}</div>
     <div class="network">{{waveformService?.currentNetwork?.name}}</div>
+  </div>
+  <div
+    matTooltip="Site and Network picker"
+    class="right d-flex flex-column"
+    (click)="openDialog()"
+  >
+    <mat-icon>arrow_drop_down</mat-icon>
   </div>
 </div>
