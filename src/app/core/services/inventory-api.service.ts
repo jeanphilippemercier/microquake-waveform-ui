@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse, Heartbeat } from '@interfaces/inventory.interface';
 import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest, RequestOptions } from '@interfaces/query.interface';
@@ -387,4 +387,18 @@ export class InventoryApiService {
     const url = `${environment.apiUrl}inventory/quakeml_event_types`;
     return this._http.get<QuakemlTypeWithMappedMicroquakeType[]>(url);
   }
+
+  /**
+   * Heartbeat
+   */
+  getHeartbeats(): Observable<Heartbeat[]> {
+    const url = `${environment.apiUrl}inventory/heartbeat`;
+    return this._http.get<Heartbeat[]>(url, {});
+  }
+
+  getHeartbeat(source: string): Observable<Heartbeat> {
+    const url = `${environment.apiUrl}inventory/heartbeat/${source}`;
+    return this._http.get<Heartbeat>(url);
+  }
+
 }
