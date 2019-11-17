@@ -1,9 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatDialog } from '@angular/material';
+import * as moment from 'moment';
 
 import { EventSitePickerDialogComponent } from '@app/events/dialogs/event-site-picker-dialog/event-site-picker-dialog.component';
 import { EventSitePickerDialogData } from '@interfaces/dialogs.interface';
 import { WaveformService } from '@services/waveform.service';
+import { Subscription, interval } from 'rxjs';
+import { take, filter } from 'rxjs/operators';
+import { HeartbeatStatus } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-site-picker',
@@ -11,15 +15,38 @@ import { WaveformService } from '@services/waveform.service';
   styleUrls: ['./event-site-picker.component.scss']
 })
 
-export class EventSitePickerComponent {
+export class EventSitePickerComponent implements OnDestroy {
+
+  HeartbeatStatus = HeartbeatStatus;
+  hearbeatSub: Subscription;
+  hearbeatStatus: HeartbeatStatus = HeartbeatStatus.INACTIVE;
+  pulseAnimation = false;
 
   constructor(
     public waveformService: WaveformService,
     private _matDialog: MatDialog
-  ) { }
+  ) {
+
+    this.hearbeatSub = this.waveformService.heartbeatStatus.subscribe(val => {
+      this.hearbeatStatus = val;
+
+      if (this.hearbeatStatus === HeartbeatStatus.ACTIVE) {
+        this.pulseAnimation = true;
+        setTimeout(() => {
+          this.pulseAnimation = false;
+        }, 4000);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.hearbeatSub) {
+      this.hearbeatSub.unsubscribe();
+      delete this.hearbeatSub;
+    }
+  }
 
   openDialog() {
-
     const dialogRef = this._matDialog.open<EventSitePickerDialogComponent, EventSitePickerDialogData>(EventSitePickerDialogComponent, {
       hasBackdrop: true,
       width: '450px',
