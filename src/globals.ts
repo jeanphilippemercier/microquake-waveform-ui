@@ -60,7 +60,7 @@ export const globals = {
   // thickness of the predicted pick lines
   predictedPicksLineThickness: 1,
   // component to determine sign for composite trace
-  signComponents: ['X', 'E', 'SH'],
+  signComponents: ['X', 'Y', 'E', 'N', 'SH', 'SV'],
   // composite trace component code
   compositeChannelCode: 'C',
   // filter defaults
@@ -68,6 +68,8 @@ export const globals = {
   lowFreqCorner: 60,
   // maximum allowed high corner frequency, do not exceed Nyquist frequency for seismic signals
   highFreqCorner: 999,
+  // maximum allowed high corner frequency, do not exceed Nyquist frequency for seismic signals
+  sampleRateForDistanceMode: 500,
   // resolution in milliseconds for moving the pick to left or right using the arrow keys
   pickTimeStep: 0.5,
   // enable loading waveforms with paging from API, if disabled load all waveforms at once

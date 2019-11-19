@@ -692,7 +692,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         // get waveform query (decimated data set)
         const waveformQuery: EventWaveformQuery = {
           traces_per_page: 500,
-          sampling_rate: 500
+          sampling_rate: globals.sampleRateForDistanceMode
         };
 
         this.waveformInfoAll = await this._eventApiService.getWaveformInfo(this.currentEventId, waveformQuery).toPromise();
@@ -843,13 +843,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const distance = this.activeSensors[i].p_ray_length ?
         this.activeSensors[i].p_ray_length : this.activeSensors[i].s_ray_length ?
         this.activeSensors[i].s_ray_length : null;
-      const hasDisabledChannels = (!this.activeSensors[i].enabled) ||
-        (this.activeSensors[i].channels.findIndex((el: Channel) => el.enabled === false) === -1 ? false : true);
+      const hasCompositeChannel = (this.activeSensors[i].channels.findIndex((el: Channel) =>
+        el.channel_id === globals.compositeChannelCode) === -1 ? false : true);
       for (const channel of this.activeSensors[i].channels) {
         if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode) ||
           (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
-          (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length < 3) ||
-          (this.waveformService.displayComposite.getValue() && hasDisabledChannels)) {
+          (this.waveformService.displayComposite.getValue() && !hasCompositeChannel)) {
           const dataArray = [];
           if (channel.enabled && this.activeSensors[i].enabled && distance) {
             for (const [index, el] of channel.data.entries()) {
@@ -1014,13 +1013,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       }
 
       const data = [];
+      const hasCompositeChannel = (this.activeSensors[i].channels.findIndex((el: Channel) =>
+        el.channel_id === globals.compositeChannelCode) === -1 ? false : true);
+      /*
       const hasDisabledChannels = (!this.activeSensors[i].enabled) ||
         (this.activeSensors[i].channels.findIndex((el: Channel) => el.enabled === false) === -1 ? false : true);
+        */
       for (const channel of this.activeSensors[i].channels) {
         if ((!this.waveformService.displayComposite.getValue() && channel.channel_id !== globals.compositeChannelCode) ||
           (this.waveformService.displayComposite.getValue() && channel.channel_id === globals.compositeChannelCode) ||
-          (this.waveformService.displayComposite.getValue() && this.activeSensors[i].channels.length < 3) ||
-          (this.waveformService.displayComposite.getValue() && hasDisabledChannels)) {
+          (this.waveformService.displayComposite.getValue() && !hasCompositeChannel)) {
           const dataArray = [];
           if (!channel.enabled || !this.activeSensors[i].enabled) {
             for (const el of channel.data) {
