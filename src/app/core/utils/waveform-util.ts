@@ -303,6 +303,9 @@ export default class WaveformUtil {
     const toLower = function (x: string) {
       return x.toLowerCase();
     };
+    const atLeastTwo = function (a: boolean, b: boolean, c: boolean) {
+      return a ? (b || c) : (b && c);
+    };
     for (const sensor of sensors) {
 
       if (!sensor) {
@@ -325,28 +328,28 @@ export default class WaveformUtil {
       const comp2 = sensor.channels[1];
       const comp3 = sensor.channels[2];
 
-      if (comp1.hasOwnProperty('enabled') && !comp1.enabled ||
-        comp2.hasOwnProperty('enabled') && !comp2.enabled ||
-        comp3.hasOwnProperty('enabled') && !comp3.enabled) {
-        console.log(`cannot create 3C composite trace for sensor with components disabled`);
+      if (!atLeastTwo(comp1.enabled, comp2.enabled, comp3.enabled)) {
+        console.log(`cannot create 3C composite trace for sensor with 2+ components disabled`);
         console.log(sensor);
         continue;
       }
 
-      if (!comp1.start.isSame(comp2.start) || !comp1.start.isSame(comp3.start) ||
-        comp1.microsec !== comp2.microsec || comp1.microsec !== comp3.microsec) {
+      if (!comp1.start.isSame(comp2.start) || !comp1.start.isSame(comp3.start) || !comp2.start.isSame(comp3.start) ||
+        comp1.microsec !== comp2.microsec || comp1.microsec !== comp3.microsec || comp2.microsec !== comp3.microsec) {
         console.log(`cannot create 3C composite trace for sensor with different channels start times`);
         console.log(sensor);
         continue;
       }
 
-      if (comp1.sample_rate !== comp2.sample_rate || comp1.sample_rate !== comp3.sample_rate) {
+      if (comp1.sample_rate !== comp2.sample_rate || comp1.sample_rate !== comp3.sample_rate
+        || comp2.sample_rate !== comp3.sample_rate) {
         console.log(`cannot create 3C composite trace for sensor with different sample rates`);
         console.log(sensor);
         continue;
       }
 
-      if (comp1.data.length !== comp2.data.length || comp1.data.length !== comp3.data.length) {
+      if (comp1.data.length !== comp2.data.length || comp1.data.length !== comp3.data.length
+        || comp2.data.length !== comp3.data.length) {
         console.log(`cannot create 3C composite trace for sensor with different lengths`);
         console.log(sensor);
         continue;
@@ -382,12 +385,28 @@ export default class WaveformUtil {
         rotated,
         raw
       };
+      // determine sign component from enabled channels only
+      let signComponent = '';
+      for (let j = 0; j < 3; j++) {
+        const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
+        if (sensor.channels[j].enabled &&
+          globals.signComponents.map(toLower).includes(comp.toLowerCase())) {
+            signComponent = comp;
+            break;
+        }
+      }
+      if (signComponent.length === 0) {
+        console.log(`could not find sign component`);
+        console.log(sensor);
+        continue;
+      }
       for (let k = 0; k < sensor.channels[0].data.length; k++) {
         let compositeValue = 0, sign = 1;
         for (let j = 0; j < 3; j++) {
-          const value = sensor.channels[j].data[k].y;
+          // for disabled channels use 0 value when calculating composite trace
+          const value = sensor.channels[j].enabled ? sensor.channels[j].data[k].y : 0;
           const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
-          sign = globals.signComponents.map(toLower).includes(comp.toLowerCase()) ? Math.sign(value) : sign;
+          sign = comp === signComponent ? Math.sign(value) : sign;
           compositeValue += Math.pow(value, 2);
         }
         sign = sign === 0 ? 1 : sign;   // do not allow zero value to zero composite trace value
