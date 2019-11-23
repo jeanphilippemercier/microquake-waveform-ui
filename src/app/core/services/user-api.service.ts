@@ -14,7 +14,7 @@ const apiPath = {
 @Injectable({
   providedIn: 'root'
 })
-export class UsersApiService {
+export class UserApiService {
 
   constructor(
     private _http: HttpClient,

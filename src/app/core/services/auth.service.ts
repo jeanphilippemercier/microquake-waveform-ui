@@ -1,14 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
-import { map, mergeMap, catchError } from 'rxjs/operators';
+import { mergeMap, catchError } from 'rxjs/operators';
 
 import { environment } from '@env/environment';
 import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefreshInput, Token } from '@interfaces/auth.interface';
 import { User } from '@interfaces/user.interface';
-import { UserService } from '@services/user.service';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { UsersApiService } from './users-api.service';
+import { UserApiService } from './user-api.service';
 import { UserCreateInput } from '@interfaces/user-dto.interface';
 
 @Injectable({
@@ -23,8 +22,7 @@ export class AuthService {
 
   constructor(
     private _httpClient: HttpClient,
-    private _userService: UserService,
-    private _userApiService: UsersApiService,
+    private _userApiService: UserApiService,
     private _jwtHelperService: JwtHelperService
   ) { }
 
@@ -87,7 +85,7 @@ export class AuthService {
       this._setDecodedToken(decodedToken);
 
       try {
-        const user = await this._userService.get(decodedToken.user_id).toPromise();
+        const user = await this._userApiService.getUser(decodedToken.user_id).toPromise();
         this._setUser(user);
       } catch (err) {
         this.logout();
@@ -112,7 +110,7 @@ export class AuthService {
           const decodedToken = this._decodeToken(r.access);
           this._setDecodedToken(decodedToken);
 
-          return this._userService.get(decodedToken.user_id);
+          return this._userApiService.getUser(decodedToken.user_id);
         }),
         mergeMap((user: User) => {
           this._setUser(user);
@@ -153,7 +151,7 @@ export class AuthService {
           this._setAccessToken(res.access);
           const decodedToken = this._decodeToken(res.access);
           this._setDecodedToken(decodedToken);
-          return this._userService.get(decodedToken.user_id);
+          return this._userApiService.getUser(decodedToken.user_id);
         }),
         mergeMap((user: User) => {
           this._setUser(user);
