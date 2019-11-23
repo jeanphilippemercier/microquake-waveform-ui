@@ -1,22 +1,27 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { filter, repeatWhen, delay, retryWhen } from 'rxjs/operators';
+
 import { environment } from '@env/environment';
-import { globals } from '../../../globals';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, pipe } from 'rxjs';
-import {
-  IEvent, Boundaries, Origin, WebsocketEventResponse, WebsocketResponseType, InteractiveProcessing, Ray, EventsDailySummary
-} from '@interfaces/event.interface';
-import {
-  EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, MicroquakeEventTypesQuery, EventDailySummaryQuery,
-  EventRayQuery
-} from '@interfaces/event-query.interface';
 import ApiUtil from '../utils/api-util';
-import {
-  EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput
-} from '@interfaces/event-dto.interface';
-import { WebSocketService } from './websocket.service';
-import { filter, retry, tap, catchError, repeat, repeatWhen, delay, map, retryWhen } from 'rxjs/operators';
 import { PaginationResponse } from '@interfaces/dto.interface';
+import { IEvent, Boundaries, Origin, WebsocketEventResponse, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
+import { EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, EventDailySummaryQuery, EventRayQuery } from '@interfaces/event-query.interface';
+import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface';
+import { WebSocketService } from './websocket.service';
+
+const apiPath = {
+  events: `events`,
+  dialySummary: `daily_summary`,
+  batch: `batch`,
+  waveform: `waveform`,
+  origins: `origins`,
+  arrivals: `arrivals`,
+  rays: `rays`,
+  boundaries: `catalog_boundaries`,
+};
+
 
 @Injectable({
   providedIn: 'root'
@@ -28,33 +33,14 @@ export class EventApiService {
     private _websocket: WebSocketService
   ) { }
 
+
+
   /**
-    * Get mseed file for waveform chart from url.
-    *
-    * @remarks
-    *
-    * Use {@link EventApiService.getWaveformInfo()} to obtain urls for mseed files.
-    *
-    * @param contextUrl - url for waveform file
-    * @returns mseed file in ArrayBuffer
-    *
-    */
-  getWaveformFile(contextUrl: string): Observable<ArrayBuffer> {
-    const url = `${contextUrl}`;
-    const params = ApiUtil.getHttpParams({});
-    const responseType = `arraybuffer`;
-
-    return this._http.get(url, { params, responseType });
-  }
-
-  getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformQueryResponse> {
-    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}/waveform`;
-    const params = ApiUtil.getHttpParams(query);
-    return this._http.get<WaveformQueryResponse>(url, { params });
-  }
+   * EVENTS
+   */
 
   getEvents(query: EventQuery): Observable<EventPaginationResponse<IEvent>> {
-    const url = `${environment.apiUrl}events`;
+    const url = `${environment.apiUrl}${apiPath.events}`;
     let params = ApiUtil.getHttpParams(query);
 
     if (query.event_type && query.event_type.length > 1) {
@@ -68,46 +54,24 @@ export class EventApiService {
     return this._http.get<EventPaginationResponse<IEvent>>(url, { params });
   }
 
-  getBoundaries(query?: BoundariesQuery): Observable<Boundaries[]> {
-    const url = `${environment.apiUrl}${globals.apiCatalogBoundaries}`;
-    const params = ApiUtil.getHttpParams(query);
-
-    return this._http.get<Boundaries[]>(url, { params });
-  }
-
-  getEventById(eventId: string): Observable<IEvent> {
-    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
+  getEvent(eventId: string): Observable<IEvent> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}`;
     return this._http.get<IEvent>(url);
   }
 
-  updateEventById(eventId: string, body: EventUpdateInput): Observable<any> {
-
-    const url = `${environment.apiUrl}${globals.apiEvents}/${eventId}`;
-    return this._http.patch(url, body);
+  updateEvent(eventId: string, body: EventUpdateInput): Observable<IEvent> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}`;
+    return this._http.patch<IEvent>(url, body);
   }
 
-  getInteractiveProcessing(eventId: string): Observable<InteractiveProcessing> {
-    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    return this._http.get<InteractiveProcessing>(url);
-  }
 
-  startInteractiveProcessing(eventId: string, body: ArrivalUpdateInput): Observable<InteractiveProcessing> {
-    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    return this._http.put<InteractiveProcessing>(url, body);
-  }
 
-  acceptInteractiveProcessing(eventId: string): any {
-    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    return this._http.post(url, {});
-  }
-
-  cancelInteractiveProcessing(eventId: string): any {
-    const url = environment.apiUrl + globals.apiEvents + '/' + eventId + '/' + globals.apiPicksInteractive;
-    return this._http.delete(url);
-  }
+  /**
+   * EVENT DAILY SUMMARY
+   */
 
   getEventDailySummary(query?: EventDailySummaryQuery): Observable<PaginationResponse<EventsDailySummary>> {
-    const url = `${environment.apiUrl}events/daily_summary`;
+    const url = `${environment.apiUrl}${apiPath.dialySummary}`;
     let params = ApiUtil.getHttpParams(query);
 
     if (query) {
@@ -123,29 +87,110 @@ export class EventApiService {
     return this._http.get<PaginationResponse<EventsDailySummary>>(url, { params });
   }
 
-  getOriginById(originId: string): Observable<Origin> {
-    const url = `${environment.apiUrl}${globals.apiOrigins}/${originId}`;
+
+
+  /**
+   * INTERACTIVE PROCESSING
+   */
+
+  getInteractiveProcessing(eventId: string): Observable<InteractiveProcessing> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.batch}`;
+    return this._http.get<InteractiveProcessing>(url);
+  }
+
+  startInteractiveProcessing(eventId: string, body: ArrivalUpdateInput): Observable<InteractiveProcessing> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.batch}`;
+    return this._http.put<InteractiveProcessing>(url, body);
+  }
+
+  acceptInteractiveProcessing(eventId: string): any {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.batch}`;
+    return this._http.post(url, {});
+  }
+
+  cancelInteractiveProcessing(eventId: string): any {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.batch}`;
+    return this._http.delete(url);
+  }
+
+
+
+  /**
+   * WAVEFORM
+   */
+
+  getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformQueryResponse> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.waveform}`;
+    const params = ApiUtil.getHttpParams(query);
+    return this._http.get<WaveformQueryResponse>(url, { params });
+  }
+
+  /**
+   * Get mseed file for waveform chart from url.
+   *
+   * @remarks
+   *
+   * Use {@link EventApiService.getWaveformInfo()} to obtain urls for mseed files.
+   *
+   * @param contextUrl - url for waveform file
+   * @returns mseed file in ArrayBuffer
+   *
+   */
+  getWaveformFile(contextUrl: string): Observable<ArrayBuffer> {
+    const url = `${contextUrl} `;
+    const params = ApiUtil.getHttpParams({});
+    const responseType = `arraybuffer`;
+
+    return this._http.get(url, { params, responseType });
+  }
+
+
+
+  /**
+   * ORIGINS
+   */
+
+  getOrigin(originId: string): Observable<Origin> {
+    const url = `${environment.apiUrl}${apiPath.origins}/${originId}`;
     const params = ApiUtil.getHttpParams({});
     return this._http.get<Origin>(url, { params });
   }
 
   getOrigins(query: EventOriginsQuery): Observable<Origin[]> {
-    const url = `${environment.apiUrl}${globals.apiOrigins}`;
+    const url = `${environment.apiUrl}${apiPath.origins}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get<Origin[]>(url, { params });
   }
 
+
+
+  /**
+   * RAYS
+   */
+
   getRays(query: EventRayQuery): Observable<Ray[]> {
-    const url = `${environment.apiUrl}${globals.apiRays}`;
+    const url = `${environment.apiUrl}${apiPath.rays}`;
     const params = ApiUtil.getHttpParams(query);
     return this._http.get<Ray[]>(url, { params });
   }
 
-  getEventArrivalsById(query: EventArrivalsQuery): any {
-    const url = `${environment.apiUrl}${globals.apiArrivals}`;
+
+
+  /**
+   * ARRIVALS
+   */
+
+  getArrivals(query: EventArrivalsQuery): Observable<Arrival[]> {
+    const url = `${environment.apiUrl}${apiPath.arrivals}`;
     const params = ApiUtil.getHttpParams(query);
-    return this._http.get(url, { params });
+    return this._http.get<Arrival[]>(url, { params });
   }
+
+
+
+  /**
+   * WEBSOCKETS
+   */
 
   onWebsocketNotification(): Observable<WebsocketEventResponse> {
     const url = environment.wss;
@@ -163,10 +208,18 @@ export class EventApiService {
     );
   }
 
-  // used only to reinit websockets!
-  // After losing connection to ws, we need to reconect to start receiving notifications again.
-  // After successfuly closing ws connection, onWebsocketNotification() fn automatically reinits the connection.
-  // timeout - minimal allowed time difference from last successfull connection
+  /**
+   * Close websocket connection
+   *
+   * @remarks
+   *
+   * used only to reinit websockets!
+   * After losing connection to ws, we need to reconect to start receiving notifications again.
+   * After successfuly closing ws connection, onWebsocketNotification() fn automatically reinits the connection.
+   *
+   * @param timeout - minimal allowed time difference from last successfull connection
+   * @param reasonToClose - object that should be send to server as reason why are we closing connection
+   */
   closeWebsocketNotification(timeout = 30000, reasonToClose: { code: number, reason: string }) {
     if (
       this._websocket.subject &&
@@ -175,6 +228,27 @@ export class EventApiService {
     ) {
       this._websocket.subject.error(reasonToClose);
     }
+  }
+
+
+
+  /**
+   * CATALOG BOUNDARIES
+   */
+
+  /**
+   * @deprecated API (now we use /events endpoint instead of deprecated /catalog endpoint)
+   * Get min and max boundaries for /catalog endpoint
+   *
+   * @param query - optional query to filter results
+   * @returns array of boundaries
+   *
+   */
+  getBoundaries(query?: BoundariesQuery): Observable<Boundaries[]> {
+    const url = `${environment.apiUrl}${apiPath.boundaries}`;
+    const params = ApiUtil.getHttpParams(query);
+
+    return this._http.get<Boundaries[]>(url, { params });
   }
 
 }

@@ -586,7 +586,7 @@ export class WaveformService implements OnDestroy {
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const eventId = data && data.event_resource_id ? data.event_resource_id : '';
 
-        const result = await this._eventApiService.updateEventById(eventId, data).toPromise();
+        const result = await this._eventApiService.updateEvent(eventId, data).toPromise();
         this.wsEventUpdated.next(result);
         this.eventUpdateDialogRef.close();
       } catch (err) {
@@ -644,7 +644,7 @@ export class WaveformService implements OnDestroy {
         // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
         status: EvaluationStatus.CONFIRMED
       };
-      await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);
@@ -664,7 +664,7 @@ export class WaveformService implements OnDestroy {
         evaluation_mode: EvaluationMode.MANUAL,
         status: EvaluationStatus.REJECTED
       };
-      await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);

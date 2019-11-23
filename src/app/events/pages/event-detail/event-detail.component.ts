@@ -260,7 +260,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
             // load event from api if not found in catalog events
             if (!clickedEvent) {
-              clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+              clickedEvent = await this._eventApiService.getEvent(eventId).toPromise();
             }
             this.currentEvent = clickedEvent;
 

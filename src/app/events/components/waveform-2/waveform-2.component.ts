@@ -484,7 +484,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           };
 
           // get arrivals, picks for preferred origin
-          this.arrivals = await this._eventApiService.getEventArrivalsById(arrivalsQuery).toPromise();
+          this.arrivals = await this._eventApiService.getArrivals(arrivalsQuery).toPromise();
 
           if (this.currentEventId !== event.event_resource_id) {
             console.log(`changed event during loading`);
