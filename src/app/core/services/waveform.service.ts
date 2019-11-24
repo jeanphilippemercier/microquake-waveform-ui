@@ -23,6 +23,7 @@ import { Site, Network, Station, Sensor, Heartbeat } from '@interfaces/inventory
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
+import { ApiService } from './api/api.service';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -167,6 +168,7 @@ export class WaveformService implements OnDestroy {
   constructor(
     private _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService,
+    private _apiService: ApiService,
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
     private _ngxSpinnerService: NgxSpinnerService,
@@ -289,7 +291,7 @@ export class WaveformService implements OnDestroy {
   }
 
   private _watchWebsocketNotifications() {
-    this.onServerEventSub = this._eventApiService.onWebsocketNotification().subscribe(data => {
+    this.onServerEventSub = this._apiService.onWebsocketNotification().subscribe(data => {
 
       try {
         if (data.type === WebsocketResponseType.EVENT) {
@@ -360,7 +362,7 @@ export class WaveformService implements OnDestroy {
       const diff = now.diff(moment.utc(lastHeard), 'seconds');
 
       if (diff > this.websocketReinitTimeout) {
-        this._eventApiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
+        this._apiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
       }
 
       if (diff > this.inactiveTimeout) {
