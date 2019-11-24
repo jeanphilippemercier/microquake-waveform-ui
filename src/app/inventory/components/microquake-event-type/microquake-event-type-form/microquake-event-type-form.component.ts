@@ -8,7 +8,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 
 import { PageMode } from '@interfaces/core.interface';
 import { MicroquakeEventTypeCreateInput, MicroquakeEventTypeUpdateInput } from '@interfaces/inventory-dto.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { EventType, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from '@interfaces/event.interface';
 import { Site, TakenEventType } from '@interfaces/inventory.interface';

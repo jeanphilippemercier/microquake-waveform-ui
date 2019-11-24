@@ -1,14 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { mergeMap, catchError } from 'rxjs/operators';
 
-import { environment } from '@env/environment';
 import { AuthLoginInput, LoginResponseContext, RefreshResponseContext, AuthRefreshInput, Token } from '@interfaces/auth.interface';
 import { User } from '@interfaces/user.interface';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { UserApiService } from './user-api.service';
+import { UserApiService } from './api/user-api.service';
 import { UserCreateInput } from '@interfaces/user-dto.interface';
+import { AuthApiService } from './api/auth-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +20,7 @@ export class AuthService {
   public readonly decodedToken: BehaviorSubject<Token | null> = new BehaviorSubject<Token | null>(null);
 
   constructor(
-    private _httpClient: HttpClient,
+    private _authApiService: AuthApiService,
     private _userApiService: UserApiService,
     private _jwtHelperService: JwtHelperService
   ) { }
@@ -100,9 +99,7 @@ export class AuthService {
 
 
   login(data: AuthLoginInput): Observable<User> {
-    const queryUrl = `${environment.url}api/token/`;
-
-    return this._httpClient.post<LoginResponseContext>(queryUrl, data)
+    return this._authApiService.login(data)
       .pipe(
         mergeMap((r: LoginResponseContext) => {
           this._setAccessToken(r.access);
@@ -139,13 +136,11 @@ export class AuthService {
   }
 
   refresh(): Observable<User> {
-    const queryUrl = `${environment.url}api/token/refresh/`;
-
     const data: AuthRefreshInput = {
       refresh: AuthService.getRefreshToken()
     };
 
-    return this._httpClient.post<RefreshResponseContext>(queryUrl, data)
+    return this._authApiService.refresh(data)
       .pipe(
         mergeMap((res: RefreshResponseContext) => {
           this._setAccessToken(res.access);

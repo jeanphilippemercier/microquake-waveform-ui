@@ -7,7 +7,7 @@ import { first } from 'rxjs/operators';
 import { PageMode } from '@interfaces/core.interface';
 import { ListPage } from '@core/classes/list-page.class';
 import { Borehole } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { BoreholeSurveyFileDialogComponent } from '@app/inventory/dialogs/borehole-survey-file-dialog/borehole-survey-file-dialog.component';
 import { BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, ConfirmationDialogData, BoreholeFormDialogData } from '@interfaces/dialogs.interface';
 import { BoreholeInterpolationDialogComponent } from '@app/inventory/dialogs/borehole-interpolation-dialog/borehole-interpolation-dialog.component';

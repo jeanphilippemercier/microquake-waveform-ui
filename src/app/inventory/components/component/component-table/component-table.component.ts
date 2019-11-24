@@ -4,7 +4,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { IComponent, ISensorType, ComponentCode, CableType } from '@interfaces/inventory.interface';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { MatDialogRef, MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';

@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 
 import { Site, Timezone, CoordinateSystem } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { SiteCreateInput } from '@interfaces/inventory-dto.interface';
 import { PageMode } from '@interfaces/core.interface';
 

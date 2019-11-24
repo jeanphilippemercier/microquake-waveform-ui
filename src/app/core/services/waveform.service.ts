@@ -8,7 +8,7 @@ import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/
 import { globals } from '@src/globals';
 import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode, WebsocketResponseType, HeartbeatStatus } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
-import { EventApiService } from './event-api.service';
+import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
@@ -18,7 +18,7 @@ import { EventQuery } from '@interfaces/event-query.interface';
 import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dialog/event-filter-dialog.component';
 import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
-import { InventoryApiService } from './inventory-api.service';
+import { InventoryApiService } from './api/inventory-api.service';
 import { Site, Network, Station, Sensor, Heartbeat } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';

@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 
 import { ListPage } from '@core/classes/list-page.class';
 import { CableType } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { MatDialog } from '@angular/material';
 import { LoadingService } from '@services/loading.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';

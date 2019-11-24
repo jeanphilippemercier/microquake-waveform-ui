@@ -7,7 +7,7 @@ import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 
 import { ListPage } from '@core/classes/list-page.class';
 import { Station } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { StationsQuery, StationsQueryOrdering } from '@interfaces/inventory-query.interface';
 import { LoadingService } from '@services/loading.service';
 import { StationFormDialogComponent } from '@app/inventory/dialogs/station-form-dialog/station-form-dialog.component';

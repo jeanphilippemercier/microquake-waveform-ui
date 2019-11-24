@@ -20,12 +20,6 @@ export class UserApiService {
     private _http: HttpClient,
   ) { }
 
-
-
-  /**
-   * USERS
-  */
-
   getUsers(query: any = {}): Observable<User[]> {
     const url = `${environment.apiUrl}${apiPath.users}`;
     const params = ApiUtil.getHttpParams(query);

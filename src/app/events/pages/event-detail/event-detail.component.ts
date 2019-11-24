@@ -6,7 +6,7 @@ import { distinctUntilChanged, skip, takeUntil, filter } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
-import { EventApiService } from '@services/event-api.service';
+import { EventApiService } from '@services/api/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { IEvent, EventsDailySummary, EvaluationStatusGroup, QuakemlType, EvaluationStatus } from '@interfaces/event.interface';
 import { EventQuery, EventDailySummaryQuery } from '@interfaces/event-query.interface';

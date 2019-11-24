@@ -17,7 +17,7 @@ import { Sensor, MotionType, GroundMotionType } from '@interfaces/inventory.inte
 import { EventOriginsQuery, EventArrivalsQuery, EventWaveformQuery } from '@interfaces/event-query.interface';
 import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
-import { EventApiService } from '@services/event-api.service';
+import { EventApiService } from '@services/api/event-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
 
 enum ContextMenuChartAction {

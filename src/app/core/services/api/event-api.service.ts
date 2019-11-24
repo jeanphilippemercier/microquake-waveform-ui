@@ -4,12 +4,12 @@ import { Observable } from 'rxjs';
 import { filter, repeatWhen, delay, retryWhen } from 'rxjs/operators';
 
 import { environment } from '@env/environment';
-import ApiUtil from '../utils/api-util';
+import ApiUtil from '../../utils/api-util';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { IEvent, Boundaries, Origin, WebsocketEventResponse, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
 import { EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, EventDailySummaryQuery, EventRayQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface';
-import { WebSocketService } from './websocket.service';
+import { WebSocketService } from '../websocket.service';
 
 const apiPath = {
   events: `events`,
@@ -21,7 +21,6 @@ const apiPath = {
   rays: `rays`,
   boundaries: `catalog_boundaries`,
 };
-
 
 @Injectable({
   providedIn: 'root'
@@ -116,7 +115,7 @@ export class EventApiService {
 
 
   /**
-   * WAVEFORM
+   * WAVEFORM DATA
    */
 
   getWaveformInfo(eventId: string, query: EventWaveformQuery): Observable<WaveformQueryResponse> {
