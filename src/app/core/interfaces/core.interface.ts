@@ -33,9 +33,3 @@ export interface EventExtra {
   };
   error: string | null;
 }
-
-export enum HeartbeatStatus {
-  ACTIVE = 'active',
-  PENDING = 'pending',
-  INACTIVE = 'inactive'
-}

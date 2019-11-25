@@ -19,12 +19,12 @@ import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dia
 import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
 import { InventoryApiService } from './api/inventory-api.service';
-import { Site, Network, Station, Sensor, Heartbeat } from '@interfaces/inventory.interface';
+import { Site, Network, Station, Sensor, Heartbeat, HeartbeatStatus } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 import { ApiService } from './api/api.service';
-import { HeartbeatStatus, WebsocketResponseType, WebsocketResponseOperation } from '@interfaces/core.interface';
+import { WebsocketResponseType, WebsocketResponseOperation } from '@interfaces/core.interface';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
