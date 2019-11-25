@@ -19,6 +19,7 @@ import { WaveformQueryResponse } from '@interfaces/event-dto.interface.ts';
 import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/api/event-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
+import { ApiService } from '@services/api/api.service.js';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -129,6 +130,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   constructor(
     public waveformService: WaveformService,
+    private _apiService: ApiService,
     private _eventApiService: EventApiService,
     private _toastrNotificationService: ToastrNotificationService,
     private _renderer: Renderer2,
@@ -415,7 +417,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
       const waveformUrl = this.waveformInfo.pages[this.waveformService.currentPage.getValue() - 1];
       const contextUrl = this.waveformInfo.context;
-      const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+      const eventFile = await this._apiService.getFileInRawBinary(waveformUrl).toPromise();
       this.waveformSensors = this.waveformInfo.sensors;
 
       if (!eventFile) {
@@ -520,7 +522,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
           this.picksBias = 0;
 
           try {
-            const contextFile = await this._eventApiService.getWaveformFile(contextUrl).toPromise();
+            const contextFile = await this._apiService.getFileInRawBinary(contextUrl).toPromise();
 
             if (this.currentEventId !== event.event_resource_id) {
               console.log(`changed event during loading`);
@@ -576,7 +578,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       return;
     }
 
-    const eventFile = await this._eventApiService.getWaveformFile(this.waveformInfo.pages[idx - 1]).toPromise();
+    const eventFile = await this._apiService.getFileInRawBinary(this.waveformInfo.pages[idx - 1]).toPromise();
     const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
     if (eventData && eventData.sensors && eventData.sensors.length > 0) {
@@ -703,7 +705,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
 
         const waveformUrl = this.waveformInfoAll.pages[0];
-        const eventFile = await this._eventApiService.getWaveformFile(waveformUrl).toPromise();
+        const eventFile = await this._apiService.getFileInRawBinary(waveformUrl).toPromise();
         this.waveformSensorsAll = this.waveformInfoAll.sensors;
 
         if (!eventFile) {
@@ -842,7 +844,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const yMax = this._getYmax(i);
       const distance = this.activeSensors[i].p_ray_length ?
         this.activeSensors[i].p_ray_length : this.activeSensors[i].s_ray_length ?
-        this.activeSensors[i].s_ray_length : null;
+          this.activeSensors[i].s_ray_length : null;
       const hasCompositeChannel = (this.activeSensors[i].channels.findIndex((el: Channel) =>
         el.channel_id === globals.compositeChannelCode) === -1 ? false : true);
       for (const channel of this.activeSensors[i].channels) {
@@ -854,7 +856,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             for (const [index, el] of channel.data.entries()) {
               dataArray.push({
                 x: el.x,
-                y: el.y * maxTraceHeight / yMax +  distance,
+                y: el.y * maxTraceHeight / yMax + distance,
               });
             }
             data.push(

@@ -69,7 +69,7 @@ export class EventApiService {
    */
 
   getEventDailySummary(query?: EventDailySummaryQuery): Observable<PaginationResponse<EventsDailySummary>> {
-    const url = `${environment.apiUrl}${apiPath.dialySummary}`;
+    const url = `${environment.apiUrl}${apiPath.events}/${apiPath.dialySummary}`;
     let params = ApiUtil.getHttpParams(query);
 
     if (query) {
