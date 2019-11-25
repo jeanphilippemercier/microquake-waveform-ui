@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable, BehaviorSubject } from 'rxjs';
 import { webSocket } from 'rxjs/webSocket';
-import { tap } from 'rxjs/operators';
-
 
 @Injectable({
   providedIn: 'root'

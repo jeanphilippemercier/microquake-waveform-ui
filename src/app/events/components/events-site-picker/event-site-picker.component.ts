@@ -1,13 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { MatDialog } from '@angular/material';
-import * as moment from 'moment';
+import { Subscription } from 'rxjs';
 
 import { EventSitePickerDialogComponent } from '@app/events/dialogs/event-site-picker-dialog/event-site-picker-dialog.component';
 import { EventSitePickerDialogData } from '@interfaces/dialogs.interface';
 import { WaveformService } from '@services/waveform.service';
-import { Subscription, interval } from 'rxjs';
-import { take, filter } from 'rxjs/operators';
-import { HeartbeatStatus } from '@interfaces/event.interface';
+import { HeartbeatStatus } from '@interfaces/inventory.interface';
 
 @Component({
   selector: 'app-event-site-picker',

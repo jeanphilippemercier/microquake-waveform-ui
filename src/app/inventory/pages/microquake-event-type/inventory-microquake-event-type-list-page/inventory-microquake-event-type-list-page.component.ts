@@ -5,7 +5,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { first, takeUntil } from 'rxjs/operators';
 
 import { ListPage } from '@core/classes/list-page.class';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, MicroquakeEventTypeFormDialogData } from '@interfaces/dialogs.interface';

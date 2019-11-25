@@ -10,7 +10,7 @@ import { takeUntil, take, filter } from 'rxjs/operators';
 import EventUtil from '@core/utils/event-util';
 import { EventUpdateDialog } from '@interfaces/dialogs.interface';
 import { EventType, EvaluationStatus, IEvent, EvaluationMode, EvaluationStatusGroup } from '@interfaces/event.interface';
-import { EventApiService } from '@services/event-api.service';
+import { EventApiService } from '@services/api/event-api.service';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { WaveformService } from '@services/waveform.service';

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { Site } from '@interfaces/inventory.interface';
 
 @Component({

@@ -10,7 +10,7 @@ import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
 import { DetailPage } from '@core/classes/detail-page.class';
 import { PageMode } from '@interfaces/core.interface';
 import { Borehole, Sensor } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, BoreholeSurveyFileDialogData, BoreholeInterpolationDialogData, SensorFormDialogData } from '@interfaces/dialogs.interface';
 import { ToastrNotificationService } from '@services/toastr-notification.service';

@@ -260,3 +260,9 @@ export interface Heartbeat {
   source: string;
   last_heard: string;
 }
+
+export enum HeartbeatStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  INACTIVE = 'inactive'
+}

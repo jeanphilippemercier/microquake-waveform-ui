@@ -8,7 +8,7 @@ import * as moment from 'moment';
 import { PageMode } from '@interfaces/core.interface';
 import { Sensor, Station } from '@interfaces/inventory.interface';
 import { MaintenanceEventCreateInput, MaintenanceEventUpdateInput } from '@interfaces/inventory-dto.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatDialogRef, MatAutocompleteSelectedEvent, MatSelectChange } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';

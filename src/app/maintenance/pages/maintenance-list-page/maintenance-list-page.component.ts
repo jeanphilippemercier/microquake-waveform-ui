@@ -4,7 +4,7 @@ import { first, takeUntil, take, skipWhile } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import { Station, } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material';

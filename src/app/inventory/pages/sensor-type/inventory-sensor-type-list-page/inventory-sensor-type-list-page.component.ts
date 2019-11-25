@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { ISensorType } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material';

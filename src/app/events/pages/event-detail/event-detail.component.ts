@@ -6,7 +6,7 @@ import { distinctUntilChanged, skip, takeUntil, filter } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
-import { EventApiService } from '@services/event-api.service';
+import { EventApiService } from '@services/api/event-api.service';
 import { Site, Network } from '@interfaces/inventory.interface';
 import { IEvent, EventsDailySummary, EvaluationStatusGroup, QuakemlType, EvaluationStatus } from '@interfaces/event.interface';
 import { EventQuery, EventDailySummaryQuery } from '@interfaces/event-query.interface';
@@ -260,7 +260,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
             // load event from api if not found in catalog events
             if (!clickedEvent) {
-              clickedEvent = await this._eventApiService.getEventById(eventId).toPromise();
+              clickedEvent = await this._eventApiService.getEvent(eventId).toPromise();
             }
             this.currentEvent = clickedEvent;
 

@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PageMode } from '@interfaces/core.interface';
 import { Station, Network, Site } from '@interfaces/inventory.interface';
 import { StationUpdateInput, StationCreateInput } from '@interfaces/inventory-dto.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { MatDialog } from '@angular/material';

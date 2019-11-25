@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PageMode } from '@interfaces/core.interface';
 import { Sensor, IComponent, ComponentCode, ISensorType, CableType } from '@interfaces/inventory.interface';
 import { ComponentCreateInput, ComponentUpdateInput } from '@interfaces/inventory-dto.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { MatDialog, MatDialogRef } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';

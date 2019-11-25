@@ -1,14 +1,14 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
-import { first, take, skipWhile, retry, retryWhen, delay, tap, repeatWhen, repeat } from 'rxjs/operators';
+import { first, take, skipWhile } from 'rxjs/operators';
 import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode, WebsocketResponseType, HeartbeatStatus } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
-import { EventApiService } from './event-api.service';
+import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
@@ -18,11 +18,13 @@ import { EventQuery } from '@interfaces/event-query.interface';
 import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dialog/event-filter-dialog.component';
 import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
-import { InventoryApiService } from './inventory-api.service';
-import { Site, Network, Station, Sensor, Heartbeat } from '@interfaces/inventory.interface';
+import { InventoryApiService } from './api/inventory-api.service';
+import { Site, Network, Station, Sensor, Heartbeat, HeartbeatStatus } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
+import { ApiService } from './api/api.service';
+import { WebsocketResponseType, WebsocketResponseOperation } from '@interfaces/core.interface';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -167,6 +169,7 @@ export class WaveformService implements OnDestroy {
   constructor(
     private _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService,
+    private _apiService: ApiService,
     private _eventApiService: EventApiService,
     private _inventoryApiService: InventoryApiService,
     private _ngxSpinnerService: NgxSpinnerService,
@@ -289,7 +292,7 @@ export class WaveformService implements OnDestroy {
   }
 
   private _watchWebsocketNotifications() {
-    this.onServerEventSub = this._eventApiService.onWebsocketNotification().subscribe(data => {
+    this.onServerEventSub = this._apiService.onWebsocketNotification().subscribe(data => {
 
       try {
         if (data.type === WebsocketResponseType.EVENT) {
@@ -360,7 +363,7 @@ export class WaveformService implements OnDestroy {
       const diff = now.diff(moment.utc(lastHeard), 'seconds');
 
       if (diff > this.websocketReinitTimeout) {
-        this._eventApiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
+        this._apiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
       }
 
       if (diff > this.inactiveTimeout) {
@@ -586,7 +589,7 @@ export class WaveformService implements OnDestroy {
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
         const eventId = data && data.event_resource_id ? data.event_resource_id : '';
 
-        const result = await this._eventApiService.updateEventById(eventId, data).toPromise();
+        const result = await this._eventApiService.updateEvent(eventId, data).toPromise();
         this.wsEventUpdated.next(result);
         this.eventUpdateDialogRef.close();
       } catch (err) {
@@ -644,7 +647,7 @@ export class WaveformService implements OnDestroy {
         // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
         status: EvaluationStatus.CONFIRMED
       };
-      await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);
@@ -664,7 +667,7 @@ export class WaveformService implements OnDestroy {
         evaluation_mode: EvaluationMode.MANUAL,
         status: EvaluationStatus.REJECTED
       };
-      await this._eventApiService.updateEventById(eventId, eventUpdateInput).toPromise();
+      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
     } catch (err) {
       repsonse = false;
       console.error(err);

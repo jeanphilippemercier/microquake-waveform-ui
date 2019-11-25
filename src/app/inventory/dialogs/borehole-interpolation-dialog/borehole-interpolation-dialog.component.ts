@@ -4,7 +4,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { PageMode } from '@interfaces/core.interface';
 import { BoreholeInterpolationDialogData } from '@interfaces/dialogs.interface';
 import { FormBuilder, Validators } from '@angular/forms';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { InterpolateBoreholeQuery } from '@interfaces/inventory-query.interface';
 import { InterpolateBoreholeResponse } from '@interfaces/inventory.interface';

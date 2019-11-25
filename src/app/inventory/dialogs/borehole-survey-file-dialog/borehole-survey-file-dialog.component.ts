@@ -5,7 +5,7 @@ import { PageMode } from '@interfaces/core.interface';
 import { MaintenanceEvent } from '@interfaces/maintenance.interface';
 import { BoreholeSurveyFileDialogData } from '@interfaces/dialogs.interface';
 import { FormBuilder, Validators } from '@angular/forms';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxFileDropEntry, FileSystemFileEntry } from 'ngx-file-drop';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { NgxSpinnerService } from 'ngx-spinner';

@@ -4,7 +4,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { PageMode } from '@interfaces/core.interface';
 import { PaginationRequest } from '@interfaces/query.interface';
 import { Sensor, Station, Borehole } from '@interfaces/inventory.interface';
-import { InventoryApiService } from '@services/inventory-api.service';
+import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Params, Router, ActivatedRoute } from '@angular/router';
 import { ListPage } from '@core/classes/list-page.class';
