@@ -1,12 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
-import { first, take, skipWhile, retry, retryWhen, delay, tap, repeatWhen, repeat } from 'rxjs/operators';
+import { first, take, skipWhile } from 'rxjs/operators';
 import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, WebsocketResponseOperation, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickKey, PickingMode, WebsocketResponseType, HeartbeatStatus } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
@@ -24,6 +24,7 @@ import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakem
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 import { ApiService } from './api/api.service';
+import { HeartbeatStatus, WebsocketResponseType, WebsocketResponseOperation } from '@interfaces/core.interface';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({

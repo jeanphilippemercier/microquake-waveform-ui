@@ -4,9 +4,9 @@ import { Observable } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { WebSocketService } from '@services/websocket.service';
-import { WebsocketEventResponse } from '@interfaces/event.interface';
 import { retryWhen, delay, filter, repeatWhen } from 'rxjs/operators';
 import ApiUtil from '@core/utils/api-util';
+import { WebsocketEventResponse } from '@interfaces/core.interface';
 
 @Injectable({
   providedIn: 'root'

@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { filter, repeatWhen, delay, retryWhen } from 'rxjs/operators';
 
 import { environment } from '@env/environment';
 import ApiUtil from '../../utils/api-util';
 import { PaginationResponse } from '@interfaces/dto.interface';
-import { IEvent, Boundaries, Origin, WebsocketEventResponse, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
+import { IEvent, Boundaries, Origin, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
 import { EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, EventDailySummaryQuery, EventRayQuery } from '@interfaces/event-query.interface';
 import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface';
 import { WebSocketService } from '../websocket.service';
