@@ -7,8 +7,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 
 import EventUtil from '@core/utils/event-util';
 import { EventApiService } from '@services/api/event-api.service';
-import { Site, Network } from '@interfaces/inventory.interface';
-import { IEvent, EventsDailySummary, EvaluationStatusGroup, QuakemlType, EvaluationStatus } from '@interfaces/event.interface';
+import { IEvent, EventsDailySummary, EventsDailySummaryForCatalog } from '@interfaces/event.interface';
 import { EventQuery, EventDailySummaryQuery } from '@interfaces/event-query.interface';
 import { WaveformService } from '@services/waveform.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
@@ -20,110 +19,51 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 })
 export class EventDetailComponent implements OnInit, OnDestroy {
 
-  paramsSub!: Subscription;
-  events!: IEvent[];
-  eventsDailySummary!: EventsDailySummary[];
-
-  today = moment().startOf('day');
-
+  private _currentEvent!: IEvent;
   public set currentEvent(v: IEvent) {
     this._currentEvent = v;
     this.waveformService.currentEvent.next(this._currentEvent);
+    EventUtil.mapEventToCatalog(v, this.timezone, this.eventsDailySummaryForCatalog);
   }
-
   public get currentEvent(): IEvent {
     return this._currentEvent;
   }
 
-  private _currentEvent!: IEvent;
   currentEventInfo!: IEvent;
-
+  paramsSub!: Subscription;
+  eventsDailySummary!: EventsDailySummary[];
+  eventsDailySummaryForCatalog!: EventsDailySummaryForCatalog[];
   initialized: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   pooling: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   currentDay: BehaviorSubject<EventsDailySummary | null> = new BehaviorSubject<EventsDailySummary | null>(null);
   eventUpdateDialogOpened = false;
   eventFilterDialogOpened = false;
-
   loadingCurrentEvent = false;
   loadingEventList = false;
-  loadingCurrentEventAndList = false;
-
-  eventListQuery!: EventQuery;
-
-  numberOfChangesInFilter = 0;
+  changeDetectCatalog = 0;
 
   // TODO: fix when resolved on API
   timezone = '+08:00';
 
-  changeDetectCatalog = 0;
-  interactiveProcessingSub!: Subscription;
-
-  acceptedEvaluationStatuses: EvaluationStatus[] = [
-    EvaluationStatus.CONFIRMED,
-    EvaluationStatus.FINAL,
-    EvaluationStatus.PRELIMINARY,
-    EvaluationStatus.REPORTED,
-    EvaluationStatus.REVIEWED
-  ];
 
   private _unsubscribe = new Subject<void>();
 
   constructor(
-    private _eventApiService: EventApiService,
     public waveformService: WaveformService,
+    private _eventApiService: EventApiService,
     private _activatedRoute: ActivatedRoute,
     private _router: Router,
     private _ngxSpinnerService: NgxSpinnerService,
     private _toastrNotificationService: ToastrNotificationService
   ) { }
 
-  test() {
-    /*
-    const e: IEvent = {
-      azimuth: null,
-      corner_frequency: 407.958984375,
-      evaluation_mode: 'automatic',
-      event_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.xml',
-      event_resource_id: 'smi:local/2019/09/28/13/56_40_699406127.e',
-      event_type: QuakemlType.COLLAPSE,
-      insertion_timestamp: '2019-09-28T14:12:12.922549Z',
-      is_processing: false,
-      magnitude: -1.30648463863957,
-      magnitude_type: 'Mw',
-      modification_timestamp: '2019-10-24T00:22:21.386091Z',
-      network: null,
-      npick: 0,
-      plunge: null,
-      preferred_magnitude_id: 'smi:local/e2a0a92f-ea87-4fd9-bbda-855e48d62949',
-      preferred_origin_id: 'smi:local/c04c7085-a75c-4c5f-bed7-7346a3a72ba9',
-      site: 1,
-      status: EvaluationStatus.PRELIMINARY,
-      time_epoch: 1569679000705994000,
-      time_residual: null,
-      time_utc: '2019-10-24T05:56:39.705994Z',
-      timezone: '+08:00',
-      uncertainty: null,
-      uncertainty_vector_x: null,
-      uncertainty_vector_y: null,
-      uncertainty_vector_z: null,
-      variable_size_waveform_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.variable_mseed',
-      waveform_context_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.context_mseed',
-      waveform_file: 'https://permanentdbfilesstorage.blob.core.windows.net/permanentdbfilesblob/events/994be6b4b4a055659683601d0e86d44e.mseed',
-      x: 651400,
-      y: 4767670,
-      z: -25,
-    };
-    this._addEvent(e);
-  */
-  }
-
   async ngOnInit() {
     await this.waveformService.isInitialized();
-    await this._getAndSubForQueryParamChange();
-    await this._loadCurrentEvent();
+    await this._watchForQueryParamChange();
+    await this._watchForCurrentEventChange();
     this._initPooling();
 
-    this.interactiveProcessingSub = this.waveformService.interactiveProcessLoading
+    this.waveformService.interactiveProcessLoading
       .pipe(
         takeUntil(this._unsubscribe),
         distinctUntilChanged(),
@@ -150,19 +90,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+
   ngOnDestroy() {
     this._unsubscribe.next();
     this._unsubscribe.complete();
   }
 
 
+  /**
+   * Watcher for keyboard events
+   *
+   * @remarks
+   * e / E - opens event update dialog
+   *
+   * @param ev - automatically provided by angular
+   *
+   */
   @HostListener('window:keydown', ['$event'])
-  doSomething($event: KeyboardEvent) {
-    if (!$event) {
+  watchKeyboardEvent(ev: KeyboardEvent) {
+    if (!ev) {
       return;
     }
 
-    switch ($event.key) {
+    switch (ev.key) {
       case 'e':
       case 'E':
         this.waveformService.openEventUpdateDialog(this.currentEventInfo);
@@ -172,6 +122,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+
+  /**
+   * Loads daily summary from API a prepares data for catalog component.
+   *
+   * @param showLoading optional setting to show loading spinner animation while fetching new data.
+   *
+   */
   private async _loadDailyEventSummary(showLoading = true) {
     try {
       const query: EventDailySummaryQuery = {
@@ -182,64 +139,93 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         this.startLoadingEventList();
       }
       const response = await this._eventApiService.getEventDailySummary(query).toPromise();
+      this.eventsDailySummary = response.results;
 
-      if (this.eventsDailySummary) {
-        this.checkForChangesInSummary(this.eventsDailySummary, response.results);
+      if (this.eventsDailySummaryForCatalog) {
 
+        this.checkForChangesInSummary(this.eventsDailySummaryForCatalog, response.results);
         const currentDay = this.currentDay.getValue();
 
         if (currentDay && !currentDay.upToDate) {
-          const found = this.eventsDailySummary ? this.eventsDailySummary.find((val: EventsDailySummary) => val.dayDate && val.dayDate.isSame(currentDay.dayDate)) : null;
+          const found = this.eventsDailySummaryForCatalog ? this.eventsDailySummaryForCatalog.find((val: EventsDailySummary) => val.dayDate && val.dayDate.isSame(currentDay.dayDate)) : null;
           this.loadEventsForCurrentlySelectedDay(found ? found : null);
         }
+        EventUtil.mapEventToCatalog(this.currentEvent, this.timezone, this.eventsDailySummaryForCatalog);
 
       } else {
         this.pooling.next(true);
-        this.eventsDailySummary = response.results.map((val, idx) => {
-          return {
-            ...val,
-            dayDate: moment.utc(val.date, 'YYYY-MM-DD').utcOffset(this.timezone, true).startOf('day')
-          };
-        });
+        this.eventsDailySummary = response.results;
+        this.eventsDailySummaryForCatalog = EventUtil.generateDaysForCatalog(moment.utc(query.time_utc_before).utcOffset(this.timezone, true), moment.utc(query.time_utc_after).utcOffset(this.timezone, true));
+        this.eventsDailySummaryForCatalog = EventUtil.mapDailySummaryToCatalogDays(response.results, this.eventsDailySummaryForCatalog);
+        EventUtil.mapEventToCatalog(this.currentEvent, this.timezone, this.eventsDailySummaryForCatalog);
       }
 
     } catch (err) {
       console.error(err);
-
     } finally {
       this.stopLoadingEventList();
     }
   }
 
-  private checkForChangesInSummary(currentSummary: EventsDailySummary[], newSummary: EventsDailySummary[]) {
-    newSummary.map((val, idx) => {
-      const found = currentSummary.find(v => v.date === val.date);
+
+  /**
+   * Checks if currentSummaryForCatalog data (all days) is up to date or needs a reload.
+   *
+   * @remarks
+   * If a day is not up to date it's marked as outdated (by upToDate = false). Day doesn't reload its events until it's selected (opened) by user.
+   *
+   * @param currentSummaryForCatalog currently used EventsDailySummaryForCatalog[] with data for catalog
+   * @param newSummary  EventsDailySummary[] fetched from API
+   *
+   */
+  private checkForChangesInSummary(currentSummaryForCatalog: EventsDailySummaryForCatalog[], newSummary: EventsDailySummary[]) {
+    if (!currentSummaryForCatalog || !newSummary) {
+      return;
+    }
+
+    if (currentSummaryForCatalog.length !== newSummary.length) {
+      // regenerate
+      const newCatalog = EventUtil.generateDaysForCatalog(moment.utc(this.waveformService.eventListQuery.time_utc_before).utcOffset(this.timezone, true), moment.utc(this.waveformService.eventListQuery.time_utc_after).utcOffset(this.timezone, true));
+      newSummary = EventUtil.mapDailySummaryToCatalogDays(newSummary, newCatalog);
+    }
+
+    newSummary.forEach((val, idx) => {
+      const found = currentSummaryForCatalog.find(v => v.date === val.date);
+
       if (found) {
-        const foundTmp = Object.assign({}, found);
-        val.events = found.events;
-        val.upToDate = found.upToDate && val.events && val.modification_timestamp_max === found.modification_timestamp_max ? true : false;
-        val.dayDate = found.dayDate;
-      } else {
-        val.dayDate = moment.utc(val.date, 'YYYY-MM-DD').utcOffset(this.timezone, true).startOf('day');
+        if (found.partial) {
+          found.upToDate = true;
+        } else {
+          found.upToDate = found.events && val.modification_timestamp_max && val.modification_timestamp_max === found.modification_timestamp_max ? true : false;
+          found.accepted_counts = val.accepted_counts;
+          found.count = val.count;
+          found.modification_timestamp_max = val.modification_timestamp_max;
+        }
       }
       return val;
     });
 
-    Object.assign(currentSummary, newSummary);
-
     const currentDay = this.currentDay.getValue();
+
     if (currentDay) {
-      const foundCurrentDay = currentSummary.find(v => v.date === currentDay.date);
+      const foundCurrentDay = currentSummaryForCatalog.find(v => v.date === currentDay.date);
 
       if (foundCurrentDay) {
-        Object.assign(currentDay, foundCurrentDay);
+        this.currentDay.next(foundCurrentDay);
       }
     }
 
     this.changeDetectCatalog = new Date().getTime();
   }
 
-  private async _loadCurrentEvent() {
+  /**
+   * Initializes a watcher for changes in url params (eventId)
+   *
+   * @remarks
+   * If eventId changes to an event that isn't yet loaded, we fetch the event from api.
+   *
+   */
+  private async _watchForCurrentEventChange() {
     this.paramsSub = this._activatedRoute.params
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(async params => {
@@ -250,11 +236,19 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             this._ngxSpinnerService.show('loadingCurrentEvent', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
             let clickedEvent: IEvent | null = null;
 
+
             // try to find event in catalog events (already loaded events)
-            if (this.events) {
-              const idx = this.events.findIndex(ev => ev.event_resource_id === eventId);
-              if (idx > -1) {
-                clickedEvent = Object.assign({}, this.events[idx]);
+            if (this.eventsDailySummaryForCatalog) {
+              let found;
+              this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => {
+                if (ev2.event_resource_id === eventId) {
+                  found = ev2;
+                  return true;
+                }
+              }));
+
+              if (found) {
+                clickedEvent = Object.assign({}, found);
               }
             }
 
@@ -263,6 +257,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
               clickedEvent = await this._eventApiService.getEvent(eventId).toPromise();
             }
             this.currentEvent = clickedEvent;
+
+            const currentlyOpenEventDate = moment.utc(this.currentEvent.time_utc).utcOffset(this.timezone).startOf('day');
+            this.eventsDailySummaryForCatalog = EventUtil.clearUnselectedDaysOutsideFilter(currentlyOpenEventDate, this.eventsDailySummary, this.eventsDailySummaryForCatalog);
 
             if (this.initialized.getValue() === false) {
               this.currentEventInfo = Object.assign({}, clickedEvent);
@@ -278,13 +275,25 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         }
       });
   }
-  private async _getAndSubForQueryParamChange() {
+
+
+  /**
+   * Initializes a watcher for url changes in query parameters
+   *
+   * @remarks
+   * Query params on this page are used to store event's catalog filter values.
+   *
+   * @returns a promise after first check is processed (to correctly init page we need to wait until this code is processed in sync).
+   *
+   */
+  private async _watchForQueryParamChange() {
     return new Promise(resolve => {
       this.paramsSub = this._activatedRoute.queryParams
         .pipe(takeUntil(this._unsubscribe))
         .subscribe(async queryParams => {
           this.waveformService.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
           this.waveformService.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.waveformService.eventListQuery);
+          delete this.eventsDailySummaryForCatalog;
           delete this.eventsDailySummary;
           this._loadDailyEventSummary();
           resolve();
@@ -292,6 +301,19 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+
+  /**
+   * Initializes pooling mechanism that checks in 30 second interaval for changes in event's daily summaries.
+   *
+   * @remarks
+   * This is a pooling mechanism to receive current daily_summary information, mainly used for event counts in catalog.
+   *
+   * It is also a fallback mechanism if WebSockets don't work. For each day in catalog It compares last modification timestamp with previous value.
+   * If the value differs, it marks the day as outdated (upToDate = false).
+   * Events for the day are refetched from API when user selects the day and the day is marked as upToDate === false.
+   * This shouldn't normaly happen if WebSockets work, as each day should already be upToDate.
+   *
+   */
   private async _initPooling() {
     interval(30000).pipe(
       filter(val => this.pooling.getValue()),
@@ -301,58 +323,56 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async _loadEvents(showLoading = true) {
-    try {
-      this.loadingEventList = true;
-      if (showLoading) {
-        this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-      }
-      const response = await this._eventApiService.getEvents(this.waveformService.eventListQuery).toPromise();
-      this.events = response.results;
-      this.pooling.next(true);
 
-    } catch (err) {
-      this._toastrNotificationService.error(err);
-      console.error(err);
-    } finally {
-      this.loadingEventList = false;
-      this._ngxSpinnerService.hide('loadingEventList');
-    }
-  }
-
-  private _addEvent($event: IEvent) {
-    if (!$event) {
+  /**
+   * Add event to catalog.
+   *
+   * @remarks
+   * If new event doesn't fit into filter selected by the user, it won't be added to event catalog.
+   *
+   * If the event that we want to add is already loaded in the catalog, toastr error will show.
+   *
+   * @param ev event to add
+   *
+   */
+  private _addEvent(ev: IEvent) {
+    if (!ev) {
       return;
     }
 
     try {
-
-      const found = this.eventsDailySummary.some(day => day.events && day.events.some(ev => (ev.event_resource_id === $event.event_resource_id)));
+      const found = this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => (ev2.event_resource_id === ev.event_resource_id)));
 
       if (found) {
-        this.waveformService.showNewEventToastrNotification($event, 'error');
-        console.error(`Event is alrady in the event list: ${$event.event_resource_id}`);
+        this.waveformService.showNewEventToastrNotification(ev, 'error');
+        console.error(`Event is alrady in the event list: ${ev.event_resource_id}`);
         return;
       }
-      const eventDate = moment.utc($event.time_utc).utcOffset(this.timezone);
-      const eventDayDate = moment.utc($event.time_utc).utcOffset(this.timezone).startOf('day');
-      const addedEventInExistingDay = this.eventsDailySummary.some(day => {
+
+      if (EventUtil.isEventOustideOfFilter(this.waveformService.eventListQuery, ev)) {
+        console.log(`New event is outside of the current filter. Not added!`);
+        return;
+      }
+
+      const eventDate = moment.utc(ev.time_utc).utcOffset(this.timezone);
+      const eventDayDate = moment.utc(ev.time_utc).utcOffset(this.timezone).startOf('day');
+      const addedEventInExistingDay = this.eventsDailySummaryForCatalog.some(day => {
 
         if (day.dayDate && !day.dayDate.isSame(eventDayDate)) {
           return false;
         }
 
-        // day was not yet clicked. Mark as added, it will load automatically after clicking on the day.
+        // day was not yet clicked (no events were loaded yet). Mark as added, it will load automatically after clicking on the day.
         if (!day.events) {
           return true;
         }
 
-        day.modification_timestamp_max = $event.modification_timestamp;
+        day.modification_timestamp_max = ev.modification_timestamp;
 
-        const addedEvent = day.events.some((ev, idx) => {
-          if (eventDate.isAfter(moment.utc(ev.time_utc).utcOffset(this.timezone))) {
+        const addedEvent = day.events.some((ev2, idx) => {
+          if (eventDate.isAfter(moment.utc(ev2.time_utc).utcOffset(this.timezone))) {
             if (day.events) {
-              day.events.splice(idx, 0, $event);
+              day.events.splice(idx, 0, ev);
             }
             return true;
           }
@@ -360,16 +380,16 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         });
 
         if (!addedEvent) {
-          day.events.push($event);
+          day.events.push(ev);
         }
 
         return true;
       });
 
       this.changeDetectCatalog = new Date().getTime();
-      this.waveformService.showNewEventToastrNotification($event, 'success');
+      this.waveformService.showNewEventToastrNotification(ev, 'success');
 
-      if (!addedEventInExistingDay && this.eventsDailySummary) {
+      if (!addedEventInExistingDay && this.eventsDailySummaryForCatalog) {
         if (this.waveformService.eventListQuery) {
           if (
             eventDate.isAfter(moment.utc(this.waveformService.eventListQuery.time_utc_before)) ||
@@ -379,33 +399,29 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             return;
           }
         }
-
-        const ds: EventsDailySummary = {
-          date: eventDayDate.format('YYYY-MM-DD'),
-          dayDate: eventDayDate,
-          modification_timestamp_max: null,
-          events: [$event],
-          count: null,
-          accepted_counts: {
-            _total_: null
-          }
-        };
-
-        this.eventsDailySummary.splice(0, 0, ds);
       }
-
 
     } catch (err) {
       console.error(err);
     }
   }
 
+
+  /**
+   * Update event that is in catalog.
+   *
+   * @remarks
+   * Tries to find event in catalog data. If event is successfully found it updates the data.
+   *
+   * @param event event to update
+   *
+   */
   private async _updateEvent(event: IEvent) {
     if (!event) {
       return;
     }
 
-    this.eventsDailySummary.some(day => {
+    this.eventsDailySummaryForCatalog.some(day => {
       return day.events && day.events.some(ev => {
         if (ev.event_resource_id === event.event_resource_id) {
           if (JSON.stringify(ev) !== JSON.stringify(event)) {
@@ -413,30 +429,13 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             Object.keys(event).forEach((key) => (event[key] === null) && delete ev[key]);
             day.modification_timestamp_max = event.modification_timestamp;
 
-            if (
-              (
-                this.waveformService.eventListQuery.status &&
-                (
-                  this.waveformService.eventListQuery.status.indexOf(EvaluationStatusGroup.REJECTED) > -1 &&
-                  event.status !== EvaluationStatus.REJECTED
-                )
-                &&
-                (
-                  this.waveformService.eventListQuery.status.indexOf(EvaluationStatusGroup.ACCEPTED) > -1 &&
-                  this.acceptedEvaluationStatuses.indexOf(event.status) === -1
-                )
-              )
-              ||
-              (
-                this.waveformService.eventListQuery.event_type &&
-                this.waveformService.eventListQuery.event_type.indexOf(<QuakemlType>`${event.event_type}`) === -1
-              )
-            ) {
+            if (EventUtil.isEventOustideOfFilter(this.waveformService.eventListQuery, event)) {
               event.outsideOfCurrentFilter = true;
             } else {
               event.outsideOfCurrentFilter = false;
             }
             Object.assign(ev, event);
+            this.changeDetectCatalog = new Date().getTime();
           }
 
           return true;
@@ -444,60 +443,90 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       });
     });
 
-    if (this.currentEvent && this.currentEvent.event_resource_id === event.event_resource_id) {
-      this.currentEvent = Object.assign({}, event);
-    }
-
-    if (this.currentEventInfo && this.currentEventInfo.event_resource_id === event.event_resource_id) {
-      this.currentEventInfo = Object.assign({}, event);
-    }
-
+    this._checkToUpdateCurrentEvent(event);
+    this._checkToUpdateCurrentEventInfo(event);
     this.changeDetectCatalog = new Date().getTime();
   }
 
-  async openChart(event: IEvent) {
-    this._router.navigate(['/events', event.event_resource_id], {
-      relativeTo: this._activatedRoute,
-      queryParamsHandling: 'merge',
-    });
+
+  /**
+   * Update currentEvent object if data has changed
+   *
+   * @param ev new event object
+   *
+   */
+  private _checkToUpdateCurrentEvent(ev: IEvent) {
+    if (
+      ev &&
+      this.currentEvent.event_resource_id === ev.event_resource_id &&
+      JSON.stringify(this.currentEvent) !== JSON.stringify(ev)
+    ) {
+      this.currentEvent = Object.assign({}, ev);
+    }
   }
 
-  async openEvent(event: IEvent) {
-    this.currentEventInfo = Object.assign({}, event);
+
+  /**
+   * Update currentEventInfo object if data has changed
+   *
+   * @param ev new event object
+   *
+   */
+  private _checkToUpdateCurrentEventInfo(ev: IEvent) {
+    if (
+      ev &&
+      this.currentEventInfo.event_resource_id === ev.event_resource_id &&
+      JSON.stringify(this.currentEventInfo) !== JSON.stringify(ev)
+    ) {
+      this.currentEventInfo = Object.assign({}, ev);
+    }
   }
 
-  onCollapseButtonClick() {
-    this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
-  }
 
-  async dayChanged($event: moment.Moment) {
-    try {
-      const found = this.eventsDailySummary ? this.eventsDailySummary.find((val: EventsDailySummary) => val.dayDate && val.dayDate.isSame($event)) : null;
+  /**
+   * Check if has changed day with either currentEvent or currentEventInfo and if yes check if they need to update
+   *
+   * @param updatedDay day that was updated
+   * @param events list of new events that will be compared to currentEvent or currentEventInfo
+   *
+   */
+  private _updateCurrentEventsIfNeeded(updatedDay: moment.Moment, events: IEvent[]) {
 
-      if (found) {
-        this.currentDay.next(found);
-        if (!found.upToDate) {
-          await this.loadEventsForCurrentlySelectedDay(found);
+    const currentEventDate = moment.utc(this.currentEvent.time_utc).utcOffset(this.timezone).startOf('day');
+    const currentEventInfoDate = moment.utc(this.currentEventInfo.time_utc).utcOffset(this.timezone).startOf('day');
+    const checkCurrentEvent = this.currentEvent && updatedDay.isSame(currentEventDate);
+    const checkCurrentEventInfo = this.currentEventInfo && updatedDay.isSame(currentEventInfoDate);
+
+
+    if (checkCurrentEvent || checkCurrentEventInfo) {
+
+      events.forEach(ev => {
+        if (checkCurrentEvent) {
+          this._checkToUpdateCurrentEvent(ev);
         }
-      } else {
-        // event outside filter's catalog
-      }
 
-    } catch (err) {
-      console.error(err);
+        if (checkCurrentEventInfo) {
+          this._checkToUpdateCurrentEventInfo(ev);
+        }
+      });
 
     }
   }
 
-  async loadEventsForCurrentlySelectedDay(selectedDay: EventsDailySummary | null) {
 
-    if (!selectedDay) {
+  /**
+   * Load events for currently selected day in event catalog
+   *
+   * @param selectedDay currently selected/open day
+   *
+   */
+  async loadEventsForCurrentlySelectedDay(selectedDay: EventsDailySummaryForCatalog | null) {
+    if (!selectedDay || selectedDay.partial) {
       return;
     }
 
     try {
       const date = moment(selectedDay.dayDate);
-
       const query: EventQuery = {
         ...this.waveformService.eventListQuery
       };
@@ -506,16 +535,20 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       query.time_utc_before = date.endOf('day').toISOString();
 
       const response = await this._eventApiService.getEvents(query).toPromise();
-      let lastModification = response.results[0].modification_timestamp;
-      let lastModificationMoment = moment.utc(lastModification);
 
-      response.results.forEach(val => {
-        if (lastModificationMoment.isBefore(moment.utc(val.modification_timestamp))) {
-          lastModification = val.modification_timestamp;
-          lastModificationMoment = moment.utc(lastModification);
-        }
-      });
+      this._updateCurrentEventsIfNeeded(moment(selectedDay.dayDate), response.results);
 
+      let lastModification = response.results && response.results[0] && response.results[0].modification_timestamp ? response.results[0].modification_timestamp : null;
+
+      if (lastModification) {
+        let lastModificationMoment = moment.utc(lastModification);
+        response.results.forEach(val => {
+          if (lastModificationMoment.isBefore(moment.utc(val.modification_timestamp))) {
+            lastModification = val.modification_timestamp;
+            lastModificationMoment = moment.utc(lastModification);
+          }
+        });
+      }
       selectedDay.events = response.results;
       selectedDay.upToDate = true;
       selectedDay.modification_timestamp_max = lastModification;
@@ -523,14 +556,90 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error(err);
     }
+
+    // if currently selected event is in currently selected day and the event doesn't fit into selected filter (wasn't loaded by API), we need to add it to the event list manually.
+    this.eventsDailySummaryForCatalog = EventUtil.mapEventToCatalog(this.currentEvent, this.timezone, this.eventsDailySummaryForCatalog);
   }
+
+
+  /**
+   * Handles click on chart icon button in catalog component
+   *
+   * @remarks
+   *
+   * Used for changing current waveform chart event. Angular routing is used to detect changed event {@link _watchForCurrentEventChange()}
+   *
+   * @param event clicked event
+   *
+   */
+  async openChart(event: IEvent) {
+    this._router.navigate(['/events', event.event_resource_id], {
+      relativeTo: this._activatedRoute,
+      queryParamsHandling: 'merge',
+    });
+  }
+
+
+  /**
+   * Handles click on event in catalog component
+   *
+   * @param ev clicked event
+   *
+   */
+  async openEvent(ev: IEvent) {
+    this.currentEventInfo = Object.assign({}, ev);
+  }
+
+
+  /**
+   * Handles click on day in catalog component
+   *
+   * @param day clicked day
+   *
+   */
+  async dayChanged(day: EventsDailySummaryForCatalog) {
+    try {
+      if (!day) {
+        return;
+      }
+
+      this.currentDay.next(day);
+      if (!day.upToDate && !day.partial) {
+        await this.loadEventsForCurrentlySelectedDay(day);
+      }
+    } catch (err) {
+      this._toastrNotificationService.error(err);
+      console.error(err);
+    }
+  }
+
+
+  /**
+   * Handles opening/closing of waveform sidebar
+   *
+   */
+  onCollapseButtonClick() {
+    this.waveformService.sidebarOpened.next(!this.waveformService.sidebarOpened.getValue());
+  }
+
+
+  /**
+   * LOADING ANIMATIONS
+   */
 
   startLoadingEventList() {
     this._ngxSpinnerService.show('loadingEventList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
   }
-
   stopLoadingEventList() {
     this._ngxSpinnerService.hide('loadingEventList');
   }
 
+
+  /**
+   * Just manual testing
+   *
+   */
+  test() {
+    this._addEvent(EventUtil.testEvent);
+  }
 }

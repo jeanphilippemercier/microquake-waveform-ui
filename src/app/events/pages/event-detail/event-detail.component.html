@@ -70,8 +70,8 @@
               >
                 <mat-icon
                   class="mat-18"
-                  [matBadge]="numberOfChangesInFilter"
-                  [matBadgeHidden]="numberOfChangesInFilter === 0"
+                  [matBadge]="waveformService.numberOfChangesInFilter"
+                  [matBadgeHidden]="(waveformService.numberOfChangesInFilter) === 0"
                   matBadgePosition="after"
                   matBadgeColor="warn"
                 >filter_list</mat-icon>
@@ -84,7 +84,7 @@
           </ng-container>
           <app-event-catalog
             [forceCD]="changeDetectCatalog"
-            [eventsDailySummary]="eventsDailySummary"
+            [eventsDailySummary]="eventsDailySummaryForCatalog"
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
@@ -176,7 +176,8 @@
         <mat-icon
           *ngIf="!(waveformService.sidebarOpened | async)"
           aria-label="Event sidebar icon"
-        >arrow_right</mat-icon>
+        >arrow_right
+        </mat-icon>
       </button>
     </div>
     <app-waveform-2

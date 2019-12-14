@@ -298,3 +298,18 @@ export interface EventsDailySummary {
   upToDate?: boolean;
   partial?: boolean;
 }
+
+export interface EventsDailySummaryForCatalog {
+  date: string;
+  count: number | null;
+  modification_timestamp_max: string | null;
+  accepted_counts: {
+    [key in QuakemlType | '_total_']?: number | null;
+  };
+  dayDate?: moment.Moment;
+  acceptedSum?: number;
+  events?: IEvent[];
+  expanded?: boolean;
+  upToDate?: boolean;
+  partial?: boolean;
+}
