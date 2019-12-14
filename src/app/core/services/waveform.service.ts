@@ -647,7 +647,8 @@ export class WaveformService implements OnDestroy {
         // this.currentEvent.event_type !== $event.quakeml_type ? EvaluationMode.MANUAL : EvaluationMode.AUTOMATIC,
         status: EvaluationStatus.CONFIRMED
       };
-      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
+      const result = await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
+      this.wsEventUpdated.next(result);
     } catch (err) {
       repsonse = false;
       console.error(err);
@@ -667,7 +668,8 @@ export class WaveformService implements OnDestroy {
         evaluation_mode: EvaluationMode.MANUAL,
         status: EvaluationStatus.REJECTED
       };
-      await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
+      const result = await this._eventApiService.updateEvent(eventId, eventUpdateInput).toPromise();
+      this.wsEventUpdated.next(result);
     } catch (err) {
       repsonse = false;
       console.error(err);
