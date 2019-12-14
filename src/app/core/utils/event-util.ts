@@ -293,7 +293,7 @@ export default class EventUtil {
    */
   static generateDaysForCatalog(start: moment.Moment, end: moment.Moment): EventsDailySummaryForCatalog[] {
     const arr: EventsDailySummaryForCatalog[] = [];
-    for (let m = moment(start); m.isSameOrAfter(end); m.add(-1, 'days')) {
+    for (const m = moment(start); m.isSameOrAfter(end); m.add(-1, 'days')) {
       const a = EventUtil.createEventDailySummaryDay(m);
       arr.push(a);
     }
