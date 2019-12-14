@@ -446,7 +446,7 @@ export class WaveformService implements OnDestroy {
         this._ngxSpinnerService.show('loadingAcceptIntercativeProcessing', { fullScreen: false, bdColor: 'rgba(51,51,51,0.75)' });
         const eventId = newEvent ? newEvent.event_resource_id : '';
         const response = await this._eventApiService.acceptInteractiveProcessing(eventId).toPromise();
-        console.log(response);
+        this.wsEventUpdated.next(response);
       } catch (err) {
         console.error(err);
       } finally {
@@ -486,7 +486,6 @@ export class WaveformService implements OnDestroy {
       const eventId = removedBatch ? removedBatch.event.event_resource_id : '';
 
       const response = await this._eventApiService.cancelInteractiveProcessing(eventId).toPromise();
-      console.log(response);
 
       // IP triggered by other than current user instance
       // there may be case, where user clicks on some other event that is being reprocessed (triggered by some other instance)

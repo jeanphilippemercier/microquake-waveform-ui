@@ -248,8 +248,6 @@ export class EventDetailComponent implements OnInit, OnDestroy {
               }));
 
               if (found) {
-                console.log(`found`);
-                console.log(found);
                 clickedEvent = Object.assign({}, found);
               }
             }
