@@ -34,9 +34,11 @@ export class EventTypeIconPipe implements PipeTransform {
       case 'acoustic noise':
       case 'L':
       case 'thunder':
+        return 'hearing';
+        break;
       case 'N':
       case 'other event':
-        return 'hearing';
+        return 'help_outline';
         break;
       case 'OP':
       case 'quarry blast':
