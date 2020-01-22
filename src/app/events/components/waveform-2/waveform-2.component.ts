@@ -20,6 +20,7 @@ import { WaveformService } from '@services/waveform.service';
 import { EventApiService } from '@services/api/event-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
 import { ApiService } from '@services/api/api.service.js';
+import { ChartStripLinesOptions } from 'typings/canvasjs/index.js';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -212,6 +213,16 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .subscribe(() => this._resetAllChartsViewXY());
 
     this.waveformService.commonTimeScale
+      .pipe(
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this._unsubscribe)
+      )
+      .subscribe((val: boolean) => {
+        this._resetAllChartsViewX();
+      });
+
+    this.waveformService.displayEntireTraces
       .pipe(
         distinctUntilChanged(),
         skip(1),
@@ -430,12 +441,30 @@ export class Waveform2Component implements OnInit, OnDestroy {
         return;
       }
 
+      // get origins
+      const originsQuery: EventOriginsQuery = {
+        site_code: this.waveformService.site.getValue(),
+        network_code: this.waveformService.network.getValue(),
+        event_id: event.event_resource_id
+      };
+
+      const origins = await this._eventApiService.getOrigins(originsQuery).toPromise();
+      let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
+
+      if (!origin) {
+        this._toastrNotificationService.warning(`Event preferred origin from catalog not found`, 'Warning');
+        console.error('No event preferred origin found');
+        origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
+        return;
+      }
+
+      this.waveformOrigin = origin;
+
       const eventData = WaveformUtil.parseMiniseed(eventFile, false);
 
       if (eventData && eventData.sensors) {
 
         WaveformUtil.setSensorsEnabled(eventData.sensors, this.allSensors);
-
         WaveformUtil.rotateSensors(eventData.sensors, this.allSensors, this.waveformSensors);
 
         // filter and recompute composite traces
@@ -458,25 +487,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this.timeEnd = moment(this.timeOrigin).add(globals.fixedDuration, 'seconds');
 
         if (this.loadedSensors.length > 0) {
-
-          // get origins
-          const originsQuery: EventOriginsQuery = {
-            site_code: this.waveformService.site.getValue(),
-            network_code: this.waveformService.network.getValue(),
-            event_id: event.event_resource_id
-          };
-
-          const origins = await this._eventApiService.getOrigins(originsQuery).toPromise();
-          let origin = WaveformUtil.findValue(origins, 'origin_resource_id', preferred_origin_id);
-
-          if (!origin) {
-            this._toastrNotificationService.warning(`Event preferred origin from catalog not found`, 'Warning');
-            console.error('No event preferred origin found');
-            origin = WaveformUtil.findValue(origins, 'preferred_origin', true);
-            return;
-          }
-
-          this.waveformOrigin = origin;
 
           const arrivalsQuery: EventArrivalsQuery = {
             site_code: this.waveformService.site.getValue(),
@@ -1124,7 +1134,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
             enabled: false
           },
           axisX: {
-            minimum: this.timeOrigin.millisecond() * 1000,
+            minimum: this._getXmin(i),
             maximum: this._getXmax(i),
             lineThickness: globals.axis.lineThickness,
             lineColor: globals.axis.lineColor,
@@ -1261,6 +1271,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
         if (e.keyCode === 88) {   // x
           this.waveformService.commonAmplitudeScale.next(!this.waveformService.commonAmplitudeScale.getValue());
+        }
+
+        if (e.keyCode === 67) {   // c
+          this.waveformService.displayEntireTraces.next(!this.waveformService.displayEntireTraces.getValue());
         }
 
         if (e.keyCode === 68) {   // d
@@ -1463,11 +1477,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
             return e.value / WaveformUtil.convXUnits;
           },
         },
-        stripLines: [{
-          startValue: timeOriginValue,
-          endValue: timeOriginValue + globals.fixedDuration * WaveformUtil.convXUnits,
-          color: globals.context.highlightColor
-        }]
+        data: [
+          {
+            type: 'line',
+            lineDashType: 'dot',
+          }
+        ],
+        stripLines: [this._getTimeOriginStripeLinesForContextTrace()]
       },
       axisY: {
         minimum: -yMax,
@@ -1861,7 +1877,29 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
+  private _getTimeOriginStripeLinesForContextTrace() {
+
+    let timeOriginValue = WaveformUtil.calculateTimeOffset(this.timeOrigin, this.contextTimeOrigin);
+
+    if (this.waveformService.displayEntireTraces.getValue()) {
+      timeOriginValue = WaveformUtil.calculateTimeOffset(moment.utc(this.waveformOrigin.time_utc), this.contextTimeOrigin);
+    }
+
+    const stripLine: ChartStripLinesOptions = {
+      labelWrap: false,
+      labelMaxWidth: 1,
+      startValue: timeOriginValue,
+      endValue: timeOriginValue + (this.waveformService.displayEntireTraces.getValue() ? 0.02 : globals.fixedDuration) * WaveformUtil.convXUnits,
+      color: this.waveformService.displayEntireTraces.getValue() ? globals.context.highlightSingleLineColor : globals.context.highlightColor,
+    };
+
+    return stripLine;
+  }
+
   private _resetAllChartsViewX() {
+    if (!this.activeSensors) {
+      return;
+    }
 
     for (const [index, el] of this.activeSensors.entries()) {
       if (index < this.activeSensors.length - 1) {
@@ -1873,6 +1911,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _resetAllChartsViewY() {
+    if (!this.activeSensors) {
+      return;
+    }
 
     for (const [index, el] of this.activeSensors.entries()) {
       if (index < this.activeSensors.length - 1) {
@@ -1884,6 +1925,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _resetAllChartsViewXY() {
+    if (!this.activeSensors) {
+      return;
+    }
 
     if (this.waveformService.displayDistanceTime.getValue()) {
       return;
@@ -1913,7 +1957,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
     if (chart.options.axisX) {
       chart.options.axisX.viewportMinimum = this._getXvpMin();
       chart.options.axisX.viewportMaximum = this._getXvpMax();
-      chart.options.axisX.minimum = this.timeOrigin ? this.timeOrigin.millisecond() * 1000 : 0;
+
+      chart.options.axisX.minimum = this._getXmin(channel);
       chart.options.axisX.maximum = this._getXmax(channel);
     }
     chart.options.viewportMinStack = [];
@@ -1934,6 +1979,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       chart.options.axisX.maximum = this._getXmaxContext();
       chart.options.viewportMinStack = [];
       chart.options.viewportMaxStack = [];
+      chart.options.axisX.stripLines = [this._getTimeOriginStripeLinesForContextTrace()];
+
     }
     chart.render();
   }
@@ -2028,6 +2075,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
     chart.render();
   }
 
+  private _getXmin(pos: number) {
+    if (this.waveformService.displayEntireTraces.getValue()) {
+      const startMicrosec = this.activeSensors[pos].channels[0].microsec;
+      return Math.max(startMicrosec, this.timeOrigin.millisecond() * 1000);
+    }
+    return this.timeOrigin.millisecond() * 1000;
+  }
+
   private _getXmax(pos: number) {
     const endMicrosec = this.activeSensors[pos].channels[0].microsec + this.activeSensors[pos].channels[0].duration;
 
@@ -2047,7 +2102,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _getXvpMax() {
-    if (this.waveformService.commonTimeScale.getValue()) {
+    if (this.waveformService.commonTimeScale.getValue() && !this.waveformService.displayEntireTraces.getValue()) {
       return this.timeOrigin.millisecond() * 1000 + globals.fixedDuration * WaveformUtil.convXUnits;
     }
 

@@ -37,6 +37,7 @@ export class WaveformService implements OnDestroy {
   commonTimeScale: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
   commonAmplitudeScale: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   zoomAll: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  displayEntireTraces: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   displayComposite: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(true);
   displayRotated: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   displayDistanceTime: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);

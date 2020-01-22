@@ -74,6 +74,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       this.waveformService.commonTimeScale,
       this.waveformService.commonAmplitudeScale,
       this.waveformService.zoomAll,
+      this.waveformService.displayEntireTraces,
       this.waveformService.displayComposite,
       this.waveformService.displayRotated,
       this.waveformService.displayDistanceTime,
@@ -86,6 +87,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       commonTimeScale,
       commonAmplitudeScale,
       zoomAll,
+      displayEntireTraces,
       displayComposite,
       displayRotated,
       displayDistanceTime,
@@ -97,6 +99,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
       values.push(commonTimeScale ? 'commonTimeScale' : '');
       values.push(commonAmplitudeScale ? 'commonAmplitudeScale' : '');
       values.push(zoomAll ? 'zoomAll' : '');
+      values.push(displayEntireTraces ? 'displayEntireTraces' : '');
       values.push(displayComposite ? 'displayComposite' : '');
       values.push(displayRotated ? 'displayRotated' : '');
       values.push(displayDistanceTime ? 'displayDistanceTime' : '');
@@ -125,6 +128,9 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
         break;
       case 'zoomAll':
         this.waveformService.zoomAll.next(selected);
+        break;
+      case 'displayEntireTraces':
+        this.waveformService.displayEntireTraces.next(selected);
         break;
       case 'displayComposite':
         this.waveformService.displayComposite.next(selected);

@@ -391,8 +391,8 @@ export default class WaveformUtil {
         const comp = sensor.channels[j].channel_id.replace('...CONTEXT', '');
         if (sensor.channels[j].enabled &&
           globals.signComponents.map(toLower).includes(comp.toLowerCase())) {
-            signComponent = comp;
-            break;
+          signComponent = comp;
+          break;
         }
       }
       if (signComponent.length === 0) {
@@ -495,8 +495,7 @@ export default class WaveformUtil {
         const ray: any = waveformSensor.preferred_ray[phase];
 
         if (ray !== null && ray.phase === phase) {
-          picktime_utc = WaveformUtil.addSecondsToUtc
-            (waveformOriginTimeUtc, ray.travel_time);
+          picktime_utc = WaveformUtil.addSecondsToUtc(waveformOriginTimeUtc, ray.travel_time);
 
           const pickTime = moment(picktime_utc);
 
