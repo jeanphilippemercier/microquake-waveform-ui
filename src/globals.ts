@@ -32,7 +32,7 @@ export const globals = {
   // sensitivity for capturing picks to drag
   snapDistance: 10,
   // colors for components line plots
-  linecolor : {
+  linecolor: {
     'P': 'blue',
     'SV': 'green',
     'SH': 'red',
@@ -47,7 +47,8 @@ export const globals = {
   // context trace colors
   context: {
     'linecolor': 'black',
-    'highlightColor': 'rgba(83, 223, 128, .2)'
+    'highlightColor': 'rgba(83, 223, 128, .2)',
+    'highlightSingleLineColor': 'rgb(100, 199, 132)'
   },
   axis: {
     'lineColor': 'rgb(222, 226, 230)',
