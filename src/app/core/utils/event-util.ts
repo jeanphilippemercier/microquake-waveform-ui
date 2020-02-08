@@ -269,6 +269,7 @@ export default class EventUtil {
       partial: false,
       count: 0,
       modification_timestamp_max: null,
+      magnitude_max: null,
       upToDate: false,
       accepted_counts: {
         _total_: 0

@@ -23,33 +23,41 @@
           {{day?.dayDate | date:' MMM dd':timezone}} <small class="pl-1">
             {{day?.dayDate | date:'yyyy':timezone}}</small>
         </mat-panel-title>
-        <mat-panel-description class="mr-0">
-          <div class="mr-auto"></div>
-          <ng-container *ngIf="!day?.partial; then nonPartialTemplate; else partialTemplate"></ng-container>
-          <ng-template #nonPartialTemplate>
-            <div
-              [matTooltipClass]="'break-line-tooltip'"
-              [matTooltipPosition]="'right'"
-              [matTooltip]="
+        <mat-panel-description class="mr-0 day-description">
+          <small
+            class="day-description-left-section"
+            *ngIf="!!day?.magnitude_max"
+          >
+            {{day?.magnitude_max ? (day?.magnitude_max | eventMagnitude) : 'none'}}<i><span class="pre">M</span>
+              <div class="supsub"><sup>max</sup><sub>w</sub></div>
+            </i>
+          </small>
+          <div class="day-description-right-section">
+            <ng-container *ngIf="!day?.partial; then nonPartialTemplate; else partialTemplate"></ng-container>
+            <ng-template #nonPartialTemplate>
+              <div
+                [matTooltipClass]="'break-line-tooltip'"
+                [matTooltipPosition]="'right'"
+                [matTooltip]="
               (!!day?.dayDate ? (day?.dayDate | date:' MMM dd yyyy':timezone) : '') + '\n' +
               (day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?') + ' accepted seismic events\n '+
               (day?.count !== null ? day?.count : '?') + ' total events in current filter'
               "
-            >
-              {{day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?'}} /
-              {{day?.count !== null ? day?.count : '?'}}
-            </div>
-          </ng-template>
-          <ng-template #partialTemplate>
-            <mat-icon
-              [matTooltipClass]="'break-line-tooltip'"
-              [matTooltipPosition]="'right'"
-              [matTooltip]="'Day is outside of the event filter. \n Day shows, becase event in this day has currenty loaded waveform charts'"
-              style="font-size: 18px; line-height: 22px;"
-              color="warn"
-            >warning</mat-icon>
-          </ng-template>
-
+              >
+                {{day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?'}} /
+                {{day?.count !== null ? day?.count : '?'}}
+              </div>
+            </ng-template>
+            <ng-template #partialTemplate>
+              <mat-icon
+                [matTooltipClass]="'break-line-tooltip'"
+                [matTooltipPosition]="'right'"
+                [matTooltip]="'Day is outside of the event filter. \n Day shows, becase event in this day has currenty loaded waveform charts'"
+                style="font-size: 18px; line-height: 22px;"
+                color="warn"
+              >warning</mat-icon>
+            </ng-template>
+          </div>
         </mat-panel-description>
       </mat-expansion-panel-header>
 

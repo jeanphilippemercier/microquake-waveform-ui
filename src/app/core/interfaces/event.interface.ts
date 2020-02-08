@@ -288,6 +288,7 @@ export interface EventsDailySummary {
   date: string;
   count: number | null;
   modification_timestamp_max: string | null;
+  magnitude_max: number | null;
   accepted_counts: {
     [key in QuakemlType | '_total_']?: number | null;
   };
@@ -303,6 +304,7 @@ export interface EventsDailySummaryForCatalog {
   date: string;
   count: number | null;
   modification_timestamp_max: string | null;
+  magnitude_max: number | null;
   accepted_counts: {
     [key in QuakemlType | '_total_']?: number | null;
   };
