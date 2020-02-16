@@ -135,6 +135,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
         ...this.waveformService.eventListQuery,
         tz_offset: this.timezone
       };
+      delete query.time_range;
+
       if (showLoading) {
         this.startLoadingEventList();
       }
