@@ -292,7 +292,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return new Promise(resolve => {
       this.paramsSub = this._activatedRoute.queryParams
         .pipe(takeUntil(this._unsubscribe))
-        .subscribe(async queryParams => {
+        .subscribe(async val => {
+          const queryParams = { ...val };
+          queryParams.site = this.waveformService.currentSite && this.waveformService.currentSite.id ? this.waveformService.currentSite.id : undefined;
+          queryParams.network = this.waveformService.currentNetwork && this.waveformService.currentNetwork.id ? this.waveformService.currentNetwork.id : undefined;
           this.waveformService.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
           this.waveformService.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.waveformService.eventListQuery);
           delete this.eventsDailySummaryForCatalog;
