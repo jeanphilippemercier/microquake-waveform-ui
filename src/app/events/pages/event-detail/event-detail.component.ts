@@ -202,6 +202,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           found.accepted_counts = val.accepted_counts;
           found.count = val.count;
           found.modification_timestamp_max = val.modification_timestamp_max;
+          found.magnitude_max = val.magnitude_max;
         }
       }
       return val;
