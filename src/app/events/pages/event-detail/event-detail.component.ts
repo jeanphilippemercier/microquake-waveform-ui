@@ -202,6 +202,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
           found.accepted_counts = val.accepted_counts;
           found.count = val.count;
           found.modification_timestamp_max = val.modification_timestamp_max;
+          found.magnitude_max = val.magnitude_max;
         }
       }
       return val;
@@ -292,7 +293,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     return new Promise(resolve => {
       this.paramsSub = this._activatedRoute.queryParams
         .pipe(takeUntil(this._unsubscribe))
-        .subscribe(async queryParams => {
+        .subscribe(async val => {
+          const queryParams = { ...val };
+          queryParams.site = this.waveformService.currentSite && this.waveformService.currentSite.id ? this.waveformService.currentSite.id : undefined;
+          queryParams.network = this.waveformService.currentNetwork && this.waveformService.currentNetwork.id ? this.waveformService.currentNetwork.id : undefined;
           this.waveformService.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
           this.waveformService.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.waveformService.eventListQuery);
           delete this.eventsDailySummaryForCatalog;
@@ -343,7 +347,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const found = this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => (ev2.event_resource_id === ev.event_resource_id)));
+      const found = this.eventsDailySummaryForCatalog && this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => (ev2.event_resource_id === ev.event_resource_id)));
 
       if (found) {
         this.waveformService.showNewEventToastrNotification(ev, 'error');
@@ -358,7 +362,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
       const eventDate = moment.utc(ev.time_utc).utcOffset(this.timezone);
       const eventDayDate = moment.utc(ev.time_utc).utcOffset(this.timezone).startOf('day');
-      const addedEventInExistingDay = this.eventsDailySummaryForCatalog.some(day => {
+      const addedEventInExistingDay = this.eventsDailySummaryForCatalog && this.eventsDailySummaryForCatalog.some(day => {
 
         if (day.dayDate && !day.dayDate.isSame(eventDayDate)) {
           return false;

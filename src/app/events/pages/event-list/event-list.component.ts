@@ -70,20 +70,22 @@ export class EventListComponent implements OnInit, OnDestroy {
 
     this._initPooling();
 
-    this._activatedRoute.queryParams.subscribe(val => {
-      const queryParams = { ...val };
-      queryParams.page_size = 15;
-      queryParams.site = this.waveformService.currentSite && this.waveformService.currentSite.id ? this.waveformService.currentSite.id : undefined;
-      // TODO: finish when API is ready
-      // queryParams.network = this.waveformService.currentNetwork.id;
-      if (Object.values(val).length === 0) {
+    this._activatedRoute.queryParams
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(val => {
+        const queryParams = { ...val };
+        queryParams.page_size = 15;
+        queryParams.site = this.waveformService.currentSite && this.waveformService.currentSite.id ? this.waveformService.currentSite.id : undefined;
+        queryParams.network = this.waveformService.currentNetwork && this.waveformService.currentNetwork.id ? this.waveformService.currentNetwork.id : undefined;
+
+        if (Object.values(val).length === 0) {
+          this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
+          this.defaultNavigate();
+          return;
+        }
         this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
-        this.defaultNavigate();
-        return;
-      }
-      this.eventListQuery = EventUtil.buildEventListQuery(queryParams, this.timezone);
-      this._loadEvents();
-    });
+        this._loadEvents();
+      });
 
     this.waveformService.wsEventCreatedObs
       .pipe(takeUntil(this._unsubscribe))
