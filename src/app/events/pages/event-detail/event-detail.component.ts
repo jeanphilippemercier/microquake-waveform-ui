@@ -346,7 +346,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const found = this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => (ev2.event_resource_id === ev.event_resource_id)));
+      const found = this.eventsDailySummaryForCatalog && this.eventsDailySummaryForCatalog.some(day => day.events && day.events.some(ev2 => (ev2.event_resource_id === ev.event_resource_id)));
 
       if (found) {
         this.waveformService.showNewEventToastrNotification(ev, 'error');
@@ -361,7 +361,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
       const eventDate = moment.utc(ev.time_utc).utcOffset(this.timezone);
       const eventDayDate = moment.utc(ev.time_utc).utcOffset(this.timezone).startOf('day');
-      const addedEventInExistingDay = this.eventsDailySummaryForCatalog.some(day => {
+      const addedEventInExistingDay = this.eventsDailySummaryForCatalog && this.eventsDailySummaryForCatalog.some(day => {
 
         if (day.dayDate && !day.dayDate.isSame(eventDayDate)) {
           return false;
