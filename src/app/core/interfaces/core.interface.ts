@@ -33,3 +33,10 @@ export interface EventExtra {
   };
   error: string | null;
 }
+
+export enum DataLoadStatus {
+  UNKNOWN = 'unknown',
+  LOADING = 'loading',
+  LOADED = 'load',
+  ERROR = 'error',
+}

@@ -1,0 +1,207 @@
+<h1 mat-dialog-title>Application data</h1>
+<div mat-dialog-content>
+
+
+  <ng-template
+    #dataCell
+    let-name="name"
+  >
+    <td class="mat-cell mat-column-name">
+      {{name}}
+    </td>
+  </ng-template>
+
+  <ng-template
+    #statusCell
+    let-status="status"
+  >
+    <td class="mat-cell mat-column-status text-center">
+      <ng-container [ngSwitch]="status">
+        <ng-container *ngSwitchCase="DataLoadStatus.LOADING">
+          <div class="d-flex justify-content-center">
+            <mat-spinner
+              matTooltip="Loading data"
+              matTooltipPosition="left"
+              [diameter]="20"
+            ></mat-spinner>
+          </div>
+        </ng-container>
+        <ng-container *ngSwitchCase="DataLoadStatus.LOADED">
+          <mat-icon
+            matTooltip="Data successfully loaded"
+            matTooltipPosition="left"
+            color="primary"
+          >check_circle_outline</mat-icon>
+        </ng-container>
+        <ng-container *ngSwitchCase="DataLoadStatus.ERROR">
+          <mat-icon
+            matTooltip="Data failed to load"
+            matTooltipPosition="left"
+            color="warn"
+          >warning</mat-icon>
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+          <mat-icon
+            matTooltip="Data loading not initialized"
+            matTooltipPosition="left"
+            color=""
+          >help_outline</mat-icon>
+        </ng-container>
+      </ng-container>
+    </td>
+
+  </ng-template>
+
+  <ng-template
+    #countCell
+    let-count="count"
+  >
+    <td class="mat-cell mat-column-count text-center">
+      {{count}}
+    </td>
+
+  </ng-template>
+
+  <ng-template
+    #moreCell
+    let-index="index"
+  >
+
+    <td class="mat-cell mat-column-actions">
+
+      <button
+        mat-icon-button
+        [matMenuTriggerFor]="menu"
+        aria-label="Data menu"
+      >
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button
+          mat-menu-item
+          color="primary"
+          (click)="reloadData(index)"
+        >
+          <mat-icon>refresh</mat-icon>
+          <span>Refresh</span>
+        </button>
+
+      </mat-menu>
+    </td>
+
+  </ng-template>
+
+
+
+  <div class="row">
+    <div class="col-12 mb-3">
+
+      <table class="mat-table w-100">
+        <tr class="mat-header-row">
+          <th class="mat-header-cell">Data</th>
+          <th class="mat-header-cell text-center">Status</th>
+          <th class="mat-header-cell text-center">Count</th>
+          <th class="mat-header-cell"></th>
+        </tr>
+
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Sites'}"></ng-container>
+          <ng-container *ngTemplateOutlet="statusCell;context:{status: (waveformService?.sitesLoadStatus | async)}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.sites?.length}"></ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 0}"></ng-container>
+        </tr>
+
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Networks'}"></ng-container>
+          <ng-container *ngTemplateOutlet="statusCell;context:{status: (waveformService?.networksLoadStatus | async)}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.networks?.length}"></ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 1}"></ng-container>
+        </tr>
+
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Microquake event types'}"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="statusCell;context:{status: (waveformService?.eventTypesLoadStatus | async)}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.eventTypes?.length}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 2}"></ng-container>
+        </tr>
+
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Sensors'}"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="statusCell;context:{status: (waveformService?.allSensorsOrigLoadStatus | async)}"
+          >
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.allSensorsOrig?.length}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 3}"></ng-container>
+        </tr>
+
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Stations'}"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="statusCell;context:{status: (waveformService?.allStationsLoadStatus | async)}"
+          >
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.allStations?.length}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 4}"></ng-container>
+        </tr>
+
+
+      </table>
+
+      <table class="mat-table w-100 no-border">
+        <tr class="mat-row">
+          <td class="mat-cell text-center">
+            <p
+              [ngSwitch]="overalLoadStatus"
+              class="mt-5"
+            >
+              <span *ngSwitchCase="DataLoadStatus.LOADING">
+                loading..
+              </span>
+              <span *ngSwitchCase="DataLoadStatus.ERROR">
+                <strong>Some of the data failed to load.</strong><br> In order to make the app work properly, all data
+                in the table above
+                must load successfully.<br>
+
+              </span>
+              <strong *ngSwitchCase="DataLoadStatus.LOADED">
+                All data loaded successfully
+              </strong>
+              <span *ngSwitchDefault>
+                unknown
+              </span>
+            </p>
+          </td>
+        </tr>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<mat-dialog-actions align="end">
+  <ng-container *ngIf="overalLoadStatus === DataLoadStatus.ERROR">
+    <button
+      mat-raised-button
+      mat-dialog-close
+    >Ignore and close</button>
+    <button
+      (click)="reloadAllMissingData()"
+      mat-raised-button
+      color="primary"
+    >Try to reload missing data</button>
+  </ng-container>
+  <ng-container *ngIf="overalLoadStatus === DataLoadStatus.LOADED">
+    <button
+      mat-raised-button
+      mat-dialog-close
+    >Close</button>
+  </ng-container>
+</mat-dialog-actions>
