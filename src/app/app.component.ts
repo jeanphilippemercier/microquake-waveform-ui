@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ComponentFactoryResolver, ViewChildren, QueryList, Injector } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterEvent, RouteConfigLoadStart, RouteConfigLoadEnd, Event } from '@angular/router';
 
@@ -7,6 +7,9 @@ import { AuthService } from '@services/auth.service';
 import { MenuService } from '@services/menu.service';
 import { AuthDialogComponent } from '@app/auth/dialogs/auth-dialog/auth-dialog.component';
 import { LoadingService } from '@services/loading.service';
+import { WaveformService } from '@services/waveform.service';
+import { EventDetailComponent } from './events/pages/event-detail/event-detail.component';
+import { EventListComponent } from './events/pages/event-list/event-list.component';
 
 @Component({
   selector: 'app-root',
@@ -16,13 +19,16 @@ import { LoadingService } from '@services/loading.service';
 export class AppComponent implements OnInit {
   user: User | null = null;
   private _asyncLoadCount = 0;
+  waveformService: WaveformService | undefined;
 
   constructor(
     private _loadingService: LoadingService,
     private _dialog: MatDialog,
     private _authService: AuthService,
     public menuService: MenuService,
-    private _router: Router
+    private _router: Router,
+    private _componentFactoryResolver: ComponentFactoryResolver,
+    private _injector: Injector
   ) { }
 
   async ngOnInit() {
@@ -77,6 +83,15 @@ export class AppComponent implements OnInit {
 
   closeMenu() {
     this.menuService.close();
+  }
+
+  openApplicaitonDataDialog() {
+    if (!this.waveformService) {
+      this.waveformService = this._injector.get<WaveformService>(WaveformService);
+    }
+    if (this.waveformService) {
+      this.waveformService.openApplicationDataDialog();
+    }
   }
 
 }
