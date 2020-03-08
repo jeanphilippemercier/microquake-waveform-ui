@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval, combineLatest } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { first, take, skipWhile } from 'rxjs/operators';
 import * as moment from 'moment';
@@ -171,6 +171,7 @@ export class WaveformService implements OnDestroy {
   sitesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   networksLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   eventTypesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  overallDataLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
 
   _appDataDialog!: MatDialogRef<WaveformInitializerDialogComponent>;
 
@@ -185,6 +186,7 @@ export class WaveformService implements OnDestroy {
     private _activatedRoute: ActivatedRoute,
     private _eventQuakemlToMicroquakeTypePipe: EventQuakemlToMicroquakeTypePipe,
   ) {
+    this._watchAllDataLoad();
     this._initPrimary();
     this._initSecondary();
   }
@@ -257,6 +259,7 @@ export class WaveformService implements OnDestroy {
       this.eventTypesLoadStatus.next(DataLoadStatus.LOADED);
     } catch (err) {
       this.eventTypesLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
       console.error(err);
       this.openApplicationDataDialog();
     }
@@ -298,6 +301,7 @@ export class WaveformService implements OnDestroy {
     } catch (err) {
       this.sitesLoadStatus.next(DataLoadStatus.ERROR);
       this.networksLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
       console.error(err);
       this.openApplicationDataDialog();
     }
@@ -748,6 +752,7 @@ export class WaveformService implements OnDestroy {
       this.allStationsLoadStatus.next(DataLoadStatus.LOADED);
     } catch (err) {
       this.allStationsLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
       console.error(err);
       this.openApplicationDataDialog();
     }
@@ -787,6 +792,8 @@ export class WaveformService implements OnDestroy {
 
     this._appDataDialog = this._matDialog.open<WaveformInitializerDialogComponent, { waveformService: WaveformService }>(WaveformInitializerDialogComponent, {
       width: '600px',
+      autoFocus: false,
+      disableClose: true,
       data: {
         waveformService: this,
       }
@@ -794,6 +801,25 @@ export class WaveformService implements OnDestroy {
 
     this._appDataDialog.afterClosed().pipe(first()).subscribe(_ => {
       delete this._appDataDialog;
+    });
+  }
+
+  private _watchAllDataLoad() {
+    combineLatest([
+      this.sitesLoadStatus,
+      this.networksLoadStatus,
+      this.eventTypesLoadStatus,
+      this.allSensorsOrigLoadStatus,
+      this.allStationsLoadStatus
+    ]).subscribe(val => {
+
+      if (val.indexOf(DataLoadStatus.ERROR) > -1) {
+        this.overallDataLoadStatus.next(DataLoadStatus.ERROR);
+      } else if (val.every(v => v === val[0])) {
+        this.overallDataLoadStatus.next(DataLoadStatus.LOADED);
+      } else {
+        this.overallDataLoadStatus.next(DataLoadStatus.LOADING);
+      }
     });
   }
 }

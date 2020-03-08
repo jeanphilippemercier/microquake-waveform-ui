@@ -159,16 +159,15 @@
         <tr class="mat-row">
           <td class="mat-cell text-center">
             <p
-              [ngSwitch]="overalLoadStatus"
+              [ngSwitch]="(waveformService?.overallDataLoadStatus | async)"
               class="mt-5"
             >
               <span *ngSwitchCase="DataLoadStatus.LOADING">
                 loading..
               </span>
               <span *ngSwitchCase="DataLoadStatus.ERROR">
-                <strong>Some of the data failed to load.</strong><br> In order to make the app work properly, all data
-                in the table above
-                must load successfully.<br>
+                <strong>Some of the data failed to load.</strong><br>
+                To make the app work properly, all data listed in the table above must load successfully.<br>
 
               </span>
               <strong *ngSwitchCase="DataLoadStatus.LOADED">
@@ -187,7 +186,7 @@
 </div>
 
 <mat-dialog-actions align="end">
-  <ng-container *ngIf="overalLoadStatus === DataLoadStatus.ERROR">
+  <ng-container *ngIf="(waveformService?.overallDataLoadStatus | async) === DataLoadStatus.ERROR">
     <button
       mat-raised-button
       mat-dialog-close
@@ -198,7 +197,7 @@
       color="primary"
     >Try to reload missing data</button>
   </ng-container>
-  <ng-container *ngIf="overalLoadStatus === DataLoadStatus.LOADED">
+  <ng-container *ngIf="(waveformService?.overallDataLoadStatus | async) === DataLoadStatus.LOADED">
     <button
       mat-raised-button
       mat-dialog-close
