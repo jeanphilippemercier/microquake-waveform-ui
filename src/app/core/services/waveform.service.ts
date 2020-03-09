@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval, combineLatest } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { first, take, skipWhile } from 'rxjs/operators';
 import * as moment from 'moment';
@@ -24,7 +24,8 @@ import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakem
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
 import { ApiService } from './api/api.service';
-import { WebsocketResponseType, WebsocketResponseOperation } from '@interfaces/core.interface';
+import { WebsocketResponseType, WebsocketResponseOperation, DataLoadStatus } from '@interfaces/core.interface';
+import { WaveformInitializerDialogComponent } from '@app/shared/dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -67,7 +68,6 @@ export class WaveformService implements OnDestroy {
   // PAGINATION
   pageChanged: Subject<number> = new Subject;
   pageChangedObs: Observable<number> = this.pageChanged.asObservable();
-
   helpDialogRef!: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
 
@@ -166,6 +166,14 @@ export class WaveformService implements OnDestroy {
   sites: Site[] = [];
   networks: Network[] = [];
 
+  allStationsLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  allSensorsOrigLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  sitesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  networksLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  eventTypesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  overallDataLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+
+  _appDataDialog!: MatDialogRef<WaveformInitializerDialogComponent>;
 
   constructor(
     private _matDialog: MatDialog,
@@ -178,6 +186,7 @@ export class WaveformService implements OnDestroy {
     private _activatedRoute: ActivatedRoute,
     private _eventQuakemlToMicroquakeTypePipe: EventQuakemlToMicroquakeTypePipe,
   ) {
+    this._watchAllDataLoad();
     this._initPrimary();
     this._initSecondary();
   }
@@ -226,7 +235,7 @@ export class WaveformService implements OnDestroy {
       this._loadPersistantData(),
       this._watchWebsocketNotifications(),
       this._loadEventTypes(),
-      this._getAllSitesAndNetworks(),
+      this._loadAllSitesAndNetworks(),
       this._getLastHeartbeatAndWatch()
     ]);
 
@@ -243,8 +252,21 @@ export class WaveformService implements OnDestroy {
   }
 
   private async _loadEventTypes() {
-    // TODO: add real site code from site picker
-    this.eventTypes = await this._inventoryApiService.getMicroquakeEventTypes().toPromise();
+    try {
+      this.eventTypesLoadStatus.next(DataLoadStatus.LOADING);
+      // TODO: add real site code from site picker
+      this.eventTypes = await this._inventoryApiService.getMicroquakeEventTypes().toPromise();
+      this.eventTypesLoadStatus.next(DataLoadStatus.LOADED);
+    } catch (err) {
+      this.eventTypesLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
+      console.error(err);
+      this.openApplicationDataDialog();
+    }
+  }
+
+  public reloadEventTypes() {
+    this._loadEventTypes();
   }
 
   private async _getLastHeartbeatAndWatch() {
@@ -261,8 +283,10 @@ export class WaveformService implements OnDestroy {
     });
   }
 
-  private async _getAllSitesAndNetworks() {
+  private async _loadAllSitesAndNetworks() {
     try {
+      this.sitesLoadStatus.next(DataLoadStatus.LOADING);
+      this.networksLoadStatus.next(DataLoadStatus.LOADING);
       const response = await this._inventoryApiService.getSites().toPromise();
       this.sites = response;
       this.networks = [];
@@ -272,9 +296,19 @@ export class WaveformService implements OnDestroy {
 
       this.currentSite = this.sites[0];
       this.currentNetwork = this.sites[0] && this.sites[0].networks && this.sites[0].networks[0];
+      this.sitesLoadStatus.next(DataLoadStatus.LOADED);
+      this.networksLoadStatus.next(DataLoadStatus.LOADED);
     } catch (err) {
+      this.sitesLoadStatus.next(DataLoadStatus.ERROR);
+      this.networksLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
       console.error(err);
+      this.openApplicationDataDialog();
     }
+  }
+
+  public reloadAllSitesAndNetworks() {
+    this._loadAllSitesAndNetworks();
   }
 
   private _loadPersistantData() {
@@ -682,6 +716,8 @@ export class WaveformService implements OnDestroy {
 
   private async _loadAllSensors() {
     try {
+
+      this.allSensorsOrigLoadStatus.next(DataLoadStatus.LOADING);
       // TODO: remove getSensors query once waveformInfo contains information about all active sensors
       const response = await this._inventoryApiService.getSensors({
         page_size: 1000
@@ -689,15 +725,23 @@ export class WaveformService implements OnDestroy {
 
       this.allSensorsOrig = response.results;
       this.allSensorsOrig.forEach((sensor, idx) => this.allSensorsMap[sensor.code] = idx);
+      this.allSensorsOrigLoadStatus.next(DataLoadStatus.LOADED);
 
     } catch (err) {
+      this.allSensorsOrigLoadStatus.next(DataLoadStatus.ERROR);
       this._toastrNotificationService.error(err);
       console.error(err);
+      this.openApplicationDataDialog();
     }
+  }
+
+  public reloadAllSensors() {
+    this._loadAllSensors();
   }
 
   private async _loadAllStations() {
     try {
+      this.allStationsLoadStatus.next(DataLoadStatus.LOADING);
       // TODO: remove getStations query once waveformInfo contains information about all active sensors
       const response = await this._inventoryApiService.getStations({
         page_size: 1000
@@ -705,9 +749,17 @@ export class WaveformService implements OnDestroy {
 
       this.allStations = response.results;
       this.allStations.forEach((station, idx) => this.allStationsMap[station.id] = idx);
+      this.allStationsLoadStatus.next(DataLoadStatus.LOADED);
     } catch (err) {
+      this.allStationsLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
       console.error(err);
+      this.openApplicationDataDialog();
     }
+  }
+
+  public reloadAllStations() {
+    this._loadAllStations();
   }
 
   async showNewEventToastrNotification($event: IEvent, type: 'success' | 'error' = 'success') {
@@ -731,5 +783,43 @@ export class WaveformService implements OnDestroy {
     ${magnitude}
     `, `Error: New event`, { enableHtml: true, timeOut: 10000 });
     }
+  }
+
+  public openApplicationDataDialog() {
+    if (this._appDataDialog) {
+      return;
+    }
+
+    this._appDataDialog = this._matDialog.open<WaveformInitializerDialogComponent, { waveformService: WaveformService }>(WaveformInitializerDialogComponent, {
+      width: '600px',
+      autoFocus: false,
+      disableClose: true,
+      data: {
+        waveformService: this,
+      }
+    });
+
+    this._appDataDialog.afterClosed().pipe(first()).subscribe(_ => {
+      delete this._appDataDialog;
+    });
+  }
+
+  private _watchAllDataLoad() {
+    combineLatest([
+      this.sitesLoadStatus,
+      this.networksLoadStatus,
+      this.eventTypesLoadStatus,
+      this.allSensorsOrigLoadStatus,
+      this.allStationsLoadStatus
+    ]).subscribe(val => {
+
+      if (val.indexOf(DataLoadStatus.ERROR) > -1) {
+        this.overallDataLoadStatus.next(DataLoadStatus.ERROR);
+      } else if (val.every(v => v === val[0])) {
+        this.overallDataLoadStatus.next(DataLoadStatus.LOADED);
+      } else {
+        this.overallDataLoadStatus.next(DataLoadStatus.LOADING);
+      }
+    });
   }
 }

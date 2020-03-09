@@ -1,0 +1,20 @@
+.mat-dialog-content {
+  // min-height: 400px;
+}
+
+.mat-column-status mat-icon,
+.mat-column-status mat-spinner {
+  cursor: pointer;
+}
+
+td.mat-column-actions {
+  width: 30px;
+}
+
+.no-border {
+  td.mat-cell,
+  td.mat-footer-cell,
+  th.mat-header-cell {
+    border-width: 0;
+  }
+}

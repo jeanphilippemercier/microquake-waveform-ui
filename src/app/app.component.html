@@ -109,6 +109,13 @@
         <h3 mat-subheader>Account</h3>
         <a
           mat-list-item
+          (click)="openApplicaitonDataDialog()"
+        >
+          <mat-icon mat-list-icon>storage</mat-icon>
+          <h4 matLine>Application data</h4>
+        </a>
+        <a
+          mat-list-item
           (click)="logoutClick()"
         >
           <mat-icon mat-list-icon>exit_to_app</mat-icon>
