@@ -72,7 +72,7 @@ mat-progress-bar {
 .error-block {
   height: 100%;
   display: flex;
-  align-items: start;
-  justify-content: start;
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: 30px 15px 15px 60px;
 }
