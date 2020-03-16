@@ -815,7 +815,7 @@ export class WaveformService implements OnDestroy {
 
       if (val.indexOf(DataLoadStatus.ERROR) > -1) {
         this.overallDataLoadStatus.next(DataLoadStatus.ERROR);
-      } else if (val.every(v => v === val[0])) {
+      } else if (val.every(v => v === DataLoadStatus.LOADED)) {
         this.overallDataLoadStatus.next(DataLoadStatus.LOADED);
       } else {
         this.overallDataLoadStatus.next(DataLoadStatus.LOADING);

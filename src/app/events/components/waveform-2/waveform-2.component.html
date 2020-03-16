@@ -1,6 +1,28 @@
 <div class="container-fluid content p-0">
   <ngx-spinner name="loadingWaveform"></ngx-spinner>
   <div
+    *ngIf="(waveformService?.overallDataLoadStatus | async) === DataLoadStatus.ERROR"
+    class="error-block"
+  >
+    <div>
+      <h3>Error in app initialization</h3>
+      <p>To show the event charts, you must resolve the following problems:</p>
+      <ul>
+        <li *ngIf="(waveformService?.allSensorsOrigLoadStatus | async) === DataLoadStatus.ERROR">
+          sensors failed to load
+        </li>
+        <li *ngIf="(waveformService?.allStationsLoadStatus | async) === DataLoadStatus.ERROR">
+          stations failed to load
+        </li>
+      </ul>
+      <button
+        (click)="waveformService?.openApplicationDataDialog()"
+        mat-raised-button
+        color="primary"
+      >Application data</button>
+    </div>
+  </div>
+  <div
     id="waveform-panel"
     #waveformContainer
     [style.opacity]="waveformShow ? '1.0' : '0.0'"
@@ -17,9 +39,21 @@
   #contextMenuChart
   [hidden]="!contextMenuChartVisible"
 >
-  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.DELETE_P)">Delete P Pick</li>
-  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.DELETE_S)">Delete S Pick</li>
-  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.NEW_P)">New P Pick</li>
-  <li [hidden]="!isContextPickingMenuVisible" (click)="contextMenuClick(ContextMenuChartAction.NEW_S)">New S Pick</li>
+  <li
+    [hidden]="!isContextPickingMenuVisible"
+    (click)="contextMenuClick(ContextMenuChartAction.DELETE_P)"
+  >Delete P Pick</li>
+  <li
+    [hidden]="!isContextPickingMenuVisible"
+    (click)="contextMenuClick(ContextMenuChartAction.DELETE_S)"
+  >Delete S Pick</li>
+  <li
+    [hidden]="!isContextPickingMenuVisible"
+    (click)="contextMenuClick(ContextMenuChartAction.NEW_P)"
+  >New P Pick</li>
+  <li
+    [hidden]="!isContextPickingMenuVisible"
+    (click)="contextMenuClick(ContextMenuChartAction.NEW_S)"
+  >New S Pick</li>
   <li (click)="contextMenuClick(ContextMenuChartAction.SHOW_CROSSHAIR)">Toggle CrossHair</li>
 </ul>

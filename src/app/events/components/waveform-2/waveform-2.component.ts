@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, ViewChild, ElementRef, Renderer2, OnDestroy } from '@angular/core';
-import { takeUntil, distinctUntilChanged, skip, skipWhile, take } from 'rxjs/operators';
+import { takeUntil, distinctUntilChanged, skip, skipWhile, take, takeWhile, endWith } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
 // @ts-ignore
@@ -21,6 +21,7 @@ import { EventApiService } from '@services/api/event-api.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service.ts';
 import { ApiService } from '@services/api/api.service.js';
 import { ChartStripLinesOptions } from 'typings/canvasjs/index.js';
+import { DataLoadStatus } from '@interfaces/core.interface.js';
 
 enum ContextMenuChartAction {
   DELETE_P = 'delete p',
@@ -128,6 +129,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   waveformShow = true;
   waveformInfo!: WaveformQueryResponse;
   waveformInfoAll!: WaveformQueryResponse;
+
+  DataLoadStatus = DataLoadStatus;
+  currentEventInitStartTimestamp = 0;
 
   constructor(
     public waveformService: WaveformService,
@@ -383,10 +387,39 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private async _handleEvent(event: IEvent) {
 
+    const currentEventInitStartTimestamp = new Date().getTime();
+    this.currentEventInitStartTimestamp = currentEventInitStartTimestamp;
     this.waveformService.interactiveProcessingEnabled.next(false);
     this._getInteractiveProcessingStatus();
 
     await this.waveformService.isInitialized();
+
+    // if error in app intialization, wait for successfull reinitialization
+    if (this.waveformService.overallDataLoadStatus.getValue() === DataLoadStatus.ERROR) {
+      this.waveformService.loading.next(false);
+      try {
+        await new Promise((resolve, reject) => {
+          this.waveformService.overallDataLoadStatus.pipe(
+            takeWhile(val => val !== DataLoadStatus.LOADED),
+          ).subscribe(val => { },
+            err => {
+              reject();
+            },
+            () => {
+              // completed - data loaded. Continue loading only for current event and reject other events.
+              if (currentEventInitStartTimestamp === this.currentEventInitStartTimestamp) {
+                resolve();
+              } else {
+                reject();
+              }
+            }
+          );
+        });
+      } catch (err) {
+        // not current event anymore. Stop loading.
+        return;
+      }
+    }
 
     this.allSensors = JSON.parse(JSON.stringify(this.waveformService.allSensorsOrig));
     this.currentEventId = event.event_resource_id;
@@ -637,8 +670,11 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const end = Math.min(pageNumber * pageSize, this.loadedSensors.length);
       this.activeSensors = this.loadedSensors.slice(start, end);
       this.activeSensors = this.activeSensors.filter(activeSensor => activeSensor.channels && activeSensor.channels.length > 0);
+
       // context trace is last
-      this.activeSensors.push(this.contextSensor[0]);
+      if (this.contextSensor && this.contextSensor[0]) {
+        this.activeSensors.push(this.contextSensor[0]);
+      }
 
       this._predicatePicks();
       this._renderCharts();
@@ -1003,6 +1039,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _renderCharts() {
 
+    if (!this.activeSensors || !this.activeSensors[0]) {
+      return;
+    }
+
     // Chart Options, Render
     if (!moment.isMoment(this.timeOrigin) || !this.timeOrigin.isValid()) {
       console.error('invalid timeOrigin');
@@ -1351,6 +1391,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   private _renderContextChart() {
+    if (!this.contextSensor) {
+      return;
+    }
 
     // Chart Options, Render
     if (this.contextSensor.length === 0 || this.contextSensor[0].channels.length === 0) {

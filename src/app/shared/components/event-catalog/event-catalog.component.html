@@ -69,7 +69,7 @@
           >
           </ng-container>
           <ng-template #eventListWithZeroEventsTemplate>
-            <h5 class="text-center pt-4 pb-2">No events</h5>
+            <h5 class="text-center pt-4 pb-2 mb-0">No events</h5>
           </ng-template>
           <ng-template #eventListWithMoreEventsTemplate>
             <mat-nav-list dense>
@@ -139,8 +139,8 @@
         </ng-template>
         <ng-template #noEventListTemplate>
           <mat-spinner
-            class="mx-auto mt-3 mb-3"
-            [diameter]="50"
+            class="mx-auto mt-3"
+            [diameter]="39"
             [strokeWidth]="3"
           ></mat-spinner>
         </ng-template>
