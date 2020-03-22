@@ -15,6 +15,7 @@ import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dia
 import { EventQuery } from '@interfaces/event-query.interface';
 import { WaveformService } from '@services/waveform.service';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
+import { DataLoadStatus } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-event-list',
@@ -48,6 +49,10 @@ export class EventListComponent implements OnInit, OnDestroy {
 
   pooling: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   private _unsubscribe = new Subject<void>();
+
+  trackEventsDataLoadStatus = true;
+  eventsDataLoadStatus: DataLoadStatus = DataLoadStatus.UNKNOWN;
+  DataLoadStatus = DataLoadStatus;
 
   constructor(
     private _eventApiService: EventApiService,
@@ -119,19 +124,39 @@ export class EventListComponent implements OnInit, OnDestroy {
       if (showLoading) {
         await this.loadingStart();
       }
+      if (this.trackEventsDataLoadStatus && !this.dataSource) {
+        this.eventsDataLoadStatus = DataLoadStatus.LOADING;
+      }
       const response = await this._eventApiService.getEvents(this.eventListQuery).toPromise();
+
+
       this.eventsCount = response.count;
       this.cursorPrevious = response.cursor_previous;
       this.cursorNext = response.cursor_next;
       this.dataSource = response.results;
       this.pooling.next(true);
+
+      if (this.trackEventsDataLoadStatus) {
+        this.eventsDataLoadStatus = DataLoadStatus.LOADED;
+        this.trackEventsDataLoadStatus = false;
+      }
+
     } catch (err) {
+
+      if (this.trackEventsDataLoadStatus) {
+        this.eventsDataLoadStatus = DataLoadStatus.ERROR;
+      }
+
       this._toastrNotificationService.error(err);
       console.error(err);
     } finally {
       await this.loadingStop();
     }
 
+  }
+
+  async reloadEvents() {
+    this._loadEvents();
   }
 
   async defaultNavigate() {
@@ -210,6 +235,8 @@ export class EventListComponent implements OnInit, OnDestroy {
         this.eventListQuery.cursor = cursor;
       }
     }
+
+    this.trackEventsDataLoadStatus = true;
 
     this._router.navigate(
       [],
