@@ -146,7 +146,7 @@ export class WaveformService implements OnDestroy {
   // in seconds
   pendingTimeout = 5 * 60;
   inactiveTimeout = 15 * 60;
-  websocketReinitTimeout = 30;
+  websocketReinitTimeout = 60;
 
   public set currentSite(v: Site) {
     this._currentSite = v;
@@ -371,8 +371,10 @@ export class WaveformService implements OnDestroy {
                 }
               }
               break;
+            case WebsocketResponseOperation.AUTOMATIC_PIPELINE_COMPLETE:
+              break;
             default:
-              console.log(`unknown websocket operation`);
+              console.log(`unknown websocket operation: ${data.operation}`);
               break;
           }
         } else if (data.type === WebsocketResponseType.HEARTBEAT) {
@@ -380,6 +382,9 @@ export class WaveformService implements OnDestroy {
             this.heartbeat.next(data.heartbeat);
             this.checkHeartbeat();
           }
+        } else if (data.type === WebsocketResponseType.SIGNAL_QUALITY) {
+        } else {
+          console.log(`unknown websocket type: ${data.type}`);
         }
       } catch (err) {
         console.error(err);

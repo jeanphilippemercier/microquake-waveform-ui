@@ -83,7 +83,7 @@ export class ApiService {
    * @param timeout - minimal allowed time difference from last successfull connection
    * @param reasonToClose - object that should be send to server as reason why are we closing connection
    */
-  closeWebsocketNotification(timeout = 30000, reasonToClose: { code: number, reason: string }) {
+  closeWebsocketNotification(timeout = 60000, reasonToClose: { code: number, reason: string }) {
     if (
       this._websocket.subject &&
       this._websocket.isClosing.getValue() === false &&
