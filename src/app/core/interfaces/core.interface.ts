@@ -11,11 +11,13 @@ export enum WebsocketResponseOperation {
   UPDATED = 'updated',
   INTERACTIVE_BATCH_READY = 'interactive_batch_ready',
   INTERACTIVE_BATCH_FAILED = 'interactive_batch_failed',
+  AUTOMATIC_PIPELINE_COMPLETE = 'automatic_pipeline_complete'
 }
 
 export enum WebsocketResponseType {
   EVENT = 'event',
-  HEARTBEAT = 'heartbeat'
+  HEARTBEAT = 'heartbeat',
+  SIGNAL_QUALITY = 'signal_quality'
 }
 
 export interface WebsocketEventResponse {
