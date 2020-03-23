@@ -37,6 +37,6 @@ export interface EventExtra {
 export enum DataLoadStatus {
   UNKNOWN = 'unknown',
   LOADING = 'loading',
-  LOADED = 'load',
+  LOADED = 'loaded',
   ERROR = 'error',
 }
