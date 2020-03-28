@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import * as moment from 'moment';
 
-import { IEvent, EventsDailySummary, EventsDailySummaryForCatalog } from '@interfaces/event.interface';
+import { IEvent, EventsDailySummary, EventsDailySummaryForCatalog, EventBatchMap } from '@interfaces/event.interface';
 
 @Component({
   selector: 'app-event-catalog',
@@ -67,9 +67,9 @@ export class EventCatalogComponent {
   }
 
 
-  private _interactiveProcessingEvents: { id: number; event: IEvent }[] = [];
+  private _interactiveProcessingEvents: EventBatchMap[] = [];
   @Input()
-  public set interactiveProcessingEvents(v: { id: number; event: IEvent }[]) {
+  public set interactiveProcessingEvents(v: EventBatchMap[]) {
     this.interactiveProcessingEventsIds = [];
     if (v) {
       this.interactiveProcessingEventsIds = v.map(val => {
@@ -78,7 +78,7 @@ export class EventCatalogComponent {
     }
     this._interactiveProcessingEvents = v;
   }
-  public get interactiveProcessingEvents(): { id: number; event: IEvent }[] {
+  public get interactiveProcessingEvents(): EventBatchMap[] {
     return this._interactiveProcessingEvents;
   }
 

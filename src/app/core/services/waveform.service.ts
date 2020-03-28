@@ -95,7 +95,9 @@ export class WaveformService implements OnDestroy {
   waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();
 
   interactiveProcessingEnabled: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  // EVENT Reprocessing triggered on current instance and other instances
   interactiveProcessActiveList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
+  // EVENT Reprocessing triggered on current instance only
   interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
 
   onServerEventSub!: Subscription;
@@ -139,14 +141,17 @@ export class WaveformService implements OnDestroy {
 
   heartbeat: BehaviorSubject<Heartbeat | null> = new BehaviorSubject<Heartbeat | null>(null);
   heartbeatStatus: BehaviorSubject<HeartbeatStatus> = new BehaviorSubject<HeartbeatStatus>(HeartbeatStatus.INACTIVE);
-  lastHeard: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+  lastHeardHeartbeat: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
+  lastHeardWebsocket: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
   heartbeatIntervalSub!: Subscription;
+  websocketIntervalSub!: Subscription;
   // in miliseconds
-  heartbeatCheckTimeout = 5000;
+  heartbeatCheckTimeout = 60000;
+  websocketCheckTimeout = 5000;
   // in seconds
   pendingTimeout = 5 * 60;
   inactiveTimeout = 15 * 60;
-  websocketReinitTimeout = 60;
+  websocketReinitTimeout = 30;
 
   public set currentSite(v: Site) {
     this._currentSite = v;
@@ -201,6 +206,12 @@ export class WaveformService implements OnDestroy {
       this.heartbeatIntervalSub.unsubscribe();
       delete this.heartbeatIntervalSub;
     }
+
+    if (this.websocketIntervalSub) {
+      this.websocketIntervalSub.unsubscribe();
+      delete this.websocketIntervalSub;
+    }
+
   }
 
   public isInitialized(): Promise<void> {
@@ -281,6 +292,11 @@ export class WaveformService implements OnDestroy {
     this.heartbeatIntervalSub = interval(this.heartbeatCheckTimeout).subscribe(_ => {
       this.checkHeartbeat();
     });
+
+    this.websocketIntervalSub = interval(this.websocketCheckTimeout).subscribe(_ => {
+      this.checkWebsocketConnection();
+    });
+
   }
 
   private async _loadAllSitesAndNetworks() {
@@ -330,6 +346,8 @@ export class WaveformService implements OnDestroy {
     this.onServerEventSub = this._apiService.onWebsocketNotification().subscribe(data => {
 
       try {
+        this.lastHeardWebsocket.next(moment());
+
         if (data.type === WebsocketResponseType.EVENT) {
           switch (data.operation) {
             case WebsocketResponseOperation.UPDATED:
@@ -345,11 +363,9 @@ export class WaveformService implements OnDestroy {
               let previousEventVer: IEvent | null = null;
               const batchId = data.extra && data.extra.batch && data.extra.batch.id;
 
-              // EVENT Reprocessing triggered on other instances
               activeList = activeList.filter(val => val.batchId !== batchId);
               this.interactiveProcessActiveList.next(activeList);
 
-              // EVENT Reprocessing triggered on current instance
               currentList = currentList.filter(val => {
                 if (val.batchId !== batchId) {
                   return true;
@@ -394,31 +410,41 @@ export class WaveformService implements OnDestroy {
     );
   }
 
+  checkWebsocketConnection() {
+    const lastHeardWebsocket = this.lastHeardWebsocket.getValue();
+
+    if (!lastHeardWebsocket) {
+      return;
+    }
+    const now = moment();
+    const diffWebsocket = now.diff(moment.utc(lastHeardWebsocket), 'seconds');
+
+    if (diffWebsocket > this.websocketReinitTimeout) {
+      this._apiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any websocket message in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
+    }
+  }
+
   checkHeartbeat() {
-    const val = this.heartbeat.getValue();
+    const heartbeat = this.heartbeat.getValue();
 
-    if (val) {
-      const lastHeard = val.last_heard;
-      const now = moment();
-      const diff = now.diff(moment.utc(lastHeard), 'seconds');
+    if (!heartbeat) {
+      return;
+    }
 
-      if (diff > this.websocketReinitTimeout) {
-        this._apiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any heartbeat in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
-      }
+    const lastHeardHeartbeat = moment(heartbeat.last_heard);
+    const now = moment();
+    const diffHeartbeat = now.diff(moment.utc(lastHeardHeartbeat), 'seconds');
 
-      if (diff > this.inactiveTimeout) {
-        this.heartbeatStatus.next(HeartbeatStatus.INACTIVE);
-      } else if (diff > this.pendingTimeout) {
-        this.heartbeatStatus.next(HeartbeatStatus.PENDING);
-      } else {
-        if (this.lastHeard.getValue() !== lastHeard) {
-          this.heartbeatStatus.next(HeartbeatStatus.ACTIVE);
-        }
-      }
+    if (diffHeartbeat > this.inactiveTimeout) {
+      this.heartbeatStatus.next(HeartbeatStatus.INACTIVE);
+    } else if (diffHeartbeat > this.pendingTimeout) {
+      this.heartbeatStatus.next(HeartbeatStatus.PENDING);
+    } else {
+      this.heartbeatStatus.next(HeartbeatStatus.ACTIVE);
+    }
 
-      if (this.lastHeard.getValue() !== lastHeard) {
-        this.lastHeard.next(lastHeard);
-      }
+    if (this.lastHeardHeartbeat.getValue() !== lastHeardHeartbeat) {
+      this.lastHeardHeartbeat.next(lastHeardHeartbeat);
     }
   }
 
