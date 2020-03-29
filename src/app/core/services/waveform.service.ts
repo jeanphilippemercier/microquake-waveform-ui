@@ -1,12 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, ReplaySubject, Subscription, forkJoin, interval, combineLatest } from 'rxjs';
 import { MatDialogRef, MatDialog } from '@angular/material/dialog';
-import { first, take, skipWhile } from 'rxjs/operators';
+import { first, take, skipWhile, takeUntil } from 'rxjs/operators';
 import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, BatchStatus, } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
@@ -100,8 +100,6 @@ export class WaveformService implements OnDestroy {
   // EVENT Reprocessing triggered on current instance only
   interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
 
-  onServerEventSub!: Subscription;
-
   wsEventUpdated: Subject<IEvent> = new Subject;
   wsEventUpdatedObs: Observable<IEvent> = this.wsEventUpdated.asObservable();
 
@@ -143,15 +141,16 @@ export class WaveformService implements OnDestroy {
   heartbeatStatus: BehaviorSubject<HeartbeatStatus> = new BehaviorSubject<HeartbeatStatus>(HeartbeatStatus.INACTIVE);
   lastHeardHeartbeat: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
   lastHeardWebsocket: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
-  heartbeatIntervalSub!: Subscription;
-  websocketIntervalSub!: Subscription;
-  // in miliseconds
-  heartbeatCheckTimeout = 60000;
-  websocketCheckTimeout = 5000;
-  // in seconds
-  pendingTimeout = 5 * 60;
-  inactiveTimeout = 15 * 60;
-  websocketReinitTimeout = 30;
+
+  // intervals (in milliseconds)
+  heartbeatCheckInterval = 60 * 1000; // 1m
+  websocketCheckInterval = 5 * 1000; // 5s
+  interactiveProcessingCheckInterval = 60 * 1000; // 1m
+  // timeouts (in milliseconds)
+  eventConnectorPendingTimeout = 5 * 60 * 1000; // 5m
+  eventConnectorInactiveTimeout = 15 * 60 * 1000; // 15m
+  websocketReinitTimeout = 30 * 1000; // 30s
+  interactiveProcessingWebsocketTimeout = 5 * 60 * 1000; // 5m
 
   public set currentSite(v: Site) {
     this._currentSite = v;
@@ -180,6 +179,8 @@ export class WaveformService implements OnDestroy {
 
   _appDataDialog!: MatDialogRef<WaveformInitializerDialogComponent>;
 
+  private _unsubscribe = new Subject<void>();
+
   constructor(
     private _matDialog: MatDialog,
     private _toastrNotificationService: ToastrNotificationService,
@@ -197,21 +198,8 @@ export class WaveformService implements OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.onServerEventSub) {
-      this.onServerEventSub.unsubscribe();
-      delete this.onServerEventSub;
-    }
-
-    if (this.heartbeatIntervalSub) {
-      this.heartbeatIntervalSub.unsubscribe();
-      delete this.heartbeatIntervalSub;
-    }
-
-    if (this.websocketIntervalSub) {
-      this.websocketIntervalSub.unsubscribe();
-      delete this.websocketIntervalSub;
-    }
-
+    this._unsubscribe.next();
+    this._unsubscribe.complete();
   }
 
   public isInitialized(): Promise<void> {
@@ -284,18 +272,28 @@ export class WaveformService implements OnDestroy {
     try {
       const response = await this._inventoryApiService.getHeartbeat(HEARTBEAT_NAME).toPromise();
       this.heartbeat.next(response);
-      this.checkHeartbeat();
+      this._checkHeartbeat();
     } catch (err) {
       console.error(err);
     }
 
-    this.heartbeatIntervalSub = interval(this.heartbeatCheckTimeout).subscribe(_ => {
-      this.checkHeartbeat();
-    });
+    interval(this.heartbeatCheckInterval)
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(_ => {
+        this._checkHeartbeat();
+      });
 
-    this.websocketIntervalSub = interval(this.websocketCheckTimeout).subscribe(_ => {
-      this.checkWebsocketConnection();
-    });
+    interval(this.websocketCheckInterval)
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(_ => {
+        this._checkWebsocketConnection();
+      });
+
+    interval(this.interactiveProcessingCheckInterval)
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(_ => {
+        this._checkInteractiveProcessing();
+      });
 
   }
 
@@ -342,89 +340,164 @@ export class WaveformService implements OnDestroy {
     window.localStorage.setItem('viewer-options', JSON.stringify(this.options));
   }
 
+  /**
+   * Watches websocket notifications
+   *
+   * @remarks
+   *
+   * Handles websocket notifications from server
+   */
   private _watchWebsocketNotifications() {
-    this.onServerEventSub = this._apiService.onWebsocketNotification().subscribe(data => {
+    this._apiService.onWebsocketNotification()
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(data => {
 
-      try {
-        this.lastHeardWebsocket.next(moment());
+        try {
+          this.lastHeardWebsocket.next(moment());
 
-        if (data.type === WebsocketResponseType.EVENT) {
-          switch (data.operation) {
-            case WebsocketResponseOperation.UPDATED:
-              this.wsEventUpdated.next(data.event);
-              break;
-            case WebsocketResponseOperation.CREATED:
-              this.wsEventCreated.next(data.event);
-              break;
-            case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
-            case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
-              let activeList = this.interactiveProcessActiveList.getValue();
-              let currentList = this.interactiveProcessCurrentList.getValue();
-              let previousEventVer: IEvent | null = null;
-              const batchId = data.extra && data.extra.batch && data.extra.batch.id;
+          if (data.type === WebsocketResponseType.EVENT) {
 
-              activeList = activeList.filter(val => val.batchId !== batchId);
-              this.interactiveProcessActiveList.next(activeList);
+            switch (data.operation) {
 
-              currentList = currentList.filter(val => {
-                if (val.batchId !== batchId) {
-                  return true;
+              case WebsocketResponseOperation.UPDATED:
+                this.wsEventUpdated.next(data.event);
+                break;
+
+              case WebsocketResponseOperation.CREATED:
+                this.wsEventCreated.next(data.event);
+                break;
+
+              case WebsocketResponseOperation.INTERACTIVE_BATCH_READY:
+              case WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED:
+
+                const batchId = data.extra && data.extra.batch && data.extra.batch.id;
+                const event = data.event;
+                const operation = data.operation;
+                const error = data.extra.error;
+                let batchStatus: BatchStatus;
+
+                if (operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
+                  batchStatus = BatchStatus.READY;
+                } else if (WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
+                  batchStatus = BatchStatus.ERROR;
+                } else {
+                  return;
                 }
-                previousEventVer = val.event;
-                return false;
-              });
-              this.interactiveProcessCurrentList.next(currentList);
 
-              if (previousEventVer) {
-                this.interactiveProcessLoading.next(false);
-
-                if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_READY) {
-                  this._toastrNotificationService.success('Interactive processing is ready');
-                  this.openInteractiveProcessDialog(previousEventVer, data.event);
-                } else if (data.operation === WebsocketResponseOperation.INTERACTIVE_BATCH_FAILED) {
-                  this.openInteractiveProcessDialog(previousEventVer, undefined);
-                  this._toastrNotificationService.error(data.extra.error, 'Interactive processing failed');
+                if (!batchId) {
+                  return;
                 }
-              }
-              break;
-            case WebsocketResponseOperation.AUTOMATIC_PIPELINE_COMPLETE:
-              break;
-            default:
-              console.log(`unknown websocket operation: ${data.operation}`);
-              break;
+
+                this._handleInteractiveProcessing(batchId, event, batchStatus, error);
+                break;
+
+              case WebsocketResponseOperation.AUTOMATIC_PIPELINE_COMPLETE:
+                break;
+
+              default:
+                console.log(`unknown websocket operation: ${data.operation}`);
+                break;
+            }
+          } else if (data.type === WebsocketResponseType.HEARTBEAT) {
+            if (data.heartbeat && data.heartbeat.source === HEARTBEAT_NAME) {
+              this.heartbeat.next(data.heartbeat);
+              this._checkHeartbeat();
+            }
+          } else if (data.type === WebsocketResponseType.SIGNAL_QUALITY) {
+            // not handled in app
+          } else {
+            console.log(`unknown websocket type: ${data.type}`);
           }
-        } else if (data.type === WebsocketResponseType.HEARTBEAT) {
-          if (data.heartbeat && data.heartbeat.source === HEARTBEAT_NAME) {
-            this.heartbeat.next(data.heartbeat);
-            this.checkHeartbeat();
-          }
-        } else if (data.type === WebsocketResponseType.SIGNAL_QUALITY) {
-        } else {
-          console.log(`unknown websocket type: ${data.type}`);
+        } catch (err) {
+          console.error(err);
         }
-      } catch (err) {
-        console.error(err);
-      }
-    },
-      (err) => console.error(err)
-    );
+      },
+        (err) => console.error(err)
+      );
   }
 
-  checkWebsocketConnection() {
+  /**
+   * Check for stuck interactive processing requests
+   *
+   * @remarks
+   *
+   * Any IP running more than specified time (this.interactiveProcessingWebsocketTimeout) is considered as potentially stuck. App probably
+   * missed WS notificaiton (INTERACTIVE_BATCH_READY or INTERACTIVE_BATCH_FAILED).
+   *
+   * On potentialy stuck IPs is done direct API request to check if they are still processing or not. If they are not, IP will be processed as on WS message.
+   *
+   */
+  private _checkInteractiveProcessing() {
+    const activeList = this.interactiveProcessActiveList.getValue();
+
+    if (!activeList || activeList.length === 0) {
+      return;
+    }
+
+    const now = moment();
+
+    activeList.forEach((batch, idx) => {
+
+      const diffBatch = now.diff(moment.utc(batch.addedAt), 'milliseconds');
+
+      if (diffBatch > this.interactiveProcessingWebsocketTimeout) {
+        setTimeout(async () => {
+          try {
+            const res = await this._eventApiService.getInteractiveProcessing(batch.event.event_resource_id).toPromise();
+            console.log(res);
+
+            const batchId = batch.batchId;
+            const event = batch.event;
+            const batchStatus = res.status;
+            const error = '';
+
+            if (batchStatus === BatchStatus.READY || batchStatus === BatchStatus.ERROR) {
+              this._handleInteractiveProcessing(batchId, event, batchStatus, error);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        }, idx * 2000);
+      }
+    });
+
+  }
+
+  /**
+   * Check for stuck WebSocket (WS) connection
+   *
+   * @remarks
+   *
+   * WS connection is considered as potentionally stuck if app didn't receive any WS message in a specified time (this.websocketReinitTimeout).
+   *
+   * Timer resets after each message.
+   *
+   * Potentionally stuck WS connection is then closed and reopened.
+   *
+   */
+  private _checkWebsocketConnection() {
     const lastHeardWebsocket = this.lastHeardWebsocket.getValue();
 
     if (!lastHeardWebsocket) {
       return;
     }
     const now = moment();
-    const diffWebsocket = now.diff(moment.utc(lastHeardWebsocket), 'seconds');
+    const diffWebsocket = now.diff(moment.utc(lastHeardWebsocket), 'milliseconds');
 
     if (diffWebsocket > this.websocketReinitTimeout) {
-      this._apiService.closeWebsocketNotification(this.websocketReinitTimeout * 1000, { code: 4000, reason: `Didn't receive any websocket message in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
+      this._apiService.closeWebsocketNotification(this.websocketReinitTimeout, { code: 4000, reason: `Didn't receive any websocket message in last ${this.websocketReinitTimeout} seconds. Closing connection.` });
     }
   }
 
-  checkHeartbeat() {
+  /**
+   * Check for heartbeat status
+   *
+   * @remarks
+   *
+   * Changes current heartbeat status according to the time when it got the last heartbeat WS notification.
+   *
+   */
+  private _checkHeartbeat() {
     const heartbeat = this.heartbeat.getValue();
 
     if (!heartbeat) {
@@ -433,11 +506,11 @@ export class WaveformService implements OnDestroy {
 
     const lastHeardHeartbeat = moment(heartbeat.last_heard);
     const now = moment();
-    const diffHeartbeat = now.diff(moment.utc(lastHeardHeartbeat), 'seconds');
+    const diffHeartbeat = now.diff(moment.utc(lastHeardHeartbeat), 'milliseconds');
 
-    if (diffHeartbeat > this.inactiveTimeout) {
+    if (diffHeartbeat > this.eventConnectorInactiveTimeout) {
       this.heartbeatStatus.next(HeartbeatStatus.INACTIVE);
-    } else if (diffHeartbeat > this.pendingTimeout) {
+    } else if (diffHeartbeat > this.eventConnectorPendingTimeout) {
       this.heartbeatStatus.next(HeartbeatStatus.PENDING);
     } else {
       this.heartbeatStatus.next(HeartbeatStatus.ACTIVE);
@@ -445,6 +518,52 @@ export class WaveformService implements OnDestroy {
 
     if (this.lastHeardHeartbeat.getValue() !== lastHeardHeartbeat) {
       this.lastHeardHeartbeat.next(lastHeardHeartbeat);
+    }
+  }
+
+  /**
+   * Handles interactive processing (IP)
+   *
+   * @remarks
+   *
+   * Helper function to process IP.
+   *
+   * Executed after:
+   *  - WS notification
+   *  - specified timeout (this.interactiveProcessingWebsocketTimeout). App probably missed WS notificaiton
+   *
+   * @param batchId - ID of IP
+   * @param event - event object on which was IP done
+   * @param batchStatus - status of IP (ready/fail)
+   * @param error - optional error object/message
+   */
+  private _handleInteractiveProcessing(batchId: number, event: IEvent, batchStatus: BatchStatus, error: any) {
+    let activeList = this.interactiveProcessActiveList.getValue();
+    let currentList = this.interactiveProcessCurrentList.getValue();
+    let previousEventVer: IEvent | null = null;
+
+    activeList = activeList.filter(val => val.batchId !== batchId);
+    this.interactiveProcessActiveList.next(activeList);
+
+    currentList = currentList.filter(val => {
+      if (val.batchId !== batchId) {
+        return true;
+      }
+      previousEventVer = val.event;
+      return false;
+    });
+    this.interactiveProcessCurrentList.next(currentList);
+
+    if (previousEventVer) {
+      this.interactiveProcessLoading.next(false);
+
+      if (batchStatus === BatchStatus.READY) {
+        this._toastrNotificationService.success('Interactive processing is ready');
+        this.openInteractiveProcessDialog(previousEventVer, event);
+      } else if (batchStatus === BatchStatus.ERROR) {
+        this.openInteractiveProcessDialog(previousEventVer, undefined);
+        this._toastrNotificationService.error(error, 'Interactive processing failed');
+      }
     }
   }
 
