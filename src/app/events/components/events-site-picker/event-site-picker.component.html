@@ -7,7 +7,7 @@
     [matTooltipClass]="'break-line-tooltip'"
     [matTooltip]="
     'Connector is ' + (hearbeatStatus === HeartbeatStatus.PENDING ? 'having connection problems' : hearbeatStatus) +'
-    Updated ' + ((this.waveformService.lastHeard | async) | amTimeAgo)"
+    Updated ' + ((waveformService?.lastHeardHeartbeat | async) | amTimeAgo)"
   >
     <div class="position-relative w-100 h-100">
       <div

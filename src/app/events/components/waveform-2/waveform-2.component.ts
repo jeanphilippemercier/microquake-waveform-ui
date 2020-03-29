@@ -196,7 +196,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
         const currentList = this.waveformService.interactiveProcessActiveList.getValue();
         const newData: EventBatchMap = {
           batchId: response.id,
-          event: this.event
+          event: this.event,
+          addedAt: moment()
         };
 
         this.waveformService.interactiveProcessActiveList.next([...currentList, newData]);
@@ -830,7 +831,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const response = await this._eventApiService.startInteractiveProcessing(this.currentEventId, { data: this.allArrivalsChanged }).toPromise();
       const newData: EventBatchMap = {
         batchId: response.id,
-        event: this.event
+        event: this.event,
+        addedAt: moment()
       };
 
       const interactiveProcessActiveList = this.waveformService.interactiveProcessActiveList.getValue();

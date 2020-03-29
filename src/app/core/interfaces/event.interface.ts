@@ -135,6 +135,7 @@ export enum BatchStatus {
 export interface EventBatchMap {
   batchId: number;
   event: IEvent;
+  addedAt: moment.Moment;
 }
 
 export interface InteractiveProcessing {

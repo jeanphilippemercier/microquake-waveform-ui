@@ -66,8 +66,7 @@ export class ApiService {
       repeatWhen(compleated => compleated.pipe(
         delay(1000),
         filter(val => this._websocket.isClosing.getValue() === false)
-      )
-      )
+      ))
     );
   }
 
@@ -80,10 +79,10 @@ export class ApiService {
    * After losing connection to ws, we need to reconect to start receiving notifications again.
    * After successfuly closing ws connection, onWebsocketNotification() fn automatically reinits the connection.
    *
-   * @param timeout - minimal allowed time difference from last successfull connection
+   * @param timeout - minimal allowed time difference from last successfull connection (30 seconds by default)
    * @param reasonToClose - object that should be send to server as reason why are we closing connection
    */
-  closeWebsocketNotification(timeout = 60000, reasonToClose: { code: number, reason: string }) {
+  closeWebsocketNotification(timeout = 30000, reasonToClose: { code: number, reason: string }) {
     if (
       this._websocket.subject &&
       this._websocket.isClosing.getValue() === false &&
