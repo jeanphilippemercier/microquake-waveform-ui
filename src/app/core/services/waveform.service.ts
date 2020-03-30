@@ -140,7 +140,7 @@ export class WaveformService implements OnDestroy {
   heartbeat: BehaviorSubject<Heartbeat | null> = new BehaviorSubject<Heartbeat | null>(null);
   heartbeatStatus: BehaviorSubject<HeartbeatStatus> = new BehaviorSubject<HeartbeatStatus>(HeartbeatStatus.INACTIVE);
   lastHeardHeartbeat: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
-  lastHeardWebsocket: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(null);
+  lastHeardWebsocket: BehaviorSubject<moment.Moment | null> = new BehaviorSubject<moment.Moment | null>(moment());
 
   // intervals (in milliseconds)
   heartbeatCheckInterval = 60 * 1000; // 1m
