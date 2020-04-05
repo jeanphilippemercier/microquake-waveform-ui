@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 
 import { IComponent, ISensorType, ComponentCode, CableType } from '@interfaces/inventory.interface';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 import { Table } from '@core/classes/table.class';
 import { Router } from '@angular/router';
 

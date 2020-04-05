@@ -5,7 +5,7 @@ import { IComponent, ISensorType, ComponentCode, CableType } from '@interfaces/i
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
 import { InventoryApiService } from '@services/api/inventory-api.service';
-import { MatDialogRef, MatDialog } from '@angular/material';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { TableWithExpandableRows } from '@core/classes/table-with-expandable-rows.class';
