@@ -206,7 +206,7 @@ const matFormFieldDefaultOptions: MatFormFieldDefaultOptions = {
   providers: [
     EventQuakemlToMicroquakeTypePipe,
     {
-      provide: MAT_LABEL_GLOBAL_OPTIONS,
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
       useValue: { float: 'always' }
     },
     {
