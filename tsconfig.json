@@ -22,8 +22,6 @@
       "dom"
     ],
     "paths": {
-      "core-js/es7/reflect": ["node_modules/core-js/proposals/reflect-metadata"],
-      "core-js/es6/*": ["node_modules/core-js/es/*"],
       "@env/*": ["src/environments/*"],
       "@guards/*": ["src/app/core/guards/*"],
       "@services/*": ["src/app/core/services/*"],
