@@ -9,7 +9,7 @@ import { Sensor, IComponent, ComponentCode, ISensorType, CableType } from '@inte
 import { ComponentCreateInput, ComponentUpdateInput } from '@interfaces/inventory-dto.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { Form } from '@core/classes/form.class';

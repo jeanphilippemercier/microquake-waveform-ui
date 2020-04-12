@@ -89,10 +89,13 @@
                         }"
                 >
                   <mat-icon
-                    class="event-icon mat-badge"
+                    class="event-icon"
+                    matBadgeSize="small"
+                    matBadge="."
+                    matBadgeOverlap="true"
+                    matBadgePosition="before"
                   >
                     {{event?.event_type | eventTypeIcon}}
-                    <span class="mat-badge-content mat-badge-active">.</span>
                   </mat-icon>
                   <div class="px-3">
 

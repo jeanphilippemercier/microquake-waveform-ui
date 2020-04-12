@@ -8,7 +8,7 @@ import { CableTypeUpdateInput, CableTypeCreateInput } from '@interfaces/inventor
 import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { Form } from '@core/classes/form.class';
 
 @Component({

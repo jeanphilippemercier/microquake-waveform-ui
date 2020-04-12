@@ -1,4 +1,4 @@
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef } from '@angular/material';
 import { PageMode } from '@interfaces/core.interface';
 
 

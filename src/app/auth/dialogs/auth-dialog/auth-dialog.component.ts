@@ -21,7 +21,7 @@ enum DialogMode {
   styleUrls: ['./auth-dialog.component.scss']
 })
 export class AuthDialogComponent {
-  @ViewChild('authForm') authForm!: NgForm;
+  @ViewChild('authForm', { static: false }) authForm!: NgForm;
 
   DialogMode = DialogMode;
   mode: DialogMode = DialogMode.LOGIN;

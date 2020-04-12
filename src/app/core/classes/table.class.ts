@@ -1,7 +1,5 @@
 import { OnInit, TemplateRef, Output, EventEmitter, Input } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { PageEvent } from '@angular/material/paginator';
-import { Sort } from '@angular/material/sort';
+import { MatDialog, PageEvent, Sort } from '@angular/material';
 
 import { PageMode } from '@interfaces/core.interface';
 

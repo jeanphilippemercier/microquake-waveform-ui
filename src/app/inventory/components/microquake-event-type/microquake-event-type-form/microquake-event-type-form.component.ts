@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, Input } from '@angular/core';
 import { NgForm, FormBuilder, Validators } from '@angular/forms';
 import { startWith, map } from 'rxjs/operators';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { Form } from '@core/classes/form.class';
 import { Observable } from 'rxjs';
 import { NgxSpinnerService } from 'ngx-spinner';
