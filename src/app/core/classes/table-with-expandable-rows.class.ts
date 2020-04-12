@@ -1,6 +1,6 @@
 import { Table } from './table.class';
 import { Output, EventEmitter } from '@angular/core';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 
 export class TableWithExpandableRows<T> extends Table<T> {
   expandedElement: T | null = null;
