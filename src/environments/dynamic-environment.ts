@@ -10,6 +10,7 @@ export class DynamicEnvironment {
 
   setDefaultConfig(config: any) {
     this._defaultConfig = config;
+    this._injectConfig(this._defaultConfig);
   }
 
   injectConfig(config: any) {

@@ -22,6 +22,7 @@ export class ConfigurationService {
         resolve(config);
       } catch (err) {
         // no dynamic config found
+        console.error(err);
         environment.injectConfig({});
         resolve();
       }
