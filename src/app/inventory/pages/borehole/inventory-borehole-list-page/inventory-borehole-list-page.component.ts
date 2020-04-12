@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { first } from 'rxjs/operators';
 
 import { PageMode } from '@interfaces/core.interface';

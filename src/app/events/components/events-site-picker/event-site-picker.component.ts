@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { Subscription } from 'rxjs';
 
 import { EventSitePickerDialogComponent } from '@app/events/dialogs/event-site-picker-dialog/event-site-picker-dialog.component';

@@ -7,7 +7,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { PageMode } from '@interfaces/core.interface';
 import { Sensor, Station, Borehole, IComponent, ComponentCode, SensorType, CableType, ISensorType } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, ComponentFormDialogData } from '@interfaces/dialogs.interface';
 import { ToastrNotificationService } from '@services/toastr-notification.service';

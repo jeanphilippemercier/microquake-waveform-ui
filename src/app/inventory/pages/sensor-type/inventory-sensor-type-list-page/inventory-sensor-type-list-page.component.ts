@@ -4,7 +4,7 @@ import { ISensorType } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, SensorTypeFormDialogData } from '@interfaces/dialogs.interface';

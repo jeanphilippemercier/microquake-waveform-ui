@@ -1,6 +1,5 @@
 import { Input, Output, EventEmitter, TemplateRef, OnDestroy, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { MatTabChangeEvent } from '@angular/material/tabs';
+import { MatDialog, MatTabChangeEvent } from '@angular/material';
 
 import { PageMode } from '@interfaces/core.interface';
 import { NgxSpinnerService } from 'ngx-spinner';

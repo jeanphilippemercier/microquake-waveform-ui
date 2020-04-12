@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogRef, MatDialog } from '@angular/material';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Table } from '@core/classes/table.class';
