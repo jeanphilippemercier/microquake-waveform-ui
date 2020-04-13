@@ -188,7 +188,7 @@ export interface WaveformSensor {
 
 export interface PreferredRay {
   ray_resource_id: string;
-  phase: string;
+  phase: PickKey;
   ray_length: number;
   travel_time: number;
   back_azimuth: number;

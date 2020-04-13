@@ -1,6 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 
-import { MatDialogRef, MatDialog, Sort } from '@angular/material';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { Sort } from '@angular/material/sort';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ActivatedRoute } from '@angular/router';
 import { Table } from '@core/classes/table.class';

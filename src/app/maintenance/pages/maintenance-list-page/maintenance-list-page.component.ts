@@ -7,7 +7,7 @@ import { Station, } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ListPage } from '@core/classes/list-page.class';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, MaintenanceFormDialogData } from '@interfaces/dialogs.interface';
