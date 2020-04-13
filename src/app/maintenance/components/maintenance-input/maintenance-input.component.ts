@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { map } from 'rxjs/operators';
-import { MatDialog, MatDialogRef, MatAutocomplete } from '@angular/material';
+import { MatAutocomplete } from '@angular/material/autocomplete';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { Station } from '@interfaces/inventory.interface';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';

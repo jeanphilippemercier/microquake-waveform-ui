@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog, Sort } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
+import { Sort } from '@angular/material/sort';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, first } from 'rxjs/operators';
 

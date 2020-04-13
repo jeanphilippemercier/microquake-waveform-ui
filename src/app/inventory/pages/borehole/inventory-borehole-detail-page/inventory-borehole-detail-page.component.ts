@@ -5,7 +5,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { first } from 'rxjs/operators';
 import { NgxFileDropEntry } from 'ngx-file-drop';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { MatDialog, Sort, MatTabChangeEvent } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
+import { Sort } from '@angular/material/sort';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 
 import { DetailPage } from '@core/classes/detail-page.class';
 import { PageMode } from '@interfaces/core.interface';

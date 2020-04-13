@@ -1,6 +1,7 @@
 import { OnInit, TemplateRef, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { MatDialog, PageEvent } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
 
 import { PageMode } from '@interfaces/core.interface';
 import { ReplaySubject, Subject } from 'rxjs';

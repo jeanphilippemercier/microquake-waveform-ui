@@ -6,7 +6,8 @@ import { WaveformService } from '@services/waveform.service';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { FormControl } from '@angular/forms';
-import { MatOptionSelectionChange, MatSelect } from '@angular/material';
+import { MatOptionSelectionChange } from '@angular/material/core';
+import { MatSelect } from '@angular/material/select';
 import { PickingMode, PickKey } from '@interfaces/event.interface';
 
 @Component({
