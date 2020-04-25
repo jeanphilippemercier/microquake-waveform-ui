@@ -390,7 +390,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
     const currentEventInitStartTimestamp = new Date().getTime();
     this.currentEventInitStartTimestamp = currentEventInitStartTimestamp;
-    this.waveformService.interactiveProcessingEnabled.next(false);
     this._getInteractiveProcessingStatus();
 
     await this.waveformService.isInitialized();
@@ -825,13 +824,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private async _onInteractiveProcess() {
     try {
       this.waveformService.interactiveProcessLoading.next(true);
+      const event = JSON.parse(JSON.stringify(this.event));
       this._updateArrivalWithPickData();
-      this.waveformService.interactiveProcessingEnabled.next(false);
       console.log('batch starting:', this.currentEventId, this.allArrivalsChanged);
       const response = await this._eventApiService.startInteractiveProcessing(this.currentEventId, { data: this.allArrivalsChanged }).toPromise();
       const newData: EventBatchMap = {
         batchId: response.id,
-        event: this.event,
+        event: event,
         addedAt: moment()
       };
 
