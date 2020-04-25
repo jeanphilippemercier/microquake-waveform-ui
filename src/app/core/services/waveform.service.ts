@@ -94,7 +94,6 @@ export class WaveformService implements OnDestroy {
   waveformComponentInitialized: ReplaySubject<boolean> = new ReplaySubject(1);
   waveformComponentInitializedObs: Observable<boolean> = this.waveformComponentInitialized.asObservable();
 
-  interactiveProcessingEnabled: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   // EVENT Reprocessing triggered on current instance and other instances
   interactiveProcessActiveList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
   // EVENT Reprocessing triggered on current instance only
