@@ -10,7 +10,7 @@ import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, Evaluat
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
-import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData } from '@interfaces/dialogs.interface';
+import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData, JsonDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { EventUpdateInput } from '@interfaces/event-dto.interface';
@@ -26,6 +26,7 @@ import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-wa
 import { ApiService } from './api/api.service';
 import { WebsocketResponseType, WebsocketResponseOperation, DataLoadStatus } from '@interfaces/core.interface';
 import { WaveformInitializerDialogComponent } from '@app/shared/dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
+import { JsonDialogComponent } from '@app/shared/dialogs/json-dialog/json-dialog.component';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -115,6 +116,9 @@ export class WaveformService implements OnDestroy {
 
   eventWaveformFilterDialogOpened = false;
   eventWaveformFilterDialogRef!: MatDialogRef<EventWaveformFilterDialogComponent>;
+
+  jsonDialogOpened = false;
+  jsonDialogRef!: MatDialogRef<JsonDialogComponent>;
 
   eventTypes: EventType[] = [];
   evaluationStatuses = Object.values(EvaluationStatus);
@@ -609,6 +613,23 @@ export class WaveformService implements OnDestroy {
     });
   }
 
+  async openJsonDialog(data: JsonDialogData) {
+    if (this.jsonDialogOpened || this.jsonDialogRef) {
+      return;
+    }
+
+    this.jsonDialogOpened = true;
+    this.jsonDialogRef = this._matDialog.open<JsonDialogComponent, JsonDialogData>(JsonDialogComponent, {
+      hasBackdrop: true,
+      width: '800px',
+      data: data
+    });
+
+    this.jsonDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.jsonDialogRef;
+      this.jsonDialogOpened = false;
+    });
+  }
 
   openInteractiveProcessDialog(oldEvent: IEvent, newEvent?: IEvent) {
     if (!oldEvent) {

@@ -103,3 +103,8 @@ export interface BoreholeSurveyFileDialogData {
 export interface BoreholeInterpolationDialogData {
   id: number;
 }
+
+export interface JsonDialogData {
+  header?: string;
+  json: any;
+}
