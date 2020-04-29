@@ -133,6 +133,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
   DataLoadStatus = DataLoadStatus;
   currentEventInitStartTimestamp = 0;
 
+  private _lazyLoadedWaveformPageQueue: number[] = [];
+
   constructor(
     public waveformService: WaveformService,
     private _apiService: ApiService,
@@ -342,14 +344,12 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(async (index: number) => {
         this.waveformService.loading.next(true);
-        if (!this._isEventPageAlreadyLoaded(index)) {
-          await this._loadWaveformPage(index);
-          this.waveformService.currentPage.next(index);
-          this._changePage(false);
-        } else {
-          this.waveformService.currentPage.next(index);
-          this._changePage(false);
-        }
+
+        await this._loadWaveformPage(index);
+        this.waveformService.currentPage.next(index);
+        this._changePage(false);
+        this._lazyLoadNextWaveformPages(index + 1);
+
         this.waveformService.loading.next(false);
       });
 
@@ -424,7 +424,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this.allSensors = JSON.parse(JSON.stringify(this.waveformService.allSensorsOrig));
     this.currentEventId = event.event_resource_id;
     this._destroyCharts();
-    this._loadEventFirstPage(event);
+    await this._loadEventFirstPage(event);
+
+    this._lazyLoadNextWaveformPages(2);
   }
 
   private async _loadEventFirstPage(event: IEvent) {
@@ -614,10 +616,72 @@ export class Waveform2Component implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Lazy loads waveform pages in the background.
+   *
+   * @remarks
+   *
+   * Loads further waveform pages in background. While pages load, the user is not locked from interaction and no loading indicator is shown.
+   * Lazy loaded pages are stored in the queue to prevent simultaneous lazy-loading of the same waveform page.
+   *
+   * Limitations: in a case, when the user directly requests a waveform page that is currently being lazy-loaded in the background and lazy loading isn't fully finished,
+   * waveform page will redundantly load from API, ignoring lazy loading.
+   *
+   * @param startPage - number of the page, where will lazy loading start.
+   * @param nextPagesToLazyLoad - count of next pages to lazy load.
+   *
+   * Returns a promise which resolves when loading of all requested waveform pages is finished.
+   */
+  private async _lazyLoadNextWaveformPages(startPage: number, nextPagesToLazyLoad = 2) {
+    return new Promise(async (resolve) => {
+
+      let pageToLoad = startPage;
+
+      for (let loadedPageCount = 0; loadedPageCount < nextPagesToLazyLoad; loadedPageCount++) {
+
+        // check if waveform page exists
+        if (!this.waveformInfo || !this.waveformInfo.pages[pageToLoad]) {
+          break;
+        }
+
+        // ignore pages that are already in the queue
+        let idxInQueue = this._lazyLoadedWaveformPageQueue.indexOf(pageToLoad);
+        if (idxInQueue > -1) {
+          pageToLoad++;
+          continue;
+        }
+
+        // add page to the queue and load it
+        this._lazyLoadedWaveformPageQueue.push(pageToLoad);
+        try {
+          await this._loadWaveformPage(pageToLoad);
+        } catch (err) {
+          console.error(err);
+        } finally {
+
+          // remove page from queue
+          idxInQueue = this._lazyLoadedWaveformPageQueue.indexOf(pageToLoad);
+
+          if (idxInQueue > -1) {
+            this._lazyLoadedWaveformPageQueue.splice(idxInQueue, 1);
+          }
+        }
+
+        pageToLoad++;
+      }
+
+      resolve();
+    });
+  }
+
   private async _loadWaveformPage(idx: number) {
 
     if (!this.waveformInfo || !this.waveformInfo.pages[idx - 1]) {
       console.error(`no waveformInfo or waveform file for current page ${idx}`);
+      return;
+    }
+
+    if (this._isEventPageAlreadyLoaded(idx)) {
       return;
     }
 

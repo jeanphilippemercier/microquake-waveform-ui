@@ -152,17 +152,6 @@
   <div class="buttons-group ml-2">
     <div class="buttons-group-content">
       <button
-        *ngIf=""
-        mat-icon-button
-        [disabled]="
-    (waveformService.currentPage | async) <= 1 ||
-    (waveformService.loading | async)
-    "
-        (click)="onChangeToFirstPage()"
-      >
-        <mat-icon>first_page</mat-icon>
-      </button>
-      <button
         mat-icon-button
         [disabled]="
     (waveformService.currentPage | async) <= 1 ||
@@ -211,17 +200,6 @@
         matTooltip="Next page"
       >
         <mat-icon>chevron_right</mat-icon>
-      </button>
-      <button
-        *ngIf=""
-        mat-icon-button
-        [disabled]="
-    (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
-    (waveformService.loading | async)
-    "
-        (click)="onChangToLastPage()"
-      >
-        <mat-icon>last_page</mat-icon>
       </button>
     </div>
   </div>
