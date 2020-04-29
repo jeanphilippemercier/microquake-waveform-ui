@@ -1,0 +1,10 @@
+<h1 mat-dialog-title>{{dialogData?.header}}</h1>
+<mat-dialog-content class="mb-3">
+  <pre>{{dialogData?.json | json}}</pre>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button
+    mat-raised-button
+    mat-dialog-close
+  >Close</button>
+</mat-dialog-actions>

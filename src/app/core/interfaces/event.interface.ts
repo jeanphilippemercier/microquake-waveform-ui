@@ -1,5 +1,4 @@
 import * as moment from 'moment';
-import { Heartbeat } from './inventory.interface';
 
 export enum QuakemlType {
   NOT_EXISTING = 'not existing',

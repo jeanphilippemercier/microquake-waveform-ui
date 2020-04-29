@@ -60,7 +60,8 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
-          <ng-container *ngIf="false && (initialized | async ) && eventsDailySummary?.length === 0 && !loadingEventList">
+          <ng-container
+            *ngIf="false && (initialized | async ) && eventsDailySummary?.length === 0 && !loadingEventList">
             <h5 class="text-center pt-4 pb-2">No events found</h5>
             <p class="text-center">Try to change filter: <button
                 class="filter-button"
@@ -138,6 +139,55 @@
               <small class="align-self-center">
                 Edit
               </small>
+            </button>
+
+            <mat-menu
+              #eventMoreMenu="matMenu"
+              [xPosition]="'after'"
+            >
+              <ng-template matMenuContent>
+                <button
+                  mat-menu-item
+                  [matMenuTriggerFor]="eventMoreFilesSubMenu"
+                >Files</button>
+                <button
+                  mat-menu-item
+                  (click)="waveformService?.openJsonDialog({json: currentEventInfo})"
+                >JSON</button>
+              </ng-template>
+            </mat-menu>
+
+            <mat-menu #eventMoreFilesSubMenu="matMenu">
+              <a
+                mat-menu-item
+                [href]="currentEventInfo?.event_file"
+                [disabled]="!currentEventInfo?.event_file"
+                download
+                target="_blank"
+              >QuakeML</a>
+              <a
+                mat-menu-item
+                [href]="currentEventInfo?.waveform_file"
+                [disabled]="!currentEventInfo?.waveform_file"
+                download
+              >Waveforms</a>
+              <a
+                mat-menu-item
+                [href]="currentEventInfo?.waveform_context_file"
+                [disabled]="!currentEventInfo?.waveform_context_file"
+                download
+              >Context trace</a>
+            </mat-menu>
+
+            <button
+              *ngIf="currentEventInfo"
+              mat-icon-button
+              [matMenuTriggerFor]="eventMoreMenu"
+              [color]="'primary'"
+              [matTooltip]="'More'"
+              [matTooltipPosition]="'right'"
+            >
+              <mat-icon>more_vert</mat-icon>
             </button>
 
           </mat-panel-title>

@@ -69,6 +69,7 @@ import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-
 import { WaveformInitializerDialogComponent } from './dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventWaveformFilterDialogComponent } from './dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
+import { JsonDialogComponent } from './dialogs/json-dialog/json-dialog.component';
 import { LayoutHeaderComponent } from './layouts/layout-header/layout-header.component';
 import { LayoutFilterComponent } from './layouts/layout-filter/layout-filter.component';
 import { LayoutContentComponent } from './layouts/layout-content/layout-content.component';
@@ -143,7 +144,8 @@ const DIALOGS = [
   EventInteractiveProcessingDialogComponent,
   ConfirmationDialogComponent,
   EventWaveformFilterDialogComponent,
-  WaveformInitializerDialogComponent
+  WaveformInitializerDialogComponent,
+  JsonDialogComponent
 ];
 
 const SHEETS: any[] = [];
