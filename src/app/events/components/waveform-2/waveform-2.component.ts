@@ -133,7 +133,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
   DataLoadStatus = DataLoadStatus;
   currentEventInitStartTimestamp = 0;
 
-  private _lazyLoadedWaveformPageQueue: number[] = [];
+  private _preLoadedWaveformPageQueue: number[] = [];
 
   constructor(
     public waveformService: WaveformService,
@@ -348,7 +348,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         await this._loadWaveformPage(index);
         this.waveformService.currentPage.next(index);
         this._changePage(false);
-        this._lazyLoadNextWaveformPages(index + 1);
+        this._preLoadNextWaveformPages(index + 1);
 
         this.waveformService.loading.next(false);
       });
@@ -420,7 +420,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     this._destroyCharts();
     await this._loadEventFirstPage(event);
 
-    this._lazyLoadNextWaveformPages(2);
+    this._preLoadNextWaveformPages(2);
   }
 
   private async _loadEventFirstPage(event: IEvent) {
@@ -611,27 +611,27 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   /**
-   * Lazy loads waveform pages in the background.
+   * Preloads waveform pages in the background.
    *
    * @remarks
    *
-   * Loads further waveform pages in background. While pages load, the user is not locked from interaction and no loading indicator is shown.
-   * Lazy loaded pages are stored in the queue to prevent simultaneous lazy-loading of the same waveform page.
+   * Loads further waveform pages in the background. While pages load, the user is not locked from interaction and no loading indicator is shown.
+   * Preloaded pages are stored in the queue to prevent simultaneous loading of the same waveform page.
    *
-   * Limitations: in a case, when the user directly requests a waveform page that is currently being lazy-loaded in the background and lazy loading isn't fully finished,
-   * waveform page will redundantly load from API, ignoring lazy loading.
+   * Limitations: in a case, when the user directly requests a waveform page that is currently being preloaded in the background and preloading isn't fully finished,
+   * waveform page will redundantly load from API, ignoring preloading request.
    *
-   * @param startPage - number of the page, where will lazy loading start.
-   * @param nextPagesToLazyLoad - count of next pages to lazy load.
+   * @param startPage - number of the page, where will preloading start.
+   * @param nextPagesToPreLoad - count of next pages to preload.
    *
    * Returns a promise which resolves when loading of all requested waveform pages is finished.
    */
-  private async _lazyLoadNextWaveformPages(startPage: number, nextPagesToLazyLoad = 2) {
+  private async _preLoadNextWaveformPages(startPage: number, nextPagesToPreLoad = 2) {
     return new Promise(async (resolve) => {
 
       let pageToLoad = startPage;
 
-      for (let loadedPageCount = 0; loadedPageCount < nextPagesToLazyLoad; loadedPageCount++) {
+      for (let loadedPageCount = 0; loadedPageCount < nextPagesToPreLoad; loadedPageCount++) {
 
         // check if waveform page exists
         if (!this.waveformInfo?.pages?.[pageToLoad - 1]) {
@@ -639,14 +639,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
 
         // ignore pages that are already in the queue
-        let idxInQueue = this._lazyLoadedWaveformPageQueue.indexOf(pageToLoad);
+        let idxInQueue = this._preLoadedWaveformPageQueue.indexOf(pageToLoad);
         if (idxInQueue > -1) {
           pageToLoad++;
           continue;
         }
 
         // add page to the queue and load it
-        this._lazyLoadedWaveformPageQueue.push(pageToLoad);
+        this._preLoadedWaveformPageQueue.push(pageToLoad);
         try {
           await this._loadWaveformPage(pageToLoad);
         } catch (err) {
@@ -654,10 +654,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
         } finally {
 
           // remove page from queue
-          idxInQueue = this._lazyLoadedWaveformPageQueue.indexOf(pageToLoad);
+          idxInQueue = this._preLoadedWaveformPageQueue.indexOf(pageToLoad);
 
           if (idxInQueue > -1) {
-            this._lazyLoadedWaveformPageQueue.splice(idxInQueue, 1);
+            this._preLoadedWaveformPageQueue.splice(idxInQueue, 1);
           }
         }
 
