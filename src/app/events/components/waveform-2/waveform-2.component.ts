@@ -627,7 +627,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
    *
    * Returns a promise which resolves when loading of all requested waveform pages is finished.
    */
-  private async _preLoadNextWaveformPages(startPage: number, nextPagesToPreLoad = 2) {
+  private async _preLoadNextWaveformPages(startPage: number, nextPagesToPreLoad = 4) {
     return new Promise(async (resolve) => {
 
       const eventId = this.event?.event_resource_id;
