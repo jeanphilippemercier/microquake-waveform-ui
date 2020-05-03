@@ -50,6 +50,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       )
     )) {
       this._event = event;
+      this._preLoadedWaveformPageQueue = [];
       this._handleEvent(this._event);
     }
   }
@@ -629,9 +630,15 @@ export class Waveform2Component implements OnInit, OnDestroy {
   private async _preLoadNextWaveformPages(startPage: number, nextPagesToPreLoad = 2) {
     return new Promise(async (resolve) => {
 
+      const eventId = this.event?.event_resource_id;
       let pageToLoad = startPage;
 
       for (let loadedPageCount = 0; loadedPageCount < nextPagesToPreLoad; loadedPageCount++) {
+
+        // current event changed, stop preloading
+        if (eventId !== this.event?.event_resource_id) {
+          break;
+        }
 
         // check if waveform page exists
         if (!this.waveformInfo?.pages?.[pageToLoad - 1]) {
