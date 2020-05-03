@@ -373,15 +373,9 @@ export class Waveform2Component implements OnInit, OnDestroy {
     const pageSize = this.waveformService.pageSize.getValue();
 
     const start = ((index - 1) * (pageSize - 1));
-    const end = start + (pageSize - 2);
 
-    if (this.loadedSensors && this.loadedSensors[start] && this.loadedSensors[end]) {
-      if (
-        this.loadedSensors[start].channels && this.loadedSensors[start].channels.length &&
-        this.loadedSensors[end].channels && this.loadedSensors[end].channels.length
-      ) {
-        return true;
-      }
+    if (this.loadedSensors?.[start]?.channels?.length) {
+      return true;
     }
     return false;
   }
@@ -676,8 +670,8 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private async _loadWaveformPage(idx: number) {
 
-    if (!this.waveformInfo || !this.waveformInfo.pages[idx - 1]) {
-      console.error(`no waveformInfo or waveform file for current page ${idx}`);
+    if (!this.waveformInfo?.pages?.[idx - 1]) {
+      console.error(`no waveform file for page ${idx}`);
       return;
     }
 
