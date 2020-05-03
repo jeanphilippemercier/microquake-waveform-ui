@@ -640,7 +640,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
       for (let loadedPageCount = 0; loadedPageCount < nextPagesToLazyLoad; loadedPageCount++) {
 
         // check if waveform page exists
-        if (!this.waveformInfo || !this.waveformInfo.pages[pageToLoad]) {
+        if (!this.waveformInfo?.pages?.[pageToLoad - 1]) {
           break;
         }
 
