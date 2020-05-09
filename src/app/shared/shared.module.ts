@@ -74,6 +74,7 @@ import { LayoutHeaderComponent } from './layouts/layout-header/layout-header.com
 import { LayoutFilterComponent } from './layouts/layout-filter/layout-filter.component';
 import { LayoutContentComponent } from './layouts/layout-content/layout-content.component';
 import { SensorTypePipe } from './pipes/sensor-type.pipe';
+import { ContextMenuComponent } from './components/context-menu/context-menu.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -135,6 +136,7 @@ const COMPONTENTS = [
   EventCatalogComponent,
   SiteSelectFieldComponent,
   SiteNetworkFieldComponent,
+  ContextMenuComponent
 ];
 
 const DIALOGS = [
