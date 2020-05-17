@@ -66,6 +66,7 @@ import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-micro
 import { ConfirmationDialogComponent } from './dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
+import { EventExportDialogComponent } from './dialogs/event-export-dialog/event-export-dialog.component';
 import { WaveformInitializerDialogComponent } from './dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
 import { EventInteractiveProcessingDialogComponent } from './dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventWaveformFilterDialogComponent } from './dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
@@ -143,6 +144,7 @@ const DIALOGS = [
   EventHelpDialogComponent,
   EventUpdateDialogComponent,
   EventFilterDialogComponent,
+  EventExportDialogComponent,
   EventInteractiveProcessingDialogComponent,
   ConfirmationDialogComponent,
   EventWaveformFilterDialogComponent,
