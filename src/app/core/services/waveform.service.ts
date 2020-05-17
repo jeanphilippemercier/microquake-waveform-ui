@@ -27,6 +27,7 @@ import { ApiService } from './api/api.service';
 import { WebsocketResponseType, WebsocketResponseOperation, DataLoadStatus } from '@interfaces/core.interface';
 import { WaveformInitializerDialogComponent } from '@app/shared/dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
 import { JsonDialogComponent } from '@app/shared/dialogs/json-dialog/json-dialog.component';
+import { EventExportDialogComponent } from '@app/shared/dialogs/event-export-dialog/event-export-dialog.component';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -113,6 +114,9 @@ export class WaveformService implements OnDestroy {
 
   eventFilterDialogOpened = false;
   eventFilterDialogRef!: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
+
+  eventExportDialogOpened = false;
+  eventExportDialogRef!: MatDialogRef<EventExportDialogComponent, EventFilterDialogData>;
 
   eventWaveformFilterDialogOpened = false;
   eventWaveformFilterDialogRef!: MatDialogRef<EventWaveformFilterDialogComponent>;
@@ -764,6 +768,62 @@ export class WaveformService implements OnDestroy {
 
     this.loadingCurrentEventAndList = false;
     this._ngxSpinnerService.hide('loadingCurrentEventAndList');
+  }
+
+  async openEventExportDialog() {
+
+    if (this.eventExportDialogRef || this.eventExportDialogOpened) {
+      return;
+    }
+
+    const unsubscribeDialog = new Subject<void>();
+
+    this.eventExportDialogOpened = true;
+    this.eventExportDialogRef = this._matDialog.open<EventExportDialogComponent, EventFilterDialogData>(EventExportDialogComponent, {
+      hasBackdrop: true,
+      width: '750px',
+      data: {
+        timezone: this.timezone,
+        eventQuery: JSON.parse(JSON.stringify(this.eventListQuery)),
+        evaluationStatuses: this.evaluationStatusGroups,
+        eventTypes: this.eventTypes,
+        eventEvaluationModes: this.eventEvaluationModes
+      }
+    });
+
+    this.eventExportDialogRef.componentInstance.onExport
+      .pipe(first())
+      .subscribe(async (data: EventQuery) => {
+
+        try {
+          this.eventExportDialogRef.componentInstance.loading = true;
+          this._ngxSpinnerService.show('loadingEventExport', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+
+          const binaryData = await this._eventApiService.downloadResource(this._eventApiService.geneateUrlToExportEventsToCsv(data)).toPromise();
+          const virtualDownloadEl = document.createElement('a');
+          virtualDownloadEl.href = window.URL.createObjectURL(binaryData);
+          virtualDownloadEl.download = 'events.csv';
+          document.body.appendChild(virtualDownloadEl);
+          virtualDownloadEl.click();
+          virtualDownloadEl.remove();
+
+          this.eventExportDialogRef.close();
+        } catch (err) {
+          console.error(err);
+        } finally {
+          this.eventExportDialogRef.componentInstance.loading = false;
+          this._ngxSpinnerService.hide('loadingEventExport');
+        }
+      });
+
+    this.eventExportDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      delete this.eventExportDialogRef;
+      this.eventExportDialogOpened = false;
+
+      unsubscribeDialog.next();
+      unsubscribeDialog.complete();
+    });
+
   }
 
 

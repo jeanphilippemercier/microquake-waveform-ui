@@ -11,6 +11,7 @@ export interface EventQuery extends PaginationRequest {
   event_type?: QuakemlType[];
   status?: EvaluationStatusGroup[];
   ordering?: string;
+  format?: string;
 }
 
 export interface EventDailySummaryQuery extends EventQuery {

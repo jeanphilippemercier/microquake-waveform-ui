@@ -3,7 +3,7 @@
   <mat-sidenav
     mode="side"
     align="start"
-    [opened]="(waveformService.sidebarOpened | async)"
+    [opened]="waveformService.sidebarOpened | async"
   >
     <mat-accordion
       class="d-flex flex-column"
@@ -40,7 +40,10 @@
               *ngIf="waveformService.eventListQuery"
               color="primary"
               mat-button
-              (click)="waveformService.openEventFilterDialog();$event.stopPropagation()"
+              (click)="
+                waveformService.openEventFilterDialog();
+                $event.stopPropagation()
+              "
               matTooltip="Open filter dialog"
               matTooltipPosition="right"
             >
@@ -53,33 +56,85 @@
                 matBadgeColor="warn"
               >filter_list</mat-icon>
               <small>
-                {{waveformService.eventListQuery.time_utc_after | date:' MMM dd': timezone}} -
-                {{waveformService.eventListQuery.time_utc_before | date:' dd yyyy': timezone}}
+                {{
+                  waveformService.eventListQuery.time_utc_after
+                    | date: " MMM dd":timezone
+                }}
+                -
+                {{
+                  waveformService.eventListQuery.time_utc_before
+                    | date: " dd yyyy":timezone
+                }}
               </small>
+            </button>
+
+            <mat-menu
+              #eventCatalogMoreMenu="matMenu"
+              [xPosition]="'after'"
+            >
+              <ng-template matMenuContent>
+                <button
+                  mat-menu-item
+                  (click)="
+                    waveformService.openEventExportDialog();
+                  "
+                >
+                  CSV export
+                </button>
+              </ng-template>
+            </mat-menu>
+
+            <button
+              *ngIf="currentEventInfo"
+              mat-icon-button
+              [matMenuTriggerFor]="eventCatalogMoreMenu"
+              [color]="'primary'"
+              [matTooltip]="'More'"
+              [matTooltipPosition]="'right'"
+            >
+              <mat-icon>more_vert</mat-icon>
             </button>
           </mat-panel-title>
         </mat-expansion-panel-header>
         <ng-template matExpansionPanelContent>
-          <ng-container
-            *ngIf="false && (initialized | async ) && eventsDailySummary?.length === 0 && !loadingEventList">
+          <ng-container *ngIf="
+              false &&
+              (initialized | async) &&
+              eventsDailySummary?.length === 0 &&
+              !loadingEventList
+            ">
             <h5 class="text-center pt-4 pb-2">No events found</h5>
-            <p class="text-center">Try to change filter: <button
+            <p class="text-center">
+              Try to change filter:
+              <button
                 class="filter-button"
                 *ngIf="waveformService.eventListQuery"
                 color="primary"
                 mat-button
-                (click)="waveformService.openEventFilterDialog();$event.stopPropagation()"
+                (click)="
+                  waveformService.openEventFilterDialog();
+                  $event.stopPropagation()
+                "
               >
                 <mat-icon
                   class="mat-18"
                   [matBadge]="waveformService.numberOfChangesInFilter"
-                  [matBadgeHidden]="(waveformService.numberOfChangesInFilter) === 0"
+                  [matBadgeHidden]="
+                    waveformService.numberOfChangesInFilter === 0
+                  "
                   matBadgePosition="after"
                   matBadgeColor="warn"
                 >filter_list</mat-icon>
                 <small>
-                  ({{waveformService.eventListQuery?.time_utc_after | date:' MMM dd': timezone}} -
-                  {{waveformService.eventListQuery?.time_utc_before | date:' dd yyyy': timezone}})
+                  ({{
+                    waveformService.eventListQuery?.time_utc_after
+                      | date: " MMM dd":timezone
+                  }}
+                  -
+                  {{
+                    waveformService.eventListQuery?.time_utc_before
+                      | date: " dd yyyy":timezone
+                  }})
                 </small>
               </button>
             </p>
@@ -90,7 +145,9 @@
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
-            [interactiveProcessingEvents]="waveformService?.interactiveProcessActiveList | async"
+            [interactiveProcessingEvents]="
+              waveformService?.interactiveProcessActiveList | async
+            "
             [filterTimeAfter]="waveformService.eventListQuery?.time_utc_after"
             [filterTimeBefore]="waveformService.eventListQuery?.time_utc_before"
             (chartClick)="openChart($event)"
@@ -119,7 +176,7 @@
               *ngIf=""
               color="primary"
               mat-button
-              (click)="test();$event.stopPropagation()"
+              (click)="test(); $event.stopPropagation()"
             >
               <mat-icon class="mat-18">new_releases</mat-icon>
               <small class="align-self-center">
@@ -131,7 +188,10 @@
               *ngIf="currentEventInfo"
               color="primary"
               mat-button
-              (click)="waveformService.openEventUpdateDialog(currentEventInfo);$event.stopPropagation()"
+              (click)="
+                waveformService.openEventUpdateDialog(currentEventInfo);
+                $event.stopPropagation()
+              "
               matTooltip="Open udpate dialog"
               matTooltipPosition="right"
             >
@@ -149,11 +209,17 @@
                 <button
                   mat-menu-item
                   [matMenuTriggerFor]="eventMoreFilesSubMenu"
-                >Files</button>
+                >
+                  Files
+                </button>
                 <button
                   mat-menu-item
-                  (click)="waveformService?.openJsonDialog({json: currentEventInfo})"
-                >JSON</button>
+                  (click)="
+                    waveformService?.openJsonDialog({ json: currentEventInfo })
+                  "
+                >
+                  JSON
+                </button>
               </ng-template>
             </mat-menu>
 
@@ -189,7 +255,6 @@
             >
               <mat-icon>more_vert</mat-icon>
             </button>
-
           </mat-panel-title>
         </mat-expansion-panel-header>
         <app-event-info
@@ -198,8 +263,18 @@
           [eventTypes]="waveformService.eventTypes"
           [evaluationStatuses]="waveformService.evaluationStatuses"
           [eventEvaluationModes]="waveformService.eventEvaluationModes"
-          (acceptClicked)="waveformService.onAcceptClick(currentEventInfo?.event_resource_id,$event)"
-          (rejectClicked)="waveformService.onDeclineClick(currentEventInfo?.event_resource_id,$event)"
+          (acceptClicked)="
+            waveformService.onAcceptClick(
+              currentEventInfo?.event_resource_id,
+              $event
+            )
+          "
+          (rejectClicked)="
+            waveformService.onDeclineClick(
+              currentEventInfo?.event_resource_id,
+              $event
+            )
+          "
           [loading]="loadingCurrentEvent"
         ></app-event-info>
       </mat-expansion-panel>
@@ -209,19 +284,21 @@
   <mat-sidenav-content>
     <div
       class="collapse-button"
-      [ngClass]="{'outside': !(waveformService.sidebarOpened | async)}"
+      [ngClass]="{ outside: !(waveformService.sidebarOpened | async) }"
       matTooltip="Collapse Sidebar"
       matTooltipPosition="right"
     >
       <button
-        [color]="!(waveformService.sidebarOpened | async) ? 'primary' : 'primary'"
+        [color]="
+          !(waveformService.sidebarOpened | async) ? 'primary' : 'primary'
+        "
         type="button"
         aria-label="Toggle event sidebar"
         mat-mini-fab
         (click)="onCollapseButtonClick()"
       >
         <mat-icon
-          *ngIf="(waveformService.sidebarOpened | async)"
+          *ngIf="waveformService.sidebarOpened | async"
           aria-label="Event sidebar icon"
         >arrow_left</mat-icon>
         <mat-icon
@@ -241,7 +318,12 @@
   <div>
     <p
       class="text-center"
-      style="font-size: 27px; font-weight: 600; color: #fff; padding-top: 180px;"
+      style="
+        font-size: 27px;
+        font-weight: 600;
+        color: #fff;
+        padding-top: 180px;
+      "
     >
       Interactive processing
     </p>
@@ -253,13 +335,17 @@
         [disabled]="true"
         mat-raised-button
         (click)="waveformService.cancelLastInteractiveProcess()"
-      >Cancel</button>
+      >
+        Cancel
+      </button>
       <button
         (click)="waveformService.runInteractiveProcessInBg()"
         class=""
         color="primary"
         mat-raised-button
-      >Run in background</button>
+      >
+        Run in background
+      </button>
     </div>
   </div>
 </ngx-spinner>
@@ -268,14 +354,18 @@
   <div>
     <p
       class="text-center"
-      style="font-size: 27px; font-weight: 600; color: #fff; padding-top: 180px;"
+      style="
+        font-size: 27px;
+        font-weight: 600;
+        color: #fff;
+        padding-top: 180px;
+      "
     >
       Accepting interactive processing
     </p>
     <div
       style="width: 100%; margin: 45px auto 0;"
       class="d-flex justify-content-around"
-    >
-    </div>
+    ></div>
   </div>
 </ngx-spinner>

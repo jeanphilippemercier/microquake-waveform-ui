@@ -62,7 +62,27 @@ export class EventApiService {
     return this._http.patch<IEvent>(url, body);
   }
 
+  geneateUrlToExportEventsToCsv(query: EventQuery): string {
+    const url = `${environment.apiUrl}${apiPath.events}`;
 
+    query.format = 'csv';
+
+    let params = ApiUtil.getHttpParams(query);
+
+    if (query.event_type && query.event_type.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.event_type, 'event_type');
+    }
+
+    if (query.status && query.status.length > 1) {
+      params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
+    }
+
+    return `${url}?${params.toString()}`;
+  }
+
+  downloadResource(url: string): Observable<Blob> {
+    return this._http.get<Blob>(url, { responseType: 'blob' as 'json' });
+  }
 
   /**
    * EVENT DAILY SUMMARY
