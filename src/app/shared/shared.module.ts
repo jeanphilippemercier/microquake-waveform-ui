@@ -76,6 +76,7 @@ import { LayoutFilterComponent } from './layouts/layout-filter/layout-filter.com
 import { LayoutContentComponent } from './layouts/layout-content/layout-content.component';
 import { SensorTypePipe } from './pipes/sensor-type.pipe';
 import { ContextMenuComponent } from './components/context-menu/context-menu.component';
+import { EventInputNumberFieldComponent } from './forms/fields/event-input-number-field/event-input-number-field.component';
 
 const MATERIAL_MODULES = [
   MatAutocompleteModule,
@@ -129,6 +130,7 @@ const COMPONTENTS = [
   LayoutFilterComponent,
   LayoutTopbarComponent,
   FooterLayoutComponent,
+  EventInputNumberFieldComponent,
   EventTypeFieldComponent,
   EventModeFieldComponent,
   EventStatusFieldComponent,

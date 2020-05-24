@@ -1,0 +1,16 @@
+<mat-form-field>
+  <mat-label>{{label}}</mat-label>
+
+  <input
+    matInput
+    [value]="value"
+    [placeholder]="placeholder"
+    [type]="'number'"
+    [autocomplete]="'off'"
+    [min]="min"
+    [max]="max"
+    [ngModel]="value"
+    (ngModelChange)="onChange($event)"
+  >
+
+</mat-form-field>
