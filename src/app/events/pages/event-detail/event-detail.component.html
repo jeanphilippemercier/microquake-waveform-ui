@@ -85,7 +85,7 @@
             </mat-menu>
 
             <button
-              *ngIf="currentEventInfo"
+              *ngIf="waveformService.eventListQuery"
               mat-icon-button
               [matMenuTriggerFor]="eventCatalogMoreMenu"
               [color]="'primary'"
