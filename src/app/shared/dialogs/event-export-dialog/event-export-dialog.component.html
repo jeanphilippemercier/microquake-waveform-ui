@@ -1,5 +1,5 @@
 <h1 mat-dialog-title>CSV export</h1>
-<div mat-dialog-content>
+<mat-dialog-content>
   <div class="row">
     <div class="col-12 mb-3">
       <div class="row">
@@ -115,8 +115,135 @@
         </div>
       </div>
     </div>
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
+          <h4>Magnitude</h4>
+        </div>
+        <div class="col-9 pt-3">
+          <div class="w-100 d-flex justify-content-between">
+
+            <app-event-input-number-field
+              [label]="'M (min)'"
+              [(value)]="editedQuery.magnitude_min"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+            <div class="min-max-separator p-3">
+              -
+            </div>
+
+            <app-event-input-number-field
+              [label]="'M (max)'"
+              [(value)]="editedQuery.magnitude_max"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
+          <h4>Energy</h4>
+        </div>
+        <div class="col-9 pt-3">
+          <div class="w-100 d-flex justify-content-between">
+
+            <app-event-input-number-field
+              [label]="'J (min)'"
+              [(value)]="editedQuery.energy_joule_min"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+            <div class="min-max-separator p-3">
+              -
+            </div>
+
+            <app-event-input-number-field
+              [label]="'J (max)'"
+              [(value)]="editedQuery.energy_joule_max"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
+          <h4>Location</h4>
+        </div>
+        <div class="col-9 pt-3">
+          <div class="w-100 d-flex justify-content-between">
+
+            <app-event-input-number-field
+              [label]="'X (min)'"
+              [(value)]="editedQuery.x_min"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+            <div class="min-max-separator p-3">
+              -
+            </div>
+
+            <app-event-input-number-field
+              [label]="'X (max)'"
+              [(value)]="editedQuery.x_max"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+          </div>
+
+          <div class="w-100 d-flex justify-content-between">
+
+            <app-event-input-number-field
+              [label]="'Y (min)'"
+              [(value)]="editedQuery.y_min"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+            <div class="min-max-separator p-3">
+              -
+            </div>
+
+            <app-event-input-number-field
+              [label]="'Y (max)'"
+              [(value)]="editedQuery.y_max"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+          </div>
+
+          <div class="w-100 d-flex justify-content-between">
+
+            <app-event-input-number-field
+              [label]="'Z (min)'"
+              [(value)]="editedQuery.z_min"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+            <div class="min-max-separator p-3">
+              -
+            </div>
+
+            <app-event-input-number-field
+              [label]="'Z (max)'"
+              [(value)]="editedQuery.z_max"
+              class="flex-fill"
+            ></app-event-input-number-field>
+
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button

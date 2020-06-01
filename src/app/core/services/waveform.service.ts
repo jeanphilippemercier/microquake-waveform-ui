@@ -782,6 +782,7 @@ export class WaveformService implements OnDestroy {
     this.eventExportDialogRef = this._matDialog.open<EventExportDialogComponent, EventFilterDialogData>(EventExportDialogComponent, {
       hasBackdrop: true,
       width: '750px',
+      height: 'auto',
       data: {
         timezone: this.timezone,
         eventQuery: JSON.parse(JSON.stringify(this.eventListQuery)),

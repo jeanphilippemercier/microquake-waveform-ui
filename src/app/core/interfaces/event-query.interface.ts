@@ -10,6 +10,16 @@ export interface EventQuery extends PaginationRequest {
   time_range?: number; // TODO: add to API ?
   event_type?: QuakemlType[];
   status?: EvaluationStatusGroup[];
+  magnitude_min?: number;
+  magnitude_max?: number;
+  energy_joule_min?: number;
+  energy_joule_max?: number;
+  x_min?: number;
+  x_max?: number;
+  y_min?: number;
+  y_max?: number;
+  z_min?: number;
+  z_max?: number;
   ordering?: string;
   format?: string;
 }
