@@ -57,6 +57,8 @@ export class WaveformService implements OnDestroy {
   resetAllChartsViewClickedObs: Observable<void> = this.resetAllChartsViewClicked.asObservable();
   undoLastPickingClicked: Subject<void> = new Subject;
   undoLastPickingClickedObs: Observable<void> = this.undoLastPickingClicked.asObservable();
+  removeAllPicksClicked: Subject<void> = new Subject;
+  removeAllPicksClickedObs: Observable<void> = this.removeAllPicksClicked.asObservable();
   interactiveProcessClicked: Subject<void> = new Subject;
   interactiveProcessClickedObs: Observable<void> = this.interactiveProcessClicked.asObservable();
 

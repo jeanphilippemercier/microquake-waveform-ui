@@ -321,6 +321,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this._undoLastPicking());
 
+    this.waveformService.removeAllPicksClickedObs
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe(() => this._removeAllPicks());
+
     this.waveformService.batchPicks
       .pipe(
         distinctUntilChanged(),
@@ -2369,6 +2373,57 @@ export class Waveform2Component implements OnInit, OnDestroy {
         }
       }
     }
+  }
+
+  /**
+   * Removes arrivals from all sensors and refreshes active charts
+   *
+   * @remarks
+   *
+   * Removes arrivals from neccessary places:
+   * - activeSensors - currently active sensors (including charts)
+   * - loadedSensors - sensors with already loaded waveform data
+   * - allSensors - all sensors (including ones, with not yet loaded waveform data)
+   * - allArrivalsChanged - array of arrivals used for reprocessing
+   *
+   * After removeing all data, refreshes active chart page.
+   */
+  private async _removeAllPicks() {
+    this.waveformService.loading.next(true);
+    await new Promise(resolve => setTimeout(() => resolve(), 100));
+
+    this.activeSensors = this._removeAllPicksFromSensors(this.activeSensors);
+    this.loadedSensors = this._removeAllPicksFromSensors(this.loadedSensors);
+    this.allSensors = this._removeAllPicksFromSensors(this.allSensors);
+    this.allArrivalsChanged = [];
+    this._changePage(false);
+
+    this.waveformService.loading.next(false);
+  }
+
+  /**
+   * Removes all arrivals from an array of Sensors
+   *
+   * @remarks
+   *
+   * Removes arriavals (P and S picks) from all input sensors. Traveltimes are not removed and remain untouched.
+   * If sensor contains chart, refreshes x axis.
+   *
+   * To see changes on active charts, charts must be re-rendered after using this function.
+   *
+   * @param sensors - array of sensors.
+   *
+   * Returns same array of sensors without arrivals.
+   */
+  private _removeAllPicksFromSensors(sensors: Sensor[]): Sensor[] {
+    sensors?.forEach(sensor => {
+      sensor.picks = sensor?.picks?.filter((pick: any) => pick.label !== PickKey.P && pick.label !== PickKey.S);
+      if (sensor?.chart?.options?.axisX) {
+        sensor.chart.options.axisX.stripLines = sensor.picks;
+      }
+    });
+
+    return sensors;
   }
 
   private _addPick(ind: number, pickType: PickKey, value: number | null) {

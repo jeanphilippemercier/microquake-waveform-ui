@@ -205,6 +205,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.undoLastPickingClicked.next();
   }
 
+  onRemoveAllPicksClick() {
+    this.waveformService.removeAllPicksClicked.next();
+  }
+
   onInteractiveProcessClick() {
     this.waveformService.interactiveProcessClicked.next();
   }
