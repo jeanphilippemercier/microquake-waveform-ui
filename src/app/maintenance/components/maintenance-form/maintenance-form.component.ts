@@ -146,7 +146,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       const statusFormEl = this.myForm.get('status');
 
       if (statusFormEl) {
-        this.status = this.model.status ? 'open' : 'closed';
+        this.status = this.model.status;
         this.myForm.patchValue({ status: this.model.status === 'open' });
 
         statusFormEl.valueChanges

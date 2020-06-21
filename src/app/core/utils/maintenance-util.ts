@@ -1,4 +1,4 @@
-import { MaintenanceEventQuery } from '@interfaces/maintenance-query.interface';
+import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
 
 
 export default class MaintenanceUtil {
@@ -78,6 +78,8 @@ export default class MaintenanceUtil {
     //   query.date__gte = moment().utc().utcOffset(tz).startOf('day').subtract(query.time_range - 1, 'days').toISOString();
     //   query.date__lte = moment().utc().utcOffset(tz).endOf('day').toISOString();
     // }
+
+    query.ordering = MaintenanceEventQueryOrdering.DATE_DESC;
 
     if (queryParams.page_size) {
       query.page_size = queryParams.page_size;

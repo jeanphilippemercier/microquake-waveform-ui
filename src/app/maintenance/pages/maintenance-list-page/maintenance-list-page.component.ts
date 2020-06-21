@@ -29,7 +29,6 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   query: MaintenanceEventQuery = {
     cursor: undefined,
     page_size: this.pageSize,
-    ordering: MaintenanceEventQueryOrdering.DATE_DESC,
     // time_range: 3,
   };
   maintenanceStatuses: MaintenanceStatus[] = [];
@@ -183,7 +182,10 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   }
 
   onRowClicked(ev: MaintenanceEvent) {
-    this._router.navigate(['maintenance', ev.id]);
+    this._router.navigate(['maintenance', ev.id],
+      {
+        preserveQueryParams: true,
+      });
   }
 
   onFilterChange() {
