@@ -27,7 +27,7 @@ export enum StationsQueryOrdering {
   nameASC = 'name',
   nameDESC = '-name',
   pkASC = 'pk',
-  pkDESC = '-pkÎ',
+  pkDESC = '-pk',
 }
 
 export interface InterpolateBoreholeQuery {
