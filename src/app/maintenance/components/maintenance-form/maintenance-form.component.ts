@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { startWith, map } from 'rxjs/operators';
+import { startWith, map, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as moment from 'moment';
@@ -55,6 +55,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   deleteDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
 
   filteredStations!: Observable<Station[]>;
+  status = 'closed';
 
   myForm = this._fb.group({
     date: [new Date(), [Validators.required]],
@@ -130,17 +131,29 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   private async _initEditableForm() {
 
     try {
+
       const stationFormEl = this.myForm.get('station');
-      if (!stationFormEl) {
-        return;
+
+      if (stationFormEl) {
+        this.filteredStations = stationFormEl.valueChanges
+          .pipe(
+            startWith(''),
+            map(value => !value || typeof value === 'string' ? value : value.name),
+            map(input => input ? this._filter<Station>(input, this.stations, 'name') : (this.stations ? this.stations.slice() : []))
+          );
       }
 
-      this.filteredStations = stationFormEl.valueChanges
-        .pipe(
-          startWith(''),
-          map(value => !value || typeof value === 'string' ? value : value.name),
-          map(input => input ? this._filter<Station>(input, this.stations, 'name') : (this.stations ? this.stations.slice() : []))
-        );
+      const statusFormEl = this.myForm.get('status');
+
+      if (statusFormEl) {
+        this.status = this.model.status;
+        this.myForm.patchValue({ status: this.model.status === 'open' });
+
+        statusFormEl.valueChanges
+          .pipe(
+            map(value => value ? 'open' : 'closed'),
+          ).subscribe(val => this.status = val);
+      }
 
     } catch (err) {
       console.error(err);
@@ -165,9 +178,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       throw new Error('No date is defined');
     }
 
-    if (!formValues.status) {
-      throw new Error('No status is defined');
-    }
+    formValues.status = formValues.status ? 'open' : 'closed';
 
     if (!formValues.category) {
       throw new Error('No category is defined');

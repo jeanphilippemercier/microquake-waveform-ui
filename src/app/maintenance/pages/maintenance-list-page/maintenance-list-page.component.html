@@ -9,18 +9,166 @@
     <ng-container breadcrumbs>Home > Inventory > Maintenance</ng-container>
   </app-layout-header>
 
-  <app-layout-content>
-    <div class="row">
-      <div class="col-lg-8 offset-lg-2 col-sm-10 offset-sm-1 m-sm-auto mx-3 py-sm-5 py-3 my-sm-5">
-        <app-maintenance-input
-          [maintenanceCategories]="maintenanceCategories"
-          [maintenanceStatuses]="maintenanceStatuses"
-          [stations]="stations"
-          (created)="onCreatedMaintenanceEvent($event)"
-          class="m-auto"
-        ></app-maintenance-input>
+  <div class="pb-3">
+    <app-layout-content>
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 col-sm-10 offset-sm-1 m-sm-auto mx-3 py-sm-5 py-3 my-sm-5">
+          <app-maintenance-input
+            [maintenanceCategories]="maintenanceCategories"
+            [maintenanceStatuses]="maintenanceStatuses"
+            [stations]="stations"
+            (created)="onCreatedMaintenanceEvent($event)"
+            class="m-auto"
+          ></app-maintenance-input>
+        </div>
       </div>
+    </app-layout-content>
+  </div>
+  <app-layout-filter>
+    <div class="col-lg-3 col-md-12">
+      <mat-form-field>
+        <mat-label>Status</mat-label>
+        <mat-select
+          [(ngModel)]="query.status_id"
+          (ngModelChange)="onFilterChange()"
+          placeholder="Click to choose"
+        >
+          <mat-option [value]="undefined">
+            all
+          </mat-option>
+          <mat-option
+            *ngFor="let maintenanceStatusesEl of maintenanceStatuses"
+            [value]="maintenanceStatusesEl.name"
+          >
+            {{maintenanceStatusesEl.name}}
+          </mat-option>
+        </mat-select>
+
+      </mat-form-field>
     </div>
+    <div class="col-lg-3 col-md-12">
+      <mat-form-field>
+        <mat-label>Category</mat-label>
+        <mat-select
+          [(ngModel)]="query.category_id"
+          (ngModelChange)="onFilterChange()"
+          placeholder="Click to choose"
+        >
+          <mat-option [value]="undefined">
+            all
+          </mat-option>
+          <mat-option
+            *ngFor="let maintenanceCategoryEl of maintenanceCategories"
+            [value]="maintenanceCategoryEl.name"
+          >
+            {{maintenanceCategoryEl.name}}
+          </mat-option>
+        </mat-select>
+
+      </mat-form-field>
+    </div>
+    <div class="col-lg-3 col-md-12">
+      <mat-form-field>
+        <mat-label>Date</mat-label>
+        <mat-select
+          [(ngModel)]="query.time_range"
+          (ngModelChange)="onFilterChange()"
+          placeholder="Click to choose"
+          [disabled]="true"
+        >
+          <mat-select-trigger>
+            <ng-container *ngIf="query.time_range !== 0">
+              Last {{query.time_range}} days
+              <small
+                class="float-right"
+                style="color: #aaa;padding-top: 2px;"
+              >
+                <ng-container *ngIf="query?.time_range">
+                  {{todayEnd | amSubtract: query?.time_range ? query?.time_range : 1 - 1 : 'days' | amDateFormat:'MMM DD':timezone}}
+                  -
+                  {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+                </ng-container>
+              </small>
+            </ng-container>
+            <ng-container *ngIf="!query.time_range">
+              Custom
+              <small
+                class="float-right"
+                style="color: #aaa;padding-top: 2px;"
+              >
+                {{query.date__gte | amDateFormat:'MMM DD.':timezone}} -
+                {{query.date__lte | amDateFormat:'MMM DD YYYY'}} (UTC {{timezone}})
+              </small>
+            </ng-container>
+          </mat-select-trigger>
+          <mat-option [value]="3">
+            Last 3 days
+            <small
+              class="float-right"
+              style="color: #aaa;padding-top: 2px;"
+            >
+              {{todayEnd | amSubtract: 3 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+              {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+            </small>
+          </mat-option>
+          <mat-option [value]="7">
+            Last 7 days
+            <small
+              class="float-right"
+              style="color: #aaa;padding-top: 2px;"
+            >
+              {{todayEnd | amSubtract: 7 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+              {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+            </small>
+          </mat-option>
+          <mat-option [value]="31">
+            Last 31 days
+            <small
+              class="float-right"
+              style="color: #aaa;padding-top: 2px;"
+            >
+              {{todayEnd | amSubtract: 31 - 1 : 'days' | amDateFormat:'MMM DD':timezone}} -
+              {{todayEnd | amDateFormat:'MMM DD YYYY (UTC Z)':timezone}}
+            </small>
+          </mat-option>
+          <mat-option [value]="0">
+            Custom
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <ng-container *ngIf="false && (!query.time_range || query.time_range === 0)">
+      <div class="offset-lg-6 col-lg-3 col-md-6">
+        <app-event-date-field
+          [label]="'Start date'"
+          [date]="query.date__gte"
+          [maxDate]="query.date__lte"
+        >
+        </app-event-date-field>
+      </div>
+      <div class="col-lg-3  col-md-6">
+        <app-event-date-field
+          [label]="'End date'"
+          [date]="query.date__lte"
+          [minDate]="query.date__gte"
+        >
+        </app-event-date-field>
+      </div>
+    </ng-container>
+    <div
+      class="col-lg-2"
+      *ngIf="search"
+    >
+      <button
+        (click)="clearFilter()"
+        class="mt-lg-3 mb-lg-0 mb-3"
+        mat-raised-button
+        color="warn"
+      >Clear filter</button>
+    </div>
+  </app-layout-filter>
+
+  <app-layout-content>
     <div class="row mt-lg-5">
       <div class="col">
         <app-maintenance-table-2

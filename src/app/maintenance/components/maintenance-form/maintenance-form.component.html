@@ -18,19 +18,22 @@
               <div class="row">
 
                 <div class="col">
-                  <mat-form-field>
+                  <mat-form-field
+                    floatLabel="always"
+                    appearance="none"
+                  >
                     <mat-label>Status</mat-label>
-                    <mat-select
+                    <mat-slide-toggle
                       [required]="true"
+                      [color]="'primary'"
                       formControlName="status"
-                    >
-                      <mat-option
-                        [value]="maintenanceStatus.name"
-                        *ngFor="let maintenanceStatus of maintenanceStatuses"
-                      >
-                        {{maintenanceStatus.name}}
-                      </mat-option>
-                    </mat-select>
+                      class="force-height"
+                    >{{status}}
+                    </mat-slide-toggle>
+                    <textarea
+                      matInput
+                      hidden
+                    ></textarea>
                   </mat-form-field>
                 </div>
 
