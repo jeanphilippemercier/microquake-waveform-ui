@@ -7,7 +7,6 @@
   background: #fff;
 }
 
-
 mat-list {
   a {
     text-decoration: none !important;
@@ -16,4 +15,12 @@ mat-list {
 
 .file-upload {
   cursor: pointer;
+}
+
+.text-invisible {
+  opacity: 0;
+}
+
+.force-height {
+  min-height: 32px;
 }
