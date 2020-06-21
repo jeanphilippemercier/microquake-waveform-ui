@@ -9,4 +9,9 @@ export enum MaintenanceEventQueryOrdering {
 export interface MaintenanceEventQuery extends PaginationRequest {
   station_id?: number;
   ordering?: MaintenanceEventQueryOrdering;
+  time_range?: number; // not on api
+  category_id?: number;
+  status_id?: number;
+  date__gte?: string;
+  date__lte?: string;
 }

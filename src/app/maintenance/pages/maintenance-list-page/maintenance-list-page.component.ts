@@ -1,7 +1,8 @@
-import { Component, OnDestroy, } from '@angular/core';
+import { Component, OnDestroy, OnInit, } from '@angular/core';
 import { forkJoin, Subject } from 'rxjs';
 import { first, takeUntil, take, skipWhile } from 'rxjs/operators';
 import { NgxSpinnerService } from 'ngx-spinner';
+import * as moment from 'moment';
 
 import { Station, } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
@@ -16,18 +17,28 @@ import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from '@inter
 import { MaintenanceEventQuery, MaintenanceEventQueryOrdering } from '@interfaces/maintenance-query.interface';
 import { MaintenanceFormDialogComponent } from '@app/maintenance/dialogs/maintenance-form-dialog/maintenance-form-dialog.component';
 import { LoadingService } from '@services/loading.service';
+import MaintenanceUtil from '@core/utils/maintenance-util';
 
 @Component({
   selector: 'app-maintenance-list-page',
   templateUrl: './maintenance-list-page.component.html',
   styleUrls: ['./maintenance-list-page.component.scss']
 })
-export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> implements OnDestroy {
+export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> implements OnInit, OnDestroy {
 
+  query: MaintenanceEventQuery = {
+    cursor: undefined,
+    page_size: this.pageSize,
+    ordering: MaintenanceEventQueryOrdering.DATE_DESC,
+    // time_range: 3,
+  };
   maintenanceStatuses: MaintenanceStatus[] = [];
   maintenanceCategories: MaintenanceCategory[] = [];
   stations: Station[] = [];
   count = 0;
+  timezone = '+08:00';
+  todayEnd = moment().utc().utcOffset(this.timezone).endOf('day');
+  timeRange = 3;
 
   constructor(
     private _inventoryApiService: InventoryApiService,
@@ -39,6 +50,13 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
     private _toastrNotificationService: ToastrNotificationService
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
+  }
+
+  async ngOnInit() {
+    const initQueryParams = this._activatedRoute.snapshot.queryParams;
+    this.query = MaintenanceUtil.buildMaintenanceListQuery(initQueryParams, this.timezone);
+
+    super.ngOnInit();
   }
 
   async afterNgOnInit() {
@@ -93,13 +111,9 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
       this.loading = true;
       await this._loadingService.start();
 
-      const query: MaintenanceEventQuery = {
-        cursor,
-        page_size: this.pageSize,
-        ordering: MaintenanceEventQueryOrdering.DATE_DESC
-      };
+      this.query.cursor = cursor;
 
-      const response = await this._inventoryApiService.getMaintenanceEvents(query).toPromise();
+      const response = await this._inventoryApiService.getMaintenanceEvents(this.query).toPromise();
       this.dataSource = response.results;
       this.count = response.count;
       this.cursorPrevious = response.cursor_previous;
@@ -170,6 +184,16 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
 
   onRowClicked(ev: MaintenanceEvent) {
     this._router.navigate(['maintenance', ev.id]);
+  }
+
+  onFilterChange() {
+
+    this._router.navigate(
+      [],
+      {
+        relativeTo: this._activatedRoute,
+        queryParams: MaintenanceUtil.buildMaintenanceListParams(this.query),
+      });
   }
 
 }
