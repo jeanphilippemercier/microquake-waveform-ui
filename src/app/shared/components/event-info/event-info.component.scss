@@ -38,7 +38,7 @@ table {
   }
 }
 
-::ng-deep .mat-form-field-appearance-outline .mat-form-field-wrapper {
+::ng-deep .mat-form-field-appearance-outline:not(.has-mat-error) .mat-form-field-wrapper {
   padding-bottom: 8px;
 }
 

@@ -209,6 +209,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.removeAllPicksClicked.next();
   }
 
+  onShiftPicksClick() {
+    this.waveformService.openShiftPicksDialog();
+  }
+
   onInteractiveProcessClick() {
     this.waveformService.interactiveProcessClicked.next();
   }
