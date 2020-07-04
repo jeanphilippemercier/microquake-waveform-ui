@@ -66,6 +66,7 @@ export class EventApiService {
     const url = `${environment.apiUrl}${apiPath.events}`;
 
     query.format = 'csv';
+    query.page_size = 1000000;
 
     let params = ApiUtil.getHttpParams(query);
 
