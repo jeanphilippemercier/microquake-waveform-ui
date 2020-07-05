@@ -63,6 +63,7 @@ import { EventMagnitudePipe } from './pipes/event-magnitude.pipe';
 import { DiffNumber } from './pipes/diff-number.pipe';
 import { OrdinalPipe } from './pipes/ordinal.pipe';
 import { EventQuakemlToMicroquakeTypePipe } from './pipes/event-quakeml-to-microquake-type.pipe';
+import { EventWaveformShiftPicksDialogComponent } from './dialogs/event-waveform-shift-picks-dialog/event-waveform-shift-picks-dialog.component';
 import { ConfirmationDialogComponent } from './dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventUpdateDialogComponent } from './dialogs/event-update-dialog/event-update-dialog.component';
 import { EventFilterDialogComponent } from './dialogs/event-filter-dialog/event-filter-dialog.component';
@@ -143,6 +144,7 @@ const COMPONTENTS = [
 ];
 
 const DIALOGS = [
+  EventWaveformShiftPicksDialogComponent,
   EventHelpDialogComponent,
   EventUpdateDialogComponent,
   EventFilterDialogComponent,

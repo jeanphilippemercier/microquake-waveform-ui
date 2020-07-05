@@ -28,6 +28,9 @@ import { WebsocketResponseType, WebsocketResponseOperation, DataLoadStatus } fro
 import { WaveformInitializerDialogComponent } from '@app/shared/dialogs/waveform-initializer-dialog/waveform-initializer-dialog.component';
 import { JsonDialogComponent } from '@app/shared/dialogs/json-dialog/json-dialog.component';
 import { EventExportDialogComponent } from '@app/shared/dialogs/event-export-dialog/event-export-dialog.component';
+import { EventWaveformShiftPicksDialogComponent } from '@app/shared/dialogs/event-waveform-shift-picks-dialog/event-waveform-shift-picks-dialog.component';
+import { PaginationResponse } from '@interfaces/dto.interface';
+import { SensorsQuery } from '@interfaces/inventory-query.interface';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -122,6 +125,10 @@ export class WaveformService implements OnDestroy {
 
   eventWaveformFilterDialogOpened = false;
   eventWaveformFilterDialogRef!: MatDialogRef<EventWaveformFilterDialogComponent>;
+
+  eventWaveformShiftPicksDialogOpened = false;
+  eventWaveformShiftPicksDialogRef!: MatDialogRef<EventWaveformShiftPicksDialogComponent>;
+  shiftPicksValue: BehaviorSubject<number> = new BehaviorSubject(0);
 
   jsonDialogOpened = false;
   jsonDialogRef!: MatDialogRef<JsonDialogComponent>;
@@ -603,6 +610,32 @@ export class WaveformService implements OnDestroy {
     this.eventWaveformFilterDialogRef.afterClosed().pipe(first()).subscribe(val => {
       delete this.eventWaveformFilterDialogRef;
       this.eventWaveformFilterDialogOpened = false;
+    });
+  }
+
+
+  /**
+   * Opens a dialog for shifting of picks. To the submitted value (this.shiftPicksValue) is subscribed waveform-2 component.
+   */
+  async openShiftPicksDialog(): Promise<void> {
+    if (this.eventWaveformShiftPicksDialogOpened || this.eventWaveformShiftPicksDialogRef) {
+      return;
+    }
+
+    this.eventWaveformShiftPicksDialogOpened = true;
+    this.eventWaveformShiftPicksDialogRef = this._matDialog.open(EventWaveformShiftPicksDialogComponent);
+
+
+    const $submitClick = this.eventWaveformShiftPicksDialogRef.componentInstance.submitClick
+      .subscribe(async (data: number) => {
+        this.shiftPicksValue.next(data);
+        this.eventWaveformShiftPicksDialogRef.close();
+      });
+
+    this.eventWaveformShiftPicksDialogRef.afterClosed().pipe(first()).subscribe(val => {
+      $submitClick.unsubscribe();
+      delete this.eventWaveformShiftPicksDialogRef;
+      this.eventWaveformShiftPicksDialogOpened = false;
     });
   }
 

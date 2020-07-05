@@ -38,10 +38,18 @@
 
       <button
         mat-icon-button
-        matTooltip="Undo Last Picking Operation"
+        matTooltip="Undo last picking operation"
         (click)="onUndoLastPickingClick()"
       >
         <mat-icon>undo</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
+        matTooltip="Shift all picks"
+        (click)="onShiftPicksClick()"
+      >
+        <mat-icon>sync_alt</mat-icon>
       </button>
 
       <button

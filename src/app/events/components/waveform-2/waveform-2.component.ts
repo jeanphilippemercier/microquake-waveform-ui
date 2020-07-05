@@ -325,6 +325,10 @@ export class Waveform2Component implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(() => this._removeAllPicks());
 
+    this.waveformService.shiftPicksValue
+      .pipe(takeUntil(this._unsubscribe))
+      .subscribe((val) => this._shiftPicks(val));
+
     this.waveformService.batchPicks
       .pipe(
         distinctUntilChanged(),
@@ -2376,9 +2380,53 @@ export class Waveform2Component implements OnInit, OnDestroy {
   }
 
   /**
-   * Removes arrivals from all sensors and refreshes active charts
+   * Shifts picks (only arrivals) by provided seconds. Function shifts picks on all sensors,
+   * picks sent for interactive processing, picks drawed on charts.
    *
-   * @remarks
+   * @param seconds - by how many seconds should all picks shift (positive or negative value)
+   */
+  private async _shiftPicks(seconds: number): Promise<void> {
+
+    this.waveformService.loading.next(true);
+    await new Promise(resolve => setTimeout(() => resolve(), 100));
+
+    const time = seconds * 1000000;
+
+    // allSensors - contains references to all picks.
+    this.allSensors?.forEach(sensor => {
+
+      // omit context trace sensor, because it's already processed (first sensor - container0).
+      if (sensor.container === 'container6') {
+        return;
+      }
+
+      // loop sensors, check if they contain arrivals and add time shift.
+      sensor?.picks?.map((pick: any) => {
+        if (pick?.label === PickKey.P || pick?.label === PickKey.S) {
+          pick.value += time;
+        }
+
+        return pick;
+      });
+
+      // update all pick changes for interactive processing.
+      this._updateSensorPicks(sensor, PickKey.P);
+      this._updateSensorPicks(sensor, PickKey.S);
+
+      // update all pick changes on charts (if sensors contains charts).
+      if (sensor?.chart?.options?.axisX) {
+        sensor.chart.options.axisX.stripLines = sensor.picks;
+      }
+
+    });
+
+    this._changePage(false);
+
+    this.waveformService.loading.next(false);
+  }
+
+  /**
+   * Removes arrivals from all sensors and refreshes active charts
    *
    * Removes arrivals from neccessary places:
    * - activeSensors - currently active sensors (including charts)
