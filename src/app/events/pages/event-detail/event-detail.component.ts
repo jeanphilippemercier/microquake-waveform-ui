@@ -544,7 +544,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
       this._updateCurrentEventsIfNeeded(moment(selectedDay.dayDate), response.results);
 
-      let lastModification = response.results && response.results[0] && response.results[0].modification_timestamp ? response.results[0].modification_timestamp : null;
+      let lastModification = response?.results?.[0]?.modification_timestamp;
 
       if (lastModification) {
         let lastModificationMoment = moment.utc(lastModification);

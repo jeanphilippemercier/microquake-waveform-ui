@@ -118,6 +118,10 @@ mat-expansion-panel-header {
     line-height: 10px;
   }
 
+   .event-id{
+    width: 165px;
+  }
+
   &.active {
     &,
     & small {
@@ -137,6 +141,10 @@ mat-expansion-panel-header {
     &:after {
       content: 'arrow_left';
     }
+  }
+
+  &.event-outside-clientside-filter{
+    opacity: 0.3;
   }
 
   &.event-no-status {

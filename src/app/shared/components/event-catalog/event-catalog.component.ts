@@ -85,8 +85,8 @@ export class EventCatalogComponent {
 
   @Input() currentEventInfo!: IEvent;
   @Input() timezone!: string;
-  @Input() filterTimeAfter: moment.Moment | null = null;
-  @Input() filterTimeBefore: moment.Moment | null = null;
+  @Input() magnitudeMax!: number;
+  @Input() magnitudeMin!: number;
 
   @Output() dayChanged: EventEmitter<EventsDailySummaryForCatalog> = new EventEmitter<EventsDailySummaryForCatalog>();
   @Output() eventClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();

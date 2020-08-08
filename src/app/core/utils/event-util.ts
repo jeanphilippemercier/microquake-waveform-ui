@@ -72,6 +72,7 @@ export default class EventUtil {
     count += query.status ? query.status.length : 0;
     count += query.event_type ? query.event_type.length : 0;
     count += query.time_range !== 3 ? 1 : 0;
+    count += query.magnitude_min || query.magnitude_max ? 1 : 0;
 
     return count;
   }
@@ -112,6 +113,14 @@ export default class EventUtil {
     } else if (eventListQuery.time_utc_before && eventListQuery.time_utc_after) {
       params.time_utc_after = eventListQuery.time_utc_after;
       params.time_utc_before = eventListQuery.time_utc_before;
+    }
+
+    if (eventListQuery.magnitude_min) {
+      params.magnitude_min = eventListQuery.magnitude_min;
+    }
+
+    if (eventListQuery.magnitude_max) {
+      params.magnitude_max = eventListQuery.magnitude_max;
     }
 
     if (eventListQuery.page_size) {
@@ -178,6 +187,13 @@ export default class EventUtil {
       eventListQuery.event_type = undefined;
     }
 
+    if (queryParams.magnitude_min) {
+      eventListQuery.magnitude_min = queryParams.magnitude_min;
+    }
+    if (queryParams.magnitude_max) {
+      eventListQuery.magnitude_max = queryParams.magnitude_max;
+    }
+
     // TODO: remove after pagination
     if (!queryParams.page_size) {
       eventListQuery.page_size = 1000;
@@ -207,7 +223,7 @@ export default class EventUtil {
    *
    * @remarks
    *
-   * Shows small warning sign in catalog if the event is outside of currently slected filter.
+   * Shows small warning sign in catalog if the event is outside of the currently selected filter.
    *
    * @param eventListQuery - query to check
    * @param ev - event to compare with query
@@ -246,6 +262,12 @@ export default class EventUtil {
         eventListQuery.event_type &&
         eventListQuery.event_type.indexOf(<QuakemlType>`${ev.event_type}`) === -1
       )
+      // magnitude is filtered only on the client-side (requested functionality)
+      // ||
+      // (
+      //   typeof eventListQuery.magnitude_max !== 'undefined' && eventListQuery.magnitude_max < ev.magnitude ||
+      //   typeof eventListQuery.magnitude_min !== 'undefined' && eventListQuery.magnitude_min > ev.magnitude
+      // )
     ) {
       return true;
     } else {
