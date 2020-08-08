@@ -1,6 +1,5 @@
 import { Component, HostBinding, HostListener } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
-import { first } from 'rxjs/operators';
 
 @Component({
   selector: 'app-context-menu',
@@ -31,18 +30,19 @@ export class ContextMenuComponent extends MatMenuTrigger {
     }
   }
 
-  public async open(data: MouseEvent) {
-    this._openMenuAtPosition(data);
-    return false;
-  }
-
-  private _openMenuAtPosition(data: MouseEvent) {
+  public async open(mouseEvent: MouseEvent, data?: any) {
     // Pass along the context data to support lazily-rendered content
     if (!!data) { this.menuData = data; }
 
+    this._openMenuAtPosition(mouseEvent);
+    return false;
+  }
+
+  private _openMenuAtPosition(mouseEvent: MouseEvent) {
+
     // Adjust the menu anchor position
-    this._x = data?.x + 'px';
-    this._y = data?.y + 'px';
+    this._x = mouseEvent?.x + 'px';
+    this._y = mouseEvent?.y + 'px';
 
     // Opens the menu
     this.openMenu();
