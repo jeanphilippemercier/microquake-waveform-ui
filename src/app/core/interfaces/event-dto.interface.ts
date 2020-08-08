@@ -24,3 +24,7 @@ export interface EventPaginationResponse<T> extends PaginationResponse<T> {
   time_utc_max: string;
   time_utc_min: string;
 }
+
+export interface EventDuplicationResponse {
+  event_resource_id: string;
+}

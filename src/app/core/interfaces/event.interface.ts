@@ -120,6 +120,7 @@ export interface IEvent {
   x: number;
   y: number;
   z: number;
+  duplicate_of: string | null;
   outsideOfCurrentFilter?: boolean;
 }
 
