@@ -49,6 +49,15 @@ export class EventApiService {
       params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
     }
 
+    // magnitude is filtered only on the client-side (requested functionality)
+    if (params.get('magnitude_min')) {
+      params = params.delete('magnitude_min');
+    }
+
+    if (params.get('magnitude_max')) {
+      params = params.delete('magnitude_max');
+    }
+
     return this._http.get<EventPaginationResponse<IEvent>>(url, { params });
   }
 
@@ -101,6 +110,15 @@ export class EventApiService {
       if (query.status && query.status.length > 1) {
         params = ApiUtil.parseArrayHttpParams(params, query.status, 'status');
       }
+    }
+
+    // magnitude is filtered only on the client-side (requested functionality)
+    if (params.get('magnitude_min')) {
+      params = params.delete('magnitude_min');
+    }
+
+    if (params.get('magnitude_max')) {
+      params = params.delete('magnitude_max');
     }
 
     return this._http.get<PaginationResponse<EventsDailySummary>>(url, { params });

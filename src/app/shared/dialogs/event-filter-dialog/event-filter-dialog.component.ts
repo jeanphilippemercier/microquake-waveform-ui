@@ -66,6 +66,8 @@ export class EventFilterDialogComponent {
     this.editedQuery.time_utc_before = this.todayEnd.toISOString();
     this.editedQuery.status = [EvaluationStatusGroup.ACCEPTED];
     this.editedQuery.event_type = undefined;
+    this.editedQuery.magnitude_min = undefined;
+    this.editedQuery.magnitude_max = undefined;
     this.selectedEventTypes = null;
     this.somethingEdited = this.checkIfSomethingEdited(this.eventQuery, this.editedQuery);
     this.numberOfChanges = EventUtil.getNumberOfChanges(this.editedQuery);

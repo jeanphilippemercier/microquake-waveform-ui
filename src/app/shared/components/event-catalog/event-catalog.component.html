@@ -86,14 +86,15 @@
                             'event-accepted-manual': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
                             'event-accepted-automatic': ['preliminary', 'confirmed', 'reviewed', 'final', 'reported'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
                             'event-rejected-manual': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'manual',
-                            'event-rejected-automatic': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic'
+                            'event-rejected-automatic': ['rejected'].indexOf(event?.status) > -1 && event?.evaluation_mode === 'automatic',
+                            'event-outside-clientside-filter': (magnitudeMax && event?.magnitude > magnitudeMax) || (magnitudeMin && event?.magnitude < magnitudeMin)
                         }"
                 >
                   <mat-icon class="event-icon mat-badge">
                     {{event?.event_type | eventTypeIcon}}
                     <span class="mat-badge-content mat-badge-active">.</span>
                   </mat-icon>
-                  <div class="px-3">
+                  <div class="px-3 event-id">
 
                     {{event?.time_utc | date:'HH:mm:ss':timezone}}
                     <small>{{event?.time_utc | date:'.SSS'}}</small>
@@ -101,13 +102,24 @@
                       ({{event?.magnitude | eventMagnitude}} {{event?.magnitude_type}})
                     </ng-container>
                   </div>
+
                   <ng-container *ngIf="event?.outsideOfCurrentFilter">
                     <mat-icon
-                      matTooltip="Event is outside of the event filter. "
+                      matTooltip="Event is outside of the event filter."
                       style="font-size: 18px; line-height: 22px;"
                       color="warn"
                     >warning</mat-icon>
                   </ng-container>
+
+                  <ng-container
+                    *ngIf="(magnitudeMax && event?.magnitude > magnitudeMax) || (magnitudeMin && event?.magnitude < magnitudeMin)"
+                  >
+                    <mat-icon
+                      matTooltip="Magnitude is outside defined filter."
+                      style="font-size: 18px; line-height: 22px;opacity: 0.6;"
+                    >warning</mat-icon>
+                  </ng-container>
+
                   <ng-container
                     *ngIf="interactiveProcessingEventsIds && interactiveProcessingEventsIds?.indexOf(event?.event_resource_id) > -1"
                   >
