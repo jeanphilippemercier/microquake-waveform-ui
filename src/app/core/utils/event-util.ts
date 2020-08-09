@@ -42,6 +42,7 @@ export default class EventUtil {
     x: 651400,
     y: 4767670,
     z: -25,
+    duplicate_of: null,
   };
 
   /**
