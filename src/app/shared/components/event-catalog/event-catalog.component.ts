@@ -91,6 +91,8 @@ export class EventCatalogComponent {
   @Output() dayChanged: EventEmitter<EventsDailySummaryForCatalog> = new EventEmitter<EventsDailySummaryForCatalog>();
   @Output() eventClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
   @Output() chartClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
+  // context menu
+  @Output() contextMenuEventDuplicationClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
 
 
   interactiveProcessingEventsIds: string[] = [];
@@ -116,6 +118,10 @@ export class EventCatalogComponent {
 
   async onChartClick($event: IEvent) {
     this.chartClick.emit($event);
+  }
+
+  async onContextMenuEventDuplicationClick($event: IEvent) {
+    this.contextMenuEventDuplicationClick.emit($event);
   }
 
   onDayChanged(ev: EventsDailySummaryForCatalog) {

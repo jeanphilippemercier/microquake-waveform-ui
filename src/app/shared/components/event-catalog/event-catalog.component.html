@@ -135,7 +135,7 @@
                     mat-icon-button
                     matTooltip="Open chart"
                     matTooltipPosition="right"
-                    (click)="onChartClick(event)"
+                    (click)="onChartClick(event);$event.stopPropagation()"
                   >
                     <mat-icon>insert_chart_outlined</mat-icon>
                   </button>
@@ -173,13 +173,13 @@
     >
       <button
         mat-menu-item
-        [disabled]="true"
+        (click)="onContextMenuEventDuplicationClick(event)"
       >Duplicate event</button>
-      <button
+      <!-- <button
         mat-menu-item
         [matMenuTriggerFor]="contextMenuPicksSubMenu"
         [disabled]="true"
-      >Picks</button>
+      >Picks</button> -->
     </ng-template>
 
   </mat-menu>

@@ -151,6 +151,7 @@
             (chartClick)="openChart($event)"
             (eventClick)="openEvent($event)"
             (dayChanged)="dayChanged($event)"
+            (contextMenuEventDuplicationClick)="waveformService.openEventDuplicationDialog($event)"
           ></app-event-catalog>
         </ng-template>
         <ngx-spinner name="loadingEventList"></ngx-spinner>

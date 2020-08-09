@@ -264,8 +264,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             const currentlyOpenEventDate = moment.utc(this.currentEvent.time_utc).utcOffset(this.timezone).startOf('day');
             this.eventsDailySummaryForCatalog = EventUtil.clearUnselectedDaysOutsideFilter(currentlyOpenEventDate, this.eventsDailySummary, this.eventsDailySummaryForCatalog);
 
+            this.openEvent(clickedEvent);
+
             if (this.initialized.getValue() === false) {
-              this.currentEventInfo = Object.assign({}, clickedEvent);
               this.initialized.next(true);
             }
           } catch (err) {
@@ -579,10 +580,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
    *
    */
   async openChart(event: IEvent) {
-    this._router.navigate(['/events', event.event_resource_id], {
-      relativeTo: this._activatedRoute,
-      queryParamsHandling: 'merge',
-    });
+    this.waveformService.openEventChart(event.event_resource_id);
   }
 
 
