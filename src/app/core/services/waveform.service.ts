@@ -130,6 +130,9 @@ export class WaveformService implements OnDestroy {
   eventWaveformShiftPicksDialogRef!: MatDialogRef<EventWaveformShiftPicksDialogComponent>;
   shiftPicksValue: BehaviorSubject<number> = new BehaviorSubject(0);
 
+  eventDuplicationDialogOpened = false;
+  eventDuplicationDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
+
   jsonDialogOpened = false;
   jsonDialogRef!: MatDialogRef<JsonDialogComponent>;
 
@@ -583,6 +586,13 @@ export class WaveformService implements OnDestroy {
     }
   }
 
+  async openEventChart(eventId: String) {
+    await this._router.navigate(['/events', eventId], {
+      relativeTo: this._activatedRoute,
+      queryParamsHandling: 'merge',
+    });
+  }
+
   async openWaveformFilterDialog() {
     if (this.eventWaveformFilterDialogOpened || this.eventWaveformFilterDialogRef) {
       return;
@@ -717,6 +727,50 @@ export class WaveformService implements OnDestroy {
       }
     });
 
+  }
+
+
+
+  async openEventDuplicationDialog(ev: IEvent) {
+    console.log('here');
+    if (!ev) {
+      console.error('No event to duplicate');
+      return null;
+    }
+
+    if (this.eventDuplicationDialogRef || this.eventDuplicationDialogOpened) {
+      return;
+    }
+
+    this.eventDuplicationDialogOpened = true;
+
+    this.eventDuplicationDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(ConfirmationDialogComponent, {
+      hasBackdrop: true,
+      width: '600px',
+      data: {
+        header: `Do you want to duplicate event ${ev.event_resource_id}?`,
+        text: `Duplicate event will open after successful duplication.`
+      }
+    });
+
+    this.eventDuplicationDialogRef.afterClosed().pipe(first()).subscribe(async val => {
+      try {
+        if (val) {
+          this.loadingCurrentEventAndList = true;
+          this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+          const response = await this._eventApiService.duplicateEvent(ev.event_resource_id).toPromise();
+          this.openEventChart(response.event_resource_id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.eventDuplicationDialogOpened = false;
+        delete this.eventDuplicationDialogRef;
+
+        this.loadingCurrentEventAndList = false;
+        this._ngxSpinnerService.hide('loadingCurrentEventAndList');
+      }
+    });
   }
 
   async cancelLastInteractiveProcess() {

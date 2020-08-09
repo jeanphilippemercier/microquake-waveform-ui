@@ -7,12 +7,13 @@ import ApiUtil from '../../utils/api-util';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { IEvent, Boundaries, Origin, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
 import { EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, EventDailySummaryQuery, EventRayQuery } from '@interfaces/event-query.interface';
-import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput } from '@interfaces/event-dto.interface';
+import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput, EventDuplicationResponse } from '@interfaces/event-dto.interface';
 import { WebSocketService } from '../websocket.service';
 
 const apiPath = {
   events: `events`,
   dialySummary: `daily_summary`,
+  duplicate: `duplicate`,
   batch: `batch`,
   waveform: `waveform`,
   origins: `origins`,
@@ -69,6 +70,11 @@ export class EventApiService {
   updateEvent(eventId: string, body: EventUpdateInput): Observable<IEvent> {
     const url = `${environment.apiUrl}${apiPath.events}/${eventId}`;
     return this._http.patch<IEvent>(url, body);
+  }
+
+  duplicateEvent(eventId: string): Observable<EventDuplicationResponse> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.duplicate}`;
+    return this._http.post<EventDuplicationResponse>(url, {});
   }
 
   geneateUrlToExportEventsToCsv(query: EventQuery): string {
