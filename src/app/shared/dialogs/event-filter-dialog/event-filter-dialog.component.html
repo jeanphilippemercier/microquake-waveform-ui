@@ -104,6 +104,23 @@
     <div class="col-12">
       <div class="row">
         <div class="col-3 pt-3">
+          <h4>Evaluation status</h4>
+        </div>
+        <div class="col-9">
+          <app-event-status-field
+            [label]="''"
+            [type]="'chip'"
+            [evaluationStatuses]="evaluationStatuses"
+            [(selectedEvaluationStatuses)]="editedQuery.status"
+            (selectedEvaluationStatusesChange)="onFilterChange()"
+          ></app-event-status-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="row">
+        <div class="col-3 pt-3">
           <h4>Magnitude <mat-icon
               [matTooltip]="'Events with magnitude outside min and max values will show as faded in the event catalog.'"
               style="font-size: 18px; line-height: 22px; cursor: pointer;"
