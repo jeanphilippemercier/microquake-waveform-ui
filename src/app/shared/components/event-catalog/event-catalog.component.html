@@ -44,7 +44,8 @@
               (day?.count !== null ? day?.count : '?') + ' total events in current filter'
               "
               >
-                {{day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?'}} /
+                {{!!day?._total_ ? day?._total_ : (day?.accepted_counts?._total_ !== null ? day?.accepted_counts?._total_ : '?')}}
+                /
                 {{day?.count !== null ? day?.count : '?'}}
               </div>
             </ng-template>
