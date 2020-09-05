@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import { Station, } from '@interfaces/inventory.interface';
 import { InventoryApiService } from '@services/api/inventory-api.service';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 import { ListPage } from '@core/classes/list-page.class';
 import { MatDialog } from '@angular/material/dialog';
 import { ToastrNotificationService } from '@services/toastr-notification.service';
@@ -111,7 +111,8 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
       await this._loadingService.start();
 
       this.query.cursor = cursor;
-
+      this.query = MaintenanceUtil.buildMaintenanceListQuery((MaintenanceUtil.buildMaintenanceListParams(this.query)), this.timezone);
+      console.log(this.query);
       const response = await this._inventoryApiService.getMaintenanceEvents(this.query).toPromise();
       this.dataSource = response.results;
       this.count = response.count;
@@ -189,13 +190,24 @@ export class MaintenanceListPageComponent extends ListPage<MaintenanceEvent> imp
   }
 
   onFilterChange() {
-
+    const query = MaintenanceUtil.buildMaintenanceListParams(this.query);
+    console.log(query);
     this._router.navigate(
       [],
       {
         relativeTo: this._activatedRoute,
-        queryParams: MaintenanceUtil.buildMaintenanceListParams(this.query),
+        queryParams: query,
       });
+  }
+
+  onCustomDateEndChange($event: Date) {
+    this.query.datetime__lte = moment($event).utc().utcOffset(this.timezone).endOf('day').toISOString(true);
+    this.onFilterChange();
+  }
+
+  onCustomDateStartChange($event: Date) {
+    this.query.datetime__gte = moment($event).utc().utcOffset(this.timezone).startOf('day').toISOString(true);
+    this.onFilterChange();
   }
 
 }

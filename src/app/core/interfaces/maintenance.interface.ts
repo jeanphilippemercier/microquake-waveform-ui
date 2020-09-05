@@ -1,6 +1,6 @@
 export interface MaintenanceEventBase {
   name: string;
-  date: string;
+  datetime: string;
   status: string;
   category: string;
   attachments: MaintenanceEventAttachment[];
