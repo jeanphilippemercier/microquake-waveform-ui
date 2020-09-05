@@ -1,6 +1,7 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import * as moment from 'moment';
 
+/** Form field component used for manipulation with dates */
 @Component({
   selector: 'app-event-date-field',
   templateUrl: './event-date-field.component.html',
@@ -8,6 +9,7 @@ import * as moment from 'moment';
 })
 export class EventDateFieldComponent {
 
+  /** Value of the component. Field has a two-way data binding */
   @Input()
   public set date(v: Date | null) {
     if (v) {
@@ -24,11 +26,21 @@ export class EventDateFieldComponent {
   }
   private _date: Date | null = null;
 
-  @Output() dateChange: EventEmitter<Date> = new EventEmitter();
+  /** Label at the top of the form field. Default value is empty string (no label) */
+  @Input()
+  label = '';
 
-  @Input() minDate: Date | null = null;
-  @Input() maxDate: Date | null = null;
-  @Input() label = '';
+  /** Minimum allowed date */
+  @Input()
+  minDate: Date | null = null;
+
+  /** Maximum allowed date */
+  @Input()
+  maxDate: Date | null = null;
+
+  /** Event emitted when [date] value changes */
+  @Output()
+  dateChange: EventEmitter<Date> = new EventEmitter();
 
   onChangeDate(event: Date) {
     this.dateChange.emit(event);

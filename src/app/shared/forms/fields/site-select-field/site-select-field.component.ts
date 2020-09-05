@@ -3,6 +3,7 @@ import { MatSelectChange } from '@angular/material/select';
 
 import { Site } from '@interfaces/inventory.interface';
 
+/** Form field component in a style of a select box. Used for selecting mine site */
 @Component({
   selector: 'app-site-select-field',
   templateUrl: './site-select-field.component.html',
@@ -10,28 +11,17 @@ import { Site } from '@interfaces/inventory.interface';
 })
 export class SiteSelectFieldComponent {
 
+  /** Defines all possible sites */
   @Input() sites: Site[] = [];
+
+  /**  Value of the component. Field has a two-way data binding */
   @Input() site: Site | null = null;
+
+  /** Emits event when value changes */
   @Output() siteChange: EventEmitter<Site> = new EventEmitter();
 
-  @Input() site_code: string | null = null;
-  @Output() site_codeChange: EventEmitter<string> = new EventEmitter();
-
-  @Output() clearSelection: EventEmitter<boolean> = new EventEmitter();
-
   onChangeSite(event: MatSelectChange) {
-
     this.siteChange.emit(event.value);
-
-    if (event.value && event.value.site_code) {
-      this.site_codeChange.emit(event.value.code);
-    }
   }
 
-  onClearSelection(event?: MouseEvent) {
-    if (event) {
-      event.preventDefault();
-    }
-    this.clearSelection.emit(true);
-  }
 }

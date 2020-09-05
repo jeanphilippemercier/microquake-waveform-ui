@@ -1,5 +1,6 @@
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 
+/** Form field component for manipulation with numbers */
 @Component({
   selector: 'app-event-input-number-field',
   templateUrl: './event-input-number-field.component.html',
@@ -7,12 +8,29 @@ import { Component, Input, EventEmitter, Output } from '@angular/core';
 })
 export class EventInputNumberFieldComponent {
 
-  @Input() label = ``;
-  @Input() placeholder = ``;
-  @Input() min: (number | null) = null;
-  @Input() max: (number | null) = null;
-  @Input() value: (number | null) = null;
-  @Output() valueChange: EventEmitter<number> = new EventEmitter();
+  /** Label at the top of the form field. Default value is empty string (no label) */
+  @Input()
+  label = ``;
+
+  /** Placeholder text, that shows when no value is set. Default value is empty string (no placeholder) */
+  @Input()
+  placeholder = ``;
+
+  /** Maximum allowed number */
+  @Input()
+  min: (number | null) = null;
+
+  /** Maximum allowed number */
+  @Input()
+  max: (number | null) = null;
+
+  /** Value of component. Field has a two-way data binding */
+  @Input()
+  value: (number | null) = null;
+
+  /** Event emitted when [value] changes */
+  @Output()
+  valueChange: EventEmitter<number> = new EventEmitter();
 
   onChange(event: any) {
     this.valueChange.emit(event);

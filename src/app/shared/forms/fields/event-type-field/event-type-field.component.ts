@@ -3,6 +3,13 @@ import { MatSelectChange } from '@angular/material/select';
 
 import { EventType } from '@interfaces/event.interface';
 
+/**
+ * Form field component for manipulation with event types.
+ *
+ * - has 2 visual types (`select` / `chip`) that can be set with `[type]` field
+ * - depending on the value if the `[multiple]` field, can set single or multiple values
+ * - depending on the value of the `[multiple]` field, emits different events
+ */
 @Component({
   selector: 'app-event-type-field',
   templateUrl: './event-type-field.component.html',
@@ -10,18 +17,58 @@ import { EventType } from '@interfaces/event.interface';
 })
 export class EventTypeFieldComponent {
 
-  @Input() label = `Event Type`;
-  @Input() multiple = true;
-  @Input() type: 'select' | 'chip' = 'select';
-  @Input() eventTypes: EventType[] = [];
+  /** Label at the top of the form field. Default value is `Event Type` */
+  @Input()
+  label = `Event Type`;
 
-  // for multiple === false
+  /**
+    * Defines if the form field should accept single or multiple values. If multiple is true, values
+    * are set and returned in an array.
+    *
+    * Default value is `true`
+    */
+  @Input()
+  multiple = true;
+
+  /**
+   * Sets visual version of the component - `select` | `chip`. Select looks like a
+   * selectbox form field and chip looks like list of labels.
+   *
+   * Default value is `select`
+   */
+  @Input()
+  type: 'select' | 'chip' = 'select';
+
+  /**  Defines all possible evevent type options */
+  @Input()
+  eventTypes: EventType[] = [];
+
+
+  // FOR SINGLE VALUE:
+
+
+  /**  (if [multiple]="false") Value of component. Field has a two-way data binding */
   @Input() selectedEventType: EventType | null = null;
+
+  /**  (if [multiple]="false") Emits event when value changes  */
   @Output() selectedEventTypeChange: EventEmitter<EventType> = new EventEmitter();
 
-  // for multiple === true
+
+  // FOR MULTIPLE VALUES:
+
+
+  /**  (if [multiple]="true") Value of component. Field has a two-way data binding */
   @Input() selectedEventTypes: EventType[] = [];
+
+  /**  (if [multiple]=true") Emits event when value changes  */
   @Output() selectedEventTypesChange: EventEmitter<EventType[]> = new EventEmitter();
+
+  /**
+   * (if [multiple]=true") Emits event when value changes.
+   *
+   * Same as (selectedEventTypesChange) event, only it doesn't return the whole
+   * `EventType` object, but maps to `EventType.quakeml_type`
+   */
   @Output() selectedMicroquakeTypesChange: EventEmitter<string[]> = new EventEmitter();
 
   previousSelectedEventTypes: EventType[] = [];
