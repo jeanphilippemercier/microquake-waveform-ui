@@ -58,7 +58,7 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
   status = 'closed';
 
   myForm = this._fb.group({
-    date: [new Date(), [Validators.required]],
+    datetime: [new Date(), [Validators.required]],
     status: [, [Validators.required]],
     station: [, Validators.required],
     category: [, Validators.required],
@@ -172,8 +172,8 @@ export class MaintenanceFormComponent extends Form<MaintenanceEvent> implements 
       throw new Error('No form is defined');
     }
 
-    if (formValues.date) {
-      formValues.date = moment(formValues.date).format('YYYY-MM-DD');
+    if (formValues.datetime) {
+      formValues.datetime = moment(formValues.datetime).format('YYYY-MM-DD');
     } else {
       throw new Error('No date is defined');
     }

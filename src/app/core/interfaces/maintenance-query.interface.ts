@@ -12,6 +12,6 @@ export interface MaintenanceEventQuery extends PaginationRequest {
   time_range?: number; // not on api
   category_id?: number;
   status_id?: number;
-  date__gte?: string;
-  date__lte?: string;
+  datetime__gte?: string;
+  datetime__lte?: string;
 }

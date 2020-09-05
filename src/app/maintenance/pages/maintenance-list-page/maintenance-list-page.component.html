@@ -74,7 +74,6 @@
           [(ngModel)]="query.time_range"
           (ngModelChange)="onFilterChange()"
           placeholder="Click to choose"
-          [disabled]="true"
         >
           <mat-select-trigger>
             <ng-container *ngIf="query.time_range !== 0">
@@ -96,11 +95,14 @@
                 class="float-right"
                 style="color: #aaa;padding-top: 2px;"
               >
-                {{query.date__gte | amDateFormat:'MMM DD.':timezone}} -
-                {{query.date__lte | amDateFormat:'MMM DD YYYY'}} (UTC {{timezone}})
+                {{query.datetime__gte | amDateFormat:'MMM DD.':timezone}} -
+                {{query.datetime__lte | amDateFormat:'MMM DD YYYY'}} (UTC {{timezone}})
               </small>
             </ng-container>
           </mat-select-trigger>
+          <mat-option [value]="null">
+            None
+          </mat-option>
           <mat-option [value]="3">
             Last 3 days
             <small
@@ -137,20 +139,22 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <ng-container *ngIf="false && (!query.time_range || query.time_range === 0)">
+    <ng-container *ngIf="(query.time_range === 0)">
       <div class="offset-lg-6 col-lg-3 col-md-6">
         <app-event-date-field
           [label]="'Start date'"
-          [date]="query.date__gte"
-          [maxDate]="query.date__lte"
+          [date]="query.datetime__gte"
+          [maxDate]="query.datetime__lte"
+          (dateChange)="onCustomDateStartChange($event)"
         >
         </app-event-date-field>
       </div>
       <div class="col-lg-3  col-md-6">
         <app-event-date-field
           [label]="'End date'"
-          [date]="query.date__lte"
-          [minDate]="query.date__gte"
+          [date]="query.datetime__lte"
+          [minDate]="query.datetime__gte"
+          (dateChange)="onCustomDateEndChange($event)"
         >
         </app-event-date-field>
       </div>
