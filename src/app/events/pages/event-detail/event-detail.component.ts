@@ -23,7 +23,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   public set currentEvent(v: IEvent) {
     this._currentEvent = v;
     this.waveformService.currentEvent.next(this._currentEvent);
-    EventUtil.mapEventToCatalog(v, this.timezone, this.eventsDailySummaryForCatalog);
+    if (this.eventsDailySummaryForCatalog) {
+      EventUtil.mapEventToCatalog(v, this.timezone, this.eventsDailySummaryForCatalog);
+    }
   }
   public get currentEvent(): IEvent {
     return this._currentEvent;
@@ -31,8 +33,8 @@ export class EventDetailComponent implements OnInit, OnDestroy {
 
   currentEventInfo!: IEvent;
   paramsSub!: Subscription;
-  eventsDailySummary!: EventsDailySummary[];
-  eventsDailySummaryForCatalog!: EventsDailySummaryForCatalog[];
+  eventsDailySummary?: EventsDailySummary[];
+  eventsDailySummaryForCatalog?: EventsDailySummaryForCatalog[];
   initialized: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   pooling: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   currentDay: BehaviorSubject<EventsDailySummary | null> = new BehaviorSubject<EventsDailySummary | null>(null);
@@ -262,7 +264,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             this.currentEvent = clickedEvent;
 
             const currentlyOpenEventDate = moment.utc(this.currentEvent.time_utc).utcOffset(this.timezone).startOf('day');
-            this.eventsDailySummaryForCatalog = EventUtil.clearUnselectedDaysOutsideFilter(currentlyOpenEventDate, this.eventsDailySummary, this.eventsDailySummaryForCatalog);
+            if (this.eventsDailySummary && this.eventsDailySummaryForCatalog) {
+              this.eventsDailySummaryForCatalog = EventUtil.clearUnselectedDaysOutsideFilter(currentlyOpenEventDate, this.eventsDailySummary, this.eventsDailySummaryForCatalog);
+            }
 
             this.openEvent(clickedEvent);
 
@@ -428,7 +432,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.eventsDailySummaryForCatalog.some(day => {
+    this.eventsDailySummaryForCatalog?.some(day => {
       return day.events && day.events.some(ev => {
         if (ev.event_resource_id === event.event_resource_id) {
           if (JSON.stringify(ev) !== JSON.stringify(event)) {
@@ -565,7 +569,9 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     }
 
     // if currently selected event is in currently selected day and the event doesn't fit into selected filter (wasn't loaded by API), we need to add it to the event list manually.
-    this.eventsDailySummaryForCatalog = EventUtil.mapEventToCatalog(this.currentEvent, this.timezone, this.eventsDailySummaryForCatalog);
+    if (this.eventsDailySummaryForCatalog) {
+      this.eventsDailySummaryForCatalog = EventUtil.mapEventToCatalog(this.currentEvent, this.timezone, this.eventsDailySummaryForCatalog);
+    }
   }
 
 

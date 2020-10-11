@@ -145,6 +145,7 @@
             [timezone]="timezone"
             [currentEvent]="currentEvent"
             [currentEventInfo]="currentEventInfo"
+            [automaticProcessingEvents]="waveformService?.automaticProcessCurrentList | async"
             [interactiveProcessingEvents]="waveformService?.interactiveProcessActiveList | async"
             [magnitudeMin]="waveformService.eventListQuery?.magnitude_min"
             [magnitudeMax]="waveformService.eventListQuery?.magnitude_max"
@@ -152,6 +153,7 @@
             (eventClick)="openEvent($event)"
             (dayChanged)="dayChanged($event)"
             (contextMenuEventDuplicationClick)="waveformService.openEventDuplicationDialog($event)"
+            (contextMenuAutomaticProcessingClick)="waveformService.automaticProcessingClick($event)"
           ></app-event-catalog>
         </ng-template>
         <ngx-spinner name="loadingEventList"></ngx-spinner>

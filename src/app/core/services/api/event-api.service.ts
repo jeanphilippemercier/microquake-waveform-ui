@@ -157,6 +157,14 @@ export class EventApiService {
   }
 
 
+  /**
+   * AUTOMATIC PROCESSING
+   */
+
+  startAutomaticProcessing(eventId: string): Observable<IEvent> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}`;
+    return this._http.patch<IEvent>(url, { 'send_to_bus': true });
+  }
 
   /**
    * WAVEFORM INFO
