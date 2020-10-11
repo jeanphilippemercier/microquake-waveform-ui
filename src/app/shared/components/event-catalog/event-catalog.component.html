@@ -175,6 +175,7 @@
     >
       <button
         mat-menu-item
+        [disabled]="(automaticProcessingEventsIds && automaticProcessingEventsIds?.indexOf(event?.event_resource_id) > -1)"
         (click)="onContextMenuAutomaticProcessingClick(event)"
       >Trigger automatic processing</button>
       <button
