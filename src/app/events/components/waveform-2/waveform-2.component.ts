@@ -963,7 +963,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const div = document.createElement('div');
       div.id = this.activeSensors[0].container;
       div.style.height = pageHeight + 'px';
-      div.style.maxWidth = '2000px';
       div.style.margin = '0px auto';
       this._renderer.appendChild(this._waveformContainer.nativeElement, div);
     }
@@ -1143,7 +1142,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
         const div = document.createElement('div');
         div.id = this.activeSensors[i].container;
         div.style.height = this.chartHeight + 'px';
-        div.style.maxWidth = '2000px';
         div.style.margin = '0px auto';
         this._renderer.appendChild(this._waveformContainer.nativeElement, div);
       }
@@ -1507,7 +1505,6 @@ export class Waveform2Component implements OnInit, OnDestroy {
       const div = document.createElement('div');
       div.id = this.activeSensors[i].container;
       div.style.height = this.chartHeight + 'px';
-      div.style.maxWidth = '2000px';
       div.style.margin = '0px auto';
       this._renderer.appendChild(this._waveformContainer.nativeElement, div);
     }
