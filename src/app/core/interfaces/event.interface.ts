@@ -124,6 +124,12 @@ export interface IEvent {
   outsideOfCurrentFilter?: boolean;
 }
 
+export enum AutomaticProcessingStatus {
+  PROCESSING = 'processing',
+  FAILED = 'failed',
+  COMPLETE = 'complete',
+}
+
 export enum BatchStatus {
   NEW = 'new',
   PENDING = 'pending',

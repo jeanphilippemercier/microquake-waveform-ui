@@ -11,7 +11,8 @@ export enum WebsocketResponseOperation {
   UPDATED = 'updated',
   INTERACTIVE_BATCH_READY = 'interactive_batch_ready',
   INTERACTIVE_BATCH_FAILED = 'interactive_batch_failed',
-  AUTOMATIC_PIPELINE_COMPLETE = 'automatic_pipeline_complete'
+  AUTOMATIC_PIPELINE_COMPLETE = 'automatic_pipeline_complete',
+  AUTOMATIC_PIPELINE_FAILED = 'automatic_pipeline_failed'
 }
 
 export enum WebsocketResponseType {

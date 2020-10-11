@@ -83,6 +83,23 @@ export class EventCatalogComponent {
   }
 
 
+  private _automaticProcessingEvents: IEvent[] = [];
+  @Input()
+  public set automaticProcessingEvents(v: IEvent[]) {
+
+    this.automaticProcessingEventsIds = [];
+    if (v) {
+      this.automaticProcessingEventsIds = v.map(val => {
+        return val.event_resource_id;
+      });
+    }
+    this._automaticProcessingEvents = v;
+  }
+  public get automaticProcessingEvents(): IEvent[] {
+    return this._automaticProcessingEvents;
+  }
+
+
   @Input() currentEventInfo!: IEvent;
   @Input() timezone!: string;
   @Input() magnitudeMax!: number;
@@ -93,9 +110,12 @@ export class EventCatalogComponent {
   @Output() chartClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
   // context menu
   @Output() contextMenuEventDuplicationClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
+  @Output() contextMenuAutomaticProcessingClick: EventEmitter<IEvent> = new EventEmitter<IEvent>();
 
 
   interactiveProcessingEventsIds: string[] = [];
+  automaticProcessingEventsIds: string[] = [];
+
   daysMap: any = {};
   openedDay: moment.Moment | null = null;
   currentEventDayInList = false;
@@ -123,6 +143,12 @@ export class EventCatalogComponent {
   async onContextMenuEventDuplicationClick($event: IEvent) {
     this.contextMenuEventDuplicationClick.emit($event);
   }
+
+  async onContextMenuAutomaticProcessingClick($event: IEvent) {
+    this.contextMenuAutomaticProcessingClick.emit($event);
+  }
+
+
 
   onDayChanged(ev: EventsDailySummaryForCatalog) {
     if (ev) {

@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, BatchStatus, } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, BatchStatus, AutomaticProcessingStatus } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
@@ -29,8 +29,6 @@ import { WaveformInitializerDialogComponent } from '@app/shared/dialogs/waveform
 import { JsonDialogComponent } from '@app/shared/dialogs/json-dialog/json-dialog.component';
 import { EventExportDialogComponent } from '@app/shared/dialogs/event-export-dialog/event-export-dialog.component';
 import { EventWaveformShiftPicksDialogComponent } from '@app/shared/dialogs/event-waveform-shift-picks-dialog/event-waveform-shift-picks-dialog.component';
-import { PaginationResponse } from '@interfaces/dto.interface';
-import { SensorsQuery } from '@interfaces/inventory-query.interface';
 
 const HEARTBEAT_NAME = `event_connector`;
 @Injectable({
@@ -75,10 +73,10 @@ export class WaveformService implements OnDestroy {
   // PAGINATION
   pageChanged: Subject<number> = new Subject;
   pageChangedObs: Observable<number> = this.pageChanged.asObservable();
-  helpDialogRef!: MatDialogRef<EventHelpDialogComponent>;
+  helpDialogRef?: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;
 
-  batchPicksDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
+  batchPicksDialogRef?: MatDialogRef<ConfirmationDialogComponent>;
   batchPicksDialogOpened = false;
 
   site: BehaviorSubject<string> = new BehaviorSubject('');
@@ -106,6 +104,8 @@ export class WaveformService implements OnDestroy {
   // EVENT Reprocessing triggered on current instance only
   interactiveProcessCurrentList: BehaviorSubject<EventBatchMap[]> = new BehaviorSubject<EventBatchMap[]>([]);
 
+  automaticProcessCurrentList: BehaviorSubject<IEvent[]> = new BehaviorSubject<IEvent[]>([]);
+
   wsEventUpdated: Subject<IEvent> = new Subject;
   wsEventUpdatedObs: Observable<IEvent> = this.wsEventUpdated.asObservable();
 
@@ -114,27 +114,27 @@ export class WaveformService implements OnDestroy {
 
   eventUpdateDialogOpened = false;
   loadingCurrentEventAndList = false;
-  eventUpdateDialogRef!: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
-  eventInteractiveProcessDialogRef!: MatDialogRef<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>;
+  eventUpdateDialogRef?: MatDialogRef<EventUpdateDialogComponent, EventUpdateDialog>;
+  eventInteractiveProcessDialogRef?: MatDialogRef<EventInteractiveProcessingDialogComponent, EventInteractiveProcessingDialog>;
 
   eventFilterDialogOpened = false;
-  eventFilterDialogRef!: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
+  eventFilterDialogRef?: MatDialogRef<EventFilterDialogComponent, EventFilterDialogData>;
 
   eventExportDialogOpened = false;
-  eventExportDialogRef!: MatDialogRef<EventExportDialogComponent, EventFilterDialogData>;
+  eventExportDialogRef?: MatDialogRef<EventExportDialogComponent, EventFilterDialogData>;
 
   eventWaveformFilterDialogOpened = false;
-  eventWaveformFilterDialogRef!: MatDialogRef<EventWaveformFilterDialogComponent>;
+  eventWaveformFilterDialogRef?: MatDialogRef<EventWaveformFilterDialogComponent>;
 
   eventWaveformShiftPicksDialogOpened = false;
-  eventWaveformShiftPicksDialogRef!: MatDialogRef<EventWaveformShiftPicksDialogComponent>;
+  eventWaveformShiftPicksDialogRef?: MatDialogRef<EventWaveformShiftPicksDialogComponent>;
   shiftPicksValue: BehaviorSubject<number> = new BehaviorSubject(0);
 
   eventDuplicationDialogOpened = false;
-  eventDuplicationDialogRef!: MatDialogRef<ConfirmationDialogComponent>;
+  eventDuplicationDialogRef?: MatDialogRef<ConfirmationDialogComponent>;
 
   jsonDialogOpened = false;
-  jsonDialogRef!: MatDialogRef<JsonDialogComponent>;
+  jsonDialogRef?: MatDialogRef<JsonDialogComponent>;
 
   eventTypes: EventType[] = [];
   evaluationStatuses = Object.values(EvaluationStatus);
@@ -196,7 +196,7 @@ export class WaveformService implements OnDestroy {
   eventTypesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   overallDataLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
 
-  _appDataDialog!: MatDialogRef<WaveformInitializerDialogComponent>;
+  _appDataDialogRef?: MatDialogRef<WaveformInitializerDialogComponent>;
 
   private _unsubscribe = new Subject<void>();
 
@@ -411,6 +411,10 @@ export class WaveformService implements OnDestroy {
                 break;
 
               case WebsocketResponseOperation.AUTOMATIC_PIPELINE_COMPLETE:
+                this._handleAutomaticProcessing(data.event, AutomaticProcessingStatus.COMPLETE);
+                break;
+              case WebsocketResponseOperation.AUTOMATIC_PIPELINE_FAILED:
+                this._handleAutomaticProcessing(data.event, AutomaticProcessingStatus.FAILED, data.extra.error);
                 break;
 
               default:
@@ -586,6 +590,28 @@ export class WaveformService implements OnDestroy {
     }
   }
 
+  async _handleAutomaticProcessing(event: IEvent, automaticProcessingStatus: AutomaticProcessingStatus, error?: any) {
+    let currentList = this.automaticProcessCurrentList.getValue();
+    currentList = currentList.filter(val => {
+      if (val.event_resource_id !== event.event_resource_id) {
+        return true;
+      }
+      return false;
+    });
+
+    // hardfix to wait for 10 additional seconds. Usually, not all processing is truly finished when we receive a notification.
+    setTimeout(async () => {
+      this.automaticProcessCurrentList.next(currentList);
+      this.wsEventUpdated.next(event);
+
+      if (automaticProcessingStatus === AutomaticProcessingStatus.COMPLETE) {
+        this._toastrNotificationService.success('Automatic processing completed');
+      } else if (automaticProcessingStatus === AutomaticProcessingStatus.FAILED) {
+        this._toastrNotificationService.error(error, 'Automatic processing failed');
+      }
+    }, 10000);
+  }
+
   async openEventChart(eventId: String) {
     await this._router.navigate(['/events', eventId], {
       relativeTo: this._activatedRoute,
@@ -614,7 +640,9 @@ export class WaveformService implements OnDestroy {
       this.highFreqCorner.next(val.highFreqCorner);
       this.numPoles.next(val.numPoles);
       this.applyFilterClicked.next();
-      this.eventWaveformFilterDialogRef.close();
+      if (!!this.eventWaveformFilterDialogRef) {
+        this.eventWaveformFilterDialogRef.close();
+      }
     });
 
     this.eventWaveformFilterDialogRef.afterClosed().pipe(first()).subscribe(val => {
@@ -639,7 +667,9 @@ export class WaveformService implements OnDestroy {
     const $submitClick = this.eventWaveformShiftPicksDialogRef.componentInstance.submitClick
       .subscribe(async (data: number) => {
         this.shiftPicksValue.next(data);
-        this.eventWaveformShiftPicksDialogRef.close();
+        if (this.eventWaveformShiftPicksDialogRef) {
+          this.eventWaveformShiftPicksDialogRef.close();
+        }
       });
 
     this.eventWaveformShiftPicksDialogRef.afterClosed().pipe(first()).subscribe(val => {
@@ -712,6 +742,10 @@ export class WaveformService implements OnDestroy {
 
   async openBatchDialog() {
 
+    if (this.batchPicksDialogRef || this.batchPicksDialogOpened) {
+      return;
+    }
+
     this.batchPicksDialogRef = this._matDialog.open<ConfirmationDialogComponent, ConfirmationDialogData>(ConfirmationDialogComponent, {
       hasBackdrop: true,
       width: '600px',
@@ -725,14 +759,43 @@ export class WaveformService implements OnDestroy {
       if (val) {
         this.batchPicks.next(true);
       }
+
+      this.batchPicksDialogOpened = false;
+      delete this.batchPicksDialogRef;
     });
 
   }
 
 
+  async automaticProcessingClick(ev: IEvent) {
+    if (!ev) {
+      console.error('No event to trigger automatic processing');
+      return null;
+    }
+
+    try {
+      this.loadingCurrentEventAndList = true;
+      this._ngxSpinnerService.show('loadingCurrentEventAndList', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      const response = await this._eventApiService.startAutomaticProcessing(ev.event_resource_id).toPromise();
+      this._toastrNotificationService.success('Automatic processing triggered');
+
+      const apCurrentList = this.automaticProcessCurrentList.getValue();
+      const idx = apCurrentList.findIndex(val => val.event_resource_id === response.event_resource_id);
+      if (idx === -1) {
+        this.automaticProcessCurrentList.next([...apCurrentList, ev]);
+      }
+    } catch (err) {
+      this._toastrNotificationService.error('Could not trigger automatic processing');
+      console.error(err);
+    } finally {
+
+      this.loadingCurrentEventAndList = false;
+      this._ngxSpinnerService.hide('loadingCurrentEventAndList');
+    }
+  }
 
   async openEventDuplicationDialog(ev: IEvent) {
-    console.log('here');
+
     if (!ev) {
       console.error('No event to duplicate');
       return null;
@@ -831,7 +894,9 @@ export class WaveformService implements OnDestroy {
       .subscribe(async (data: EventQuery) => {
         try {
           this.eventListQuery = data;
-          this.eventFilterDialogRef.componentInstance.loading = true;
+          if (this.eventFilterDialogRef) {
+            this.eventFilterDialogRef.componentInstance.loading = true;
+          }
           this._ngxSpinnerService.show('loadingEventFilter', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
           this._router.navigate(
             [],
@@ -841,11 +906,15 @@ export class WaveformService implements OnDestroy {
             });
 
           this.numberOfChangesInFilter = EventUtil.getNumberOfChanges(this.eventListQuery);
-          this.eventFilterDialogRef.close();
+          if (this.eventFilterDialogRef) {
+            this.eventFilterDialogRef.close();
+          }
         } catch (err) {
           console.error(err);
         } finally {
-          this.eventFilterDialogRef.componentInstance.loading = false;
+          if (this.eventFilterDialogRef) {
+            this.eventFilterDialogRef.componentInstance.loading = false;
+          }
           this._ngxSpinnerService.hide('loadingEventFilter');
         }
       });
@@ -886,7 +955,9 @@ export class WaveformService implements OnDestroy {
       .subscribe(async (data: EventQuery) => {
 
         try {
-          this.eventExportDialogRef.componentInstance.loading = true;
+          if (this.eventExportDialogRef) {
+            this.eventExportDialogRef.componentInstance.loading = true;
+          }
           this._ngxSpinnerService.show('loadingEventExport', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
           const binaryData = await this._eventApiService.downloadResource(this._eventApiService.geneateUrlToExportEventsToCsv(data)).toPromise();
@@ -897,11 +968,15 @@ export class WaveformService implements OnDestroy {
           virtualDownloadEl.click();
           virtualDownloadEl.remove();
 
-          this.eventExportDialogRef.close();
+          if (this.eventExportDialogRef) {
+            this.eventExportDialogRef.close();
+          }
         } catch (err) {
           console.error(err);
         } finally {
-          this.eventExportDialogRef.componentInstance.loading = false;
+          if (this.eventExportDialogRef) {
+            this.eventExportDialogRef.componentInstance.loading = false;
+          }
           this._ngxSpinnerService.hide('loadingEventExport');
         }
       });
@@ -938,44 +1013,50 @@ export class WaveformService implements OnDestroy {
     });
 
     const updateDialogSaveSub = this.eventUpdateDialogRef.componentInstance.onSave.pipe(first()).subscribe(async (data: EventUpdateInput) => {
-      try {
+      if (!!this.eventUpdateDialogRef) {
+        try {
+          this.eventUpdateDialogRef.componentInstance.loading = true;
+          this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+          const eventId = data && data.event_resource_id ? data.event_resource_id : '';
+
+          const result = await this._eventApiService.updateEvent(eventId, data).toPromise();
+          this.wsEventUpdated.next(result);
+          this.eventUpdateDialogRef.close();
+        } catch (err) {
+          console.error(err);
+        } finally {
+          this.eventUpdateDialogRef.componentInstance.loading = false;
+          this._ngxSpinnerService.hide('loadingEventUpdate');
+        }
+      }
+    });
+
+    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.pipe(first()).subscribe(async (data: EventType) => {
+      if (!!this.eventUpdateDialogRef) {
         this.eventUpdateDialogRef.componentInstance.loading = true;
         this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-        const eventId = data && data.event_resource_id ? data.event_resource_id : '';
 
-        const result = await this._eventApiService.updateEvent(eventId, data).toPromise();
-        this.wsEventUpdated.next(result);
-        this.eventUpdateDialogRef.close();
-      } catch (err) {
-        console.error(err);
-      } finally {
+        if (await this.onAcceptClick(event.event_resource_id, data)) {
+          this.eventUpdateDialogRef.close();
+        }
+
         this.eventUpdateDialogRef.componentInstance.loading = false;
         this._ngxSpinnerService.hide('loadingEventUpdate');
       }
     });
 
-    const updateDialogAcceptSub = this.eventUpdateDialogRef.componentInstance.onAcceptClicked.pipe(first()).subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
-
-      if (await this.onAcceptClick(event.event_resource_id, data)) {
-        this.eventUpdateDialogRef.close();
-      }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
-    });
-
     const updateDialogRejectSub = this.eventUpdateDialogRef.componentInstance.onRejectClicked.pipe(first()).subscribe(async (data: EventType) => {
-      this.eventUpdateDialogRef.componentInstance.loading = true;
-      this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
+      if (!!this.eventUpdateDialogRef) {
+        this.eventUpdateDialogRef.componentInstance.loading = true;
+        this._ngxSpinnerService.show('loadingEventUpdate', { fullScreen: false, bdColor: 'rgba(51,51,51,0.25)' });
 
-      if (await this.onDeclineClick(event.event_resource_id, data)) {
-        this.eventUpdateDialogRef.close();
+        if (await this.onDeclineClick(event.event_resource_id, data)) {
+          this.eventUpdateDialogRef.close();
+        }
+
+        this.eventUpdateDialogRef.componentInstance.loading = false;
+        this._ngxSpinnerService.hide('loadingEventUpdate');
       }
-
-      this.eventUpdateDialogRef.componentInstance.loading = false;
-      this._ngxSpinnerService.hide('loadingEventUpdate');
     });
 
     this.eventUpdateDialogRef.afterClosed().pipe(first()).subscribe(val => {
@@ -1106,11 +1187,11 @@ export class WaveformService implements OnDestroy {
   }
 
   public openApplicationDataDialog() {
-    if (this._appDataDialog) {
+    if (this._appDataDialogRef) {
       return;
     }
 
-    this._appDataDialog = this._matDialog.open<WaveformInitializerDialogComponent, { waveformService: WaveformService }>(WaveformInitializerDialogComponent, {
+    this._appDataDialogRef = this._matDialog.open<WaveformInitializerDialogComponent, { waveformService: WaveformService }>(WaveformInitializerDialogComponent, {
       width: '600px',
       autoFocus: false,
       disableClose: true,
@@ -1119,8 +1200,8 @@ export class WaveformService implements OnDestroy {
       }
     });
 
-    this._appDataDialog.afterClosed().pipe(first()).subscribe(_ => {
-      delete this._appDataDialog;
+    this._appDataDialogRef.afterClosed().pipe(first()).subscribe(_ => {
+      delete this._appDataDialogRef;
     });
   }
 

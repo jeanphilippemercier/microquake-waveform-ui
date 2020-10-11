@@ -42,6 +42,14 @@ export class Waveform2Component implements OnInit, OnDestroy {
   set event(event: IEvent) {
     const newEventId = event ? event.event_resource_id : null;
     const oldEventId = this._event ? this._event.event_resource_id : null;
+    const oldEvent = this._event;
+
+
+    // const currentAutomaticProcessingList = this.waveformService.automaticProcessCurrentList.getValue();
+    // if (currentAutomaticProcessingList?.findIndex(automaticProcessingEvent => automaticProcessingEvent?.event_resource_id === event?.event_resource_id) > -1) {
+    //   return;
+    // }
+
     if (newEventId !== oldEventId || (
       this._event && event && (
         this._event.x !== event.x ||
@@ -51,7 +59,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
     )) {
       this._event = event;
       this._preLoadedWaveformPageQueue = [];
-      this._handleEvent(this._event);
+      this._handleEvent(this._event, oldEvent);
     }
   }
   get event(): IEvent {
@@ -389,11 +397,13 @@ export class Waveform2Component implements OnInit, OnDestroy {
     return false;
   }
 
-  private async _handleEvent(event: IEvent) {
+  private async _handleEvent(event: IEvent, previousEvent: IEvent) {
 
     const currentEventInitStartTimestamp = new Date().getTime();
     this.currentEventInitStartTimestamp = currentEventInitStartTimestamp;
-    this._getInteractiveProcessingStatus();
+    if (event?.event_resource_id !== previousEvent?.event_resource_id) {
+      this._getInteractiveProcessingStatus();
+    }
 
     await this.waveformService.isInitialized();
 
@@ -705,7 +715,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
         this._toastrNotificationService.warning(msg_str);
       }
 
-      if (!this.timeOrigin.isSame(eventData.timeOrigin, 'second')) {
+      if (!this.timeOrigin?.isSame(eventData.timeOrigin, 'second')) {
         console.log('Warning: Different origin time on page: ', idx);
       }
 
