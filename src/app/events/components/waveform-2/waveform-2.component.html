@@ -1,3 +1,5 @@
+<!-- <div style="position: absolute; top: 0px;left:0px;width: 300px;height:50px;background: black;">test</div> -->
+
 <div class="container-fluid content p-0">
   <ngx-spinner name="loadingWaveform"></ngx-spinner>
   <div
@@ -27,6 +29,69 @@
     #waveformContainer
     [style.opacity]="waveformShow ? '1.0' : '0.0'"
   >
+    <div
+      *ngFor="let chartId of [0,1,2,3,4,5,6]"
+      [id]="'containerWrap'+chartId"
+      class="chart-container-wrap"
+      [ngStyle]="{'height': 'calc((100vh - 64px) / 7)'}"
+    >
+      <div
+        [id]="'container'+chartId"
+        class="chart-container"
+        [ngStyle]="{'height': 'calc((100vh - 64px) / 7)'}"
+      ></div>
+
+      <ng-container *ngIf="activeSensorsMeta[chartId] != null">
+        <div class="trace-title">{{activeSensorsMeta[chartId]?.title}}</div>
+        <div class="trace-subtitle">{{activeSensorsMeta[chartId]?.subtitle}}</div>
+        <div
+          class="trace-labels"
+          *ngIf="!(this.waveformService.labellingModeIsActive | async)"
+        >
+          <mat-chip-list aria-label=" selection">
+            <ng-container *ngIf="activeSensors[chartId + 1]; else elseTemplate">
+              <mat-chip
+                *ngFor="let label of eventTraceLabelsMap[allWaveformSensors[((currentPage - 1) * pageSize - (currentPage - 1)) + chartId]?.code]; let idx = index"
+              >
+                {{label.name}}
+              </mat-chip>
+            </ng-container>
+            <ng-template #elseTemplate>
+              <mat-chip *ngFor="let label of eventTraceLabelsMap['context'];">
+                {{label.name}}
+              </mat-chip>
+            </ng-template>
+
+          </mat-chip-list>
+        </div>
+      </ng-container>
+
+    </div>
+    <!-- <div
+      [id]="'containerWrap6'"
+      class="chart-container-wrap"
+      [ngStyle]="{'height': 'calc((100vh - 64px) / 7)'}"
+    >
+      <div
+        [id]="'container6'"
+        class="chart-container"
+        [ngStyle]="{'height': 'calc((100vh - 64px) / 7)'}"
+      ></div>
+
+      <ng-container>
+        <div
+          class="trace-labels"
+          *ngIf="!(this.waveformService.labellingModeIsActive | async)"
+        >
+          <mat-chip-list aria-label=" selection">
+            <mat-chip *ngFor="let label of eventTraceLabelsMap['context']; let idx = index">
+              {{label.name}}
+            </mat-chip>
+          </mat-chip-list>
+        </div>
+      </ng-container>
+
+    </div> -->
     <div
       class="text-color"
       id="zeroTime"

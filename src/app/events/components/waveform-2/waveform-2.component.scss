@@ -76,3 +76,47 @@ mat-progress-bar {
   justify-content: flex-start;
   padding: 30px 15px 15px 60px;
 }
+
+.chart-container-wrap {
+  margin: 0px auto;
+  position: relative;
+
+  .trace-title {
+    position: absolute;
+    top: 0;
+    left: 60px;
+    font-size: 12px;
+    color: black;
+    font-weight: 400;
+  }
+
+  .trace-subtitle {
+    position: absolute;
+    top: 15px;
+    left: 60px;
+    font-size: 10px;
+    color: black;
+    font-weight: 400;
+  }
+
+  .trace-labels {
+    position: absolute;
+    top: 2px;
+    left: 200px;
+    opacity: 0.45;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    .mat-chip {
+      font-size: 10px;
+      min-height: 22px;
+      padding: 5px 8px;
+    }
+  }
+
+  .chart-container {
+    margin: 0px auto;
+  }
+}
