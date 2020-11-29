@@ -9,6 +9,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { WaveformToolbarComponent } from './components/waveform-toolbar/waveform-toolbar.component';
 import { EventSitePickerComponent } from './components/events-site-picker/event-site-picker.component';
 import { EventSitePickerDialogComponent } from './dialogs/event-site-picker-dialog/event-site-picker-dialog.component';
+import { WaveformLabellingModeComponent } from './components/waveform-labelling-mode/waveform-labelling-mode.component';
 
 const ROUTES: Routes = [
   {
@@ -27,6 +28,7 @@ const ROUTES: Routes = [
     EventDetailComponent,
     EventListComponent,
     Waveform2Component,
+    WaveformLabellingModeComponent,
     WaveformToolbarComponent,
     EventSitePickerComponent,
     EventSitePickerDialogComponent
