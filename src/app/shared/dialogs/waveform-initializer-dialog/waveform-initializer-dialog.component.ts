@@ -40,6 +40,9 @@ export class WaveformInitializerDialogComponent {
       case 4:
         this.waveformService.reloadAllStations();
         break;
+      case 5:
+        this.waveformService.reloadTraceLabels();
+        break;
     }
   }
   reloadAllMissingData() {
@@ -60,6 +63,10 @@ export class WaveformInitializerDialogComponent {
 
     if (this.waveformService.allStationsLoadStatus.getValue() === DataLoadStatus.ERROR) {
       this.reloadData(4);
+    }
+
+    if (this.waveformService.traceLabelsLoadStatus.getValue() === DataLoadStatus.ERROR) {
+      this.reloadData(5);
     }
   }
 }

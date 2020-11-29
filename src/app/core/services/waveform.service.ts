@@ -6,20 +6,20 @@ import * as moment from 'moment';
 
 import { EventHelpDialogComponent } from '@app/shared/dialogs/event-help-dialog/event-help-dialog.component';
 import { globals } from '@src/globals';
-import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, BatchStatus, AutomaticProcessingStatus } from '@interfaces/event.interface';
+import { IEvent, EventBatchMap, EvaluationStatusGroup, EvaluationStatus, EvaluationMode, EventType, PickingMode, BatchStatus, AutomaticProcessingStatus, WaveformSensor } from '@interfaces/event.interface';
 import { ToastrNotificationService } from './toastr-notification.service';
 import { EventApiService } from './api/event-api.service';
 import { EventInteractiveProcessingDialogComponent } from '@app/shared/dialogs/event-interactive-processing-dialog/event-interactive-processing-dialog.component';
 import { EventInteractiveProcessingDialog, EventUpdateDialog, EventFilterDialogData, ConfirmationDialogData, EventWaveformFilterDialogData, JsonDialogData } from '@interfaces/dialogs.interface';
 import { EventUpdateDialogComponent } from '@app/shared/dialogs/event-update-dialog/event-update-dialog.component';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { EventUpdateInput } from '@interfaces/event-dto.interface';
+import { EventTraceLabelUpdateInput, EventUpdateInput } from '@interfaces/event-dto.interface';
 import { EventQuery } from '@interfaces/event-query.interface';
 import { EventFilterDialogComponent } from '@app/shared/dialogs/event-filter-dialog/event-filter-dialog.component';
 import EventUtil from '@core/utils/event-util';
 import { Router, ActivatedRoute } from '@angular/router';
 import { InventoryApiService } from './api/inventory-api.service';
-import { Site, Network, Station, Sensor, Heartbeat, HeartbeatStatus } from '@interfaces/inventory.interface';
+import { Site, Network, Station, Sensor, Heartbeat, HeartbeatStatus, TraceLabel } from '@interfaces/inventory.interface';
 import { EventQuakemlToMicroquakeTypePipe } from '@app/shared/pipes/event-quakeml-to-microquake-type.pipe';
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { EventWaveformFilterDialogComponent } from '@app/shared/dialogs/event-waveform-filter-dialog/event-waveform-filter-dialog.component';
@@ -92,6 +92,13 @@ export class WaveformService implements OnDestroy {
   currentPage: BehaviorSubject<number> = new BehaviorSubject(1);
   maxPages: BehaviorSubject<number> = new BehaviorSubject(globals.max_num_pages);
   loadedPages: BehaviorSubject<number> = new BehaviorSubject(0);
+  allWaveformSensors: BehaviorSubject<WaveformSensor[]> = new BehaviorSubject<WaveformSensor[]>([]);
+  contextSensors: BehaviorSubject<Sensor[]> = new BehaviorSubject<Sensor[]>([]);
+
+  labellingModeIsActive: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+
+  labelTracesRequest: Subject<EventTraceLabelUpdateInput> = new Subject;
+  labelTracesRequestObs: Observable<EventTraceLabelUpdateInput> = this.labelTracesRequest.asObservable();
 
   loading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   interactiveProcessLoading: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
@@ -137,6 +144,7 @@ export class WaveformService implements OnDestroy {
   jsonDialogRef?: MatDialogRef<JsonDialogComponent>;
 
   eventTypes: EventType[] = [];
+  traceLabels: TraceLabel[] = [];
   evaluationStatuses = Object.values(EvaluationStatus);
   evaluationStatusGroups = Object.values(EvaluationStatusGroup);
   eventEvaluationModes = Object.values(EvaluationMode);
@@ -194,6 +202,7 @@ export class WaveformService implements OnDestroy {
   sitesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   networksLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   eventTypesLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
+  traceLabelsLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
   overallDataLoadStatus: BehaviorSubject<DataLoadStatus> = new BehaviorSubject<DataLoadStatus>(DataLoadStatus.UNKNOWN);
 
   _appDataDialogRef?: MatDialogRef<WaveformInitializerDialogComponent>;
@@ -253,6 +262,7 @@ export class WaveformService implements OnDestroy {
       this._loadPersistantData(),
       this._watchWebsocketNotifications(),
       this._loadEventTypes(),
+      this._loadTraceLabels(),
       this._loadAllSitesAndNetworks(),
       this._getLastHeartbeatAndWatch()
     ]);
@@ -285,6 +295,23 @@ export class WaveformService implements OnDestroy {
 
   public reloadEventTypes() {
     this._loadEventTypes();
+  }
+
+  private async _loadTraceLabels() {
+    try {
+      this.traceLabelsLoadStatus.next(DataLoadStatus.LOADING);
+      this.traceLabels = await this._inventoryApiService.getTraceLabels().toPromise();
+      this.traceLabelsLoadStatus.next(DataLoadStatus.LOADED);
+    } catch (err) {
+      this.traceLabelsLoadStatus.next(DataLoadStatus.ERROR);
+      this._toastrNotificationService.error(err);
+      console.error(err);
+      this.openApplicationDataDialog();
+    }
+  }
+
+  public reloadTraceLabels() {
+    this._loadTraceLabels();
   }
 
   private async _getLastHeartbeatAndWatch() {

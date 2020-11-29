@@ -1,4 +1,5 @@
 import * as moment from 'moment';
+import { TraceLabel } from './inventory.interface';
 
 export enum QuakemlType {
   NOT_EXISTING = 'not existing',
@@ -122,6 +123,7 @@ export interface IEvent {
   z: number;
   duplicate_of: string | null;
   outsideOfCurrentFilter?: boolean;
+  trace_labels: EventTraceLabel[];
 }
 
 export enum AutomaticProcessingStatus {
@@ -321,4 +323,17 @@ export interface EventsDailySummaryForCatalog {
   expanded?: boolean;
   upToDate?: boolean;
   partial?: boolean;
+}
+
+export interface EventTraceLabel {
+  id: string;
+  sensor: null | {
+    id: number;
+    code: string;
+  };
+  label: TraceLabel;
+}
+
+export interface EventTraceLabelMap {
+  [key: string]: TraceLabel[];
 }

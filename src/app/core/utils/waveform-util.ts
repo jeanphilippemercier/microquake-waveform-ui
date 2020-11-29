@@ -5,8 +5,9 @@ import * as filter from 'seisplotjs-filter';
 import * as moment from 'moment';
 import { globals } from '@src/globals';
 import { Sensor } from '@interfaces/inventory.interface';
-import { Channel, PickType } from '@interfaces/event.interface';
+import { Channel, EventTraceLabel, EventTraceLabelMap, PickType } from '@interfaces/event.interface';
 import { PickKey, Arrival, PredictedPickKey, WaveformSensor, PreferredRay } from '@interfaces/event.interface';
+import { isArray } from 'rxjs/internal/util/isArray';
 
 export default class WaveformUtil {
 
@@ -667,6 +668,20 @@ export default class WaveformUtil {
       });
     }
     return sensorsToPopulate;
+  }
+
+
+  static createEventTraceLabelsMap(eventTraceLabels: EventTraceLabel[]): EventTraceLabelMap {
+    const eventTraceLabelsMap: EventTraceLabelMap = {};
+    eventTraceLabels?.forEach(el => {
+      const key = el.sensor?.code ?? 'context';
+      if (eventTraceLabelsMap[key] === null || !isArray(eventTraceLabelsMap[key])) {
+        eventTraceLabelsMap[key] = [];
+      }
+      eventTraceLabelsMap[key].push(el.label);
+    });
+
+    return eventTraceLabelsMap;
   }
 }
 

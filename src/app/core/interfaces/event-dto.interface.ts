@@ -28,3 +28,16 @@ export interface EventPaginationResponse<T> extends PaginationResponse<T> {
 export interface EventDuplicationResponse {
   event_resource_id: string;
 }
+
+export interface EventTraceLabelUpdateContext {
+  sensor: {
+    code: string;
+  } | null;
+  label: {
+    id: number;
+  };
+}
+
+export interface EventTraceLabelUpdateInput {
+  trace_labels: EventTraceLabelUpdateContext[];
+}
