@@ -1,6 +1,6 @@
 import { IEvent, EvaluationStatus, EventType, EvaluationMode, EvaluationStatusGroup, QuakemlType, QuakemlTypeWithMappedMicroquakeType } from './event.interface';
 import { EventQuery } from './event-query.interface';
-import { Site, Network, Station, TakenEventType, Borehole, Sensor, CableType, ISensorType, IComponent, ComponentCode } from './inventory.interface';
+import { Site, Network, Station, TakenEventType, Borehole, Sensor, CableType, ISensorType, IComponent, ComponentCode, TraceLabel } from './inventory.interface';
 import { MaintenanceEvent, MaintenanceStatus, MaintenanceCategory } from './maintenance.interface';
 import { PageMode } from './core.interface';
 
@@ -63,6 +63,13 @@ export interface MicroquakeEventTypeFormDialogData {
   sites: Site[];
   takenEventType: TakenEventType[];
   quakemlTypes: QuakemlTypeWithMappedMicroquakeType[];
+}
+
+export interface TraceLabelFormDialogData {
+  model: TraceLabel | Partial<TraceLabel>;
+  mode: PageMode;
+  takenEventType: number[];
+  eventTypes: EventType[];
 }
 
 export interface CableTypeFormDialogData {

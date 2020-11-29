@@ -39,6 +39,10 @@ import { BoreholeFormDialogComponent } from './dialogs/borehole-form-dialog/bore
 import { ComponentTable2Component } from './components/component/component-table-2/component-table-2.component';
 import { ComponentFormDialogComponent } from './dialogs/component-form-dialog/component-form-dialog.component';
 import { PageMode } from '@interfaces/core.interface';
+import { InventoryTraceLabelListPageComponent } from './pages/microquake-event-type/inventory-trace-label-list-page/inventory-trace-label-list-page.component';
+import { TraceLabelFormComponent } from './components/trace-label/trace-label-form/trace-label-form.component';
+import { TraceLabelTableComponent } from './components/trace-label/trace-label-table/trace-label-table.component';
+import { TraceLabelFormDialogComponent } from './dialogs/trace-label-form-dialog/trace-label-form-dialog.component';
 
 const ROUTES: Routes = [
   {
@@ -121,6 +125,14 @@ const ROUTES: Routes = [
     path: 'inventory/microquake-event-types/:microquakeEventTypeId',
     component: InventoryMicroquakeEventTypeListPageComponent,
   },
+  {
+    path: 'inventory/trace-labels',
+    redirectTo: 'inventory/trace-labels/',
+  },
+  {
+    path: 'inventory/trace-labels/:traceLabelId',
+    component: InventoryTraceLabelListPageComponent,
+  },
 ];
 
 const pageDetailComponents = [
@@ -137,7 +149,8 @@ const pageListComponents = [
   InventorySensorTypeListPageComponent,
   InventoryCableTypeListPageComponent,
   InventoryBoreholeListPageComponent,
-  InventoryMicroquakeEventTypeListPageComponent
+  InventoryMicroquakeEventTypeListPageComponent,
+  InventoryTraceLabelListPageComponent
 ];
 
 const formComponents = [
@@ -147,7 +160,8 @@ const formComponents = [
   ComponentFormComponent,
   SensorTypeFormComponent,
   BoreholeFormComponent,
-  MicroquakeEventTypeFormComponent
+  MicroquakeEventTypeFormComponent,
+  TraceLabelFormComponent
 ];
 
 const tableComponents = [
@@ -158,7 +172,8 @@ const tableComponents = [
   BoreholeTableComponent,
   MicroquakeEventTypeTableComponent,
   CableTypeTableComponent,
-  SensorTypeTableComponent
+  SensorTypeTableComponent,
+  TraceLabelTableComponent
 ];
 
 const formDialogComponents = [
@@ -168,13 +183,15 @@ const formDialogComponents = [
   SensorTypeFormDialogComponent,
   StationFormDialogComponent,
   BoreholeFormDialogComponent,
-  ComponentFormDialogComponent
+  ComponentFormDialogComponent,
+  TraceLabelFormDialogComponent
 ];
 
 const otherDialogComponents = [
   BoreholeSurveyFileDialogComponent,
   BoreholeInterpolationDialogComponent
 ];
+
 @NgModule({
   declarations: [
     ...pageDetailComponents,

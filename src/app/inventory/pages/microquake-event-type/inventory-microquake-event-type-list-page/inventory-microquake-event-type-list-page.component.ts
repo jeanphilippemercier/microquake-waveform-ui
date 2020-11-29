@@ -50,7 +50,7 @@ export class InventoryMicroquakeEventTypeListPageComponent extends ListPage<Even
 
         try {
           await this.loadingStart();
-          await this.wiatForInitialization();
+          await this.waitForInitialization();
 
           let data: EventType | undefined;
           if (this.dataSource) {

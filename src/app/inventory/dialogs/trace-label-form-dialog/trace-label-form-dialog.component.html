@@ -1,0 +1,20 @@
+<h1 mat-dialog-title>
+  <ng-container *ngIf="dialogData.mode === PageMode.CREATE; else editTemplate">
+    Creating new trace label
+  </ng-container>
+  <ng-template #editTemplate>
+    Editing trace label
+  </ng-template>
+</h1>
+<mat-dialog-content>
+  <app-trace-label-form
+    [mode]="dialogData.mode"
+    [model]="dialogData.model"
+    (modelEdited)="onSaveClicked()"
+    (modelCreated)="onSaveClicked()"
+    (cancel)="onCancelClicked()"
+    [takenEventTypes]="dialogData.takenEventType"
+    [eventTypes]="dialogData.eventTypes"
+  >
+  </app-trace-label-form>
+</mat-dialog-content>

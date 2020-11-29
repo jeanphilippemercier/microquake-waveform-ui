@@ -1,0 +1,30 @@
+<mat-toolbar color="primary">
+  <app-layout-topbar></app-layout-topbar>
+</mat-toolbar>
+
+<div class="container-fluid">
+
+  <app-layout-header>
+    <ng-container headline>Trace labels</ng-container>
+    <ng-container breadcrumbs>Home > Inventory > Trace labels</ng-container>
+
+    <ng-container actions>
+      <button
+        (click)="openCreateFormDialog()"
+        mat-raised-button
+        color="primary"
+      >Create</button>
+    </ng-container>
+  </app-layout-header>
+
+  <app-layout-content>
+    <app-trace-label-table
+      [dataSource]="dataSource"
+      [showPagination]="false"
+      [eventTypes]="eventTypes"
+      (delete)="delete($event)"
+      (rowClick)="onRowClicked($event)"
+    ></app-trace-label-table>
+  </app-layout-content>
+
+</div>

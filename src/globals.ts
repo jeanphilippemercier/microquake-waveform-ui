@@ -21,6 +21,8 @@ export const globals = {
   apiPicksInteractive: 'batch',
   // Microquake event types API endpoint
   apiMicroquakeEventTypes: 'inventory/microquake_event_types',
+  // Trace labels API endpoint
+  apiTraceLabels:  'inventory/labels',
   // Reprocess events API endpoint
   apiReprocess: 'reprocess',
   // number of charts per page
