@@ -118,7 +118,21 @@ mat-expansion-panel-header {
     line-height: 10px;
   }
 
-   .event-id{
+  .event-icon .mat-badge-label-content {
+    right: -18px;
+    position: absolute;
+    bottom: -9px;
+    margin: auto;
+    font-size: 11px;
+
+    mat-icon {
+      font-size: 18px;
+      display: block;
+      color: #4051b5;
+    }
+  }
+
+  .event-id {
     width: 165px;
   }
 
@@ -143,7 +157,7 @@ mat-expansion-panel-header {
     }
   }
 
-  &.event-outside-clientside-filter{
+  &.event-outside-clientside-filter {
     opacity: 0.3;
   }
 
