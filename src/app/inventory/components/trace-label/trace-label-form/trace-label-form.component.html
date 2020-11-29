@@ -33,11 +33,7 @@
                 none
               </mat-option>
               <ng-container *ngFor="let eventType of eventTypes">
-                <mat-option
-                  [value]="eventType"
-                  [disabled]="eventType?.id !== model?.event_type && isEventTypeTaken(eventType)"
-                >
-                  <!-- [disabled]="eventType?.quakeml_type !== model?.quakeml_type && eventType?.microquake_type" -->
+                <mat-option [value]="eventType">
                   {{eventType?.microquake_type}}
                 </mat-option>
               </ng-container>

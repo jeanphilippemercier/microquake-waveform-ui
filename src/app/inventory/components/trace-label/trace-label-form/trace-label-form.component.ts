@@ -53,10 +53,7 @@ export class TraceLabelFormComponent extends Form<TraceLabel> implements OnInit 
   private _initEditableForm() {
 
     const foundEventType = this.eventTypes.find(val => val.id === this.model.event_type);
-    console.log(this.eventTypes);
-    console.log(this.model);
     if (foundEventType) {
-      console.log('found!');
       this.myForm.patchValue({ event_type: foundEventType });
     }
 
