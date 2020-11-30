@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, ChangeDetectionStrategy, ChangeDetectorRef, HostBinding } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import WaveformUtil from '@core/utils/waveform-util';
 import { EventTraceLabelUpdateContext, EventTraceLabelUpdateInput } from '@interfaces/event-dto.interface';
@@ -16,14 +16,13 @@ import { takeUntil } from 'rxjs/operators';
 })
 
 export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
+  @HostBinding('class.isActive') public isLabellingModeActive = false;
 
   private _unsubscribe = new Subject<void>();
   waveformSensors: WaveformSensor[] = [];
   selectedWaveformSensors: WaveformSensor[] = [];
-  labelTypes: EventType[] = [];
   traceLabels: TraceLabel[] = [];
   eventTraceLabelsMap: EventTraceLabelMap = {};
-
 
   paginationForm = new FormControl();
   paginationPages: number[] = [];
@@ -33,15 +32,13 @@ export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
   contextSensor: Sensor | null = null;
   selectedContextSensor = false;
   event: IEvent | null = null;
-  selectedLabelsMap: any = {};
-
 
   keyboardShortcutsFn = (e: any) => {
     const target = e.target || e.srcElement;
     if (!/INPUT|TEXTAREA|SELECT/.test(target.nodeName)) {
 
       if (e.keyCode === 88) {  // x
-        this.toggleSelectAllTraces();
+        this.selectAllVisibleTraces();
       }
 
       if (e.keyCode === 90) {
@@ -76,8 +73,22 @@ export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    this.selectedWaveformSensors = [];
-    this.traceLabels = this.waveformService.traceLabels;
+
+    this.waveformService.labellingModeIsActive.pipe(
+      takeUntil(this._unsubscribe)
+    ).subscribe(val => {
+      this.isLabellingModeActive = val;
+      if (this.isLabellingModeActive) {
+        this.selectedWaveformSensors = [];
+        this.selectedContextSensor = false;
+        this.traceLabels = this.waveformService.traceLabels;
+        document.addEventListener('keydown', this.keyboardShortcutsFn);
+      } else {
+        document.removeEventListener('keydown', this.keyboardShortcutsFn);
+      }
+
+      this._cdr.detectChanges();
+    });
 
     this.waveformService.currentEvent.pipe(
       takeUntil(this._unsubscribe)
@@ -128,16 +139,14 @@ export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
       this._cdr.detectChanges();
     });
 
-    this.labelTypes = this.waveformService.eventTypes;
 
-    document.addEventListener('keydown', this.keyboardShortcutsFn);
   }
 
 
   ngOnDestroy(): void {
     this._unsubscribe.next();
     this._unsubscribe.complete();
-    document.removeEventListener('keydown', this.keyboardShortcutsFn);
+    // document.removeEventListener('keydown', this.keyboardShortcutsFn);
   }
 
   onCancelClick() {
@@ -248,6 +257,27 @@ export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
     this._cdr.detectChanges();
   }
 
+  selectAllVisibleTraces() {
+    for (let index = 0; index < this.pageSize - 1; index++) {
+      const sensorIndex = (index + (this.currentPage - 1) * this.pageSize) - (this.currentPage - 1);
+      const element = this.waveformSensors[sensorIndex];
+      if (this.selectedWaveformSensors.findIndex(val => val.id === element.id) === -1) {
+        this.selectedWaveformSensors.push(element);
+      }
+    }
+    this._cdr.detectChanges();
+  }
+
+  deselectAllTraces() {
+    this.selectedWaveformSensors = [];
+    this._cdr.detectChanges();
+  }
+
+  removeAllLabels() {
+    this.eventTraceLabelsMap = {};
+    this._cdr.detectChanges();
+  }
+
   toggleLabel(label: TraceLabel): void {
     if (this.event == null) {
       return;
@@ -335,5 +365,9 @@ export class WaveformLabellingModeComponent implements OnInit, OnDestroy {
       trace_labels: data,
     };
     return eventTraceLabelUpdateInput;
+  }
+
+  areLabelsEmpty(): boolean {
+    return Object.keys(this.eventTraceLabelsMap).length === 0;
   }
 }

@@ -9,6 +9,7 @@ import { FormControl } from '@angular/forms';
 import { MatOptionSelectionChange } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { PickingMode, PickKey } from '@interfaces/event.interface';
+import { DataLoadStatus } from '@interfaces/core.interface';
 
 @Component({
   selector: 'app-waveform-toolbar',
@@ -20,6 +21,7 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
 
   @ViewChild('options', { static: true }) optionsSelect!: MatSelect;
 
+  DataLoadStatus = DataLoadStatus;
   PickKey = PickKey;
   helpDialogRef!: MatDialogRef<EventHelpDialogComponent>;
   helpDialogOpened = false;

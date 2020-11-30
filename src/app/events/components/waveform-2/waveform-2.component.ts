@@ -987,6 +987,7 @@ export class Waveform2Component implements OnInit, OnDestroy {
 
   private _destroyCharts() {
 
+    this.activeSensorsMeta = [];
     if (this.activeSensors) {
       for (const activeSensor of this.activeSensors) {
         if (activeSensor.chart !== undefined) {

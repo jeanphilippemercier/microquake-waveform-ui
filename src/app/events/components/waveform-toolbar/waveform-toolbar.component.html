@@ -37,6 +37,7 @@
       </mat-button-toggle-group>
 
       <button
+        [disabled]="(waveformService.traceLabelsLoadStatus | async) !== DataLoadStatus.LOADED"
         mat-icon-button
         matTooltip="Open Labelling mode"
         (click)="onLabellingModeClick()"

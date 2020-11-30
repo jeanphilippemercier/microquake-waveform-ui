@@ -1,134 +1,181 @@
-<mat-toolbar
-  color="primary"
-  class="overflow-auto"
->
-  <ng-container>
+<ng-container *ngIf="isLabellingModeActive">
 
-    <button
-      class="ml-2"
-      mat-raised-button
-      matTooltip="Cancel labelling mode"
-      (click)="onCancelClick()"
-    >Cancel</button>
-    <button
-      class="ml-2"
-      mat-raised-button
-      matTooltip="Close labelling mode and save labels"
-      (click)="onSaveClick()"
-    >Save labels</button>
+  <mat-toolbar
+    color="primary"
+    class="overflow-auto"
+  >
+    <ng-container>
 
-    <div class="mr-auto"></div>
-    <h2>Labelling mode</h2>
+      <button
+        class="ml-2"
+        mat-raised-button
+        matTooltip="Cancel labelling mode"
+        (click)="onCancelClick()"
+      >Cancel</button>
+      <button
+        class="ml-2"
+        mat-raised-button
+        matTooltip="Close labelling mode and save labels"
+        (click)="onSaveClick()"
+      >Save labels</button>
 
-    <div class="mr-auto"></div>
+      <div class="mr-auto"></div>
+      <h2>Labelling mode</h2>
 
-    <div class="buttons-group ml-2">
-      <div class="buttons-group-content">
-        <button
-          mat-icon-button
-          [disabled]="
+      <div class="mr-auto"></div>
+
+      <div class="buttons-group ml-2">
+        <div class="buttons-group-content">
+          <button
+            mat-icon-button
+            [disabled]="
     (waveformService.currentPage | async) <= 1 ||
     (waveformService.loading | async)
     "
-          (click)="onAddPage(-1)"
-          matTooltip="Previous page"
-        >
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <div
-          class="pagination-pages"
-          (click)="pagination.open()"
-          matTooltip="Select specific waveform page"
-        >
-          <span>
-            <span class="current">{{waveformService.currentPage | async}}</span> /
-            {{waveformService.maxPages | async}}<br>
-          </span>
-          <span class="suffix-label">pages</span>
-        </div>
-        <button
-          class="pagination-button"
-          mat-icon-button
-          (click)="pagination.open()"
-        >
-          <mat-select
-            [formControl]="paginationForm"
-            #pagination
-            class="langSelect"
+            (click)="onAddPage(-1)"
+            matTooltip="Previous page"
           >
-            <mat-option
-              *ngFor="let paginationPage of paginationPages"
-              (click)="onChangeToCustomPage(paginationPage)"
-              [value]="paginationPage"
-            >{{paginationPage}}</mat-option>
-          </mat-select>
-        </button>
-        <button
-          mat-icon-button
-          [disabled]="
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <div
+            class="pagination-pages"
+            (click)="pagination.open()"
+            matTooltip="Select specific waveform page"
+          >
+            <span>
+              <span class="current">{{waveformService.currentPage | async}}</span> /
+              {{waveformService.maxPages | async}}<br>
+            </span>
+            <span class="suffix-label">pages</span>
+          </div>
+          <button
+            class="pagination-button"
+            mat-icon-button
+            (click)="pagination.open()"
+          >
+            <mat-select
+              [formControl]="paginationForm"
+              #pagination
+              class="langSelect"
+            >
+              <mat-option
+                *ngFor="let paginationPage of paginationPages"
+                (click)="onChangeToCustomPage(paginationPage)"
+                [value]="paginationPage"
+              >{{paginationPage}}</mat-option>
+            </mat-select>
+          </button>
+          <button
+            mat-icon-button
+            [disabled]="
     (waveformService.currentPage | async) === (waveformService.maxPages | async) ||
     (waveformService.loading | async)
     "
-          (click)="onAddPage(1)"
-          matTooltip="Next page"
-        >
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
-    </div>
-  </ng-container>
-
-</mat-toolbar>
-<div class="content container-fluid">
-  <div class="side ">
-
-    <div class="p-3 text-right">
-      <h4>
-        {{selectedWaveformSensors?.length  + (selectedContextSensor ? 1 : 0)}}/{{waveformSensors?.length + (contextSensor ? 1 : 0)}}
-        traces selected
-      </h4>
-    </div>
-    <div class="text-right">
-      <button
-        mat-raised-button
-        class="mr-3"
-        (click)="toggleSelectAllTraces()"
-      >{{selectedWaveformSensors.length === 0 ? 'Select all traces' : 'Deselect traces' }}</button>
-    </div>
-    <div class="px-3">
-      <h3>Labels</h3>
-    </div>
-    <div class="chart-labels-wrap">
-      <mat-chip-list
-        class="chart-labels"
-        aria-label=" selection"
-        [multiple]="true"
-      >
-        <ng-container *ngFor="let label of traceLabels; let idx = index">
-          <mat-chip
-            [selectable]="selectedWaveformSensors?.length > 0"
-            [selected]="isLabelSelected(label) > -1"
-            [ngStyle]="{'opacity': isLabelSelected(label) === 0 ? 0.6 : 1.0}"
-            [color]="'primary'"
-            (click)="toggleLabel(label)"
+            (click)="onAddPage(1)"
+            matTooltip="Next page"
           >
-            <span class="shortcut-key">{{idx < 9 ?(idx+1) : ''}}</span>
-            {{' '+ label.name}}
-          </mat-chip>
-        </ng-container>
-      </mat-chip-list>
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+  </mat-toolbar>
+  <div class="content container-fluid">
+    <div class="side ">
+
+      <div class="p-3 text-right">
+        <h4>
+          {{selectedWaveformSensors?.length  + (selectedContextSensor ? 1 : 0)}}/{{waveformSensors?.length + (contextSensor ? 1 : 0)}}
+          traces selected
+        </h4>
+      </div>
+      <div class="text-right">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="selectAllVisibleTraces()"
+          class="m-2"
+        >Select all visible traces</button>
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="selectedWaveformSensors?.length === 0 && selectedContextSensor === false"
+          (click)="deselectAllTraces()"
+          class="m-2"
+        >Deselect all traces</button>
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="areLabelsEmpty()"
+          (click)="removeAllLabels()"
+          class="m-2"
+        >Remove all labels</button>
+      </div>
+
+      <div class="px-3">
+        <h3>Labels</h3>
+      </div>
+      <div class="chart-labels-wrap">
+        <mat-chip-list
+          class="chart-labels"
+          aria-label=" selection"
+          [multiple]="true"
+        >
+          <ng-container *ngFor="let label of traceLabels; let idx = index">
+            <mat-chip
+              [selectable]="selectedWaveformSensors?.length > 0"
+              [selected]="isLabelSelected(label) > -1"
+              [ngStyle]="{'opacity': isLabelSelected(label) === 0 ? 0.6 : 1.0}"
+              [color]="'primary'"
+              (click)="toggleLabel(label)"
+            >
+              <span class="shortcut-key">{{idx < 9 ?(idx+1) : ''}}</span>
+              {{' '+ label.name}}
+            </mat-chip>
+          </ng-container>
+        </mat-chip-list>
+      </div>
+
+
     </div>
-
-
-  </div>
-  <div class="main">
-    <ng-container *ngFor="let chartId of [0,1,2,3,4,5]">
+    <div class="main">
+      <ng-container *ngFor="let chartId of [0,1,2,3,4,5]">
+        <div
+          *ngIf="(((currentPage -1) * (pageSize -1)) + chartId + 1) <= waveformSensors.length"
+          class="chart-selectable-area trace-waveform"
+          [ngClass]="{'selected': isWaveformTraceSelected(chartId)}"
+          [ngStyle]="{'height': 'calc((100vh - 64px) / '+ (pageSize) +')'}"
+          (click)="toggleWaveformTrace(chartId)"
+        >
+          <div class="chart-selectable-area-background"></div>
+          <div class="chart-selectable-area-labels">
+            <mat-chip-list
+              aria-label=" selection"
+              [multiple]="true"
+            >
+              <mat-chip
+                *ngFor="let label of eventTraceLabelsMap[waveformSensors[((currentPage - 1) * pageSize - (currentPage - 1)) + chartId]?.code]; let idx = index"
+                [selected]="isLabelSelected(label) > -1"
+                [ngStyle]="{'opacity': isLabelSelected(label) === 0 ? 0.6 : 1.0}"
+              >{{label.name}}
+              </mat-chip>
+            </mat-chip-list>
+          </div>
+          <div class="chart-selectable-area-marker">
+            <mat-icon>check</mat-icon>
+          </div>
+          <div class="chart-selectable-area-text">
+            <!-- {{waveformSensors[((currentPage -1) * (pageSize)) + chartId]?.code}} -->
+          </div>
+        </div>
+      </ng-container>
       <div
-        *ngIf="(((currentPage -1) * (pageSize -1)) + chartId + 1) <= waveformSensors.length"
-        class="chart-selectable-area trace-waveform"
-        [ngClass]="{'selected': isWaveformTraceSelected(chartId)}"
-        [ngStyle]="{'height': 'calc((100vh - 64px) / '+ (pageSize) +')'}"
-        (click)="toggleWaveformTrace(chartId)"
+        *ngIf="contextSensor"
+        [ngStyle]="{'height': 'calc((100vh - 64px) /'+ (pageSize)+ ')'}"
+        [ngClass]="{'selected': selectedContextSensor}"
+        (click)="toggleContextTrace()"
+        class="chart-selectable-area trace-context"
       >
         <div class="chart-selectable-area-background"></div>
         <div class="chart-selectable-area-labels">
@@ -137,7 +184,7 @@
             [multiple]="true"
           >
             <mat-chip
-              *ngFor="let label of eventTraceLabelsMap[waveformSensors[((currentPage - 1) * pageSize - (currentPage - 1)) + chartId]?.code]; let idx = index"
+              *ngFor="let label of eventTraceLabelsMap['context']; let idx = index"
               [selected]="isLabelSelected(label) > -1"
               [ngStyle]="{'opacity': isLabelSelected(label) === 0 ? 0.6 : 1.0}"
             >{{label.name}}
@@ -148,37 +195,9 @@
           <mat-icon>check</mat-icon>
         </div>
         <div class="chart-selectable-area-text">
-          <!-- {{waveformSensors[((currentPage -1) * (pageSize)) + chartId]?.code}} -->
         </div>
       </div>
-    </ng-container>
-    <div
-      *ngIf="contextSensor"
-      [ngStyle]="{'height': 'calc((100vh - 64px) /'+ (pageSize)+ ')'}"
-      [ngClass]="{'selected': selectedContextSensor}"
-      (click)="toggleContextTrace()"
-      class="chart-selectable-area trace-context"
-    >
-      <div class="chart-selectable-area-background"></div>
-      <div class="chart-selectable-area-labels">
-        <mat-chip-list
-          aria-label=" selection"
-          [multiple]="true"
-        >
-          <mat-chip
-            *ngFor="let label of eventTraceLabelsMap['context']; let idx = index"
-            [selected]="isLabelSelected(label) > -1"
-            [ngStyle]="{'opacity': isLabelSelected(label) === 0 ? 0.6 : 1.0}"
-          >{{label.name}}
-          </mat-chip>
-        </mat-chip-list>
-      </div>
-      <div class="chart-selectable-area-marker">
-        <mat-icon>check</mat-icon>
-      </div>
-      <div class="chart-selectable-area-text">
-      </div>
-    </div>
 
+    </div>
   </div>
-</div>
+</ng-container>
