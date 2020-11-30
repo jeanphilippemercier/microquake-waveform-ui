@@ -5,9 +5,9 @@ import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import ApiUtil from '../../utils/api-util';
 import { PaginationResponse } from '@interfaces/dto.interface';
-import { IEvent, Boundaries, Origin, InteractiveProcessing, Ray, EventsDailySummary, Arrival } from '@interfaces/event.interface';
+import { IEvent, Boundaries, Origin, InteractiveProcessing, Ray, EventsDailySummary, Arrival, EventTraceLabel } from '@interfaces/event.interface';
 import { EventQuery, BoundariesQuery, EventWaveformQuery, EventOriginsQuery, EventArrivalsQuery, EventDailySummaryQuery, EventRayQuery } from '@interfaces/event-query.interface';
-import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput, EventDuplicationResponse } from '@interfaces/event-dto.interface';
+import { EventUpdateInput, WaveformQueryResponse, EventPaginationResponse, ArrivalUpdateInput, EventDuplicationResponse, EventTraceLabelUpdateInput } from '@interfaces/event-dto.interface';
 import { WebSocketService } from '../websocket.service';
 
 const apiPath = {
@@ -20,6 +20,7 @@ const apiPath = {
   arrivals: `arrivals`,
   rays: `rays`,
   boundaries: `catalog_boundaries`,
+  traceLabels: 'trace_labels',
 };
 
 @Injectable({
@@ -130,6 +131,20 @@ export class EventApiService {
     return this._http.get<PaginationResponse<EventsDailySummary>>(url, { params });
   }
 
+
+
+  /**
+   * Event trace labels
+   */
+  getTraceLabels(eventId: string): Observable<EventTraceLabel[]> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}/${apiPath.traceLabels}`;
+    return this._http.get<EventTraceLabel[]>(url, {});
+  }
+
+  updateTraceLabels(eventId: string, body: EventTraceLabelUpdateInput): Observable<IEvent> {
+    const url = `${environment.apiUrl}${apiPath.events}/${eventId}`;
+    return this._http.patch<IEvent>(url, { trace_labels: body?.trace_labels });
+  }
 
 
   /**

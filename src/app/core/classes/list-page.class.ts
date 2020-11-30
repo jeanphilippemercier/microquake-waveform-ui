@@ -66,7 +66,7 @@ export class ListPage<T> implements OnInit, OnDestroy {
 
   async afterNgOnInit() { }
 
-  public wiatForInitialization(): Promise<void> {
+  public waitForInitialization(): Promise<void> {
     return new Promise(resolve => {
       this.initialized.pipe(
         skipWhile(val => val !== true),

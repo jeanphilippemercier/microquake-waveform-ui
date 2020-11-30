@@ -1,0 +1,105 @@
+<form
+  class=""
+  [formGroup]="myForm"
+  (ngSubmit)="onSubmit()"
+>
+  <div class="row">
+
+    <div class="col-lg-3 pr-lg-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input
+              [required]="true"
+              matInput
+              formControlName="name"
+            >
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-lg-3 pl-lg-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Event type</mat-label>
+            <mat-select formControlName="event_type">
+              <mat-option [value]="null">
+                none
+              </mat-option>
+              <ng-container *ngFor="let eventType of eventTypes">
+                <mat-option [value]="eventType">
+                  {{eventType?.microquake_type}}
+                </mat-option>
+              </ng-container>
+
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-lg-3 px-lg-4">
+      <div class="row">
+
+        <div class="col">
+          <mat-form-field>
+            <mat-label>Priority</mat-label>
+            <input
+              matInput
+              type="text"
+              formControlName="priority"
+            >
+          </mat-form-field>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-lg-3 pl-lg-4">
+      <div class="row">
+
+        <div class="col">
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-12 py-1">
+      <div class="d-flex">
+        <div class="mr-auto"></div>
+        <button
+          (click)="onCancel();$event.preventDefault()"
+          class="mr-3"
+          mat-raised-button
+        >Cancel</button>
+
+        <ng-container *ngIf="mode === PageMode.EDIT">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Save</button>
+        </ng-container>
+
+        <ng-container *ngIf="mode === PageMode.CREATE">
+          <button
+            type="submit"
+            [color]="'primary'"
+            mat-raised-button
+          >Create</button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</form>

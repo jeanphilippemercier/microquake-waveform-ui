@@ -152,6 +152,16 @@
           <ng-container *ngTemplateOutlet="moreCell;context:{index: 4}"></ng-container>
         </tr>
 
+        <tr class="mat-row">
+          <ng-container *ngTemplateOutlet="dataCell;context:{name: 'Trace labels'}"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="statusCell;context:{status: (waveformService?.traceLabelsLoadStatus | async)}"
+          >
+          </ng-container>
+          <ng-container *ngTemplateOutlet="countCell;context:{count: waveformService?.traceLabels?.length}">
+          </ng-container>
+          <ng-container *ngTemplateOutlet="moreCell;context:{index: 5}"></ng-container>
+        </tr>
 
       </table>
 

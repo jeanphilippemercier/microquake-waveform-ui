@@ -94,6 +94,9 @@
                   <mat-icon class="event-icon mat-badge">
                     {{event?.event_type | eventTypeIcon}}
                     <span class="mat-badge-content mat-badge-active">.</span>
+                    <span *ngIf="event?.trace_labels?.length > 0" class="mat-badge-label-content mat-badge-active">
+                      <mat-icon class="event-icon mat-badge">label</mat-icon>
+                    </span>
                   </mat-icon>
                   <div class="px-3 event-id">
 

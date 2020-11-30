@@ -43,6 +43,7 @@ export default class EventUtil {
     y: 4767670,
     z: -25,
     duplicate_of: null,
+    trace_labels: [],
   };
 
   /**

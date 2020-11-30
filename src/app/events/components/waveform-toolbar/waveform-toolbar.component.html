@@ -11,6 +11,7 @@
     <app-event-site-picker></app-event-site-picker>
   </app-layout-topbar>
 
+
   <div class="buttons-group ml-2">
     <div class="buttons-group-content">
       <mat-button-toggle-group
@@ -35,6 +36,13 @@
         </mat-button-toggle>
       </mat-button-toggle-group>
 
+      <button
+        mat-icon-button
+        matTooltip="Open Labelling mode"
+        (click)="onLabellingModeClick()"
+      >
+        <mat-icon>label</mat-icon>
+      </button>
 
       <button
         mat-icon-button

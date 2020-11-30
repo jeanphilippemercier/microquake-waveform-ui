@@ -266,3 +266,10 @@ export enum HeartbeatStatus {
   PENDING = 'pending',
   INACTIVE = 'inactive'
 }
+
+export interface TraceLabel {
+  id: number;
+  name: string;
+  priority: number | null;
+  event_type: number | null;
+}

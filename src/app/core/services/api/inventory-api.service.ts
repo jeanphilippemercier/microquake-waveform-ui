@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import ApiUtil from '@core/utils/api-util';
 import { globals } from '@src/globals';
 import { environment } from '@env/environment';
-import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse, Heartbeat } from '@interfaces/inventory.interface';
+import { Site, Station, Borehole, ISensorType, CableType, InterpolateBoreholeResponse, Heartbeat, TraceLabel } from '@interfaces/inventory.interface';
 import { Sensor, IComponent } from '@interfaces/inventory.interface';
 import { PaginationResponse } from '@interfaces/dto.interface';
 import { PaginationRequest, RequestOptions } from '@interfaces/query.interface';
@@ -377,6 +377,35 @@ export class InventoryApiService {
 
   deleteMicroquakeEventType(id: number): Observable<any> {
     const url = `${environment.apiUrl}${globals.apiMicroquakeEventTypes}/${id}`;
+    return this._http.delete(url);
+  }
+
+
+  /**
+   * Trace labels
+   */
+  getTraceLabels(): Observable<TraceLabel[]> {
+    const url = `${environment.apiUrl}${globals.apiTraceLabels}`;
+    return this._http.get<TraceLabel[]>(url, {});
+  }
+
+  getTraceLabel(id: number): Observable<TraceLabel> {
+    const url = `${environment.apiUrl}${globals.apiTraceLabels}/${id}`;
+    return this._http.get<TraceLabel>(url);
+  }
+
+  createTraceLabel(body: any): Observable<TraceLabel> {
+    const url = `${environment.apiUrl}${globals.apiTraceLabels}`;
+    return this._http.post<TraceLabel>(url, body);
+  }
+
+  updateTraceLabel(id: number, body: any): Observable<TraceLabel> {
+    const url = `${environment.apiUrl}${globals.apiTraceLabels}/${id}`;
+    return this._http.patch<TraceLabel>(url, body);
+  }
+
+  deleteTraceLabel(id: number): Observable<any> {
+    const url = `${environment.apiUrl}${globals.apiTraceLabels}/${id}`;
     return this._http.delete(url);
   }
 

@@ -217,6 +217,10 @@ export class WaveformToolbarComponent implements OnInit, OnDestroy {
     this.waveformService.interactiveProcessClicked.next();
   }
 
+  onLabellingModeClick() {
+    this.waveformService.labellingModeIsActive.next(!this.waveformService.labellingModeIsActive.getValue());
+  }
+
   onPickingModeChange($event: PickingMode) {
 
     const currentVal = this.waveformService.pickingMode.getValue();

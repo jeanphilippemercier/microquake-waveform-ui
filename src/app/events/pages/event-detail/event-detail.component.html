@@ -315,6 +315,9 @@
     ></app-waveform-2>
   </mat-sidenav-content>
 </mat-sidenav-container>
+
+<app-waveform-labelling-mode *ngIf="waveformService?.labellingModeIsActive | async"></app-waveform-labelling-mode>
+
 <ngx-spinner name="loadingInteractiveProcessing">
   <div>
     <p
