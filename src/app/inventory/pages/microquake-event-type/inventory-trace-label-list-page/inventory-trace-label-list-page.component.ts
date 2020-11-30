@@ -10,12 +10,11 @@ import { ToastrNotificationService } from '@services/toastr-notification.service
 import { ConfirmationDialogComponent } from '@app/shared/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { ConfirmationDialogData, TraceLabelFormDialogData } from '@interfaces/dialogs.interface';
 import { EventType } from '@interfaces/event.interface';
-import { MicroquakeEventTypeFormDialogComponent } from '@app/inventory/dialogs/microquake-event-type-form-dialog/microquake-event-type-form-dialog.component';
 import { TraceLabel } from '@interfaces/inventory.interface';
 import { forkJoin } from 'rxjs';
 import { PageMode } from '@interfaces/core.interface';
-import { TraceLabelFormDialogComponent } from '@app/inventory/dialogs/trace-label-form-dialog/trace-label-form-dialog.component'
-import { WaveformService } from '@services/waveform.service';;
+import { TraceLabelFormDialogComponent } from '@app/inventory/dialogs/trace-label-form-dialog/trace-label-form-dialog.component';
+import { WaveformService } from '@services/waveform.service';
 
 @Component({
   selector: 'app-inventory-trace-label-list-page',
@@ -35,7 +34,6 @@ export class InventoryTraceLabelListPageComponent extends ListPage<TraceLabel> {
     protected _matDialog: MatDialog,
     protected _router: Router,
     private _toastrNotificationService: ToastrNotificationService,
-    private _injector: Injector,
   ) {
     super(_activatedRoute, _matDialog, _router, _ngxSpinnerService);
   }
@@ -181,14 +179,7 @@ export class InventoryTraceLabelListPageComponent extends ListPage<TraceLabel> {
   }
 
   onRowClicked(ev: EventType) {
-    // if (!this.waveformService) {
-    //   this.waveformService = this._injector.get<WaveformService>(WaveformService);
-    // }
-    // if (this.waveformService) {
-    //   this.waveformService.openApplicationDataDialog();
-    // }
     this._router.navigate(['/inventory/trace-labels', ev.id]);
   }
-
 
 }
